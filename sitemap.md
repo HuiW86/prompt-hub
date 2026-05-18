@@ -141,8 +141,8 @@ graph TD
 
 ---
 
-## §5 待 W4 决议的视图细节
+## §5 待决议的视图细节
 
 - `view:monthly-review` 的具体数据维度（哪些字段聚合）→ 详见 [[product-spec#4.5.5]] 未覆盖 flow
-- `view:status-panel` 是否包含 schema_version 升级状态 → 待 ops-spec 决议
+- ✅ `view:status-panel` 是否包含 schema_version 升级状态 → 已由 [[ops-spec#§5.1]] 决议：迁移日志在 `view:config` 配置面板，**不在** status-panel
 - 配置入口的 Tab 划分（4 Tab 还是 5 Tab）→ 待 product-spec 修订

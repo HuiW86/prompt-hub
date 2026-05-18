@@ -173,7 +173,9 @@ Mac 上：view:config → view:data-io → 导出 JSON → 保存到 iCloud Driv
 
 ## §8 待补 flow（已识别但未细化）
 
-- **AI 协作分位变化 flow**：用户在和 AI 对话中途切换相位（已在 [[product-spec#4.5.1]] 部分覆盖，待补「连续切相位 3 次」边缘场景）
-- **SOP 录制 flow**：从 UsageRecord 历史录制 SOP（[[prd#8.2-Q2]]）的具体粒度选择 UI
-- **副屏断开 flow**：辅形态运行中物理副屏被拔出（应优雅降级为窗口模式）
-- **存储满 flow**：localStorage 达到浏览器配额上限（IndexedDB 兜底策略待定）
+| Flow | Owner | Due（按 plan 阶段） | 触发条件 |
+|---|---|---|---|
+| **AI 协作分位变化 flow**（[[product-spec#4.5.1]] 部分覆盖，待补「连续切相位 3 次」边缘场景） | omar | S1 / 第一阶段 | 主形态 MVP 跑通后 |
+| **SOP 录制 flow**：从 UsageRecord 历史录制 SOP（[[prd#8.2-Q2]]）的具体粒度选择 UI | omar | S3 / 第三阶段 | SOP 导航模块开工前 |
+| **副屏断开 flow**：辅形态运行中物理副屏被拔出（应优雅降级为窗口模式） | omar | S5 / 第五阶段 | 辅形态实施时 |
+| **存储满 flow**：localStorage 达到配额上限（IndexedDB 兜底策略待定） | omar | S1 / 第一阶段 | 待 ADR-003（数据持久化）决议后 |
