@@ -1,0 +1,154 @@
+---
+type: features
+project: prompt-hub
+version: v0.1
+created: 2026-05-19
+status: pre-code  # ⚠️ 0 LOC，所有功能 planned，测试覆盖 0%
+audience: [human, ai]
+description: prompt-hub 功能清单运营视图——功能 × 状态 × 测试覆盖 × 版本，单一事实源
+related:
+  - prd
+  - plan
+  - test-spec  # 待 W4 补
+---
+
+# Features: prompt-hub
+
+> 功能清单的**运营视图**。回答「现在有什么、做到什么程度、测得怎么样」。
+> **不重复 prd**：本文件只承载状态/覆盖率，功能定义见 [[prd#5]] 各章节。
+> **不替代 issue tracker**：单条 bug / task 走 git history，本文件追全局功能层面。
+>
+> ⚠️ **当前 pre-code 阶段**：所有功能 `planned`，无版本号，无测试覆盖。
+> 首次第一阶段建仓时，状态升 `in-progress` 并开始填充覆盖率。
+
+---
+
+## §1 状态定义
+
+| 状态 | 含义 | 触发 |
+|---|---|---|
+| `planned` | 已立项，未开始编码 | spec / prd 收录 |
+| `in-progress` | 编码中 | 第一个 commit 提交 |
+| `done` | 编码完成，本地跑通 | PR merged to main |
+| `verified` | 测试覆盖达标，已上线给真实使用者 | E2E 通过 + 使用者使用 ≥1 周 |
+| `deprecated` | 已废弃，待移除 | 开 ADR 决议废弃 |
+
+**铁律**：已发布到生产（自用）的功能必须 `verified`，否则违反 [[spec#10.5]] 验收节奏。
+
+## §2 优先级定义
+
+| 优先级 | 含义 | 例子 |
+|---|---|---|
+| **P0** | MVP 核心，缺失则产品不成立 | 主形态唤起、Macro 调用、相位带 |
+| **P1** | 重要但可延后，缺失则体验打折 | SOP 导航、配置入口、数据导入导出 |
+| **P2** | 增强型，覆盖少数场景 | 辅形态副屏、月度 review 视图 |
+
+## §3 功能矩阵
+
+### 3.1 主形态 MVP（S1 / 第一阶段）
+
+| 功能 | 优先级 | 状态 | 目标版本 | 测试覆盖 | 责任人 | prd 引用 |
+|---|---|---|---|---|---|---|
+| 搜索区（⌘K 全局搜索） | P0 | `planned` | v1.0 | 0% | omar | [[prd#5.0]] |
+| 相位带（Phase Bar） | P0 | `planned` | v1.0 | 0% | omar | [[prd#5.1]] |
+| Macro 快捷区 | P0 | `planned` | v1.0 | 0% | omar | [[prd#5.2]] |
+| Scene 全景区 | P0 | `planned` | v1.0 | 0% | omar | [[prd#5.3]] |
+| 最近使用区 | P0 | `planned` | v1.0 | 0% | omar | [[prd#5.5]] |
+
+### 3.2 闭环沉淀（S2 / 第二阶段）
+
+| 功能 | 优先级 | 状态 | 目标版本 | 测试覆盖 | 责任人 | prd 引用 |
+|---|---|---|---|---|---|---|
+| Composition 组合工作台（⌘N） | P0 | `planned` | v1.1 | 0% | omar | [[prd#5.4]] |
+| 状态仪表区（相位分布） | P0 | `planned` | v1.1 | 0% | omar | [[prd#5.7]] |
+| 「未分类草稿」识别 | P0 | `planned` | v1.1 | 0% | omar | [[plan#第二阶段]] |
+| 「保存为 Macro」自动提示 | P0 | `planned` | v1.1 | 0% | omar | [[plan#第二阶段]] |
+
+### 3.3 SOP 导航（S3 / 第三阶段）
+
+| 功能 | 优先级 | 状态 | 目标版本 | 测试覆盖 | 责任人 | prd 引用 |
+|---|---|---|---|---|---|---|
+| SOP 导航区 | P1 | `planned` | v1.2 | 0% | omar | [[prd#5.6]] |
+| SOP 模板的创建和编辑 | P1 | `planned` | v1.2 | 0% | omar | [[plan#第三阶段]] |
+| 从使用历史录制 SOP | P1 | `planned` | v1.2 | 0% | omar | [[plan#第三阶段]] |
+
+### 3.4 配置与个性化（S4 / 第四阶段）
+
+| 功能 | 优先级 | 状态 | 目标版本 | 测试覆盖 | 责任人 | prd 引用 |
+|---|---|---|---|---|---|---|
+| 配置入口 | P1 | `planned` | v1.3 | 0% | omar | [[prd#5.8]] |
+| Phase 可配置编辑 | P1 | `planned` | v1.3 | 0% | omar | [[prd#6.5]] |
+| 数据导入导出（JSON） | P1 | `planned` | v1.3 | 0% | omar | [[prd#6.9]] |
+| 主形态界面布局可配置 | P1 | `planned` | v1.3 | 0% | omar | [[spec#2.9]] |
+
+### 3.5 辅形态副屏（S5 / 第五阶段）
+
+| 功能 | 优先级 | 状态 | 目标版本 | 测试覆盖 | 责任人 | prd 引用 |
+|---|---|---|---|---|---|---|
+| 副屏常驻窗口 | P2 | `planned` | v2.0 | 0% | omar | [[plan#第五阶段]] |
+| 月度 review 视图 | P2 | `planned` | v2.0 | 0% | omar | [[plan#第五阶段]] |
+| 副屏 Composition 侧栏 | P2 | `planned` | v2.0 | 0% | omar | [[plan#第五阶段]] |
+
+### 3.6 跨模块能力（非单模块功能）
+
+| 功能 | 优先级 | 状态 | 目标版本 | 测试覆盖 | 责任人 | 引用 |
+|---|---|---|---|---|---|---|
+| 全局快捷键注册（默认 ⌥ Space） | P0 | `planned` | v1.0 | 0% | omar | [[plan#第一阶段]] |
+| 主形态唤起 ≤200ms（P95） | P0 | `planned` | v1.0 | 0% | omar | [[constitution#C1]] |
+| 复制即隐藏 / ESC 关闭 | P0 | `planned` | v1.0 | 0% | omar | [[plan#第一阶段]] |
+| UsageRecord 持续记录 | P0 | `planned` | v1.0 | 0% | omar | [[prd#6.8]] |
+| 三层资产模型（Modifier/Composition/Macro） | P0 | `planned` | v1.0 | 0% | omar | [[constitution#B1]] |
+| 协议层与任务层物理分离 | P0 | `planned` | v1.0 | 0% | omar | [[constitution#B2]] |
+| 本地数据存储（无服务端） | P0 | `planned` | v1.0 | 0% | omar | [[constitution#A2]] |
+| 设计 Token 系统（无裸值） | P0 | `planned` | v1.0 | 0% | omar | [[plan#§0-T1]] |
+
+---
+
+## §4 阶段交付节奏
+
+| 阶段 | 版本 | 功能数 | 状态 |
+|---|---|---|---|
+| S1 主形态 MVP | v1.0 | 5 模块 + 8 跨模块能力 | `planned` |
+| S2 闭环沉淀 | v1.1 | 4 功能 | `planned` |
+| S3 SOP 导航 | v1.2 | 3 功能 | `planned` |
+| S4 配置个性化 | v1.3 | 4 功能 | `planned` |
+| S5 辅形态副屏 | v2.0 | 3 功能 | `planned` |
+| **合计** | — | **27 项** | — |
+
+**注**：版本号语义为 prompt-hub 自身版本，与 prd / spec / methodology 各自独立。v1.0 = 第一阶段 MVP 可发布；v2.0 = 辅形态加入（双形态完整）。
+
+---
+
+## §5 测试覆盖目标
+
+> 详细测试策略见 [[test-spec]]（W4 待补）。本节定门槛：
+
+| 优先级 | 目标版本时的最低覆盖 | 备注 |
+|---|---|---|
+| P0 | 单元 ≥80% + E2E 覆盖核心路径 | MVP 前必须达成 |
+| P1 | 单元 ≥60% + E2E 覆盖主路径 | 发布前必须达成 |
+| P2 | 单元 ≥40% | 发布后 1 个月内补齐 |
+
+**违反**：低于目标但仍标 `verified` → bug，必须降级为 `done` 并补测。
+
+---
+
+## §6 变更日志（追加型，禁止修改历史）
+
+| 日期 | 变更 | 触发 |
+|---|---|---|
+| 2026-05-19 | features.md v0.1 初版，27 项功能全部 `planned` | W2 实战验证落盘 |
+
+---
+
+## §7 当前阶段说明（pre-code）
+
+- LOC: 0
+- 通过测试: 0 / 0
+- 已合并 PR: 0（仅文档 commit）
+- 下一动作：见 [[plan#§0]] 跨阶段先决条件 + [[tech-stack#§3]] 待 ADR 决议项
+
+**自动同步约定**（建仓后启用）：
+- 每次 PR merged 自动跑 `scripts/update-features.sh` 同步状态（脚本待第一阶段加）
+- 单元测试覆盖率由 vitest coverage report 直接填入
+- 责任人字段单人项目暂时全为 `omar`，多人协作时按 PR author 自动填
