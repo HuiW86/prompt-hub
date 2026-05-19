@@ -23,10 +23,12 @@ related:
 ### 1.1 分发形态
 
 > **2026-05-19 [[adr/001-choose-desktop-runtime]] 后**：分发统一走 Tauri bundle + `tauri-plugin-updater`，跨 OS 一致。
+>
+> **2026-05-19 [[adr/008-enable-macos-private-api]] 后**：启用 `macos-private-api` feature 以满足 [[spec#2.3]] 主形态视觉效果，**永久排除** macOS App Store 上架（违反 Mac App Store Review Guidelines 2.5.1 私有 API 禁令）；macOS 分发仅走 DMG 直链 + Developer ID 签名 + notarization。若未来需上架 App Store 需开新 ADR superseding ADR-008 并重写主形态窗口管理代码。
 
 | 平台 | 分发方式 | 安装包格式 | 自动更新 |
 |---|---|---|---|
-| macOS | DMG 直链 / 未来 App Store（v2.0+ 考虑） | `.dmg` / `.app` / `.app.tar.gz`（updater）| **tauri-plugin-updater** |
+| macOS | DMG 直链（**永久排除 App Store**，见 [[adr/008-enable-macos-private-api#6]]）| `.dmg` / `.app` / `.app.tar.gz`（updater）| **tauri-plugin-updater** |
 | Windows | MSI 直链 | `.msi` / `.exe.zip`（updater）| **tauri-plugin-updater** |
 | Linux | （v2.0 后再考虑） | AppImage / .deb | tauri-plugin-updater |
 | iPad（辅形态） | （v2.0+，[[prd#7.4]] 次要设备，Tauri 2 支持 iOS 但本项目暂缓） | TestFlight 或 sideload | — |

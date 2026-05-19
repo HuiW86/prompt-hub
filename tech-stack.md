@@ -1,22 +1,31 @@
 ---
 type: tech-stack
 project: prompt-hub
-version: v0.1
+version: v1.0
 created: 2026-05-19
-status: pending-adr  # ⚠️ 待 ADR-001 (桌面运行时选型) 决议后升 v1.0
+updated: 2026-05-19
+status: ratified  # ADR-001~004/006~009 全部 Accepted；ADR-005（prompt-combiner 复用）仍 Proposed
 audience: [ai]
-description: prompt-hub 技术栈快照——当前为 stub 状态，桌面运行时与数据层选型待 ADR 决议
+description: prompt-hub 技术栈快照——全栈拍板：Tauri 2.x + React 19.2 + rusqlite 0.32 + pnpm 9.x + Zustand 5 + Vitest 4 + CSS Modules，macos-private-api 启用
 related:
   - constitution
   - plan
-  - adr/001-choose-desktop-runtime  # Accepted 2026-05-19
+  - adr/001-choose-desktop-runtime
+  - adr/002-choose-frontend-framework
+  - adr/003-choose-data-persistence
+  - adr/004-choose-package-manager
+  - adr/005-prompt-combiner-reuse
+  - adr/006-choose-state-management
+  - adr/007-choose-test-stack
+  - adr/008-enable-macos-private-api
+  - adr/009-choose-styling
 ---
 
 # Tech Stack: prompt-hub
 
-> ⚠️ **本文件当前为 stub 状态**。prompt-hub 尚未建仓写代码（pre-code 阶段），多项技术选型未拍板。AI 在生成代码前必须先确认对应 ADR 已存在并标 Accepted；若 ADR 未存在，必须先 [[plan]] 流程触发决策，不得擅自选型。
+> 全栈技术选型已通过 ADR-001~009 拍板（除 ADR-005 prompt-combiner 复用仍 Proposed）。AI 在生成代码前可直接按本文件 §4~§7 操作；遇 dependency major bump 必须先开 ADR（[[#§8-升级流程]]）。
 >
-> 完整版填写时机：第一阶段 MVP 建仓前（[[plan#第一阶段]]）。
+> 跨阶段先决条件见 [[plan#§0]]；第一阶段 MVP 建仓基线见 [[plan#第一阶段]]。
 
 ---
 
@@ -52,65 +61,167 @@ related:
 
 ---
 
-## §3 待 ADR 决议项（pending）
+## §3 决策项总览（resolved + pending）
 
-| # | 决策项 | 候选 | 触发 ADR | 状态 |
+| # | 决策项 | 选定 | ADR | 状态 |
 |---|---|---|---|---|
-| **D1** | 桌面运行时 | ~~Tauri 2.x~~ / ~~Electron 30+~~ | ADR-001 | ✅ **Accepted 2026-05-19**：Tauri 2.x |
-| **D2** | 前端框架 | React 19 / Vue 3.5 / Svelte 5 / Solid | ADR-002 | ⏳ pending（第一阶段建仓） |
-| **D3** | 数据持久化 | SQLite（drizzle/better-sqlite3）/ JSON 文件 / localStorage | ADR-003 | ⏳ pending（UsageRecord 实现） |
-| **D4** | 包管理器 | pnpm / bun / npm | ADR-004 | ⏳ pending（建仓） |
-| **D5** | 构建工具 | ~~Vite~~ / ~~Tauri 内置~~ | 自动锁定 by ADR-001 | ✅ **Vite**（Tauri 官方推荐） |
-| **D6** | 状态管理 | Zustand / Jotai / 框架内置 | 依赖 D2 | ⏳ pending（第二阶段） |
-| **D7** | 全局快捷键 API | ~~Tauri global-shortcut~~ / ~~Electron globalShortcut~~ | 自动锁定 by ADR-001 | ✅ **@tauri-apps/plugin-global-shortcut** |
-| **D8** | 是否复用 prompt-combiner 旧代码 | 复用 / 重写 / 部分迁移 | ADR-005 | ⏳ pending（须评估前端组件可迁移性，Rust 后端需重写） |
+| **D1** | 桌面运行时 | Tauri 2.x | [[adr/001-choose-desktop-runtime]] | ✅ Accepted 2026-05-19 |
+| **D2** | 前端框架 | React 19.2 | [[adr/002-choose-frontend-framework]] | ✅ Accepted 2026-05-19 |
+| **D3** | 数据持久化 | rusqlite 0.32 + bundled SQLite（不启 SQLCipher）| [[adr/003-choose-data-persistence]] | ✅ Accepted 2026-05-19 |
+| **D4** | 包管理器 | pnpm 9.x | [[adr/004-choose-package-manager]] | ✅ Accepted 2026-05-19 |
+| **D5** | 构建工具 | Vite 8.0 | D1 自动锁定（无独立 ADR）| ✅ 由 D1 锁定 |
+| **D6** | 状态管理 | Zustand 5（四层 store）| [[adr/006-choose-state-management]] | ✅ Accepted 2026-05-19 |
+| **D7** | 全局快捷键 API | @tauri-apps/plugin-global-shortcut | D1 自动锁定（无独立 ADR）| ✅ 由 D1 锁定 |
+| **D8** | prompt-combiner 复用 | （待 omar 提供仓库后调研）| [[adr/005-prompt-combiner-reuse]] | ⏳ Proposed |
+| **D9** | macOS 私有 API | 启用 macos-private-api（永久弃 App Store）| [[adr/008-enable-macos-private-api]] | ✅ Accepted 2026-05-19 |
+| **D10** | 样式方案 | CSS Modules + CSS variables（不引 Tailwind）| [[adr/009-choose-styling]] | ✅ Accepted 2026-05-19 |
+| **D11** | 测试栈 | Vitest 4 + Testing Library + jsdom 29 + cargo test + tempfile | [[adr/007-choose-test-stack]] | ✅ Accepted 2026-05-19 |
 
-**决策原则**（不是决策本身）：
-- 优先选择支持 A1 + A2 + C1 的组合
-- D1 已锁定 Tauri 2.x（[[adr/001-choose-desktop-runtime]]），D2/D3/D4/D8 仍 pending
-- D5 / D7 因 Tauri 选定后自动锁定，无需独立 ADR
-- 若复用 prompt-combiner（[[plan#§总实施周期估计]]），需在 ADR-005 列出迁移成本——注意 Tauri 选定后后端 Node.js 代码无法直接迁移
+**仅剩 D8 阻塞**：第一阶段 MVP 建仓不依赖 D8（可走「重写」路径），D8 调研结果只影响迁移节奏。
 
 ---
 
-## §4 填写模板（ADR 决议后回填）
-
-> 当 ADR-001 ~ 005 全部 Accepted 后，删除 §3，按以下模板填 §4 升 v1.0：
-
-```markdown
 ## §4 运行时与框架
 
-- **桌面运行时**：<Tauri X.Y.Z / Electron X.Y.Z>（ADR-001）
-- **前端框架**：<React 19.0 / ...>（ADR-002）
-- **TypeScript**：5.x，strict mode
-- **Node 版本**：lts/iron 或更新
+| 维度 | 选定 | 版本 | 来源 |
+|---|---|---|---|
+| **桌面运行时** | Tauri | 2.x | [[adr/001-choose-desktop-runtime]] |
+| **Tauri features** | `macos-private-api` 启用 | — | [[adr/008-enable-macos-private-api]] |
+| **前端框架** | React + React-DOM | 19.2 | [[adr/002-choose-frontend-framework]] |
+| **状态管理** | Zustand | 5.x | [[adr/006-choose-state-management]] |
+| **TypeScript** | TS | 5.x（strict mode）| 标配 |
+| **Node 版本** | lts/iron | 20.x 或更新 | Tauri 2.x + Vite 8 要求 |
+| **Rust MSRV** | rustc | 1.77.2+ | Tauri 2.x 要求 |
+
+### 4.1 Zustand 四层 store
+
+| Store | 职责 | 持久化 |
+|---|---|---|
+| `appStore` | 窗口形态（main/aux）/ 当前视图 ID / 主形态可见性 | 部分（视图偏好）|
+| `promptStore` | Modifier / Composition / Macro / UsageRecord（从 Rust IPC 拉取）| 否（数据源是 SQLite）|
+| `searchStore` | query / filter / 高亮结果 | 否（短期态）|
+| `settingsStore` | 快捷键 / 主题 / 副屏开关 / Phase 状态 | 是（localStorage + Rust IPC 同步至 SQLite）|
+
+文件结构约定：`src/stores/{name}Store.ts`。完整设计见 [[adr/006-choose-state-management#6]]。
+
+### 4.2 macOS 私有 API 用途
+
+| 私有 API | 用途 | spec 依据 |
+|---|---|---|
+| NSWindow `level` | 主形态浮于所有应用上方但不抢焦点 | [[spec#2.3]] 哲学三时间分离 |
+| `setSharingType` | 控制窗口分享行为 | 主形态隐私 |
+| `canBecomeMain` / `canBecomeKey` | 唤起后立即接收键盘事件而不切换 active app | [[constitution#C1]] 200ms 唤起 |
+
+**不可逆约束**：App Store 上架永久排除（[[adr/008-enable-macos-private-api#6]]）。
+
+---
 
 ## §5 数据层
 
-- **持久化**：<SQLite via better-sqlite3 X.Y.Z>（ADR-003）
-- **Schema 工具**：<drizzle X.Y.Z / ...>
-- **数据目录**：`<OS user data dir>/prompt-hub/`
+| 维度 | 选定 | 版本 | 备注 |
+|---|---|---|---|
+| **数据库引擎** | SQLite（rusqlite bundled feature）| 0.32 | bundled SQLite 跨 OS 行为一致 |
+| **加密** | 不启 SQLCipher | — | A2 + OS 用户密码 + FileVault 已是隐私底线 |
+| **关系/索引** | rusqlite 原生 SQL | — | 外键 / 索引 / 事务全开 |
+| **时间** | `chrono` | 0.4.x | UsageRecord 时间戳 |
+| **UUID** | `uuid` v4 | 1.x | 实体主键 |
+| **测试 fixture** | `tempfile` | 3.x | 临时 .db 文件，测后自动清理 |
 
-## §6 工具链
+### 5.1 数据目录
 
-- **包管理**：<pnpm 9.x>（ADR-004），lockfile 提交
-- **构建**：<Vite X.Y.Z>
-- **测试**：<Vitest X.Y.Z / Playwright X.Y.Z>
-- **Lint**：ESLint 9 flat config + Prettier 3.x
-
-## §7 锁定原因（关键依赖）
-
-| 包 | 版本锁定 | 原因 |
-|---|---|---|
-| <Tauri> | ^2.0 | <2.x 不兼容 1.x，固守> |
-| ... | | |
 ```
+macOS:   ~/Library/Application Support/dev.prompt-hub/
+Windows: %APPDATA%\dev.prompt-hub\
+```
+
+由 Tauri `path::app_data_dir()` 解析。完整备份策略见 [[ops-spec#§3]]（`cp .db + WAL`）。
+
+### 5.2 数据规模与索引基线
+
+| 实体 | 预估上限 | 索引策略 |
+|---|---|---|
+| Modifier | ≤ 5,000 | 全表 + 标签反查 |
+| Composition | ≤ 1,000 | 含 Modifier 引用反查 |
+| Macro | ≤ 100 | 主键即可 |
+| UsageRecord | 增长无上限（按月归档）| 时间范围 query + 关联实体反查 |
+| SOP | ≤ 200 | 主键 |
 
 ---
 
-## §5 升级流程
+## §6 工具链
 
-任何依赖 major version bump 必须走：
-1. 开 ADR 评估破坏性变更
-2. 升级后跑 [[plan#§0-T2]] 全量自检
-3. 更新本文件并 bump version
+| 维度 | 选定 | 版本 | 来源 |
+|---|---|---|---|
+| **包管理** | pnpm | 9.x | [[adr/004-choose-package-manager]] |
+| **构建** | Vite | 8.0 | D1 自动锁定（Tauri 官方推荐）|
+| **样式** | CSS Modules + CSS variables | Vite 内置 | [[adr/009-choose-styling]] |
+| **class 拼接** | clsx | 2.x | 变体合并 |
+| **前端测试** | Vitest + Testing Library + jsdom | 4 / latest / 29 | [[adr/007-choose-test-stack]] |
+| **Rust 测试** | cargo test + tempfile | 内置 / 3.x | [[adr/007-choose-test-stack]] |
+| **E2E** | Playwright | 推到 v1.0+ 评估 | [[adr/007-choose-test-stack#5]] |
+| **JS Lint** | ESLint | 9.x（flat config）| 标配 |
+| **JS Format** | Prettier | 3.x | 标配 |
+| **Rust Lint** | clippy（`-D warnings`）| 随 toolchain | 标配 |
+| **Rust Format** | rustfmt | 随 toolchain | 标配 |
+
+### 6.1 lockfile 政策
+
+- `pnpm-lock.yaml` **必须提交**；`package-lock.json` / `yarn.lock` / `bun.lockb` **必须 gitignore**
+- 严禁混用其他包管理器（npm install 会产生 lockfile 冲突）
+
+### 6.2 CI 测试 step（待 ops-spec 补 workflow）
+
+```bash
+pnpm install --frozen-lockfile
+pnpm test                          # Vitest 全量
+pnpm lint                          # ESLint
+cargo test --manifest-path src-tauri/Cargo.toml
+cargo clippy --manifest-path src-tauri/Cargo.toml -- -D warnings
+```
+
+完整命令见 [[CLAUDE#§2]]。
+
+---
+
+## §7 锁定原因（关键依赖版本约束）
+
+| 包 | 版本锁定 | 原因 | 升级触发 |
+|---|---|---|---|
+| `tauri` (Rust) | `^2.0` | 2.x 不兼容 1.x；私有 API 行为绑定 macOS 版本 | major bump → ADR |
+| `@tauri-apps/api` | `^2.0` | 与 Rust 端协议绑定 | 同上 |
+| `@tauri-apps/plugin-global-shortcut` | `^2.0` | Tauri 2.x 插件协议 | 同上 |
+| `@tauri-apps/plugin-updater` | `^2.0` | Tauri 2.x 插件协议 | 同上 |
+| `react` / `react-dom` | `^19.2` | Actions / useOptimistic 是 19 特性，不可降级 | major bump → ADR |
+| `zustand` | `^5.0` | v5 类型推断与 v4 不兼容 | major bump → ADR |
+| `rusqlite` | `0.32` | bundled SQLite 版本影响 schema 迁移 | minor bump 即评估 |
+| `chrono` | `0.4` | 与 rusqlite 0.32 timestamp 适配 | 与 rusqlite 联动 |
+| `uuid` | `^1.0` | 主键格式稳定 | 自由 |
+| `pnpm` | `9.x` | lockfile 格式跨 OS 一致 | major bump → ADR |
+| `vite` | `^8.0` | Tauri 2.x 模板基线；HMR / 测试共享配置 | major bump → ADR |
+| `vitest` | `^4.0` | bench API 用于 C1 benchmark | major bump → ADR |
+| `@testing-library/react` | latest | 与 React 19 同步 | 跟随 react |
+| `jsdom` | `29.x` | 与 Vitest 4 适配 | 跟随 Vitest |
+| `eslint` | `^9.0` | flat config 强制 | major bump → ADR |
+| `prettier` | `^3.0` | 与 ESLint 9 协作 | 自由 |
+| `clsx` | `^2.0` | 微依赖，CSS Modules 变体组合 | 自由 |
+
+### 7.1 VaultX 借鉴的依赖组合（待建仓 `cargo build` 实测）
+
+prompt-hub 借鉴 VaultX 的 Rust 依赖组合（rusqlite 0.32 + chrono 最新 + uuid 1.x），在 MSRV 1.77.2 下首次 `cargo build` 时需实测兼容性；若失败需在 ADR 补记并锁版本。
+
+---
+
+## §8 升级流程
+
+任何 dependency major version bump 必须走：
+
+1. 开 ADR 评估破坏性变更（含 Options Considered + 反悔成本）
+2. 升级后跑 [[plan#§0-T2]] 全量自检（含 design token 颜色一致性）
+3. 跑 [[plan#§0-T1]] 性能 benchmark（C1 200ms 唤起回归）
+4. 更新本文件 `§4~§7` 对应条目 + frontmatter `updated`
+5. 升 frontmatter `version`（patch bump，如 v1.0 → v1.1）
+
+**禁止行为**：
+- 不走 ADR 直接 bump major version
+- 不跑 benchmark 就 ship（[[constitution#C1]] 200ms 是硬指标）
+- 混用其他包管理器（[[adr/004-choose-package-manager#6]]）

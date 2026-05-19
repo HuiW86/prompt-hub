@@ -1,11 +1,11 @@
 ---
 type: plan
 project: prompt-hub
-version: v0.6
+version: v0.7
 created: 2026-05-18
-last_modified: 2026-05-18
-related: [[spec]], [[product-spec]], [[prd]]
-description: 手动 AI 编程仪表盘的五阶段实施任务清单——主形态优先 + v0.6 新增 §0 跨阶段先决条件（Token 落地 / 旧色全替换 / contrast checker / 暗色模式延后）
+last_modified: 2026-05-19
+related: [[spec]], [[product-spec]], [[prd]], [[tech-stack]], [[adr/001-choose-desktop-runtime]], [[adr/002-choose-frontend-framework]], [[adr/003-choose-data-persistence]], [[adr/004-choose-package-manager]], [[adr/006-choose-state-management]], [[adr/007-choose-test-stack]], [[adr/008-enable-macos-private-api]], [[adr/009-choose-styling]]
+description: 手动 AI 编程仪表盘的五阶段实施任务清单——主形态优先 + v0.7 锁定全栈技术形态（Tauri 2.x + React 19.2 + Zustand 5 + rusqlite 0.32 + pnpm 9.x + CSS Modules + Vitest 4）
 ---
 
 # Plan: prompt-hub（五阶段实施任务清单）
@@ -89,17 +89,43 @@ rg "#1D9E75|#1d9e75" --type css --type ts --type tsx --type js --type jsx \
 
 [[design-spec#2.5 暗色模式（v1.0 占位声明）]] 明确 v1.0 不实现。任何阶段不写 `prefers-color-scheme` 相关代码，等触发前置条件满足后专项立项。
 
+### T5 全栈技术决策锁定（v0.7 新增，建仓前必读）
+
+第一阶段建仓使用以下全栈组合（来源见 [[tech-stack#§3]]）：
+
+| 维度 | 锁定 | ADR |
+|---|---|---|
+| 桌面运行时 | Tauri 2.x（启用 `macos-private-api`）| [[adr/001-choose-desktop-runtime]] / [[adr/008-enable-macos-private-api]] |
+| 前端框架 | React 19.2 + React-DOM 19.2 | [[adr/002-choose-frontend-framework]] |
+| 状态管理 | Zustand 5（四层 store：appStore / promptStore / searchStore / settingsStore）| [[adr/006-choose-state-management]] |
+| 数据持久化 | rusqlite 0.32 + bundled SQLite（不启 SQLCipher）+ chrono + uuid | [[adr/003-choose-data-persistence]] |
+| 包管理 | pnpm 9.x（lockfile 提交，禁用 npm/yarn/bun）| [[adr/004-choose-package-manager]] |
+| 构建 | Vite 8.0（Tauri 官方推荐）| D1 自动锁定 |
+| 样式 | CSS Modules + CSS variables（不引 Tailwind / CSS-in-JS）| [[adr/009-choose-styling]] |
+| 测试 | Vitest 4 + Testing Library + jsdom 29 + cargo test + tempfile | [[adr/007-choose-test-stack]] |
+| 全局快捷键 | @tauri-apps/plugin-global-shortcut | D1 自动锁定 |
+
+**仅剩 D8 阻塞**：prompt-combiner 复用范围（[[adr/005-prompt-combiner-reuse]] 仍 Proposed），第一阶段可走「重写」路径不依赖 D8。
+
+**首次 `cargo build` 实测项**（[[tech-stack#§7.1]]）：rusqlite 0.32 + chrono 0.4 + uuid 1.x 组合在 MSRV 1.77.2 下兼容性需建仓时验证；失败需在 ADR 补记并锁版本。
+
 ---
 
 ## 第一阶段：主形态 MVP（快捷键唤起 + 核心调用）
 
 **目标**：跑通"快捷键唤起 → 对齐 → 看全景 → 一键复制 → 自动隐藏"这个核心闭环。
 
-**技术形态**：
+**技术形态**（全栈基线见 [[#T5]]）：
 
-- 桌面原生应用 — **Tauri 2.x**（[[adr/001-choose-desktop-runtime]]）
+- 桌面运行时：**Tauri 2.x** + `macos-private-api` feature（[[adr/001-choose-desktop-runtime]] / [[adr/008-enable-macos-private-api]]）
+- 前端框架：**React 19.2** + TypeScript 5.x strict（[[adr/002-choose-frontend-framework]]）
+- 状态管理：**Zustand 5** — `appStore` 管窗口 visibility / `promptStore` 管 Macro/UsageRecord / `searchStore` 管 query / `settingsStore` 管快捷键与 Phase（[[adr/006-choose-state-management]]）
+- 数据层：**rusqlite 0.32 + bundled SQLite** + `chrono` 0.4 + `uuid` v4；数据目录 `~/Library/Application Support/dev.prompt-hub/`（[[adr/003-choose-data-persistence]]）
+- 样式：**CSS Modules + CSS variables**（token 全部引用 §0 T1 根样式表，禁止裸值；[[adr/009-choose-styling]]）
+- 包管理：**pnpm 9.x**；构建：**Vite 8.0**（[[adr/004-choose-package-manager]]）
+- 测试：**Vitest 4 + Testing Library + jsdom 29** 跑前端单元；**cargo test + tempfile** 跑 Rust + SQLite fixture（[[adr/007-choose-test-stack]]）
 - 全局快捷键注册（默认 `⌥ Space`，可配置）via `@tauri-apps/plugin-global-shortcut`
-- 全屏覆盖窗口 + 半透明背景（约 92%）
+- 主形态：全屏覆盖窗口 + 半透明背景（约 92%）+ NSWindow `level` 浮于所有应用上方但不抢焦点（macos-private-api）
 - 复制即隐藏 + ESC 关闭
 
 **包含的功能模块**：

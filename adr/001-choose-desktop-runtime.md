@@ -19,7 +19,7 @@ related:
 - **标题**：选择 Tauri 2.x 而非 Electron 30+ / Wails 2.x 作为桌面运行时
 - **日期**：2026-05-19
 - **决策者**：omar
-- **影响范围**：[[tech-stack#§3-D1]]（resolved）/ 后续 ADR-002（前端框架，解锁独立决策）/ ADR-004（包管理）/ ADR-005（prompt-combiner 复用，前端组件可迁移评估）/ ADR-007（D7 全局快捷键自动锁定 tauri-plugin-global-shortcut）/ [[plan#§0]] 跨阶段先决条件解锁 / [[ops-spec#§1.2]] 打包签名章节方向锁定
+- **影响范围**：[[tech-stack#§3-D1]]（resolved）/ 后续 ADR-002（前端框架，解锁独立决策）/ ADR-004（包管理）/ ADR-005（prompt-combiner 复用，前端组件可迁移评估）/ D7 自动锁定（无独立 ADR — tauri-plugin-global-shortcut 由 Tauri 选定后内生）/ [[plan#§0]] 跨阶段先决条件解锁 / [[ops-spec#§1.2]] 打包签名章节方向锁定
 
 ## 2. Status
 
