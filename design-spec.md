@@ -4,6 +4,8 @@ project: prompt-hub
 version: v0.6
 created: 2026-05-18
 last_modified: 2026-05-18
+status: pre-code
+author: co  # 🤝 人机共创（CLAUDE §5.2）
 related: [[spec]], [[product-spec]]
 description: 手动 AI 编程仪表盘的视觉规范——字号/间距/颜色/动画 Token 全 CSS Variables 化 + WCAG 对比度实测 + 暗色模式 v1.0 占位
 ---

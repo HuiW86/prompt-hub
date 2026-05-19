@@ -4,6 +4,8 @@ project: prompt-hub
 version: v0.5
 created: 2026-05-18
 last_modified: 2026-05-18
+status: pre-code
+author: co  # 🤝 人机共创（CLAUDE §5.2）
 related: [[spec]], [[design-spec]], [[prd]]
 description: 手动 AI 编程仪表盘的 UI 契约——双形态架构/布局/点击路径/交互频率/状态反馈/引导/用户旅程/主形态 UI 草案
 ---

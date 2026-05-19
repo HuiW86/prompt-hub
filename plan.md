@@ -4,6 +4,8 @@ project: prompt-hub
 version: v0.7
 created: 2026-05-18
 last_modified: 2026-05-19
+status: pre-code
+author: co  # 🤝 人机共创（CLAUDE §5.2）
 related: [[spec]], [[product-spec]], [[prd]], [[tech-stack]], [[adr/001-choose-desktop-runtime]], [[adr/002-choose-frontend-framework]], [[adr/003-choose-data-persistence]], [[adr/004-choose-package-manager]], [[adr/006-choose-state-management]], [[adr/007-choose-test-stack]], [[adr/008-enable-macos-private-api]], [[adr/009-choose-styling]]
 description: 手动 AI 编程仪表盘的五阶段实施任务清单——主形态优先 + v0.7 锁定全栈技术形态（Tauri 2.x + React 19.2 + Zustand 5 + rusqlite 0.32 + pnpm 9.x + CSS Modules + Vitest 4）
 ---

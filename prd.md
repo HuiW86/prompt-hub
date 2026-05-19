@@ -4,6 +4,8 @@ project: prompt-hub
 version: v0.6
 created: 2026-05-18
 last_modified: 2026-05-19
+status: pre-code
+author: ai  # 🤖 AI 主笔 + 人审（CLAUDE §5.2）
 related: [[spec]], [[product-spec]], [[plan]]
 description: 手动 AI 编程仪表盘的工程契约——数据模型三表式/状态机/升级回滚/NFR/Boundaries 三段式/安全字段（含本地+离线档）
 ---

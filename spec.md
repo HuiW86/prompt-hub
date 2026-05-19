@@ -4,6 +4,8 @@ project: prompt-hub
 version: v0.5
 created: 2026-04-23
 last_modified: 2026-05-18
+status: pre-code
+author: human  # 🧑 人主笔，AI 禁止起草（CLAUDE §5.2）
 related: [[product-spec]], [[design-spec]], [[prd]], [[plan]]
 description: 手动 AI 编程仪表盘的产品 spec——What/Why/九条哲学/边界/未决决策
 ---

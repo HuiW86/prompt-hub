@@ -4,6 +4,7 @@ project: prompt-hub
 version: v1.0
 created: 2026-05-19
 status: ratified
+author: human  # 🧑 人主笔，AI 禁止起草（CLAUDE §5.2）
 audience: [human, ai]
 description: prompt-hub 项目宪法——8 条不可违反铁律。违反任一条，项目即转型，不再是同一个项目。
 related:

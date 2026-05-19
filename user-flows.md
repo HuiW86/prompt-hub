@@ -4,6 +4,7 @@ project: prompt-hub
 version: v0.1
 created: 2026-05-19
 status: pre-code
+author: co  # 🤝 人机共创（CLAUDE §5.2）
 audience: [human]
 description: prompt-hub 关键用户流程补充——product-spec §4.5 未覆盖的边缘/异常/跨形态流程
 related:
@@ -37,7 +38,7 @@ related:
 ```
 
 **关键约束**：
-- 主辅形态共享同一数据后端（[[constitution#A4 推论]] - 双形态共享）
+- 主辅形态共享同一数据后端（[[constitution#A2]] 本地优先推论——单本地后端，双形态共享）
 - 主形态复制触发 UsageRecord 写入 → 辅形态 reactive 监听更新
 - 辅形态**不要**因主形态唤起而隐藏（独立窗口，互不影响）
 

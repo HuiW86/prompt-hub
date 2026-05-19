@@ -5,6 +5,7 @@ version: v1.0
 created: 2026-05-19
 updated: 2026-05-19
 status: ratified  # ADR-001~004/006~009 全部 Accepted；ADR-005（prompt-combiner 复用）仍 Proposed
+author: ai  # 🤖 AI 主笔 + 人审（CLAUDE §5.2）
 audience: [ai]
 description: prompt-hub 技术栈快照——全栈拍板：Tauri 2.x + React 19.2 + rusqlite 0.32 + pnpm 9.x + Zustand 5 + Vitest 4 + CSS Modules，macos-private-api 启用
 related:

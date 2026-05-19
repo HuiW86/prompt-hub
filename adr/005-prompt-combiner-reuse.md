@@ -15,7 +15,7 @@ related:
 
 # ADR-005: prompt-combiner 旧代码复用决策（Proposed 占位）
 
-> ⚠️ **本 ADR 当前为 Proposed 占位**，Decision 留空待调研。本节列出三候选 + 触发调研的下一步动作，避免 [[CLAUDE#§6 忌讳清单 #8]] 「不要复用 prompt-combiner 旧代码而不开 ADR」铁律被绕过。
+> ⚠️ **本 ADR 当前为 Proposed 占位**，Decision 留空待调研。本节列出三候选 + 触发调研的下一步动作，避免 [[CLAUDE#§6]] 第 8 项 「不要复用 prompt-combiner 旧代码而不开 ADR」铁律被绕过。
 
 ## 1. 标题与日期
 
@@ -53,7 +53,7 @@ related:
 ### 不决策的代价
 - [[plan#§0-T2]] 旧色替换风险注无法收口
 - 第一阶段 MVP 实施节奏不确定（重写需 1.5x 工时，部分迁移需评估混搭成本）
-- AI 在生成代码时可能擅自参考 prompt-combiner 旧逻辑（违反 [[CLAUDE#§6 忌讳清单 #8]]）
+- AI 在生成代码时可能擅自参考 prompt-combiner 旧逻辑（违反 [[CLAUDE#§6]] 第 8 项）
 
 ## 4. Options Considered（待调研后填具体优劣）
 
@@ -106,7 +106,7 @@ related:
 ### 当前 Proposed 状态的承诺
 
 - 在本 ADR 未转 Accepted 前，AI **不得**自行从 prompt-combiner 复制代码到 prompt-hub 仓库
-- [[CLAUDE#§6 忌讳清单 #8]] 持续生效
+- [[CLAUDE#§6]] 第 8 项 持续生效
 - [[plan#§0-T2]] 旧色替换风险注保留警示
 
 ---
@@ -119,6 +119,6 @@ related:
 
 ## 相关链接
 
-- **触发本决策的文档**：[[CLAUDE#§6-#8]] / [[plan#§0-T2]] / [[tech-stack#§3-D8]]
+- **触发本决策的文档**：[[CLAUDE#§6]] 第 8 项 / [[plan#§0-T2]] / [[tech-stack#§3-D8]]
 - **被本决策影响的文档**：[[plan#§0]] / [[plan#第一阶段]] / [[features]]（若复用前端组件，需登记影响范围）
 - **相关 ADR**：前置 ADR-001（锁定 Rust 后端，收窄候选）/ ADR-002（锁定 React 19.2，决定前端组件可迁性）

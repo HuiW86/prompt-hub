@@ -3,6 +3,8 @@ type: claude-md
 project: prompt-hub
 version: v1.0
 created: 2026-05-19
+status: ratified
+author: co  # 🤝 人机共创（CLAUDE §5.2 本文档自身）
 audience: [ai, human]
 description: prompt-hub 项目级 AI 上下文——项目特有约束/三温区映射/忌讳清单。AI 进场始终注入
 related:
@@ -123,6 +125,16 @@ AI 不得擅自起草人主笔文档（spec / constitution），可起草共创 
 - constitution 变更 → 必须先开 ADR（[[constitution#E1]]）
 - 技术栈 bump major version → 必须开 ADR（[[tech-stack#§5]]）
 
+### 5.4 Anchor 命名约定
+
+项目采用**复合 anchor** 指代表格行 / 子任务项 / 列表项。标准 Markdown 解析器（GitHub / Obsidian 部分场景）不一定能跳转，但人/AI 阅读时可定位：
+
+- `[[plan#§0-T1]]` — plan.md §0 章节下的 T1 子任务（实际标题 `### T1 ...`，单独 anchor 也能解析为 `[[plan#T1]]`）
+- `[[tech-stack#§3-D1]]` — tech-stack.md §3 决策表的 D1 行（**不可解析**：D1 是表格行不是标题，纯人/AI 视觉定位）
+- `[[CLAUDE#§6]] 第 N 项` — 列表项用"§N + 文字补语"，不写 `#§6-#N` 复合形式
+
+**新增引用时**：优先用真实标题 anchor；表格行 / 列表项的复合形式仅在"指向粒度小于子标题"时使用，且默认接受其不可机器跳转。
+
 ---
 
 ## §6 忌讳清单（不要做的事）
@@ -136,7 +148,7 @@ AI 不得擅自起草人主笔文档（spec / constitution），可起草共创 
 5. **不要把数据上传到任何外部服务**——违反 [[constitution#A2]]，话术含隐私指纹
 6. **不要给设计文档就地补丁**——必须走方法论 §7 八步上游回流
 7. **任何 dependency major version bump 必须开 ADR**——技术栈全部锁定见 [[tech-stack#§3]]，bump 流程见 [[tech-stack#§8]]
-   - ✅ **已解锁**：D1（Tauri 2.x）/ D2（React 19.2）/ D3（rusqlite 0.32）/ D4（pnpm 9.x）/ D6（Zustand 5）/ D7（测试栈）/ D9（macos-private-api）/ D10（CSS Modules）/ D11（测试栈）；D5（Vite 8.0）+ D7（quick-shortcut plugin）由 D1 自动锁定
+   - ✅ **已解锁**：D1（Tauri 2.x）/ D2（React 19.2）/ D3（rusqlite 0.32）/ D4（pnpm 9.x）/ D6（Zustand 5）/ D9（macos-private-api）/ D10（CSS Modules）/ D11（测试栈）；D5（Vite 8.0）+ D7（quick-shortcut plugin）由 D1 自动锁定
    - ⏳ **仍 pending**：D8（prompt-combiner 复用，[[adr/005-prompt-combiner-reuse]] Proposed）— 等 omar 提供仓库后调研，不阻塞第一阶段 MVP
 8. **不要复用 prompt-combiner 旧代码而不等 ADR-005 Accepted**——见 [[tech-stack#§3-D8]]
 9. **不要让 AI 起草 spec / constitution**——这是 🧑 人主笔文档（§5.2）

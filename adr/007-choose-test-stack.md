@@ -19,7 +19,7 @@ related:
 - **标题**：选择 Vitest 4 + Testing Library + jsdom 29 + cargo test + tempfile 为测试栈
 - **日期**：2026-05-19
 - **决策者**：omar
-- **影响范围**：[[tech-stack#§3]] 测试工具行 / [[test-spec]] 用例书写格式 / CI 测试 step / [[features#测试覆盖列]]
+- **影响范围**：[[tech-stack#§3]] 测试工具行 / [[test-spec]] 用例书写格式 / CI 测试 step / [[features#§5]] 测试覆盖目标
 
 ## 2. Status
 

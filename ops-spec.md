@@ -4,6 +4,7 @@ project: prompt-hub
 version: v0.1
 created: 2026-05-19
 status: pre-code
+author: ai  # 🤖 AI 主笔 + 人审（CLAUDE §5.2）
 audience: [ai, human]
 description: prompt-hub 运营规格——部署/性能预算/备份/升级回滚/监控（本地单人语境）
 related:

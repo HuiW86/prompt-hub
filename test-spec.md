@@ -4,6 +4,7 @@ project: prompt-hub
 version: v0.1
 created: 2026-05-19
 status: pre-code
+author: ai  # 🤖 AI 主笔 + 人审（CLAUDE §5.2）
 audience: [ai, human]
 description: prompt-hub 测试规格——单元/集成/E2E 三层 + 性能基准 + LLM Eval 集（N/A 说明）
 related:
