@@ -22,18 +22,21 @@ related:
 
 ### 1.1 分发形态
 
+> **2026-05-19 [[adr/001-choose-desktop-runtime]] 后**：分发统一走 Tauri bundle + `tauri-plugin-updater`，跨 OS 一致。
+
 | 平台 | 分发方式 | 安装包格式 | 自动更新 |
 |---|---|---|---|
-| macOS | DMG / App Store（待 ADR） | `.dmg` 或 `.app` | Sparkle 框架 / App Store |
-| Windows | MSI / 直链 | `.msi` 或 `.exe` | Squirrel / 手动 |
-| Linux | （v2.0 后再考虑） | AppImage | — |
-| iPad（辅形态） | （v2.0+，[[prd#7.4]] 次要设备） | TestFlight 或 sideload | — |
+| macOS | DMG 直链 / 未来 App Store（v2.0+ 考虑） | `.dmg` / `.app` / `.app.tar.gz`（updater）| **tauri-plugin-updater** |
+| Windows | MSI 直链 | `.msi` / `.exe.zip`（updater）| **tauri-plugin-updater** |
+| Linux | （v2.0 后再考虑） | AppImage / .deb | tauri-plugin-updater |
+| iPad（辅形态） | （v2.0+，[[prd#7.4]] 次要设备，Tauri 2 支持 iOS 但本项目暂缓） | TestFlight 或 sideload | — |
 
 ### 1.2 签名 / 公证
 
 - macOS：必须 Apple Developer ID 签名 + 公证（避免 Gatekeeper 拦截）
 - Windows：建议 EV 代码签名（避免 SmartScreen 拦截）
 - 签名密钥管理：本地 Keychain / 加密文件，不进 git
+- **Tauri 集成方式**（[[adr/001-choose-desktop-runtime]] 后）：在 `tauri.conf.json` 配置 `bundle.macOS.signingIdentity` + `bundle.macOS.entitlements` + `bundle.macOS.providerShortName`，构建时通过 `APPLE_ID` / `APPLE_PASSWORD` / `APPLE_TEAM_ID` 环境变量触发 notarization，无需自建 shell 脚本
 
 ### 1.3 不做的部署
 
@@ -55,6 +58,8 @@ related:
 | 包体积 | ≤80MB（解压后） | 构建产物 stat | warning，>120MB 阻塞发布 |
 
 **自采样**：用户本地 perf 数据写入 localStorage `metrics_log`，仅本地查看，**不上报**（[[constitution#A2]]）。
+
+> **2026-05-19 [[adr/001-choose-desktop-runtime]] 后**：Tauri 2.x 实测内存常驻 50-100MB / 包体 10-20MB，远低于上述上限。本表保留为**警戒线**（regression 防线），非目标——若实际数字接近上限说明出现内存泄漏或资源未压缩，需调查。
 
 ---
 

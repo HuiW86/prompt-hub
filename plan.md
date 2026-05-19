@@ -69,6 +69,8 @@ description: 手动 AI 编程仪表盘的五阶段实施任务清单——主形
 
 ⚠️ **历史 prompt-combiner 改造路径风险**：若复用 prompt-combiner 旧代码（参考 §总实施周期估计），其中可能存在 `#1D9E75` 字面量——必须先全量替换为 `var(--color-task-border)` 或 `#178561`。
 
+> **2026-05-19 ADR-001 后补**：Tauri 2.x 选定后，prompt-combiner 若是 Electron/Node.js 栈，**后端代码无法直接迁移**（需 Rust 重写），仅 React/Vue 前端组件可迁。`#1D9E75` 替换仅是迁移前的最小自检，复用范围决策见待开 ADR-005。
+
 **自检命令**（每个阶段开始前跑一次）：
 ```bash
 rg "#1D9E75|#1d9e75" --type css --type ts --type tsx --type js --type jsx \
@@ -95,8 +97,8 @@ rg "#1D9E75|#1d9e75" --type css --type ts --type tsx --type js --type jsx \
 
 **技术形态**：
 
-- 桌面原生应用（Tauri 或 Electron）
-- 全局快捷键注册（默认 `⌥ Space`，可配置）
+- 桌面原生应用 — **Tauri 2.x**（[[adr/001-choose-desktop-runtime]]）
+- 全局快捷键注册（默认 `⌥ Space`，可配置）via `@tauri-apps/plugin-global-shortcut`
 - 全屏覆盖窗口 + 半透明背景（约 92%）
 - 复制即隐藏 + ESC 关闭
 
