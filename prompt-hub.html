@@ -1,0 +1,2997 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>prompt-hub · 项目全景文档</title>
+<meta name="description" content="prompt-hub 项目文档全景——AI 编程手动挡阶段的桌面仪表盘。13 主文档 + 9 ADR 合订本，按文档类型分八章。">
+<meta name="author" content="omar">
+<style>
+/* ================================================================
+   prompt-hub · 项目全景阅读型 HTML
+   遵循 reading-html-spec v3 路线 A（Stripe Docs / GitHub 风）
+   ================================================================ */
+
+:root {
+  /* 路线 A 配色（暖白 + GitHub 蓝） */
+  --bg:        #fbfaf7;
+  --paper:     #ffffff;
+  --ink:       #1a1a1a;
+  --ink-2:     #4a4a4a;
+  --ink-3:     #767676;
+  --line:      #e5e3dd;
+  --line-2:    #d4d1c7;
+  --accent:    #0969da;
+  --accent-bg: #ddf4ff;
+  --code-bg:   #f6f8fa;
+  --code-text: #24292f;
+  --warn:      #9a6700;
+  --warn-bg:   #fff8c5;
+  --ok:        #1a7f37;
+  --ok-bg:     #dafbe1;
+  --danger:    #cf222e;
+  --danger-bg: #ffebe9;
+
+  --font-sans:
+    -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto,
+    "PingFang SC", "Microsoft YaHei", "Noto Sans CJK SC",
+    "Helvetica Neue", Arial, sans-serif;
+  --font-mono:
+    ui-monospace, SFMono-Regular, "SF Mono", Menlo, Consolas, monospace;
+
+  --measure: 38em;
+
+  font-size: 16px;
+}
+
+@media (prefers-color-scheme: dark) {
+  :root {
+    --bg:        #0d1117;
+    --paper:     #161b22;
+    --ink:       #c9d1d9;
+    --ink-2:     #b1bac4;
+    --ink-3:     #8b949e;
+    --line:      #30363d;
+    --line-2:    #444c56;
+    --accent:    #58a6ff;
+    --accent-bg: #133054;
+    --code-bg:   #161b22;
+    --code-text: #c9d1d9;
+    --warn:      #d29922;
+    --warn-bg:   #2d2306;
+    --ok:        #3fb950;
+    --ok-bg:     #0c2912;
+    --danger:    #f85149;
+    --danger-bg: #2d0e0e;
+  }
+}
+
+* { box-sizing: border-box; margin: 0; padding: 0; }
+
+html {
+  scroll-behavior: smooth;
+  scroll-padding-top: 1.5rem;
+  -webkit-text-size-adjust: 100%;
+}
+
+body {
+  background: var(--bg);
+  color: var(--ink);
+  font-family: var(--font-sans);
+  /* 流体字号：320px → 15.2px；1280px → 17px */
+  font-size: clamp(0.95rem, 0.3vw + 0.9rem, 1.0625rem);
+  line-height: 1.78;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  font-feature-settings: "kern", "liga", "calt";
+}
+
+/* ================================================================
+   布局：移动优先 → 中等屏 → 大屏
+   ================================================================ */
+
+.layout {
+  max-width: 100%;
+  margin: 0 auto;
+  padding: 0;
+}
+
+.sidebar-desktop { display: none; }
+
+.main {
+  background: var(--paper);
+  padding: 1.5rem 1.25rem 4rem;
+  min-height: 100vh;
+}
+
+.content { max-width: 100%; }
+
+/* 移动端折叠 TOC */
+.mobile-toc {
+  margin: 1rem 0 2rem;
+  border: 1px solid var(--line);
+  border-radius: 6px;
+  background: var(--bg);
+}
+.mobile-toc summary {
+  padding: 0.75rem 1rem;
+  font-weight: 600;
+  font-size: 0.95em;
+  cursor: pointer;
+  min-height: 44px;
+  display: flex;
+  align-items: center;
+  list-style: none;
+  user-select: none;
+}
+.mobile-toc summary::-webkit-details-marker { display: none; }
+.mobile-toc summary::before {
+  content: "▸";
+  display: inline-block;
+  margin-right: 0.6em;
+  color: var(--ink-3);
+  transition: transform 200ms;
+}
+.mobile-toc[open] summary::before { transform: rotate(90deg); }
+.mobile-toc nav { padding: 0 0.5rem 0.5rem; }
+.mobile-toc nav ul { list-style: none; padding: 0; margin: 0; }
+.mobile-toc nav a {
+  display: block;
+  padding: 0.75rem;
+  min-height: 44px;
+  color: var(--ink-2);
+  text-decoration: none;
+  border-radius: 4px;
+  font-size: 0.9em;
+}
+.mobile-toc nav a:hover,
+.mobile-toc nav a:active {
+  background: var(--accent-bg);
+  color: var(--accent);
+}
+.mobile-toc nav .chapter-num {
+  display: inline-block;
+  width: 1.75em;
+  color: var(--ink-3);
+  font-variant-numeric: tabular-nums;
+}
+
+@media (min-width: 640px) {
+  .main { padding: 2.5rem 2rem 5rem; }
+}
+
+@media (min-width: 1024px) {
+  .layout {
+    display: grid;
+    grid-template-columns: 14rem 1fr;
+    max-width: 67.5rem;
+    padding: 0;
+  }
+  .mobile-toc { display: none; }
+
+  .sidebar-desktop {
+    display: block;
+    position: sticky;
+    top: 0;
+    align-self: start;
+    height: 100vh;
+    overflow-y: auto;
+    padding: 3rem 1.25rem 3rem 1.75rem;
+    border-right: 1px solid var(--line);
+    background: var(--bg);
+    font-size: 0.86em;
+  }
+  .sidebar-eyebrow {
+    font-size: 0.72em;
+    font-weight: 600;
+    color: var(--ink-3);
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    margin-bottom: 0.25em;
+  }
+  .sidebar-subtitle {
+    font-size: 0.78em;
+    color: var(--ink-3);
+    margin-bottom: 1.8em;
+    padding-bottom: 1.2em;
+    border-bottom: 1px solid var(--line);
+  }
+  .sidebar-desktop nav ul { list-style: none; padding: 0; margin: 0; }
+  .sidebar-desktop nav a {
+    display: block;
+    padding: 0.375rem 0.625rem 0.375rem 0.75rem;
+    color: var(--ink-2);
+    text-decoration: none;
+    border-left: 2px solid transparent;
+    line-height: 1.5;
+    transition: color 150ms, border-color 150ms, background 150ms;
+  }
+  .sidebar-desktop nav a:hover {
+    color: var(--accent);
+    background: var(--accent-bg);
+    border-left-color: var(--accent);
+  }
+  .sidebar-desktop nav .chapter-num {
+    display: inline-block;
+    width: 1.5em;
+    color: var(--ink-3);
+    font-variant-numeric: tabular-nums;
+    font-size: 0.88em;
+  }
+  .sidebar-desktop nav .sub a {
+    padding-left: 2.375rem;
+    font-size: 0.9em;
+    color: var(--ink-3);
+  }
+
+  .main {
+    background: var(--paper);
+    border-left: 1px solid var(--line);
+    border-right: 1px solid var(--line);
+    padding: 3.5rem 3.5rem 6rem;
+  }
+  .content { max-width: var(--measure); }
+}
+
+/* ================================================================
+   报告头部
+   ================================================================ */
+
+.report-header {
+  margin-bottom: 2.5rem;
+  padding-bottom: 1.25rem;
+  border-bottom: 1px solid var(--line);
+}
+.report-eyebrow {
+  font-size: 0.72em;
+  font-weight: 600;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--ink-3);
+  margin: 0 0 0.75em;
+}
+
+h1 {
+  font-size: clamp(1.5rem, 2.5vw + 1rem, 2rem);
+  font-weight: 700;
+  line-height: 1.25;
+  letter-spacing: -0.012em;
+  color: var(--ink);
+  margin: 0 0 0.4em;
+}
+
+.report-deck {
+  font-size: clamp(0.98em, 0.3vw + 0.9em, 1.06em);
+  color: var(--ink-2);
+  line-height: 1.6;
+  margin: 0 0 1.5em;
+}
+
+.report-meta {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 0.2em 0;
+  font-size: 0.86em;
+  color: var(--ink-3);
+  margin-top: 1.2em;
+}
+.report-meta > div {
+  display: flex;
+  justify-content: space-between;
+  padding: 0.3em 0;
+  border-bottom: 1px dashed var(--line-2);
+}
+
+@media (min-width: 640px) {
+  .report-meta {
+    grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+    gap: 0.2em 1.5em;
+  }
+}
+
+/* ================================================================
+   章节标题
+   ================================================================ */
+
+.chapter {
+  scroll-margin-top: 1.5rem;
+  margin: 3.5rem 0 2rem;
+  padding-top: 1.5rem;
+  border-top: 2px solid var(--line);
+}
+.chapter:first-of-type {
+  margin-top: 0;
+  border-top: none;
+  padding-top: 0;
+}
+
+h2 {
+  font-size: clamp(1.35rem, 1.8vw + 0.9rem, 1.6rem);
+  font-weight: 700;
+  line-height: 1.3;
+  letter-spacing: -0.008em;
+  color: var(--ink);
+  margin: 0 0 0.5em;
+}
+h2 .chapter-num {
+  color: var(--ink-3);
+  font-variant-numeric: tabular-nums;
+  font-weight: 600;
+  margin-right: 0.6em;
+}
+
+h3 {
+  font-size: clamp(1.1rem, 0.8vw + 0.95rem, 1.25rem);
+  font-weight: 700;
+  line-height: 1.35;
+  color: var(--ink);
+  margin: 2.2em 0 0.6em;
+  scroll-margin-top: 1.5rem;
+}
+
+h4 {
+  font-size: clamp(1rem, 0.4vw + 0.95rem, 1.1rem);
+  font-weight: 600;
+  line-height: 1.4;
+  color: var(--ink);
+  margin: 1.8em 0 0.5em;
+  scroll-margin-top: 1.5rem;
+}
+
+h5 {
+  font-size: 1rem;
+  font-weight: 600;
+  line-height: 1.4;
+  color: var(--ink-2);
+  margin: 1.5em 0 0.4em;
+}
+
+p { margin: 0.9em 0; }
+
+a {
+  color: var(--accent);
+  text-decoration: none;
+  border-bottom: 1px solid transparent;
+  transition: border-color 150ms;
+}
+a:hover { border-bottom-color: var(--accent); }
+
+strong { font-weight: 600; }
+em { font-style: italic; }
+em.ref {
+  color: var(--ink-3);
+  font-style: normal;
+  font-size: 0.88em;
+  background: var(--code-bg);
+  padding: 0 0.3em;
+  border-radius: 3px;
+}
+
+ul, ol { margin: 0.9em 0; padding-left: 1.5em; }
+li { margin: 0.4em 0; }
+li > ul, li > ol { margin: 0.4em 0; }
+
+blockquote {
+  margin: 1.2em 0;
+  padding: 0.5em 0 0.5em 1em;
+  border-left: 3px solid var(--line-2);
+  color: var(--ink-2);
+}
+blockquote p:first-child { margin-top: 0; }
+blockquote p:last-child { margin-bottom: 0; }
+
+/* ================================================================
+   代码
+   ================================================================ */
+
+code {
+  font-family: var(--font-mono);
+  font-size: 0.88em;
+  background: var(--code-bg);
+  color: var(--code-text);
+  padding: 0.15em 0.4em;
+  border-radius: 3px;
+  word-break: break-word;
+}
+
+pre {
+  font-family: var(--font-mono);
+  background: var(--code-bg);
+  color: var(--code-text);
+  padding: 0.9em 1em;
+  border-radius: 6px;
+  overflow-x: auto;
+  -webkit-overflow-scrolling: touch;
+  font-size: 0.86em;
+  line-height: 1.6;
+  margin: 1em 0;
+  border: 1px solid var(--line);
+}
+pre code {
+  background: transparent;
+  padding: 0;
+  border-radius: 0;
+  font-size: 1em;
+  color: inherit;
+}
+
+pre.mermaid-src::before {
+  content: "Mermaid 源码（示意，非渲染）";
+  display: block;
+  font-family: var(--font-sans);
+  font-size: 0.78em;
+  color: var(--ink-3);
+  margin-bottom: 0.6em;
+  letter-spacing: 0.05em;
+  font-weight: 500;
+}
+
+/* ================================================================
+   表格（默认 .table-stack 移动端堆叠）
+   ================================================================ */
+
+table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 0.92em;
+  margin: 1.2em 0;
+}
+thead th {
+  text-align: left;
+  font-weight: 600;
+  color: var(--ink);
+  padding: 0.55em 0.7em;
+  border-bottom: 2px solid var(--line-2);
+}
+tbody td {
+  padding: 0.55em 0.7em;
+  border-bottom: 1px solid var(--line);
+  vertical-align: top;
+}
+tbody tr:last-child td { border-bottom: none; }
+
+@media (max-width: 640px) {
+  .table-stack thead { display: none; }
+  .table-stack, .table-stack tbody, .table-stack tr, .table-stack td {
+    display: block;
+    width: 100%;
+  }
+  .table-stack tr {
+    margin-bottom: 1em;
+    padding: 0.75em 0;
+    border-bottom: 1px solid var(--line);
+  }
+  .table-stack tr:last-child { border-bottom: 0; }
+  .table-stack td {
+    padding: 0.15em 0;
+    border: none;
+    display: grid;
+    grid-template-columns: 6em 1fr;
+    gap: 0.5em;
+    align-items: baseline;
+  }
+  .table-stack td::before {
+    content: attr(data-label);
+    color: var(--ink-3);
+    font-size: 0.85em;
+    font-weight: 500;
+  }
+}
+
+.table-scroll {
+  overflow-x: auto;
+  -webkit-overflow-scrolling: touch;
+  border: 1px solid var(--line);
+  border-radius: 4px;
+  margin: 1.2em 0;
+}
+.table-scroll table { margin: 0; }
+
+/* ================================================================
+   提示框
+   ================================================================ */
+
+.callout {
+  margin: 1.2em 0;
+  padding: 0.8em 1em;
+  border-left: 3px solid var(--accent);
+  background: var(--accent-bg);
+  border-radius: 0 4px 4px 0;
+  font-size: 0.95em;
+}
+.callout.warn   { border-left-color: var(--warn);   background: var(--warn-bg); }
+.callout.danger { border-left-color: var(--danger); background: var(--danger-bg); }
+.callout.ok     { border-left-color: var(--ok);     background: var(--ok-bg); }
+.callout p:first-child { margin-top: 0; }
+.callout p:last-child  { margin-bottom: 0; }
+
+@media (max-width: 640px) { .callout { padding: 0.7em 0.85em; } }
+
+/* ================================================================
+   ADR 折叠卡片
+   ================================================================ */
+
+.adr-card {
+  margin: 0.8em 0;
+  border: 1px solid var(--line);
+  border-radius: 6px;
+  background: var(--bg);
+  overflow: hidden;
+}
+.adr-card summary {
+  padding: 0.85em 1em;
+  font-weight: 600;
+  cursor: pointer;
+  min-height: 44px;
+  display: flex;
+  align-items: center;
+  list-style: none;
+  user-select: none;
+  background: var(--paper);
+  gap: 0.5em;
+}
+.adr-card summary::-webkit-details-marker { display: none; }
+.adr-card summary::before {
+  content: "▸";
+  display: inline-block;
+  color: var(--ink-3);
+  transition: transform 200ms;
+}
+.adr-card[open] summary::before { transform: rotate(90deg); }
+.adr-card .adr-body {
+  padding: 0.5em 1.25em 1.25em;
+  border-top: 1px solid var(--line);
+}
+.adr-status {
+  display: inline-block;
+  font-size: 0.74em;
+  padding: 0.1em 0.5em;
+  border-radius: 3px;
+  margin-left: auto;
+  font-weight: 500;
+  background: var(--ok-bg);
+  color: var(--ok);
+}
+.adr-status.proposed { background: var(--warn-bg); color: var(--warn); }
+
+/* ================================================================
+   触摸目标
+   ================================================================ */
+
+@media (pointer: coarse) {
+  .sidebar-desktop nav a,
+  .mobile-toc nav a {
+    min-height: 44px;
+    padding-top: 0.6rem;
+    padding-bottom: 0.6rem;
+  }
+}
+
+/* ================================================================
+   Print stylesheet
+   ================================================================ */
+
+@page { margin: 2cm 1.8cm; size: A4; }
+
+@media print {
+  :root { font-size: 11pt; }
+  body { background: white; color: black; font-size: 11pt; line-height: 1.55; }
+  .sidebar-desktop, .mobile-toc { display: none; }
+  .layout { grid-template-columns: 1fr; max-width: 100%; }
+  .main { border: none; padding: 0; background: white; }
+  .content { max-width: 100%; }
+
+  h2, h3, h4 { page-break-after: avoid; color: black; }
+  p, li, blockquote, table { orphans: 3; widows: 3; }
+  pre, table, .callout, .adr-card { page-break-inside: avoid; }
+
+  a { color: black; border-bottom: none; }
+  pre, code {
+    background: #f5f5f5 !important;
+    color: black !important;
+    border: 1px solid #ddd;
+  }
+  .chapter { page-break-before: always; }
+  .chapter:first-of-type { page-break-before: avoid; }
+  .no-print { display: none; }
+}
+
+hr {
+  border: none;
+  border-top: 1px solid var(--line);
+  margin: 2em 0;
+}
+
+.muted { color: var(--ink-3); }
+</style>
+</head>
+<body>
+
+<div class="layout">
+
+  <aside class="sidebar-desktop">
+    <div class="sidebar-eyebrow">prompt-hub</div>
+    <div class="sidebar-subtitle">AI 编程手动挡仪表盘 · 项目全景</div>
+    <nav>
+      <ul>
+        <li><a href="#ch01"><span class="chapter-num">01</span>CLAUDE</a></li>
+        <li><a href="#ch02"><span class="chapter-num">02</span>spec</a></li>
+        <li><a href="#ch03"><span class="chapter-num">03</span>constitution</a></li>
+        <li><a href="#ch04"><span class="chapter-num">04</span>product-spec</a></li>
+        <li><a href="#ch05"><span class="chapter-num">05</span>user-flows</a></li>
+        <li><a href="#ch06"><span class="chapter-num">06</span>design-spec</a></li>
+        <li><a href="#ch07"><span class="chapter-num">07</span>prd</a></li>
+        <li><a href="#ch08"><span class="chapter-num">08</span>features</a></li>
+        <li><a href="#ch09"><span class="chapter-num">09</span>sitemap</a></li>
+        <li><a href="#ch10"><span class="chapter-num">10</span>plan</a></li>
+        <li><a href="#ch11"><span class="chapter-num">11</span>tech-stack</a></li>
+        <li><a href="#ch12"><span class="chapter-num">12</span>adr/*</a></li>
+        <li><a href="#ch13"><span class="chapter-num">13</span>ops-spec</a></li>
+        <li><a href="#ch14"><span class="chapter-num">14</span>test-spec</a></li>
+      </ul>
+    </nav>
+  </aside>
+
+  <main class="main">
+    <article class="content">
+
+      <header class="report-header">
+        <div class="report-eyebrow">项目文档合订本</div>
+        <h1>prompt-hub · 项目全景</h1>
+        <p class="report-deck">AI 编程手动挡阶段的桌面仪表盘。主形态为快捷键唤起的全屏覆盖窗口，辅形态为副屏常驻视图；承载提示词资产的展示、调用与沉淀，以及人机协作的协议对齐。</p>
+        <dl class="report-meta">
+          <div><span class="muted">状态</span><span>pre-code · 0 LOC</span></div>
+          <div><span class="muted">文档</span><span>13 主文档 + 9 ADR</span></div>
+          <div><span class="muted">tech-stack</span><span>v1.0 ratified</span></div>
+          <div><span class="muted">日期</span><span>2026-05-19</span></div>
+        </dl>
+
+        <details class="mobile-toc">
+          <summary>目录 · 14 章节（1:1 对应源文件）</summary>
+          <nav>
+            <ul>
+              <li><a href="#ch01"><span class="chapter-num">01</span>CLAUDE</a></li>
+              <li><a href="#ch02"><span class="chapter-num">02</span>spec</a></li>
+              <li><a href="#ch03"><span class="chapter-num">03</span>constitution</a></li>
+              <li><a href="#ch04"><span class="chapter-num">04</span>product-spec</a></li>
+              <li><a href="#ch05"><span class="chapter-num">05</span>user-flows</a></li>
+              <li><a href="#ch06"><span class="chapter-num">06</span>design-spec</a></li>
+              <li><a href="#ch07"><span class="chapter-num">07</span>prd</a></li>
+              <li><a href="#ch08"><span class="chapter-num">08</span>features</a></li>
+              <li><a href="#ch09"><span class="chapter-num">09</span>sitemap</a></li>
+              <li><a href="#ch10"><span class="chapter-num">10</span>plan</a></li>
+              <li><a href="#ch11"><span class="chapter-num">11</span>tech-stack</a></li>
+              <li><a href="#ch12"><span class="chapter-num">12</span>adr/*</a></li>
+              <li><a href="#ch13"><span class="chapter-num">13</span>ops-spec</a></li>
+              <li><a href="#ch14"><span class="chapter-num">14</span>test-spec</a></li>
+            </ul>
+          </nav>
+        </details>
+      </header>
+
+      <!-- ============================================================
+           Chapter 01 · CLAUDE.md
+           ============================================================ -->
+      <section class="chapter" id="ch01">
+        <h2><span class="chapter-num">01</span>CLAUDE.md</h2>
+        <p class="muted" style="font-size: 0.88em; margin-top: -0.5em;">AI 进场基线 · 一句话定位 / 命令 / 三温区 / 代码规范 / 主笔人分工 / 忌讳清单 / 当前状态</p>
+
+        <h3 id="ch01-position">一句话定位</h3>
+        <p>prompt-hub 是 <strong>AI 编程手动挡阶段的桌面仪表盘</strong>——主形态快捷键唤起全屏窗口，辅形态副屏常驻视图，承载提示词资产的展示 / 调用 / 沉淀，以及人机协议对齐。</p>
+
+        <h3 id="ch01-commands">关键命令</h3>
+        <p>全栈技术决议完毕（Tauri 2.x + React 19.2 + pnpm 9.x + Vite 8.0 + Vitest 4 + cargo test），命令骨架建仓后直接可用：</p>
+
+        <pre><code># 包管理
+pnpm install                                  # 安装依赖
+pnpm install --frozen-lockfile                # CI 环境
+
+# 开发与构建
+pnpm tauri dev                                # Dev server + Tauri shell
+pnpm tauri build                              # 生产构建（.dmg / .msi / .app.tar.gz）
+
+# 质量
+pnpm test                                     # Vitest 全量
+pnpm lint                                     # ESLint 9 flat config
+pnpm format                                   # Prettier 3.x
+cargo test    --manifest-path src-tauri/Cargo.toml
+cargo fmt     --manifest-path src-tauri/Cargo.toml
+cargo clippy  --manifest-path src-tauri/Cargo.toml -- -D warnings
+
+# 性能 benchmark（C1 200ms 唤起自检）
+pnpm bench:cold-start
+pnpm bench:hotkey-wake</code></pre>
+
+        <p><strong>lockfile 政策</strong>：禁用 <code>npm install</code> / <code>yarn install</code> / <code>bun install</code>——它们会产生 lockfile 冲突。</p>
+
+        <h3 id="ch01-tempzone">三温区映射</h3>
+        <table class="table-stack">
+          <thead>
+            <tr><th>温区</th><th>触发</th><th>文件</th></tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td data-label="温区"><strong>热区</strong>（自动加载）</td>
+              <td data-label="触发">AI 进场基线</td>
+              <td data-label="文件">CLAUDE.md / constitution.md / spec.md / HANDOFF.md</td>
+            </tr>
+            <tr>
+              <td data-label="温区"><strong>温区</strong>（按需召回）</td>
+              <td data-label="触发">写后端/UI/CSS/任务时分别取</td>
+              <td data-label="文件">prd / product-spec / design-spec / plan / tech-stack / adr/*</td>
+            </tr>
+            <tr>
+              <td data-label="温区"><strong>冷区</strong>（显式查询）</td>
+              <td data-label="触发">追溯/调研时</td>
+              <td data-label="文件">~/Vault/知识库 / git history / features / sitemap</td>
+            </tr>
+          </tbody>
+        </table>
+
+        <h3 id="ch01-codestyle">代码规范（项目特有）</h3>
+        <ul>
+          <li><strong>CSS 必须用 token</strong>——任何组件 CSS / 内联样式禁止裸 px / 裸 hex / 裸 ms 值，必须引用 <code>--fs-*</code> / <code>--space-*</code> / <code>--color-*</code> / <code>--duration-*</code> token。失败案例：旧 <code>#1D9E75</code> 字面量混入代码导致颜色不一致，2026-05-18 全量替换为 <code>var(--color-task-border)</code>。</li>
+          <li><strong>数据模型严守三层</strong>——任何新增资产类型前，先确认能否归入 Modifier / Composition / Macro。<strong>不允许引入第 4 层资产</strong>。</li>
+          <li><strong>协议层与任务层分离</strong>——AlignmentPhrase 不出现在 Composition 工作台 / 不被 SOP 引用 / Macro 区不展示 AlignmentPhrase。</li>
+          <li><strong>性能预算</strong>——任何主形态相关代码必须保持唤起 ≤ 200ms P95。涉及主形态启动路径的改动需附 benchmark。</li>
+        </ul>
+
+        <h3 id="ch01-doc-roles">文档主笔人分工</h3>
+        <ul>
+          <li>🧑 <strong>人主笔</strong>：<code>spec.md</code> / <code>constitution.md</code>——AI 禁起草，可校对</li>
+          <li>🤝 <strong>共创</strong>：<code>CLAUDE.md</code> / <code>adr/*</code> / <code>user-flows.md</code> / <code>product-spec.md</code> / <code>design-spec.md</code> / <code>plan.md</code></li>
+          <li>🤖 <strong>AI 主笔（人审）</strong>：<code>prd.md</code> / <code>test-spec.md</code> / <code>ops-spec.md</code> / <code>features.md</code> / <code>sitemap.md</code> / <code>tech-stack.md</code></li>
+        </ul>
+
+        <h3 id="ch01-taboo">忌讳清单（不要做的事）</h3>
+        <p>每条都来自真实约束或方法论铁律，<strong>违反请立即停手</strong>：</p>
+        <ol>
+          <li>不要内嵌 LLM SDK 用于话术生成——违反 constitution D1，工具会退化为"AI 话术陈列馆"</li>
+          <li>不要写自动发送话术给 AI 的逻辑——违反 spec §8.3，破坏"思考的缓冲"</li>
+          <li>不要在 Macro 里展示 AlignmentPhrase——违反 constitution B2，破坏协议/任务分离</li>
+          <li>不要引入 Scene / Macro / Phase 的嵌套子层级——违反 spec §8.4</li>
+          <li>不要把数据上传到任何外部服务——违反 constitution A2，话术含隐私指纹</li>
+          <li>不要给设计文档就地补丁——必须走方法论 §7 八步上游回流</li>
+          <li>任何 dependency major version bump 必须开 ADR——技术栈全部锁定，bump 流程见 tech-stack §8</li>
+          <li>不要复用 prompt-combiner 旧代码而不等 ADR-005 Accepted</li>
+          <li>不要让 AI 起草 spec / constitution——这是 🧑 人主笔文档</li>
+          <li>不要写 README.md 重复 CLAUDE.md——本项目暂无 README，CLAUDE.md 是单一入口</li>
+        </ol>
+
+        <h3 id="ch01-status">当前状态指针</h3>
+        <ul>
+          <li>项目阶段：<strong>pre-code</strong>（仅设计文档，0 LOC）</li>
+          <li>文档体系：<strong>13/13 全部落盘</strong>（spec / product-spec / design-spec / prd / plan / constitution / CLAUDE / tech-stack / features / sitemap / user-flows / test-spec / ops-spec + adr/）</li>
+          <li>ADR 进度：<strong>9/9 已落盘</strong>——001/002/003/004/006/007/008/009 Accepted（2026-05-19）；005（prompt-combiner 复用）仍 Proposed</li>
+          <li>tech-stack 状态：<strong>v1.0 ratified</strong>——全栈拍板：Tauri 2.x + React 19.2 + Zustand 5 + rusqlite 0.32 + pnpm 9.x + Vite 8.0 + Vitest 4 + CSS Modules + macos-private-api</li>
+          <li>下一动作：第一阶段 MVP 建仓（按 plan §0 + plan 第一阶段）；或推进 ADR-005 调研</li>
+        </ul>
+      </section>
+
+      <!-- ============================================================
+           Chapter 02 · spec.md
+           ============================================================ -->
+      <section class="chapter" id="ch02">
+        <h2><span class="chapter-num">02</span>spec.md</h2>
+        <p class="muted" style="font-size: 0.88em; margin-top: -0.5em;">项目定位 · 九条哲学 · 核心概念 · Non-Goals · 开放问题（🧑 人主笔）</p>
+
+        <h3 id="ch02-position">2.1 项目定位</h3>
+
+        <h4 id="ch02-oneliner">一句话定位</h4>
+        <p><strong>一款服务于"AI 编程手动挡阶段"的桌面应用，主形态为快捷键唤起的全屏仪表盘、辅形态为副屏常驻视图，承载提示词资产的展示、调用和沉淀，以及人机协作的协议对齐。</strong></p>
+
+        <h4 id="ch02-not">这不是什么</h4>
+        <p>明确边界比描述功能更重要。这个项目<strong>不是</strong>：</p>
+        <ul>
+          <li><strong>不是</strong>"更漂亮的提示词管理器"——Snippety / Paste / Promptler 已经很多，我们不和它们竞争</li>
+          <li><strong>不是</strong>"更快的提示词调用工具"——Raycast / 文本替换在调用速度上永远更快</li>
+          <li><strong>不是</strong>"AI 自动驾驶平台"——不涉及自动化执行、Agent 编排、workflow 引擎</li>
+          <li><strong>不是</strong>"面向团队协作的知识库"——单人使用，不考虑权限、评论、分享</li>
+        </ul>
+
+        <h4 id="ch02-is">这是什么</h4>
+        <ul>
+          <li>一个<strong>手动挡阶段</strong>的练车场，帮使用者在高强度 AI 编程中建立稳定的认知节奏</li>
+          <li>一个<strong>外部化的思考工具</strong>，把"我可以怎么想这件事"从头脑里卸载到屏幕上</li>
+          <li>一个<strong>资产沉淀场</strong>，让每天的提示词使用自动产生可以复用、可以迭代的资产</li>
+          <li>一个<strong>人机协议握手台</strong>，让每次协作开始前的"对齐动作"显式化、工具化</li>
+          <li>一个<strong>双形态承载</strong>的仪表盘——主形态为快捷键唤起的全屏覆盖窗口（80% 使用场景），辅形态为副屏常驻视图（深度工作和复盘场景）</li>
+        </ul>
+
+        <h4 id="ch02-persona">用户画像</h4>
+        <p><strong>使用者是一人公司/独立开发者，高频使用 Claude Code 进行 AI 辅助编程。</strong> 具备以下特征：</p>
+        <ul>
+          <li>每天与 AI 对话频次 &gt; 50 次</li>
+          <li>已经形成一套个人的提示词 / 工作流话术（几十条以上规模）</li>
+          <li>有持续迭代和优化自己工作方法的习惯</li>
+          <li>重视"看见全局"胜过"操作最快"</li>
+          <li>对 AI 编程范式有自己的演进路径规划（SOP 化 → 手动 → 自动 → 协同 → 自主）</li>
+        </ul>
+
+        <h3 id="ch02-philosophy">2.2 九条设计哲学</h3>
+        <p>这九条哲学是整个项目的地基。<strong>任何具体设计决策都必须能回溯到这里某一条</strong>，否则这个设计就不该存在。</p>
+
+        <h4 id="ch02-p1">哲学一：五阶段演进路径</h4>
+        <p>AI 编程的成熟度分五个阶段，<strong>这个项目只服务于第二阶段</strong>：</p>
+        <table class="table-stack">
+          <thead><tr><th>阶段</th><th>特征</th><th>对应工具</th></tr></thead>
+          <tbody>
+            <tr><td data-label="阶段">1. SOP 化</td><td data-label="特征">把隐性工作方法显式化为话术、模板</td><td data-label="工具">笔记本、文档</td></tr>
+            <tr><td data-label="阶段"><strong>2. 手动挡</strong></td><td data-label="特征"><strong>人完整驱动，工具辅助展示和调用</strong></td><td data-label="工具"><strong>本项目</strong></td></tr>
+            <tr><td data-label="阶段">3. 自动挡</td><td data-label="特征">工具自动跑一段，人设定起点和终点</td><td data-label="工具">Claude Code slash commands</td></tr>
+            <tr><td data-label="阶段">4. 辅助驾驶</td><td data-label="特征">人机实时协同决策</td><td data-label="工具">Claude Code plan mode + subagents</td></tr>
+            <tr><td data-label="阶段">5. 自主驾驶</td><td data-label="特征">AI 端到端交付</td><td data-label="工具">目前不可达</td></tr>
+          </tbody>
+        </table>
+
+        <h5>为什么用"汽车驾驶"做比喻</h5>
+        <p>选择汽车而不是常见的"初级/中级/高级"分级，是因为汽车比喻<strong>内嵌了两个其他分级不具备的核心前提</strong>：</p>
+        <p><strong>前提一：驾驶员永远是决策者</strong>。哪怕是最先进的辅助驾驶，方向盘依然在人手里——这和 AI 编程的理想状态完全一致。我们不是在训练 AI 替代自己，是在训练自己和 AI 形成稳定的协同关系。"初级→高级"这种分级暗示了"终点是人不再需要干预"，但汽车比喻明确拒绝这个暗示。</p>
+        <p><strong>前提二：每一阶段都需要前一阶段的积累</strong>。不能跳过手动挡直接开辅助驾驶——你的脚会不知道该放哪里、你的眼睛会不知道该看哪里、你的肌肉会不知道该在哪一刻紧张。<strong>能力的跃迁不是软件升级，是肌肉记忆的沉淀</strong>。</p>
+
+        <h5>本项目在五阶段中的精确位置</h5>
+        <p>本项目<strong>只做手动挡，不做相邻阶段</strong>：</p>
+        <ul>
+          <li><strong>不做 SOP 化</strong>：话术的创作、提炼应该在 Obsidian 或笔记软件里完成。本项目不是编辑器，是展示器和调用器。</li>
+          <li><strong>不做自动挡</strong>：一键触发自动化、编排多步执行、自主跑 agentic loop——这些应该在 Claude Code 的 slash commands、composite commands、subagents 机制里实现。本项目可以<strong>为未来迁移到自动挡做准备</strong>（比如 SOP 模板可以直接映射为 composite commands），但自身不执行任何自动化动作。</li>
+        </ul>
+
+        <h4 id="ch02-p2">哲学二：看见全局 &gt; 操作最快</h4>
+        <p>对手动挡学员来说，<strong>视觉全景比操作速度更重要</strong>。这条颠覆了效率工具的常见假设——多数效率工具追求"最少点击""最少步骤"。本项目主动接受"多一步点击"的代价，换取"一眼看全"的收益。</p>
+        <p><strong>设计上的含义</strong>：默认视图是全景式的，不是搜索框式的；相位、场景、话术、最近使用、SOP 进度应同屏可见；拒绝把关键信息隐藏在 Tab、下拉菜单、二级页面后面。</p>
+
+        <h4 id="ch02-p3">哲学三：注意力分层通过"分离"实现，但分离方式因形态而异</h4>
+        <p><strong>仪表盘和主工作屏必须存在某种"分离"，分离才能创造注意力分层。但分离的实现方式因形态而异——主形态用时间分离，辅形态用空间分离。</strong></p>
+        <p>认知科学上，把工具信息从主工作流卸载到一个"另外的地方"，形成 external cognition offloading（外部认知卸载）。主屏是执行现场，仪表盘是思考工具。<strong>从执行态切回决策态需要一个触发动作</strong>——这个动作不是为了换屏幕看，是为了换大脑模式。</p>
+
+        <table class="table-stack">
+          <thead><tr><th>分离方式</th><th>形态</th><th>触发动作</th><th>退出动作</th></tr></thead>
+          <tbody>
+            <tr><td data-label="方式"><strong>时间分离</strong>（主形态）</td><td data-label="形态">快捷键唤起的全屏覆盖窗口</td><td data-label="触发">按下全局快捷键（如 ⌥ Space）</td><td data-label="退出">复制后自动隐藏 / ESC 关闭</td></tr>
+            <tr><td data-label="方式"><strong>空间分离</strong>（辅形态）</td><td data-label="形态">副屏常驻视图</td><td data-label="触发">抬头看副屏</td><td data-label="退出">不需要退出（常驻在场）</td></tr>
+          </tbody>
+        </table>
+
+        <p><strong>为什么主形态选时间分离</strong>：不占视觉空间（主屏 100% 留给和 AI 的对话）；召之即来（任何设备都能用，不需要副屏硬件）；用完即走（复制后窗口立刻消失，主屏粘贴流程顺滑）；认知触发更强（"按下快捷键"这个动作本身就是一次明显的模式切换）。</p>
+
+        <p><strong>反方案</strong>（明确拒绝的）：</p>
+        <ul>
+          <li>❌ <strong>主屏浮层</strong>——既不时间分离也不空间分离，遮挡主屏破坏专注</li>
+          <li>❌ <strong>浏览器 tab</strong>——需要切换 tab 才能看，离手成本高且容易被关掉</li>
+          <li>❌ <strong>只做副屏不做快捷键</strong>——使用者 80% 时间没有/不开副屏，工具就废了</li>
+          <li>❌ <strong>只做快捷键不做副屏</strong>——失去"持续在场的状态指示器"价值</li>
+        </ul>
+
+        <h4 id="ch02-p4">哲学四：使用即沉淀</h4>
+        <p>每一次点击、每一次复制、每一次组合，<strong>都应该成为资产的一部分</strong>，而不是挥发掉的操作。</p>
+        <p>传统工具把"沉淀"当作一个<strong>独立动作</strong>（手动保存、手动命名、手动分类）——这个摩擦让 90% 的有价值信息都没被沉淀下来。本项目的设计目标：<strong>让沉淀成为使用的副产品</strong>。</p>
+        <p><strong>设计上的含义</strong>：每次调用自动记录 usage_count、last_used_at；重复使用的组合自动识别并提示保存；使用热度数据驱动月度 review，而不是靠回忆。</p>
+
+        <h4 id="ch02-p5">哲学五：话术是分层语言系统</h4>
+        <p>经过观察，一个成熟的提示词库不是<strong>扁平的列表</strong>，而是<strong>分层的语言系统</strong>：</p>
+        <pre><code>Modifier（原子）
+    ↓ 组合
+Composition（组合）
+    ↓ 固化
+Macro（宏定义 / Favorites）</code></pre>
+        <ul>
+          <li><strong>Modifier（原子）</strong>：不可再分的方法论动作，比如"第一性原理思考""启动子代理并行"</li>
+          <li><strong>Composition（组合）</strong>：由多个 Modifier 按顺序拼接而成的完整提示词</li>
+          <li><strong>Macro（宏）</strong>：高频使用的 Composition 被固化为单独的快捷入口</li>
+        </ul>
+        <p><strong>设计上的含义</strong>：三层结构必须在 UI 上都有对应位置；三层之间的跃迁路径必须被设计（Composition → Macro 的固化、Modifier → Composition 的组装）；数据模型也必须支持这种跃迁的可追溯性（一个 Macro 由哪些 Modifier 组成？）。</p>
+
+        <h4 id="ch02-p6">哲学六：减少"离手"但不消除</h4>
+        <p>"离手"指的是：注意力从主屏（和 AI 对话）离开，去操作辅助工具。</p>
+        <ul>
+          <li><strong>完全消除离手</strong> = Raycast 式浮层 → 属于自动挡阶段</li>
+          <li><strong>完全不管离手</strong> = 频繁切屏、手忙脚乱 → 过度原始</li>
+        </ul>
+        <p><strong>手动挡阶段的正确选择</strong>：把离手动作<strong>显式化、标准化、最小化</strong>。这种受控的离手，反而创造了<strong>思考的刹车片</strong>——点击前那一瞬间的再确认，让误用率下降。</p>
+
+        <h4 id="ch02-p7">哲学七：人机协同需要协议对齐</h4>
+        <p>和 AI 高效协作的前提，不是"我有多好的任务提示词"，而是<strong>AI 知道我这次协作的模式是什么、要产出什么形态的东西</strong>。一次清晰的相位对齐，胜过十句精雕细琢的任务话术。</p>
+        <p><strong>对齐话术定义"框"，任务话术在框里工作</strong>。框不对，任务话术再精都无效；框一旦定下来，后续沟通摩擦大幅下降，输出形态可预测。</p>
+        <p>因此对齐话术是<strong>协作的元层</strong>——它不参与任务话术的组合、不被 SOP 引用、不和 Macro 互相转化。它独立成对象（AlignmentPhrase），独立成 UI 区域（相位带），独立成认知动作。</p>
+
+        <h4 id="ch02-p8">哲学八：双形态承载，按场景分工</h4>
+        <p>仪表盘不存在"唯一正确的承载形态"——使用者一天的工作里，<strong>有些瞬间需要召之即来的工具，有些瞬间需要持续在场的状态指示</strong>。强行用一种形态覆盖两种需求，结果是两边都不顺手。</p>
+
+        <table class="table-stack">
+          <thead><tr><th>维度</th><th>主形态：快捷键唤起</th><th>辅形态：副屏常驻</th></tr></thead>
+          <tbody>
+            <tr><td data-label="使用占比"><strong>使用占比</strong></td><td data-label="主">80%（日常高频）</td><td data-label="辅">20%（深度场景）</td></tr>
+            <tr><td data-label="触发方式"><strong>触发方式</strong></td><td data-label="主">全局快捷键</td><td data-label="辅">永远在场</td></tr>
+            <tr><td data-label="退出方式"><strong>退出方式</strong></td><td data-label="主">复制后自动隐藏 / ESC</td><td data-label="辅">不退出</td></tr>
+            <tr><td data-label="核心价值"><strong>核心价值</strong></td><td data-label="主">高效查找、快速调用</td><td data-label="辅">全景巡视、状态监视</td></tr>
+            <tr><td data-label="典型场景"><strong>典型场景</strong></td><td data-label="主">日常对话中复制话术</td><td data-label="辅">月度 review、整理资产、长任务跟随</td></tr>
+            <tr><td data-label="优化方向"><strong>优化方向</strong></td><td data-label="主">召之即来用完即走</td><td data-label="辅">持续可见余光感知</td></tr>
+            <tr><td data-label="设备依赖"><strong>设备依赖</strong></td><td data-label="主">任何桌面（含笔记本单屏）</td><td data-label="辅">需要副屏硬件</td></tr>
+          </tbody>
+        </table>
+
+        <p>两种形态<strong>共享同一套数据后端、同一套 UI 资产</strong>——它们不是两个产品，是同一个产品的两种唤起方式。使用者切换形态的成本应该为零。实施时应<strong>先做主形态 MVP</strong>，再做辅形态。</p>
+
+        <h4 id="ch02-p9">哲学九：界面自身也是被维护的资产</h4>
+        <p><strong>真实仪表盘对应物</strong>：赛车手会根据自己的习惯调整仪表盘布局——哪些信息放哪里，是可以被个人化配置的。</p>
+        <p><strong>决策</strong>：界面本身必须可配置——Scene 的排序、显隐可调；Phase 的增删、排序、改色可调；Macro 的置顶数量可调；SOP 模板可以自由增删；Modifier 池可编辑、增删、分组重命名；首屏六个区域的高度比例可调。</p>
+        <p><strong>反设计</strong>：把配置项藏在设置页（常用的配置应该在首屏就能调）；用复杂的设置系统（每个配置项都应该是"点一下就切换"的简单开关）。</p>
+
+        <h3 id="ch02-concepts">2.3 核心概念</h3>
+
+        <h4 id="ch02-three-layer">三层资产模型</h4>
+        <p>这是整个项目最核心的数据模型。其他所有设计都围绕这个模型展开。</p>
+
+        <h5>Modifier（方法论原子）</h5>
+        <p><strong>定义</strong>：不可再分的方法论动作，是其他所有话术的"构造材料"。</p>
+        <ul>
+          <li>通常以"动宾短语"形式存在，比如"主动调研、推进，""从更高的视角重新设计，"</li>
+          <li>末尾常带逗号而非句号——它是"半句话"，设计上就是要被拼接的</li>
+          <li>可按作用类型分组：认知前置（思维）、动作策略（执行）、产出形态（交付）、通用约束（约束）</li>
+        </ul>
+        <p><strong>设计要求</strong>：每个 Modifier 必须能独立成立，不依赖上下文；Modifier 之间应尽量正交，避免语义重复；数量控制在 30 以内——过多会稀释组合的价值。</p>
+
+        <h5>Composition（组合）</h5>
+        <p><strong>定义</strong>：由多个 Modifier 按固定顺序拼接而成的完整提示词，服务于某个具体任务场景。</p>
+        <p><strong>标准结构</strong>（推荐顺序）：</p>
+        <pre><code>[角色设定] + [认知前置 Modifier] + [核心任务] + [动作策略 Modifier]
++ [产出形态 Modifier] + [通用约束 Modifier]</code></pre>
+        <p><strong>示例</strong>：作为战略合伙人，（使用第一性原理思考，）全面负责本次方案的完善，（主动调研、推进，搜索最佳实践或 GitHub 开源实践作为参考，）减少实施路径，（输出经得起推敲的方案，先出方案供我拍板。）</p>
+
+        <h5>Macro（宏定义 / Favorites）</h5>
+        <p><strong>定义</strong>：高频使用的 Composition 被固化为单独的快捷入口，<strong>绕过组合过程直接调用</strong>。</p>
+        <ul>
+          <li>Composition 是<strong>现场组装</strong>的（临时拼接）</li>
+          <li>Macro 是<strong>预先固化</strong>的（一键调用）</li>
+        </ul>
+        <p><strong>Macro 的来源</strong>：90% 应来自"曾经的 Composition"——使用者发现某个组合反复出现，就把它升级成 Macro；10% 可以是"原生的 Macro"——不由 Modifier 组合而来，而是直接写出来的成品话术。</p>
+        <p><strong>典型示例</strong>："推翻重来" / "借力最优解" / "经得起推敲的方案" / "第一责任人主动找事做"。</p>
+
+        <h4 id="ch02-scene">场景（Scene）</h4>
+        <p><strong>定义</strong>：按"使用时机"对话术进行的横切分类。示例：规划（plan）、调研（research）、方案（debug）、排查、部署、审查、日常、工作流……</p>
+        <p>Scene 是<strong>正交维度</strong>。一条 Modifier 可以属于某个 Scene，也可以跨 Scene 通用。Scene 数量控制在 10 个以内；Scene 之间必须互斥；Scene 可以有子状态（如"方案"Scene 包含"生成→评审→修订→定版"四个子阶段）。</p>
+
+        <h4 id="ch02-sop">SOP（标准作业流程）</h4>
+        <p><strong>定义</strong>：由多个 Macro 或 Composition 按<strong>时间顺序</strong>串联起来的工作流模板。</p>
+        <ul>
+          <li>Composition 是<strong>单次对话内</strong>的提示词组合（横向拼接）</li>
+          <li>SOP 是<strong>跨多次对话</strong>的话术使用序列（纵向串联）</li>
+        </ul>
+        <p><strong>示例 SOP（方案设计型）</strong>：</p>
+        <pre><code>1. /借力最优解              → 让 Claude 先调研外部最佳实践
+2. /全局视角出方案          → 基于调研结果出整体方案
+3. /多 agent 评价方案       → 多 Agent 交叉评审
+4. /根据 codex 意见修改     → 收敛修订建议
+5. /更新方案                → 整合修订成最终版</code></pre>
+        <p>SOP 是这个项目第一个"超越单次对话"的概念——它体现了使用者的工作流节奏，也是未来迁移到自动挡阶段的"半成品蓝图"。<strong>SOP 不引用 Modifier（颗粒度不够）、不引用 AlignmentPhrase（哲学七边界）</strong>。</p>
+
+        <h4 id="ch02-metrics">三个关键数据指标</h4>
+        <ul>
+          <li><strong>usage_count</strong>：每条话术 / Modifier / Macro 被复制的次数，永久累加</li>
+          <li><strong>last_used_at</strong>：最近一次被复制的时间戳</li>
+          <li><strong>session_recent</strong>：本次会话中最近 5 次复制记录（用于"刚刚操作了什么"）</li>
+        </ul>
+        <p>这些指标不是锦上添花，是<strong>驱动哲学四（使用即沉淀）落地的核心机制</strong>。没有它们，这个项目就退化回普通的"提示词陈列馆"。</p>
+
+        <h4 id="ch02-phase">认知相位（Phase）与对齐话术（AlignmentPhrase）</h4>
+        <p>使用者在长期 AI 编程实践中观察到：一次完整的人机协作任务，无论 Scene 是什么，内部都会经历一组<strong>认知相位</strong>——发散、理解、规划、生成、执行、收敛、沉淀、迭代。每个相位对 AI 的期待完全不同。</p>
+
+        <h5>当前 Phase 实践版本（可配置增删）</h5>
+        <table class="table-stack">
+          <thead><tr><th>相位</th><th>协同期待</th></tr></thead>
+          <tbody>
+            <tr><td data-label="相位">发散</td><td data-label="期待">铺开可能性，不下结论</td></tr>
+            <tr><td data-label="相位">理解</td><td data-label="期待">拆解问题、找出本质</td></tr>
+            <tr><td data-label="相位">规划</td><td data-label="期待">制定路径和优先级</td></tr>
+            <tr><td data-label="相位">生成</td><td data-label="期待">产出具体方案/代码/内容</td></tr>
+            <tr><td data-label="相位">执行</td><td data-label="期待">按既定方案推进，少质疑多动手</td></tr>
+            <tr><td data-label="相位">收敛</td><td data-label="期待">对比、评估、给出结论</td></tr>
+            <tr><td data-label="相位">沉淀</td><td data-label="期待">复盘、提炼、记录</td></tr>
+            <tr><td data-label="相位">迭代</td><td data-label="期待">基于反馈修订，推翻重来</td></tr>
+          </tbody>
+        </table>
+
+        <h5>AlignmentPhrase（对齐话术）</h5>
+        <p><strong>定义</strong>：人机协作的协议层话术。在任务开始前、或对话中途切换相位时使用，告诉 AI 当前的认知相位，定义本次协作的"框"。</p>
+        <p><strong>示例</strong>：</p>
+        <ul>
+          <li>发散相位："我们现在做发散，先把所有可能性铺出来，不要给结论，不要评估优劣。"</li>
+          <li>收敛相位："我们现在做收敛，从前面的方案里选出最优解，给出明确推荐和理由。"</li>
+          <li>沉淀相位："我们现在做复盘，目标是提炼可复用的方法论，不是重新评估方案本身。"</li>
+        </ul>
+        <p><strong>独立成对象</strong>——不寄生在 Macro 里；<strong>属于 Phase</strong>——每条 AlignmentPhrase 必须归属于一个 Phase；<strong>孤岛声明</strong>——不参与 Modifier 拼接、不属于任何 Scene、不被 SOP 引用、不和 Macro 互相转化。</p>
+
+        <h3 id="ch02-nongoals">2.4 不做什么（Non-Goals）</h3>
+        <p>这一章比"做什么"更重要。<strong>明确拒绝的事情，决定了这个产品的性格</strong>。</p>
+
+        <h4>8.1 不做 AI 生成</h4>
+        <ul>
+          <li>不内嵌任何 "用 AI 帮我生成 Modifier" 的功能</li>
+          <li>不内嵌 "AI 自动分类我的话术" 的功能</li>
+          <li>不做 "AI 自动建议 SOP" 的功能</li>
+          <li>不做 "AI 自动判断当前相位" 的功能</li>
+        </ul>
+        <p><strong>理由</strong>：引入 AI 生成会让使用者失去"自己思考"这一步，而这一步恰恰是手动挡阶段的核心价值。本工具的目的是沉淀<strong>使用者自己</strong>的方法论，不是让使用者消费 AI 生成的通用话术。</p>
+
+        <h4>8.2 不做社区 / 分享功能</h4>
+        <p>不做"导出为可分享的链接" / "浏览他人的提示词库" / "团队协作"。<strong>理由</strong>：单人工具的价值最大化依赖<strong>高度个性化</strong>；使用者的话术沉淀涉及其工作方式的指纹——分享机制反而产生隐私压力。</p>
+
+        <h4>8.3 不做自动执行</h4>
+        <ul>
+          <li>点击话术只复制到剪贴板，不自动发送给任何 AI</li>
+          <li>不集成 Claude API 直接对话</li>
+          <li>不做"一键跑完整个 SOP"的自动化</li>
+          <li>不做"切换相位时自动发对齐话术给 Claude"——必须人主动粘贴</li>
+        </ul>
+        <p><strong>理由</strong>：手动复制粘贴虽然多一步，但这一步是<strong>思考的缓冲</strong>，有认知价值。</p>
+
+        <h4>8.4 不做多层级文件夹</h4>
+        <p>Scene 下不允许再嵌套子 Scene；Macro 不允许分组到文件夹；Modifier 只有四个固定分组；Phase 下不允许再嵌套子 Phase。<strong>理由</strong>：层级 &gt; 1 就会变成"找东西"——违背哲学二。</p>
+
+        <h4>8.5 不做付费 / 商业化</h4>
+        <p>这是自用工具，不考虑商业化路径。<strong>理由</strong>：目标是沉淀使用者自己的方法论，商业化会扭曲设计方向。</p>
+
+        <h4>8.6 不让对齐层与任务层混淆</h4>
+        <p><strong>协议层（AlignmentPhrase / Phase）和任务层（Modifier / Composition / Macro / Phrase / Scene / SOP）必须物理分离</strong>：</p>
+        <ul>
+          <li>AlignmentPhrase 不出现在 Composition 工作台（不参与 Modifier 拼接）</li>
+          <li>AlignmentPhrase 不能被加入 SOP 步骤</li>
+          <li>AlignmentPhrase 不与 Macro 互相转化（即使内容相似也是两个对象）</li>
+          <li>Macro 区不展示 AlignmentPhrase</li>
+          <li>相位带（Phase Bar）不展示任何任务话术</li>
+          <li>Scene 不包含 AlignmentPhrase</li>
+        </ul>
+
+        <h4>8.7 不让主辅形态各自走偏</h4>
+        <p>不做"主形态独占功能"和"辅形态独占功能"的对立；不做两套独立 UI；不做数据同步——两种形态读写同一份本地数据，零同步层；不做主形态和辅形态之间的数据迁移——它们就是同一份数据。</p>
+
+        <h3 id="ch02-open">2.5 开放问题（来自 spec §10）</h3>
+        <p>这些是 spec 当前无法确定、需要在实施过程中根据真实使用反馈决策的问题。</p>
+        <ul>
+          <li><strong>10.1 Modifier 池的增长管理</strong>——什么时候该新增 / 修改 / 拆分 / 合并？观察期：使用 3 个月后看 usage_count 分布。</li>
+          <li><strong>10.2 SOP 的粒度</strong>——SOP 步骤应该是"一次复制操作"还是"一个对话阶段"？观察期：第三阶段实施后看实际使用情况。</li>
+          <li><strong>10.3 手动挡 → 自动挡的过渡点</strong>——什么时候应该把某个 SOP 升级为 Claude Code 的 composite command？观察期：有至少 2 个 SOP 被使用超过 20 次之后。</li>
+          <li><strong>10.4 Phase 体系的稳定性</strong>——当前 8 个 Phase 是否稳定？观察期：MVP 使用 1-2 个月后看 phase_id 分布。</li>
+          <li><strong>10.6 Scene 区在 user flow 中的存在感</strong>——三个典型场景 Scene 区都没作为主角出场；可能更适合"事后回看"角色。当前决策：暂不调整。</li>
+          <li><strong>10.7 搜索语法演化</strong>——是否需要 <code>#macro</code> <code>#scene:方案</code> 等过滤前缀？当前决策：先不做语法。</li>
+          <li><strong>10.8 双形态的使用比例验证</strong>——主辅 80/20 假设未经长期验证。观察期：辅形态实现后至少使用 1 个月。</li>
+        </ul>
+      </section>
+
+      <!-- ============================================================
+           Chapter 03 · constitution.md
+           ============================================================ -->
+      <section class="chapter" id="ch03">
+        <h2><span class="chapter-num">03</span>constitution.md</h2>
+        <p class="muted" style="font-size: 0.88em; margin-top: -0.5em;">8 条不可违反铁律 · 违反任一条即转型（🧑 人主笔）</p>
+
+        <h3 id="ch03-articles">3.1 八条铁律</h3>
+        <div class="callout warn">
+          <p>每条都「违反即死」——违反任一条，项目就不再是 prompt-hub。修订必须开 ADR。本文件 6 个月内不应频繁修订。</p>
+        </div>
+
+        <h4 id="ch03-A1">A1 · 桌面原生 only</h4>
+        <p>本项目必须是桌面原生应用（Tauri / Electron 类），不做 Web 版、浏览器扩展、移动端。</p>
+        <ul>
+          <li><strong>证伪</strong>：见到 web build target 或 PWA manifest → 违反</li>
+          <li><strong>依据</strong>：哲学三时间分离机制依赖原生快捷键 + 全屏覆盖窗口，浏览器不可达</li>
+          <li><strong>后果</strong>：失去主形态承载机制，退化为 web 提示词管理器（市场已饱和）</li>
+        </ul>
+
+        <h4 id="ch03-A2">A2 · 本地优先 + 无服务端</h4>
+        <p>所有数据存本地（localStorage / SQLite / 本地文件），不调用自有后端，不依赖云同步。</p>
+        <ul>
+          <li><strong>证伪</strong>：见到 fetch 到自有 API / 注册服务端依赖 → 违反</li>
+          <li><strong>依据</strong>：单人工具 + 话术含工作指纹 + spec §8.2 隐私论证</li>
+          <li><strong>后果</strong>：引入运维 / 网络依赖 / 隐私风险——三者任一让产品转型</li>
+        </ul>
+
+        <h4 id="ch03-A3">A3 · 单人单机</h4>
+        <p>不引入用户系统、权限模型、协作机制、分享链接。</p>
+        <ul>
+          <li><strong>证伪</strong>：见到 user_id / OAuth / share token → 违反</li>
+          <li><strong>依据</strong>：单人工具的价值最大化依赖高度个性化</li>
+          <li><strong>后果</strong>：设计向"通用好用"妥协，失去个性化深度</li>
+        </ul>
+
+        <h4 id="ch03-B1">B1 · 资产三层模型不可破</h4>
+        <p>仅 Modifier / Composition / Macro 三层，不引入第 4 层资产类型。</p>
+        <ul>
+          <li><strong>证伪</strong>：见到 SuperMacro / SubModifier / 任何第 4 类资产 schema → 违反</li>
+          <li><strong>依据</strong>：三层是观察沉淀的语言系统；第 4 层破坏组合可追溯性</li>
+          <li><strong>后果</strong>：数据模型膨胀，UI 无展示位，组合语义混乱</li>
+        </ul>
+
+        <h4 id="ch03-B2">B2 · 协议层与任务层物理分离</h4>
+        <p>AlignmentPhrase 不参与 Modifier 拼接、不入 SOP、不与 Macro 互转、不归属 Scene。</p>
+        <ul>
+          <li><strong>证伪</strong>：见到 SOP 步骤含 AlignmentPhrase / Macro 区展示 AlignmentPhrase → 违反</li>
+          <li><strong>依据</strong>：哲学七「先定框、再发任务」的认知节奏依赖物理分离</li>
+          <li><strong>后果</strong>：失去元层协议握手能力，退化为更花哨的提示词管理器</li>
+        </ul>
+
+        <h4 id="ch03-C1">C1 · 主形态快捷键唤起 ≤ 200ms 可见</h4>
+        <p>全局快捷键按下到窗口完整可交互必须 ≤ 200ms（P95）。</p>
+        <ul>
+          <li><strong>证伪</strong>：benchmark P95 &gt; 200ms → 违反</li>
+          <li><strong>依据</strong>：哲学三「召之即来」——超 200ms 产生迟滞感，主形态心智崩溃</li>
+          <li><strong>后果</strong>：使用者放弃主形态，工具退化为偶尔打开的辅形态</li>
+        </ul>
+
+        <h4 id="ch03-D1">D1 · 不内嵌 AI 生成</h4>
+        <p>工具内部不调用 LLM 生成 / 优化 / 分类 / 推荐话术（用户手动粘贴到外部 AI 不算）。</p>
+        <ul>
+          <li><strong>证伪</strong>：见到 anthropic / openai / 任何 LLM SDK 用于生成话术 → 违反</li>
+          <li><strong>依据</strong>：手动挡阶段的核心价值是使用者自己思考</li>
+          <li><strong>后果</strong>：使用者消费 AI 通用话术，失去沉淀自己方法论的机会</li>
+        </ul>
+
+        <h4 id="ch03-E1">E1 · 宪法变更必须开 ADR</h4>
+        <p>本文件任何一条铁律的修改 / 删除 / 新增，必须先开 ADR 决议；PR 描述需链接 ADR 编号。</p>
+        <ul>
+          <li><strong>证伪</strong>：constitution PR 无 ADR 链接 → 违反</li>
+          <li><strong>依据</strong>：宪法变更影响整个项目方向，必须留下决策痕迹</li>
+          <li><strong>后果</strong>：宪法沦为可随意改写的「建议」，失去约束力</li>
+        </ul>
+
+      </section>
+
+      <!-- ============================================================
+           Chapter 04 · product-spec.md
+           ============================================================ -->
+      <section class="chapter" id="ch04">
+        <h2><span class="chapter-num">04</span>product-spec.md</h2>
+        <p class="muted" style="font-size: 0.88em; margin-top: -0.5em;">UI 契约 · 双形态架构 · 一屏全景 · 三个核心 user flow · 主形态 UI 草案（🤝 共创）</p>
+
+        <h3 id="ch04-dual-form">4.1 双形态架构</h3>
+
+        <h4 id="ch04-form-relation">两种形态的关系</h4>
+        <p>本项目采用<strong>单一应用、双形态承载</strong>架构：</p>
+        <ul>
+          <li><strong>主形态：快捷键唤起的全屏覆盖窗口</strong>——80% 使用场景</li>
+          <li><strong>辅形态：副屏常驻视图</strong>——20% 深度场景</li>
+        </ul>
+        <p><strong>关键性质</strong>：一个桌面应用，两种形态由同一个 Tauri 应用提供；共享数据后端，零同步成本；共享 UI 模块，只是容器布局不同；形态切换无成本。</p>
+
+        <h4 id="ch04-main-form">主形态的核心特征</h4>
+        <ul>
+          <li><strong>触发</strong>：全局快捷键（默认 <code>⌥ Space</code>，可配置）</li>
+          <li><strong>承载</strong>：全屏覆盖窗口，半透明背景（透明度约 92%），主屏内容可透出感知</li>
+          <li><strong>退出</strong>：复制话术后自动隐藏；ESC 手动隐藏；点击窗口外区域隐藏</li>
+          <li><strong>使用画面</strong>：在主屏想事情 → 按下快捷键 → 仪表盘全屏覆盖 → 扫视/搜索定位话术 → 点击或回车复制 → 窗口自动隐藏 → 回到主屏粘贴</li>
+        </ul>
+
+        <h4 id="ch04-aux-form">辅形态的核心特征</h4>
+        <ul>
+          <li><strong>触发</strong>：应用启动时常驻于副屏</li>
+          <li><strong>承载</strong>：副屏常驻窗口，不覆盖主屏</li>
+          <li><strong>退出</strong>：不退出（关闭应用即关闭副屏视图）</li>
+          <li><strong>使用画面</strong>：月度 review / 整理资产 / 跟随长 SOP 时 → 抬头看副屏 → 在副屏点击/编辑 → 主屏继续工作</li>
+        </ul>
+
+        <h4 id="ch04-ui-share">UI 共用规则</h4>
+        <p>两种形态使用<strong>同一套 UI 模块</strong>，区别只在容器布局：</p>
+        <table class="table-stack">
+          <thead><tr><th>模块</th><th>主形态</th><th>辅形态</th></tr></thead>
+          <tbody>
+            <tr><td data-label="模块">搜索框</td><td data-label="主">顶部居中，中等大小</td><td data-label="辅">顶部居中，中等大小</td></tr>
+            <tr><td data-label="模块">相位带</td><td data-label="主">搜索框下方，8 个横排</td><td data-label="辅">搜索框下方，8 个横排</td></tr>
+            <tr><td data-label="模块">Macro 区</td><td data-label="主">中部左侧，60% 宽</td><td data-label="辅">中部左侧，60% 宽</td></tr>
+            <tr><td data-label="模块">Scene 区</td><td data-label="主">中部右侧,40% 宽</td><td data-label="辅">中部右侧，40% 宽</td></tr>
+            <tr><td data-label="模块">最近使用</td><td data-label="主">底部左侧</td><td data-label="辅">底部左侧</td></tr>
+            <tr><td data-label="模块">SOP 导航</td><td data-label="主">底部右侧</td><td data-label="辅">底部右侧</td></tr>
+            <tr><td data-label="模块">状态栏</td><td data-label="主">最底部</td><td data-label="辅">最底部</td></tr>
+          </tbody>
+        </table>
+
+        <p><strong>差异点</strong>：主形态背景半透明、有"复制即隐藏"动画、ESC 关闭；辅形态背景不透明、不会隐藏、可选展开 Composition 工作台为侧栏。</p>
+
+        <h3 id="ch04-layout">3.2 一屏全景布局原则</h3>
+        <p><strong>真实仪表盘对应物</strong>：汽车仪表盘上，时速表、转速表、油量、水温、挡位指示灯<strong>同时可见</strong>，驾驶员不需要切换视图。</p>
+
+        <p><strong>决策</strong>：仪表盘首屏（两种形态都适用）必须同时呈现以下七个区域：</p>
+        <ol>
+          <li><strong>搜索框</strong>（顶部居中，中等大小）——全局兜底入口，⌘K 唤起聚焦</li>
+          <li><strong>相位带</strong>——8 个 Phase 横排，承载 AlignmentPhrase 一键调用</li>
+          <li><strong>Macro 区</strong>——当前所有 Macro 作为卡片墙置顶</li>
+          <li><strong>Scene 区</strong>——按场景横切的话术分类（Tab 切换）</li>
+          <li><strong>最近使用区</strong>——最近 5 次复制历史（时间倒序）</li>
+          <li><strong>SOP 导航区</strong>——当前激活的 SOP 模板 + 进度指示</li>
+          <li><strong>状态栏</strong>——今日复制次数、当前相位、未分类草稿等指标</li>
+        </ol>
+
+        <p><strong>为什么搜索框是"兜底"而非"主路径"</strong>：哲学二要求扫视为主、搜索为辅；搜索是"知道有这条话术但记不清在哪"时的兜底；搜索框视觉权重刻意压低（背景浅灰、占位文字、约 60% 宽度居中），不诱导优先使用。</p>
+
+        <p><strong>反设计</strong>：搜索框作为主导航（Raycast、Alfred）——隐藏了全局信息；瀑布流式——需要滚动才能看全；主导航 Tab 式——把同类信息藏在不同 Tab 里。</p>
+
+        <h3 id="ch04-click-path">3.3 点击路径按频率分层</h3>
+        <p><strong>真实仪表盘对应物</strong>：换挡杆的挡位布局——1、3、5 挡在上排（常用），2、4、R 挡在下排（次常用）。使用者按频率找挡位，不是按字母顺序。</p>
+
+        <table class="table-stack">
+          <thead><tr><th>层级</th><th>点击路径</th><th>步数</th></tr></thead>
+          <tbody>
+            <tr><td data-label="层级">AlignmentPhrase（相位带）</td><td data-label="路径">首屏顶部 → 点击即复制</td><td data-label="步数">1 步</td></tr>
+            <tr><td data-label="层级">Macro</td><td data-label="路径">首屏直达 → 点击即复制</td><td data-label="步数">1 步</td></tr>
+            <tr><td data-label="层级">最近使用</td><td data-label="路径">首屏直达 → 点击即复制</td><td data-label="步数">1 步</td></tr>
+            <tr><td data-label="层级">Scene 内话术</td><td data-label="路径">点 Scene → 点话术</td><td data-label="步数">2 步</td></tr>
+            <tr><td data-label="层级">Composition 组合</td><td data-label="路径">进入组合模式 → 勾选 → 调序 → 复制</td><td data-label="步数">3-4 步</td></tr>
+          </tbody>
+        </table>
+
+        <h3 id="ch04-interaction-freq">3.4 交互频率与路径（行为契约）</h3>
+        <table class="table-stack">
+          <thead><tr><th>调用频率</th><th>主要路径</th><th>设计要求</th></tr></thead>
+          <tbody>
+            <tr><td data-label="频率">极高频（70%）</td><td data-label="路径">快捷键唤起 → 扫视 → 点击/回车复制</td><td data-label="要求">主形态默认入口，1-2 秒完成</td></tr>
+            <tr><td data-label="频率">高频（15%）</td><td data-label="路径">快捷键唤起 → ⌘K 搜索 → 选 → 复制</td><td data-label="要求">搜索作为兜底，3-4 秒完成</td></tr>
+            <tr><td data-label="频率">中频（10%）</td><td data-label="路径">快捷键唤起 → Composition 工作台（⌘N） → 组装 → 复制</td><td data-label="要求">现场组装场景</td></tr>
+            <tr><td data-label="频率">低频（5%）</td><td data-label="路径">副屏深度操作 → 整理 / 配置 / Review</td><td data-label="要求">月度场景，不追求速度</td></tr>
+          </tbody>
+        </table>
+
+        <h3 id="ch04-feedback">3.5 状态反馈：刚刚发生了什么</h3>
+        <p>任何操作都必须有即时的视觉确认：</p>
+        <ul>
+          <li><strong>复制成功</strong>：话术卡片闪一下绿色 + 角落显示"已复制"</li>
+          <li><strong>相位切换</strong>：相位带高亮当前相位 + 状态栏显示"当前相位：X"</li>
+          <li><strong>组合添加</strong>：组合队列区出现新条目 + 该 Modifier 卡片变色</li>
+          <li><strong>Macro 保存</strong>：Macro 区顶部出现新卡片 + 轻微上浮动画</li>
+          <li><strong>使用次数更新</strong>：话术卡片右上角的数字 +1</li>
+          <li><strong>拆解视图展开</strong>：Macro 长按 / 右键展开"由哪些 Modifier 组成"</li>
+        </ul>
+
+        <h3 id="ch04-user-flow">3.6 用户旅程（User Flow）</h3>
+        <p>传统 App 的 user flow 是"用户从 A 屏点到 B 屏完成 X 任务"。本项目的 user flow <strong>不只是 UI 跳转</strong>——它必须把"人机协同的认知节奏"画出来。一次完整任务横跨<strong>主屏（Claude Code 对话）+ 仪表盘 + 头脑（认知动作）</strong>三个空间。</p>
+
+        <p>下面 3 个核心场景按<strong>主形态视角</strong>描写。辅形态差异：不需要"按下快捷键"——副屏永远在场；复制后窗口不会自动隐藏——副屏持续呈现；余光感知关键状态。</p>
+
+        <h4 id="ch04-flow-1">场景一：完整 SOP 驱动型（方案设计任务）</h4>
+
+        <p><strong>任务背景</strong>：接到新需求"给现有系统加一个数据导出模块"。已有"方案设计型 SOP"模板可以驱动整个流程。</p>
+
+        <h5>叙事</h5>
+        <blockquote>
+          <p>我在主屏的 Claude Code 里打开了项目，光标停在对话框里。但我没有立刻打字——我先<strong>抬头看副屏</strong>。</p>
+          <p>副屏的相位带最顶部，8 个 Phase 横排着。我此刻要做的是方案设计，第一步应该是<strong>调研外部最佳实践</strong>——这是"发散"相位。我<strong>点了一下"发散"</strong>，剪贴板里立刻有了那条对齐话术。我<strong>回到主屏</strong>，Cmd+V 粘贴，回车。</p>
+          <p>Claude 收到了对齐话术，回了一句"好，我们现在进入发散模式，先不下结论"。</p>
+          <p>然后我<strong>再次抬头看副屏</strong>——SOP 导航区已经识别出我刚才用的话术属于"方案设计型 SOP"的第 1 步。我<strong>点击 SOP 中的第 1 步</strong>，剪贴板里换成了"借力最优解"这条 Macro。<strong>回到主屏粘贴</strong>，加上我的具体任务描述。</p>
+          <p>Claude 给我铺开了 5 个方案。看完，发现已经够发散了，该收敛了。<strong>抬头看副屏</strong>——状态栏显示"当前相位：发散"。我<strong>点击相位带的"收敛"</strong>，剪贴板里有了收敛对齐话术，<strong>主屏粘贴</strong>。SOP 导航区同步推进到了第 2 步。</p>
+          <p>任务结束前，副屏弹出一个不打扰的提示："你今天用了一个新组合 3 次，是否保存为 Macro？" 我<strong>点确认</strong>，那个组合成了 Macro 区的新卡片。</p>
+        </blockquote>
+
+        <p><strong>验证的设计</strong>：哲学三物理分离；哲学四使用即沉淀；哲学六受控离手；哲学七协议对齐；相位带承担挡位切换器角色；SOP 导航区承担"下一步建议"角色；状态仪表区承担相位监视器角色。</p>
+
+        <h4 id="ch04-flow-2">场景二：单点快速调用型（日常排查任务）</h4>
+
+        <p><strong>任务背景</strong>：凌晨值班，监控告警了一个生产 bug。需要快速排查，不走 SOP——这种任务太熟，凭肌肉记忆走就行。</p>
+
+        <h5>叙事</h5>
+        <blockquote>
+          <p>告警弹出来，我直接打开 Claude Code，光标进对话框。</p>
+          <p>我<strong>抬头一眼副屏</strong>——不为切相位，只为确认当前状态。状态栏显示"当前相位：沉淀"（这是我上次工作留下的）。这次任务我要进入"理解"——先搞清楚 bug 是什么。我<strong>点击相位带的"理解"</strong>，剪贴板有了对齐话术。<strong>回主屏粘贴</strong>，加上"这是生产告警日志：[贴日志]，请帮我定位根因"。</p>
+          <p>Claude 提出了一个假设：可能是某个服务的连接池耗尽了。这次任务有标准 Macro——"先调研对比方案"。我<strong>抬头看 Macro 区</strong>，第二排第一张卡片就是它（按使用频次排序，它经常用），<strong>点击</strong>，剪贴板就绪。<strong>回主屏粘贴</strong>。</p>
+          <p>整个过程<strong>没有打开 SOP 导航、没有用 Composition 工作台</strong>——只用了相位带和 Macro 区。</p>
+        </blockquote>
+
+        <p><strong>验证的设计</strong>：哲学二的"反例验证"——高频任务下凭肌肉记忆只用相位带+Macro 区，不需要看全景，但全景"在那里"作为安全网；1 步抵达 Macro 是高频任务的命脉；状态仪表的余光价值——开始任务时一眼扫到"当前相位"，不需要打开任何界面。</p>
+
+        <h4 id="ch04-flow-3">场景三：组合工作台沉淀型（新型任务）</h4>
+
+        <p><strong>任务背景</strong>：接到一个不熟悉的任务"给这个 Python 项目加单元测试覆盖率检查"。没有现成的 SOP，没有现成的 Macro 能直接用——得<strong>临时组装一条话术</strong>，并且这条话术可能将来还会再用。</p>
+
+        <h5>叙事</h5>
+        <blockquote>
+          <p>这个任务我需要<strong>先想清楚怎么问</strong>。<strong>切到副屏</strong>，先点击相位带的"规划"——告诉 Claude 我们现在要规划。<strong>回主屏粘贴</strong>。</p>
+          <p>然后我<strong>回到副屏，打开 Composition 工作台</strong>。工作台左边是 Modifier 池，分四组排列。我开始挑：</p>
+          <ul>
+            <li>认知前置组：选<strong>"第一性原理思考"</strong></li>
+            <li>动作策略组：选<strong>"主动调研推进"</strong>和<strong>"启动子代理并行"</strong></li>
+            <li>产出形态组：选<strong>"先出方案我拍板"</strong></li>
+            <li>通用约束组：选<strong>"确保不影响现有功能"</strong>和<strong>"用中文回答"</strong></li>
+          </ul>
+          <p>选完后，在角色输入框写"作为质量保障合伙人"，在任务输入框写"为本项目设计单测覆盖率检查方案"。工作台底部实时预览拼好。点<strong>"复制"</strong>，<strong>回主屏粘贴</strong>。</p>
+          <p>任务结束后，我<strong>回到副屏的 Composition 工作台</strong>。这条组合<strong>将来做类似的"为陌生项目设计某类方案"还会用</strong>。我点了<strong>"保存为 Macro"</strong>，命名为"陌生领域方案设计"。Macro 区立刻多了一张新卡片。</p>
+        </blockquote>
+
+        <p><strong>验证的设计</strong>：哲学五完整跑通"Modifier 原子 → Composition 组合 → Macro 固化"三层跃迁；Composition 工作台作为"陌生任务的应对工具"和"沉淀新资产的入口"双重价值；expandFrom 字段的实战价值；哲学四的最强体现——一个新任务的副产品是一个新 Macro，沉淀成本几乎为零。</p>
+
+        <h4 id="ch04-flow-cross">跨场景对照表</h4>
+        <table class="table-stack">
+          <thead><tr><th>模块</th><th>SOP 驱动</th><th>单点调用</th><th>现场组装</th></tr></thead>
+          <tbody>
+            <tr><td data-label="模块">搜索区</td><td data-label="SOP">—</td><td data-label="单点">—</td><td data-label="组装">—</td></tr>
+            <tr><td data-label="模块">相位带</td><td data-label="SOP">⭐⭐⭐</td><td data-label="单点">⭐⭐</td><td data-label="组装">⭐⭐</td></tr>
+            <tr><td data-label="模块">Macro 快捷区</td><td data-label="SOP">⭐⭐</td><td data-label="单点">⭐⭐⭐</td><td data-label="组装">⭐（创建）</td></tr>
+            <tr><td data-label="模块">Scene 全景区</td><td data-label="SOP">—</td><td data-label="单点">—</td><td data-label="组装">—</td></tr>
+            <tr><td data-label="模块">Composition 工作台</td><td data-label="SOP">—</td><td data-label="单点">—</td><td data-label="组装">⭐⭐⭐</td></tr>
+            <tr><td data-label="模块">最近使用区</td><td data-label="SOP">—</td><td data-label="单点">—</td><td data-label="组装">—</td></tr>
+            <tr><td data-label="模块">SOP 导航区</td><td data-label="SOP">⭐⭐⭐</td><td data-label="单点">—</td><td data-label="组装">—</td></tr>
+            <tr><td data-label="模块">状态仪表区</td><td data-label="SOP">⭐（事后）</td><td data-label="单点">⭐（事前）</td><td data-label="组装">⭐（事后）</td></tr>
+          </tbody>
+        </table>
+
+        <p><strong>关键观察</strong>：相位带在所有场景都被使用，印证了哲学七的普适性；不同场景使用不同核心模块，印证了一屏全景的必要性；Scene 区在三个场景中都未直接出场，是值得标记的现象。</p>
+
+        <h3 id="ch04-ui-draft">4.7 主形态 UI 草案</h3>
+        <p>本节是 v0.5 新增附录，落地了快捷键唤起全屏覆盖窗口的具体 UI 布局。</p>
+
+        <h4 id="ch04-ui-premise">设计前提</h4>
+        <ul>
+          <li><strong>触发方式</strong>：全局快捷键（默认 <code>⌥ Space</code>）</li>
+          <li><strong>承载形态</strong>：全屏覆盖窗口，背景半透明约 92%</li>
+          <li><strong>退出方式</strong>：复制即隐藏 / ESC / 点击窗口外</li>
+          <li><strong>导航策略</strong>：扫视为主、搜索为兜底；不做主导航 Tab</li>
+          <li><strong>从资产结构反推 UI</strong>：不从 UI 形态出发去设计，而是从已确定的资产结构反推页面布局</li>
+        </ul>
+
+        <h4 id="ch04-ui-areas">区域分层</h4>
+        <ul>
+          <li><strong>顶部 · 入口层</strong>：搜索区（居中 60% 宽，浅灰背景，⌘K 聚焦，兜底）+ 相位带（8 个 Phase 横排，⌘1-8 直切，紫色高亮）</li>
+          <li><strong>中部 · 主工作区</strong>：Macro 区（左 60%，卡片墙，按热度排序，绿色主战场）+ Scene 区（右 40%，Tab 切换，子阶段分组）</li>
+          <li><strong>底部 · 辅助信息层</strong>：最近使用（左 50%，5 条历史）+ SOP 进度（右 50%，进度条 + 下一步，未激活折叠）</li>
+          <li><strong>最底 · 状态栏</strong>：今日复制次数 · 当前相位 · 草稿待沉淀 · 右侧快捷键提示</li>
+        </ul>
+
+        <h4 id="ch04-shortcuts">关键交互快捷键</h4>
+        <table class="table-stack">
+          <thead><tr><th>快捷键</th><th>动作</th><th>备注</th></tr></thead>
+          <tbody>
+            <tr><td data-label="键"><code>⌥ Space</code></td><td data-label="动作">全局唤起仪表盘</td><td data-label="备注">默认值，可配置</td></tr>
+            <tr><td data-label="键"><code>ESC</code></td><td data-label="动作">关闭仪表盘</td><td data-label="备注">任何时候可用</td></tr>
+            <tr><td data-label="键"><code>⏎</code></td><td data-label="动作">复制当前选中项 + 自动隐藏</td><td data-label="备注">主形态默认行为</td></tr>
+            <tr><td data-label="键"><code>⌘K</code></td><td data-label="动作">焦点跳到搜索框</td><td data-label="备注">唤起即已默认聚焦</td></tr>
+            <tr><td data-label="键"><code>⌘1</code> - <code>⌘8</code></td><td data-label="动作">直接切换到第 N 个相位 + 复制对齐话术</td><td data-label="备注">哲学七的极速通道</td></tr>
+            <tr><td data-label="键"><code>⌘N</code></td><td data-label="动作">唤起 Composition 工作台子窗口</td><td data-label="备注">现场组装</td></tr>
+            <tr><td data-label="键"><code>⌘,</code></td><td data-label="动作">唤起配置面板</td><td data-label="备注">编辑 Scene/Phase/Modifier</td></tr>
+            <tr><td data-label="键"><code>↑↓←→</code></td><td data-label="动作">在卡片间移动焦点</td><td data-label="备注">键盘党的扫视路径</td></tr>
+            <tr><td data-label="键"><code>Tab</code></td><td data-label="动作">在区域间切换焦点</td><td data-label="备注">区域级导航</td></tr>
+          </tbody>
+        </table>
+      </section>
+
+      <!-- ============================================================
+           Chapter 05 · user-flows.md
+           ============================================================ -->
+      <section class="chapter" id="ch05">
+        <h2><span class="chapter-num">05</span>user-flows.md</h2>
+        <p class="muted" style="font-size: 0.88em; margin-top: -0.5em;">product-spec §4.5 未覆盖的边缘 / 异常 / 跨形态流程（🤝 共创）</p>
+
+        <p>本章只补充 product-spec 三个核心 flow（SOP 驱动型 / 单点调用型 / 组合沉淀型）<strong>未覆盖</strong>的流程：跨形态切换 / 升级迁移 / 数据导入失败 / 删除资产 / 快捷键冲突 / 首次使用 / 跨设备同步。</p>
+
+        <h3 id="ch05-uf1">5.1 跨形态切换（主 ↔ 辅）</h3>
+        <p><strong>场景</strong>：用户在副屏开着辅形态做月度 review，主屏正在和 AI 对话，忽然需要快速复制一个 Macro。</p>
+        <pre><code>用户在主屏对话 → ⌥ Space → 主形态弹出（覆盖主屏）
+  → 点 Macro 复制 → 主形态自动隐藏（哲学六）
+  → 辅形态副屏状态同步更新（usage_count +1）
+  → 用户继续 review，看到刚才用的 Macro 高亮在「最近使用区」</code></pre>
+        <p><strong>关键约束</strong>：主辅形态共享同一数据后端；主形态复制触发 UsageRecord 写入 → 辅形态 reactive 监听更新；辅形态<strong>不要</strong>因主形态唤起而隐藏。</p>
+
+        <h3 id="ch05-uf2">5.2 升级迁移（schema_version 演进）</h3>
+        <p><strong>场景</strong>：用户使用 v1.x，应用升级到 v2.0（major 升级）。</p>
+        <pre><code>启动 → 检测 schema_version=1.1 vs 代码内置 2.0
+  → 显式弹窗：「v2.0 即将到来 / 影响范围 / 会丢失字段 / 是否继续」
+  → [取消] → 保持 v1.x 二进制继续运行
+  → [继续] → 强制要求导出 v1.x 备份到指定位置
+    → 导出成功 → 执行 migrate_1_x_to_2_0
+      → 迁移成功 → schema_version=2.0，记录 migration_log
+      → 迁移失败 → 回滚到备份 → 错误提示 + 用户介入
+    → 导出失败 → 中止迁移，保持 v1.x</code></pre>
+        <p><strong>约束</strong>：minor 升级零感知；major 升级强同意；任何迁移前自动备份。</p>
+
+        <h3 id="ch05-uf3">5.3 数据导入失败</h3>
+        <p>用户从其他工具导入 JSON 数据，格式不兼容或含恶意字段。</p>
+        <pre><code>view:data-io → 选择 JSON → 导入
+  → schema 校验
+    → 通过 → 写入本地数据库 → 提示「成功导入 N 条」
+    → 失败 → 显示具体错误 → 提供「查看示例 schema」
+            → 数据库保持导入前状态（事务回滚）</code></pre>
+        <p><strong>关键约束</strong>：禁拒键 <code>__proto__</code> / <code>constructor</code> / <code>prototype</code>（防原型污染）；单条话术 ≤ 5000 字符；总文件 ≤ 10 MB；必须显示具体错误，不允许"导入失败请重试"模糊提示。</p>
+
+        <h3 id="ch05-uf4">5.4 删除资产的 ask-first flow</h3>
+        <p>用户在配置面板尝试删除一个使用过 48 次的 Macro，弹三选项：取消 / 标记为 deprecated（保留历史）/ 永久删除。三选项必须始终给（不允许"取消/确认"二选一）；高频使用资产（usage_count ≥ 10）默认推荐 deprecated 而非删除。</p>
+
+        <h3 id="ch05-uf5">5.5 快捷键冲突</h3>
+        <p>用户配置全局快捷键为 <code>⌥ Space</code>，但 macOS Spotlight 也占用此组合：弹窗 → 选项①改用备选 ⌥ ⇧ Space ②自定义其他组合 ③暂时只用辅形态 → 选择后写入 config + 重试注册。</p>
+
+        <h3 id="ch05-uf6">5.6 首次使用 onboarding</h3>
+        <p>引导页 ≤ 3 屏（定位 + 三层资产 + 是否导入示例）；不强制导入示例；不弹出教程视频；不要求账号注册。</p>
+
+        <h3 id="ch05-uf7">5.7 跨设备数据同步（最终一致性）</h3>
+        <p>Mac 上：view:data-io → 导出 JSON → 保存到 iCloud Drive → iPad 应用启动 → 检测 iCloud 同步目录 → 提示导入。<strong>约束</strong>：不做实时同步；iPad 只读为主，不主动写回；通过 Git / iCloud / 手动 USB 同步 JSON，工具不绑定具体同步方式。</p>
+
+      </section>
+
+      <!-- ============================================================
+           Chapter 06 · design-spec.md
+           ============================================================ -->
+      <section class="chapter" id="ch06">
+        <h2><span class="chapter-num">06</span>design-spec.md</h2>
+        <p class="muted" style="font-size: 0.88em; margin-top: -0.5em;">视觉规范 · 字号 / 间距 / 颜色 / 动画 Token · WCAG 对比度实测 · 暗色模式占位（🤝 共创）</p>
+
+        <h3 id="ch06-design-principle">6.1 设计原则</h3>
+        <p><strong>真实仪表盘对应物</strong>：汽车仪表盘的字体和图标都比普通显示器大，颜色对比度更高——因为驾驶员是扫视，不是阅读。</p>
+        <p><strong>核心决策</strong>：UI 参数比常规网页放大一档，针对"扫视为主、阅读为辅"场景优化。使用者需要在 <strong>1 秒内识别屏幕上的关键资产</strong>。</p>
+
+        <h3 id="ch06-fs-token">6.2 字号 Token</h3>
+        <table class="table-stack">
+          <thead><tr><th>Token</th><th>值</th><th>用途映射</th></tr></thead>
+          <tbody>
+            <tr><td data-label="Token"><code>--fs-xs</code></td><td data-label="值">11px / 0.6875rem</td><td data-label="用途">元数据 / 状态栏 / 快捷键提示</td></tr>
+            <tr><td data-label="Token"><code>--fs-sm</code></td><td data-label="值">13px / 0.8125rem</td><td data-label="用途">Phrase 卡片 / 相位带 Phase 名 / Tab 标签</td></tr>
+            <tr><td data-label="Token"><code>--fs-base</code></td><td data-label="值">14px / 0.875rem</td><td data-label="用途">Macro 卡片标题（加粗 600）</td></tr>
+            <tr><td data-label="Token"><code>--fs-md</code></td><td data-label="值">16px / 1rem</td><td data-label="用途">正文起步（默认 body）</td></tr>
+            <tr><td data-label="Token"><code>--fs-lg</code></td><td data-label="值">18px / 1.125rem</td><td data-label="用途">卡片标题（常规）</td></tr>
+            <tr><td data-label="Token"><code>--fs-xl</code></td><td data-label="值">20px / 1.25rem</td><td data-label="用途">卡片标题（强调，仅相位带 Phase 名加粗变体）</td></tr>
+          </tbody>
+        </table>
+        <p><strong>字重约定</strong>：默认 400；标题档加粗 600；其余档保持 400。</p>
+
+        <h3 id="ch06-space-token">6.3 间距与热区 Token</h3>
+        <p>4px 基准网格——所有间距 / 高度 / 内外边距必须是 4px 倍数。命名约定：<code>--space-{n}</code>，n 为 4px 的倍数。</p>
+        <table class="table-stack">
+          <thead><tr><th>Token</th><th>值</th><th>用途</th></tr></thead>
+          <tbody>
+            <tr><td data-label="Token"><code>--space-1</code></td><td data-label="值">4px</td><td data-label="用途">进度条高度 / 极紧凑分隔</td></tr>
+            <tr><td data-label="Token"><code>--space-3</code></td><td data-label="值">12px</td><td data-label="用途">卡片间距（最小）</td></tr>
+            <tr><td data-label="Token"><code>--space-6</code></td><td data-label="值">24px</td><td data-label="用途">Tab pill 高度 / 模块间隔</td></tr>
+            <tr><td data-label="Token"><code>--space-8</code></td><td data-label="值">32px</td><td data-label="用途">状态栏高度</td></tr>
+            <tr><td data-label="Token"><code>--space-10</code></td><td data-label="值">40px</td><td data-label="用途">搜索框高度</td></tr>
+            <tr><td data-label="Token"><code>--space-12</code></td><td data-label="值">48px</td><td data-label="用途">卡片最小高度（原 50px 收敛到 4px grid）</td></tr>
+            <tr><td data-label="Token"><code>--space-20</code></td><td data-label="值">80px</td><td data-label="用途">相位带高度（视觉权重最高）</td></tr>
+          </tbody>
+        </table>
+        <p><strong>热区最小尺寸</strong>：任何可点击元素 ≥ 48px × 48px，符合 WCAG 2.5.5 Target Size (AAA) 要求。</p>
+
+        <h3 id="ch06-contrast">6.4 对比度（WCAG 实测）</h3>
+        <p><strong>总原则</strong>：主文字 vs 背景 ≥ 7:1（WCAG AAA）；非文字元素（边框 / 图标 / 控件）≥ 3:1；禁止依赖颜色单一维度传递信息——必须颜色 + 形状 + 位置多维度冗余编码。</p>
+
+        <table class="table-stack">
+          <thead><tr><th>配色组合</th><th>前景</th><th>背景</th><th>实测</th><th>评级</th></tr></thead>
+          <tbody>
+            <tr><td data-label="组合">白底 + 主文字</td><td data-label="前景"><code>#1A1A1A</code></td><td data-label="背景"><code>#FFFFFF</code></td><td data-label="实测">17.40:1</td><td data-label="评级">AAA ✓</td></tr>
+            <tr><td data-label="组合">紫卡 + 主文字</td><td data-label="前景"><code>#1A1A1A</code></td><td data-label="背景"><code>#EEEDFE</code></td><td data-label="实测">15.07:1</td><td data-label="评级">AAA ✓</td></tr>
+            <tr><td data-label="组合">绿卡 + 主文字</td><td data-label="前景"><code>#1A1A1A</code></td><td data-label="背景"><code>#E1F5EE</code></td><td data-label="实测">15.33:1</td><td data-label="评级">AAA ✓</td></tr>
+            <tr><td data-label="组合">紫边框 vs 紫 bg</td><td data-label="前景"><code>#534AB7</code></td><td data-label="背景"><code>#EEEDFE</code></td><td data-label="实测">6.00:1</td><td data-label="评级">AA Normal ✓</td></tr>
+            <tr><td data-label="组合">原绿边框 vs 绿 bg（已弃用）</td><td data-label="前景"><code>#1D9E75</code></td><td data-label="背景"><code>#E1F5EE</code></td><td data-label="实测">2.98:1</td><td data-label="评级">❌ FAIL</td></tr>
+            <tr><td data-label="组合"><strong>新绿边框 vs 绿 bg</strong></td><td data-label="前景"><strong><code>#178561</code></strong></td><td data-label="背景"><code>#E1F5EE</code></td><td data-label="实测"><strong>4.05:1</strong></td><td data-label="评级">Non-text ✓ <strong>采纳</strong></td></tr>
+          </tbody>
+        </table>
+
+        <p><strong>结论</strong>：任何文字必须用主深色 <code>#1A1A1A</code>（对比度均 ≥ 15:1，远超 AAA）；彩色 token 仅用于边框 / 图标 / 强调色块，不可作正文文字；绿边框已修订 <code>#1D9E75</code> → <code>#178561</code>（2026-05-18 采纳候选 A）。</p>
+
+        <h3 id="ch06-color-token">6.5 颜色 Token（CSS Variables）</h3>
+        <p>按视觉层级分三色系（协议层 紫 / 任务层 绿 / 辅助层 灰）。命名约定：<code>--color-{语义层}-{角色}</code>。</p>
+
+        <table class="table-stack">
+          <thead><tr><th>语义层</th><th>Token</th><th>值</th><th>适用模块</th></tr></thead>
+          <tbody>
+            <tr><td data-label="语义层"><strong>协议层（紫）</strong></td><td data-label="Token"><code>--color-protocol-bg</code></td><td data-label="值"><code>#EEEDFE</code></td><td data-label="模块">相位带背景 / 当前激活</td></tr>
+            <tr><td data-label="语义层">协议层</td><td data-label="Token"><code>--color-protocol-border</code></td><td data-label="值"><code>#534AB7</code></td><td data-label="模块">紫色边框（不可作文字）</td></tr>
+            <tr><td data-label="语义层"><strong>任务层（绿）</strong></td><td data-label="Token"><code>--color-task-bg</code></td><td data-label="值"><code>#E1F5EE</code></td><td data-label="模块">Macro 区 / Scene 区背景</td></tr>
+            <tr><td data-label="语义层">任务层</td><td data-label="Token"><code>--color-task-border</code></td><td data-label="值"><code>#178561</code></td><td data-label="模块">绿色边框（修订自 #1D9E75）</td></tr>
+            <tr><td data-label="语义层"><strong>辅助层（灰）</strong></td><td data-label="Token"><code>--color-aux-bg</code></td><td data-label="值"><code>#F1EFE8</code></td><td data-label="模块">搜索框 / 最近使用 / 状态栏背景</td></tr>
+            <tr><td data-label="语义层">辅助层</td><td data-label="Token"><code>--color-aux-border</code></td><td data-label="值"><code>#888780</code></td><td data-label="模块">灰色边框（不可作文字）</td></tr>
+          </tbody>
+        </table>
+
+        <p><strong>颜色编码语义</strong>：协议层（紫）= 哲学七视觉权重最高，余光感知 → 相位带、激活态；任务层（绿）= 高频使用要醒目 → Macro / Scene 主战场；辅助层（灰）= 兜底 / 历史 / 状态，视觉压低。</p>
+
+        <h3 id="ch06-darkmode">6.6 暗色模式（v1.0 占位声明）</h3>
+        <p><strong>决策</strong>：v1.0 <strong>暂不实现</strong>暗色模式。<strong>理由</strong>：MVP 阶段聚焦主形态稳定，暗色模式涉及全 token 体系反色 + 对比度重测；扫视优先场景对单一稳定色彩环境的依赖更强；当前主形态使用场景以亮色环境为主，夜间场景占比 &lt; 20%。</p>
+        <p><strong>启动前置条件</strong>（满足任一即触发）：主形态视觉 token 稳定 3 个月 + 无重大变更；使用者反馈夜间使用频率 ≥ 30%；屏幕亮度自适应反馈强烈需求。</p>
+
+        <h3 id="ch06-animation">6.7 动画 Token</h3>
+        <table class="table-stack">
+          <thead><tr><th>Token</th><th>值</th><th>用途</th></tr></thead>
+          <tbody>
+            <tr><td data-label="Token"><code>--duration-instant</code></td><td data-label="值">100ms</td><td data-label="用途">即时反馈（卡片闪烁）</td></tr>
+            <tr><td data-label="Token"><code>--duration-fast</code></td><td data-label="值">200ms</td><td data-label="用途">主形态状态反馈 / 隐藏过渡</td></tr>
+            <tr><td data-label="Token"><code>--duration-base</code></td><td data-label="值">300ms</td><td data-label="用途">主形态状态反馈（稍长档）</td></tr>
+            <tr><td data-label="Token"><code>--duration-slow</code></td><td data-label="值">500ms</td><td data-label="用途">辅形态状态反馈（"持续在场"）</td></tr>
+            <tr><td data-label="Token"><code>--ease-out</code></td><td data-label="值"><code>cubic-bezier(0.16, 1, 0.3, 1)</code></td><td data-label="用途">进场动画（淡入 / 滑入）</td></tr>
+            <tr><td data-label="Token"><code>--ease-in-out</code></td><td data-label="值"><code>cubic-bezier(0.4, 0, 0.2, 1)</code></td><td data-label="用途">切换 / 渐变（Material standard）</td></tr>
+            <tr><td data-label="Token"><code>--ease-spring</code></td><td data-label="值"><code>cubic-bezier(0.34, 1.56, 0.64, 1)</code></td><td data-label="用途">上浮 / 弹出（轻微回弹感）</td></tr>
+          </tbody>
+        </table>
+        <p><strong>统一原则</strong>：动画必须显式声明 <code>transition: &lt;property&gt; var(--duration-X) var(--ease-Y)</code>，禁止使用裸时长（如 <code>transition: 200ms</code>）。</p>
+
+        <h3 id="ch06-dual-visual">6.8 双形态视觉适配</h3>
+        <table class="table-stack">
+          <thead><tr><th>视觉要素</th><th>主形态</th><th>辅形态</th></tr></thead>
+          <tbody>
+            <tr><td data-label="要素">背景</td><td data-label="主">半透明 92%，主屏内容可透出</td><td data-label="辅">不透明，独立窗口</td></tr>
+            <tr><td data-label="要素">距离</td><td data-label="主">30-40cm（直视主屏正前方）</td><td data-label="辅">50-70cm（侧目扫视）</td></tr>
+            <tr><td data-label="要素">字号基准</td><td data-label="主">16px 起步</td><td data-label="辅">16-18px 起步（更大）</td></tr>
+            <tr><td data-label="要素">输入焦点</td><td data-label="主">唤起即聚焦搜索框</td><td data-label="辅">不自动聚焦</td></tr>
+          </tbody>
+        </table>
+
+        <h3 id="ch06-anti-design">6.9 反设计清单</h3>
+        <ul>
+          <li>❌ 小型 X 关闭按钮——扫视优先场景需要大热区</li>
+          <li>❌ 多层嵌套的菜单——违背一屏全景哲学</li>
+          <li>❌ 需要悬停才显示的内容——主形态唤起后用户不会把鼠标停在界面上等待 tooltip</li>
+          <li>❌ 依赖颜色单一维度传递信息——需要颜色 + 形状 + 位置多维度冗余编码</li>
+          <li>❌ 需要长按才能触发的操作——手动挡阶段不接受"藏起来"的功能</li>
+          <li>❌ 用花哨的图表——手动挡阶段追求信息密度，不是炫技</li>
+          <li>❌ 把配置项藏在设置页——常用配置应该在首屏就能调</li>
+          <li>❌ 用复杂的设置系统——每个配置项应该是"点一下就切换"的简单开关</li>
+        </ul>
+      </section>
+
+
+      <!-- ============================================================
+           Chapter 07 · prd.md
+           ============================================================ -->
+      <section class="chapter" id="ch07">
+        <h2><span class="chapter-num">07</span>prd.md</h2>
+        <p class="muted" style="font-size: 0.88em; margin-top: -0.5em;">工程契约 · 功能模块 · 数据模型三表式 · 状态机 · 升级回滚 · NFR · Boundaries · 安全字段（🤖 AI 主笔 + 人审）</p>
+
+        <h3 id="ch07-modules">7.1 功能模块（§5）</h3>
+
+        <h4 id="ch07-m-search">5.0 搜索区</h4>
+        <p><strong>定位</strong>：首屏顶部居中的全局搜索框。承担"扫视找不到时的兜底"角色，不是主入口。</p>
+        <p><strong>关键交互</strong>：<code>⌘K</code> 焦点跳到搜索框；输入关键字过滤所有资产；↑↓ 选择 → ⏎ 复制并隐藏；ESC 清空，焦点回到首屏。</p>
+        <p><strong>搜索范围</strong>：Macro / Phrase / AlignmentPhrase / SOP 纳入；Modifier / Composition 不纳入（Modifier 是组合材料；Composition 是临时态）。</p>
+        <p><strong>为什么是"兜底"</strong>：哲学二要求扫视为主——主要查找路径是看卡片墙；搜索框视觉权重刻意压低，不诱导优先使用；当用户记得有这条话术、忘了在哪个 Scene 时，搜索是必要的兜底。</p>
+
+        <h4 id="ch07-m-phase">5.1 相位带（Phase Bar）</h4>
+        <p><strong>定位</strong>：首屏顶部、搜索框下方，承载 AlignmentPhrase 一键调用，是"挡位指示器"和"协议切换器"的合体。哲学七的视觉落地。</p>
+        <p><strong>交互</strong>：单击 Phase → 复制该 Phase 的<strong>默认 AlignmentPhrase</strong> 到剪贴板 + 状态栏切换显示"当前相位：X"；悬停/长按 → 展开该 Phase 下的所有 AlignmentPhrase 列表；右键 / 长按 → 进入该 Phase 编辑视图。</p>
+        <p><strong>与其他模块的关系</strong>：不与 Macro 区互通；不被 SOP 引用；触发 UsageRecord（target_type: 'alignment'）。</p>
+
+        <h4 id="ch07-m-macro">5.2 Macro 快捷区</h4>
+        <p><strong>定位</strong>：首屏第二显眼位置（仅次于相位带），承载使用者最高频调用的任务话术。</p>
+        <p><strong>内容</strong>：使用者手动标记为 Macro 的话术；每张卡片显示标题 / 内容预览（2-3 行）/ 使用次数 / 最近使用时间；卡片按使用频次排序（可切换为手动排序）。</p>
+        <p><strong>关键交互</strong>：单击 → 复制 + 视觉反馈；长按 / 右键 → 打开"拆解视图"（展示 expandFrom Modifier）；拖拽 → 调整顺序；卡片右上角 "…" → 编辑 / 删除 / 移入 Scene / 标记 deprecated。</p>
+
+        <h4 id="ch07-m-scene">5.3 Scene 全景区</h4>
+        <p><strong>定位</strong>：按"使用时机"横切的话术分类展示。</p>
+        <p><strong>内容</strong>：10 个以内的 Scene 卡片，显示 Scene 名称和图标 / 话术数量 / 前 3-5 条话术标题预览 / 本周使用次数。点击 Scene 后在首屏展开该 Scene 的全部话术（不跳页）。如果 Scene 有 <code>sub_stages[]</code>（如"方案"Scene 的四阶段），按子阶段分组显示。</p>
+
+        <h4 id="ch07-m-comp">5.4 Composition 组合工作台</h4>
+        <p><strong>定位</strong>：把 Modifier 按顺序拼装成完整 Composition 的工作区域。</p>
+        <p><strong>内容</strong>：Modifier 池（20-30 个，按四组排列）；组合队列（被选中的 Modifier 按顺序排列）；角色和任务输入框；实时预览。</p>
+        <p><strong>关键交互</strong>：单击 Modifier → 加入组合队列；队列中的 Modifier 可拖拽排序；填写角色和任务后预览实时刷新；按钮：<strong>复制 / 保存为 Macro / 保存为 Scene 话术 / 清空</strong>。</p>
+        <p><strong>边界</strong>：AlignmentPhrase <strong>不进入</strong>组合工作台——协议层与内容层物理分离。</p>
+
+        <h4 id="ch07-m-recent">5.5 最近使用区</h4>
+        <p><strong>定位</strong>：短期记忆窗口，承载本次工作会话的复制历史。</p>
+        <p><strong>内容</strong>：最近 5 条复制记录（时间倒序），每条显示内容预览（一行）、来源（Macro/Scene/Composition/Alignment）、时间。</p>
+        <p><strong>关键交互</strong>：单击 → 再次复制（最常见用途：刚才粘贴错了）；长按 / 右键 → 把该条话术升级为 Macro（AlignmentPhrase 类型不提供"升级为 Macro"选项）。</p>
+        <p><strong>实现注意</strong>：本地 session 范围，不跨会话保留；5 条是上限，再多就成了"历史记录"而非"最近使用"。</p>
+
+        <h4 id="ch07-m-sop">5.6 SOP 导航区</h4>
+        <p><strong>定位</strong>：跨对话的工作流指引，是整个仪表盘中"向前看"的部分。</p>
+        <p><strong>内容</strong>：当前激活的 SOP 模板（带序号的步骤列表 / 流程图）；进度标记（已完成的步骤打勾，当前步骤高亮，下一步突出）；SOP 模板切换器；"新建 SOP"按钮（从使用历史录制）。</p>
+        <p><strong>SOP 模板的初始设计</strong>：方案设计型 / 调研型 / 排查型 / 复盘型。SOP 模板应该是可自定义的。</p>
+        <p><strong>重要边界</strong>：SOP 步骤<strong>不</strong>引用 AlignmentPhrase——相位切换由使用者在执行 SOP 过程中手动通过相位带完成，不混进 SOP 步骤序列。</p>
+
+        <h4 id="ch07-m-status">5.7 状态仪表区</h4>
+        <p><strong>定位</strong>：量化使用数据，驱动迭代。</p>
+        <p><strong>内容</strong>：今日复制次数 / 今日最常用 Top 3 / 本周新增 Macro 数 / 当前所处相位 / 今日各相位停留次数分布 / 未分类草稿数 / 提示词总数的变化趋势。</p>
+        <p>这是哲学四（使用即沉淀）的<strong>收口模块</strong>——让沉淀从"默默发生"变成"显式可见"。"未分类草稿"是整个系统里最宝贵的信号——它告诉使用者哪些高频使用尚未沉淀。</p>
+        <p><strong>实现注意</strong>：数字要大、显眼，不是装饰性小字；不要用花哨的图表；首次启动空状态需引导文案，不能白屏。</p>
+
+        <h4 id="ch07-m-config">5.8 配置与迭代入口</h4>
+        <p><strong>入口位置</strong>：右上角小齿轮图标。</p>
+        <p><strong>可配置项</strong>：Scene 增删改 / Phase 增删改 / Modifier 池增删 / AlignmentPhrase 批量编辑 / SOP 模板增删 / 首屏区域比例 / 数据导入导出（JSON）。</p>
+
+        <h3 id="ch07-data-model">4.2 数据模型（PRD §6）</h3>
+
+        <h4 id="ch07-asset-tree">资产关系总览</h4>
+        <p>整个数据模型由三条正交的轴和两类特殊对象组成：</p>
+        <ul>
+          <li><strong>结构轴</strong>（颗粒度跃迁）：Modifier → Composition → Macro</li>
+          <li><strong>容器轴</strong>（归属分类）：Scene 包含 Phrase / SubStage；Phase 包含 AlignmentPhrase</li>
+          <li><strong>时间轴</strong>（工作流编排）：SOP 串联 Macro 和 Phrase</li>
+          <li><strong>孤岛对象</strong>：AlignmentPhrase 不和任何其他资产产生结构关联（哲学七）</li>
+          <li><strong>观察对象</strong>：UsageRecord 观察所有可复制的资产，append-only，不持有结构关系</li>
+        </ul>
+
+        <pre class="mermaid-src"><code>graph TD
+    subgraph 结构轴
+        M[Modifier 方法论原子] -->|组合| C[Composition 组合·临时态]
+        C -->|固化| MA[Macro 宏定义]
+        MA -.->|expandFrom 追溯| M
+    end
+    subgraph 容器轴1[Scene 体系]
+        SC[Scene] -->|contains| P[Phrase]
+        SC -->|contains| SS[SubStage]
+        P <-->|可互相转化| MA
+    end
+    subgraph 容器轴2[Phase 体系 哲学七]
+        PH[Phase] -->|contains| AP[AlignmentPhrase 协议层]
+    end
+    subgraph 时间轴
+        SOP -->|ordered_steps| MA
+        SOP -->|ordered_steps| P
+    end
+    subgraph 观察者
+        UR[UsageRecord append-only]
+    end
+    UR -.->|observes| M
+    UR -.->|observes| MA
+    UR -.->|observes| AP</code></pre>
+
+        <h4 id="ch07-relation-constraint">关键关系约束</h4>
+        <table class="table-stack">
+          <thead><tr><th>关系类型</th><th>允许</th><th>禁止</th></tr></thead>
+          <tbody>
+            <tr><td data-label="类型">结构轴</td><td data-label="允许">Modifier → Composition → Macro 单向跃迁；Macro 可追溯 Modifier</td><td data-label="禁止">Composition 不能跨越成为 SOP 步骤</td></tr>
+            <tr><td data-label="类型">容器轴-Scene</td><td data-label="允许">Phrase ↔ Macro 双向转化；Phrase 归属 SubStage</td><td data-label="禁止">Scene 不嵌套子 Scene；Modifier 不归属 Scene</td></tr>
+            <tr><td data-label="类型">容器轴-Phase</td><td data-label="允许">AlignmentPhrase 归属 Phase（多对一）</td><td data-label="禁止">AlignmentPhrase 不归属 Scene</td></tr>
+            <tr><td data-label="类型">时间轴-SOP</td><td data-label="允许">SOP 步骤引用 Macro 或 Phrase</td><td data-label="禁止">SOP 步骤不引用 Modifier、Composition、AlignmentPhrase</td></tr>
+            <tr><td data-label="类型">孤岛-AlignmentPhrase</td><td data-label="允许">只与 Phase 关联</td><td data-label="禁止">不参与 Modifier 拼接、不进 Scene、不进 SOP、不与 Macro 互转</td></tr>
+            <tr><td data-label="类型">观察者-UsageRecord</td><td data-label="允许">观察所有可复制资产；append-only</td><td data-label="禁止">不持有任何资产间的结构关系；不修改不删除（除归档外）</td></tr>
+          </tbody>
+        </table>
+
+        <h4 id="ch07-modifier">6.1 Modifier</h4>
+        <table class="table-stack">
+          <thead><tr><th>Field</th><th>Type</th><th>说明</th></tr></thead>
+          <tbody>
+            <tr><td data-label="Field">id</td><td data-label="Type">string PK</td><td data-label="说明">唯一标识</td></tr>
+            <tr><td data-label="Field">name</td><td data-label="Type">string</td><td data-label="说明">短名称（UI 展示）</td></tr>
+            <tr><td data-label="Field">content</td><td data-label="Type">string</td><td data-label="说明">实际文本（半句话，末尾带标点）</td></tr>
+            <tr><td data-label="Field">group</td><td data-label="Type">enum 四值</td><td data-label="说明">cognition / action / delivery / constraint</td></tr>
+            <tr><td data-label="Field">usage_count</td><td data-label="Type">integer ≥0</td><td data-label="说明">被引用次数</td></tr>
+            <tr><td data-label="Field">last_used_at</td><td data-label="Type">timestamp</td><td data-label="说明">最近使用时间</td></tr>
+            <tr><td data-label="Field">notes</td><td data-label="Type">string?</td><td data-label="说明">迭代说明（为什么这么写、改过没）</td></tr>
+            <tr><td data-label="Field">deprecated</td><td data-label="Type">boolean</td><td data-label="说明">是否过时（不删除，仅标记）</td></tr>
+          </tbody>
+        </table>
+        <p><strong>删除策略</strong>：不允许 hard delete（哲学：历史痕迹是资产），所有"删除"操作等价于 <code>deprecated = true</code>。</p>
+        <p><strong>字段设计理由</strong>：<code>group</code> 固定四类是哲学五的具体落地；<code>notes</code> 对抗"我半年后忘了为什么这么写"；<strong>不带 phase 字段</strong>——Phase 只服务于 AlignmentPhrase，不污染 Modifier。</p>
+
+        <h4 id="ch07-composition">6.2 Composition（临时态）</h4>
+        <p>Composition 默认存在于内存或 session storage，不持久化。值得沉淀的 Composition 升级为 Macro 后才创建持久化记录。</p>
+        <table class="table-stack">
+          <thead><tr><th>Field</th><th>Type</th><th>说明</th></tr></thead>
+          <tbody>
+            <tr><td data-label="Field">role</td><td data-label="Type">string</td><td data-label="说明">角色描述（现场填写）</td></tr>
+            <tr><td data-label="Field">task</td><td data-label="Type">string</td><td data-label="说明">任务描述</td></tr>
+            <tr><td data-label="Field">modifiers</td><td data-label="Type">array&lt;string&gt;</td><td data-label="说明">Modifier.id 列表（顺序敏感）</td></tr>
+            <tr><td data-label="Field">assembled_text</td><td data-label="Type">string</td><td data-label="说明">派生字段，实时计算</td></tr>
+          </tbody>
+        </table>
+
+        <h4 id="ch07-macro">6.3 Macro</h4>
+        <table class="table-stack">
+          <thead><tr><th>Field</th><th>Type</th><th>说明</th></tr></thead>
+          <tbody>
+            <tr><td data-label="Field">id</td><td data-label="Type">string PK</td><td data-label="说明">唯一标识</td></tr>
+            <tr><td data-label="Field">name</td><td data-label="Type">string</td><td data-label="说明">短名称</td></tr>
+            <tr><td data-label="Field">content</td><td data-label="Type">string</td><td data-label="说明">完整文本</td></tr>
+            <tr><td data-label="Field">expandFrom</td><td data-label="Type">array&lt;string&gt;?</td><td data-label="说明">Modifier.id 数组；与 native 互斥</td></tr>
+            <tr><td data-label="Field">native</td><td data-label="Type">boolean</td><td data-label="说明">是否原生（非组合）</td></tr>
+            <tr><td data-label="Field">scene_id</td><td data-label="Type">string? FK</td><td data-label="说明">软关联 Scene（可空）</td></tr>
+            <tr><td data-label="Field">usage_count</td><td data-label="Type">integer ≥0</td><td data-label="说明">使用次数</td></tr>
+            <tr><td data-label="Field">deprecated</td><td data-label="Type">boolean</td><td data-label="说明">是否过时</td></tr>
+          </tbody>
+        </table>
+        <p><strong>字段设计理由</strong>：<code>expandFrom</code> 是哲学五的关键——Macro 可以追溯到构成它的 Modifier；<code>native: true</code> 标记直接写的成品话术；<strong>不带 phase_id 或 is_alignment 字段</strong>——AlignmentPhrase 独立成对象，不寄生在 Macro 里。</p>
+
+        <h4 id="ch07-scene">6.4 Scene（含 Phrase / SubStage 三表）</h4>
+        <p>Scene 节包含 3 个相关模型：Scene（场景容器）、Phrase（Scene 内话术）、SubStage（子阶段分组）。三者独立持久化，通过外键关联。</p>
+
+        <h5>Scene</h5>
+        <table class="table-stack">
+          <thead><tr><th>Field</th><th>Type</th><th>说明</th></tr></thead>
+          <tbody>
+            <tr><td data-label="Field">id</td><td data-label="Type">string PK</td><td data-label="说明">唯一标识</td></tr>
+            <tr><td data-label="Field">name</td><td data-label="Type">string</td><td data-label="说明">Scene 名称</td></tr>
+            <tr><td data-label="Field">icon</td><td data-label="Type">string?</td><td data-label="说明">emoji 或图标标识符</td></tr>
+            <tr><td data-label="Field">order</td><td data-label="Type">integer ≥0</td><td data-label="说明">首屏显示顺序</td></tr>
+            <tr><td data-label="Field">visible</td><td data-label="Type">boolean</td><td data-label="说明">是否首屏显示</td></tr>
+            <tr><td data-label="Field">role_presets</td><td data-label="Type">array&lt;string&gt;</td><td data-label="说明">常用角色设定预设</td></tr>
+          </tbody>
+        </table>
+
+        <h5>Phrase</h5>
+        <table class="table-stack">
+          <thead><tr><th>Field</th><th>Type</th><th>说明</th></tr></thead>
+          <tbody>
+            <tr><td data-label="Field">id</td><td data-label="Type">string PK</td><td data-label="说明">唯一标识</td></tr>
+            <tr><td data-label="Field">scene_id</td><td data-label="Type">string FK</td><td data-label="说明">所属 Scene</td></tr>
+            <tr><td data-label="Field">name / content</td><td data-label="Type">string</td><td data-label="说明">名称 / 文本</td></tr>
+            <tr><td data-label="Field">sub_stage_id</td><td data-label="Type">string? FK</td><td data-label="说明">所属子阶段（同 Scene 内）</td></tr>
+            <tr><td data-label="Field">usage_count / last_used_at</td><td data-label="Type">int / ts</td><td data-label="说明">使用统计</td></tr>
+          </tbody>
+        </table>
+
+        <p><strong>关键设计</strong>：Phrase / SubStage 改为反向 FK 而非嵌套数组——为支持 Phrase 高频写入（usage_count 更新）和 SubStage 独立编辑，扁平表结构对 IndexedDB 友好。</p>
+
+        <h4 id="ch07-phase">6.5 Phase（认知相位）</h4>
+        <table class="table-stack">
+          <thead><tr><th>Field</th><th>Type</th><th>说明</th></tr></thead>
+          <tbody>
+            <tr><td data-label="Field">id</td><td data-label="Type">string PK</td><td data-label="说明">唯一标识</td></tr>
+            <tr><td data-label="Field">name</td><td data-label="Type">string</td><td data-label="说明">相位名（发散/理解/规划/...）</td></tr>
+            <tr><td data-label="Field">order</td><td data-label="Type">integer</td><td data-label="说明">认知流默认顺序</td></tr>
+            <tr><td data-label="Field">color</td><td data-label="Type">string?</td><td data-label="说明">相位带 UI 着色</td></tr>
+            <tr><td data-label="Field">visible</td><td data-label="Type">boolean</td><td data-label="说明">是否在相位带展示</td></tr>
+            <tr><td data-label="Field">default_alignment_phrase_id</td><td data-label="Type">string? FK</td><td data-label="说明">默认对齐话术（点击 Phase 时复制）</td></tr>
+          </tbody>
+        </table>
+        <p><strong>字段设计理由</strong>：独立成表（不写死为枚举）——Phase 仍在演化中；<code>default_alignment_phrase_id</code> 让"点击 Phase 即可复制"的 1 步交互成立；<code>color</code> 是相位带视觉权重的重要承载——余光感知时颜色比文字更快被识别。</p>
+
+        <h4 id="ch07-alignment">6.6 AlignmentPhrase（对齐话术）</h4>
+        <table class="table-stack">
+          <thead><tr><th>Field</th><th>Type</th><th>说明</th></tr></thead>
+          <tbody>
+            <tr><td data-label="Field">id</td><td data-label="Type">string PK</td><td data-label="说明">唯一标识</td></tr>
+            <tr><td data-label="Field">phase_id</td><td data-label="Type">string FK 必填</td><td data-label="说明">所属 Phase（无"无相位归属"状态）</td></tr>
+            <tr><td data-label="Field">name / content</td><td data-label="Type">string</td><td data-label="说明">名称 / 完整话术文本</td></tr>
+            <tr><td data-label="Field">is_default</td><td data-label="Type">boolean</td><td data-label="说明">同 phase_id 下至多一条 is_default=true</td></tr>
+            <tr><td data-label="Field">usage_count / deprecated</td><td data-label="Type">int / bool</td><td data-label="说明">使用统计 / 过时标记</td></tr>
+          </tbody>
+        </table>
+
+        <p><strong>关系约束</strong>（哲学七——协议层与内容层物理分离）：</p>
+        <ul>
+          <li>✗ 不参与 Composition.modifiers 拼接</li>
+          <li>✗ 无 scene_id 字段，不属于任何 Scene</li>
+          <li>✗ SOPStep 不能引用 AlignmentPhrase</li>
+          <li>✗ 不能直接转化为 Macro（即使内容相似也是两个独立对象）</li>
+        </ul>
+
+        <h4 id="ch07-sop">6.7 SOP（含 SOPStep）</h4>
+
+        <h5>SOP</h5>
+        <table class="table-stack">
+          <thead><tr><th>Field</th><th>Type</th><th>说明</th></tr></thead>
+          <tbody>
+            <tr><td data-label="Field">id</td><td data-label="Type">string PK</td><td data-label="说明">唯一标识</td></tr>
+            <tr><td data-label="Field">name / description</td><td data-label="Type">string</td><td data-label="说明">名称 / 简介</td></tr>
+            <tr><td data-label="Field">source</td><td data-label="Type">enum</td><td data-label="说明">'manual' | 'recorded'</td></tr>
+            <tr><td data-label="Field"><strong>status</strong></td><td data-label="Type"><strong>enum</strong></td><td data-label="说明"><strong>'draft' | 'active' | 'archived'</strong>——SOP 是唯一显式持有 status 的模型</td></tr>
+            <tr><td data-label="Field">execution_count</td><td data-label="Type">integer</td><td data-label="说明">执行次数</td></tr>
+          </tbody>
+        </table>
+
+        <h5>SOPStep</h5>
+        <table class="table-stack">
+          <thead><tr><th>Field</th><th>Type</th><th>说明</th></tr></thead>
+          <tbody>
+            <tr><td data-label="Field">id / sop_id / order</td><td data-label="Type">string / string FK / integer</td><td data-label="说明">主键 / 所属 SOP / 顺序</td></tr>
+            <tr><td data-label="Field">target_type</td><td data-label="Type">enum</td><td data-label="说明">'phrase' | 'macro'（<strong>禁止</strong> 'alignment'）</td></tr>
+            <tr><td data-label="Field">target_id</td><td data-label="Type">string FK</td><td data-label="说明">按 target_type 解析</td></tr>
+            <tr><td data-label="Field">optional</td><td data-label="Type">boolean</td><td data-label="说明">是否可选步骤</td></tr>
+            <tr><td data-label="Field">branch_condition</td><td data-label="Type">string?</td><td data-label="说明">分支条件描述（预留扩展）</td></tr>
+          </tbody>
+        </table>
+
+        <h4 id="ch07-usage">6.8 UsageRecord（使用记录）</h4>
+        <table class="table-stack">
+          <thead><tr><th>Field</th><th>Type</th><th>说明</th></tr></thead>
+          <tbody>
+            <tr><td data-label="Field">id / timestamp</td><td data-label="Type">string / ts</td><td data-label="说明">PK / 复制发生时间</td></tr>
+            <tr><td data-label="Field">target_type</td><td data-label="Type">enum</td><td data-label="说明">'modifier' | 'macro' | 'phrase' | 'composition' | 'alignment'</td></tr>
+            <tr><td data-label="Field">target_id</td><td data-label="Type">string? FK</td><td data-label="说明">composition 时可 null</td></tr>
+            <tr><td data-label="Field">source</td><td data-label="Type">enum</td><td data-label="说明">'macro_area' | 'scene' | 'recent' | 'sop' | 'composition' | 'phase_bar'</td></tr>
+            <tr><td data-label="Field">modifier_ids</td><td data-label="Type">array&lt;string&gt;?</td><td data-label="说明">展开后的 Modifier 列表（target_type ∈ {composition, macro}）</td></tr>
+            <tr><td data-label="Field">sop_id / sop_step_order</td><td data-label="Type">string? / int?</td><td data-label="说明">SOP 流程上下文（source='sop' 时填充）</td></tr>
+            <tr><td data-label="Field">phase_id</td><td data-label="Type">string? FK</td><td data-label="说明">相位使用分布（target_type='alignment' 时填充）</td></tr>
+          </tbody>
+        </table>
+        <p><strong>删除策略</strong>：append-only，不修改、不删除（除归档外）。归档：定期（如季度）将 90 天前的记录导出为冷备 JSON，从主存储清理。</p>
+        <p><strong>字段设计理由</strong>：<code>source</code> 让"哪个入口效率最高"成为数据；<code>modifier_ids</code> 让"哪些 Modifier 在实战中被组合得最多"成为数据基础；<code>sop_id + sop_step_order</code> 让 SOP 执行可追溯。这张表是最高频写入的，建议 append-only——避免任何同步冲突。</p>
+
+        <h4 id="ch07-export">6.9 数据导出 JSON Schema</h4>
+        <pre><code>{
+  "schema_version": "1.1",
+  "exported_at": "2026-05-18T10:00:00Z",
+  "modifiers": [/* Modifier[] */],
+  "macros": [/* Macro[] */],
+  "scenes": [/* Scene[] */],
+  "phrases": [/* Phrase[] */],
+  "sub_stages": [/* SubStage[] */],
+  "phases": [/* Phase[] */],
+  "alignment_phrases": [/* AlignmentPhrase[] */],
+  "sops": [/* SOP[] */],
+  "usage_records": [/* UsageRecord[]，可选 */]
+}</code></pre>
+        <ul>
+          <li><code>schema_version</code> 从 v1.0 升到 v1.1，对应 Phase 和 AlignmentPhrase 新增</li>
+          <li><code>usage_records</code> 可选——大数据量场景下可只导出当前资产、不导出历史</li>
+          <li>所有 ID 在导出 JSON 内部保持一致（不重新生成），导入时按 ID 还原关联</li>
+        </ul>
+
+        <h4 id="ch07-state-machine">6.10 状态机</h4>
+        <p>定义关键资产的生命周期状态流转——<strong>仅描述行为流，不引入新字段</strong>（除 SOP 已显式持有 <code>status</code> 枚举外，其他模型的状态由 <code>deprecated</code> 布尔推导）。</p>
+
+        <h5>状态承载策略</h5>
+        <table class="table-stack">
+          <thead><tr><th>资产</th><th>状态承载字段</th><th>状态计算</th></tr></thead>
+          <tbody>
+            <tr><td data-label="资产">Macro</td><td data-label="字段"><code>deprecated</code> 布尔</td><td data-label="计算">active ≜ deprecated=false；deprecated ≜ deprecated=true</td></tr>
+            <tr><td data-label="资产">Composition</td><td data-label="字段">无持久化字段（运行时态）</td><td data-label="计算">building / assembled / discarded / promoted</td></tr>
+            <tr><td data-label="资产">SOP</td><td data-label="字段"><code>status</code> 枚举</td><td data-label="计算">draft / active / archived</td></tr>
+          </tbody>
+        </table>
+
+        <p><strong>为什么 SOP 显式 status 而其他模型用 deprecated？</strong>——SOP 的"草稿期"是真实存在的（录制中未保存、多步编辑中），二值无法表达。其他模型创建后即可用，不存在草稿期，<code>deprecated</code> 布尔足够。</p>
+
+        <h5>Macro 状态机</h5>
+        <pre class="mermaid-src"><code>stateDiagram-v2
+    [*] --> active : 创建（手工 / Composition 固化 / native 直写）
+    active --> deprecated : 用户标记为过时
+    deprecated --> active : 用户取消过时标记
+    deprecated --> [*] : （仅数据迁移）hard delete</code></pre>
+
+        <h5>Composition 状态机</h5>
+        <pre class="mermaid-src"><code>stateDiagram-v2
+    [*] --> building : 用户开始填写 role/task/modifiers
+    building --> assembled : assembled_text 实时计算完成
+    assembled --> discarded : 用户清空工作台 / 关闭窗口
+    assembled --> promoted : 用户点击「沉淀为 Macro」
+    promoted --> [*] : 写入新 Macro 记录</code></pre>
+
+        <h5>SOP 状态机</h5>
+        <pre class="mermaid-src"><code>stateDiagram-v2
+    [*] --> draft : 用户新建 SOP / 录制开始
+    draft --> active : 用户「发布」（保存且声明可推荐）
+    active --> draft : 用户「重新编辑」
+    active --> archived : 用户标记为归档
+    archived --> active : 用户取消归档</code></pre>
+
+        <p><strong>active ↔ draft 双向迁移的设计意图</strong>：避免"active SOP 被随意改坏 → 推荐列表中出现破损 SOP"。强制降回 draft 编辑，保留 active 版本的稳定性。如需保留旧版同时新版迭代，建议复制 SOP 而非原地编辑。</p>
+
+        <h3 id="ch07-nfr">4.3 非功能需求（PRD §7）</h3>
+
+        <h4 id="ch07-nfr-perf">7.1 性能</h4>
+        <ul>
+          <li><strong>首屏加载时间</strong>：≤ 1.5 秒（冷启动）</li>
+          <li><strong>任何点击响应</strong>：≤ 100 毫秒（含复制、搜索、切 Scene、切 Phase）</li>
+          <li><strong>支持数据量</strong>：Modifier 30 条、Macro 100 条、Scene 10 个、Phase 12 个、AlignmentPhrase 50 条、SOP 20 个、Phrase 总计 300 条——超过这个规模说明资产膨胀需要清理</li>
+        </ul>
+
+        <h4 id="ch07-nfr-offline">7.2 离线可用 · 7.3 隐私</h4>
+        <ul>
+          <li>完全本地运行，不依赖任何后端服务</li>
+          <li>数据持久化在 SQLite / 本地数据库，不上传到云端</li>
+          <li>不内置任何第三方分析脚本（GA / Sentry 等一律禁用）</li>
+          <li>不调用任何外部 API（不做话术的 AI 辅助生成）</li>
+        </ul>
+        <p><strong>理由</strong>：使用者涉及敏感业务场景（政府/公安数据方向），任何云端存储都是硬伤。本地优先是硬性要求。</p>
+
+        <h4 id="ch07-nfr-device">7.4 跨设备</h4>
+        <ul>
+          <li><strong>主要设备</strong>：Mac/Windows 桌面（主形态：快捷键唤起 + 全屏覆盖；辅形态：副屏常驻）</li>
+          <li><strong>次要设备</strong>：iPad（横屏，无副屏条件或便携场景；仅作辅形态备选）</li>
+          <li><strong>辅助设备</strong>：iPhone（移动场景下临时查看，只读为主）</li>
+          <li>不做多设备实时协同——单人使用，最终一致性即可</li>
+        </ul>
+
+        <h4 id="ch07-nfr-migrate">7.5 可迁移性</h4>
+        <p><strong>最重要的非功能需求之一</strong>：使用者应该随时可以<strong>把数据拿走、换个工具继续用</strong>。所有数据以 JSON 格式存储；提供"导出全部数据"按钮；提供"从 JSON 导入"功能；数据格式保持稳定（向后兼容）。</p>
+
+        <h4 id="ch07-nfr-upgrade">7.7 升级回滚契约</h4>
+        <p><code>schema_version</code> 采用 <code>major.minor</code> 字符串格式。</p>
+
+        <table class="table-stack">
+          <thead><tr><th>升级类型</th><th>触发</th><th>用户感知</th></tr></thead>
+          <tbody>
+            <tr><td data-label="类型"><strong>minor 升级</strong></td><td data-label="触发">向后兼容的字段增加 / 索引调整 / 可空字段引入</td><td data-label="感知">无感（旧数据可直接读）</td></tr>
+            <tr><td data-label="类型"><strong>major 升级</strong></td><td data-label="触发">字段删除 / 重命名 / 类型变更 / 必填字段引入</td><td data-label="感知">显式弹窗 + 强制迁移 + 旧版导出兜底</td></tr>
+          </tbody>
+        </table>
+
+        <p><strong>升级流程 6 阶段</strong>：检测 → 备份（自动 JSON 导出）→ 迁移（minor 自动 / major 用户确认）→ 验证 → 完成 → 记录迁移日志。</p>
+
+        <p><strong>设计原则</strong>：minor 升级零感知；major 升级强同意；任何升级都可回滚（自动备份是硬约束）；<code>schema_version</code> 是真理之源——任何代码逻辑都通过读 <code>schema_version</code> 决定如何处理数据，禁止"猜版本"。</p>
+
+        <h3 id="ch07-boundaries">4.4 Boundaries（PRD §8）</h3>
+
+        <h4 id="ch07-always">Always do（默认动作）</h4>
+        <table class="table-stack">
+          <thead><tr><th>操作</th><th>When</th><th>Why</th></tr></thead>
+          <tbody>
+            <tr><td data-label="操作">A1 复制后自动隐藏窗口</td><td data-label="When">主形态下任何成功复制操作完成后</td><td data-label="Why">哲学一手动挡 + 用完即走（辅形态例外）</td></tr>
+            <tr><td data-label="操作">A2 每次复制追加 UsageRecord</td><td data-label="When">任何复制操作</td><td data-label="Why">哲学四「使用即沉淀」的核心机制</td></tr>
+            <tr><td data-label="操作">A3 数据本地优先</td><td data-label="When">任何数据写入操作</td><td data-label="Why">§7.2 离线可用 + §7.3 隐私</td></tr>
+            <tr><td data-label="操作">A4 UsageRecord append-only 写入</td><td data-label="When">任何 UsageRecord 写入</td><td data-label="Why">避免同步冲突 + 便于归档</td></tr>
+          </tbody>
+        </table>
+
+        <h4 id="ch07-ask">Ask first（边界模糊）</h4>
+        <table class="table-stack">
+          <thead><tr><th>操作</th><th>选项</th><th>Why</th></tr></thead>
+          <tbody>
+            <tr><td data-label="操作">Q1 删除 Modifier / Macro / Phrase / Phase / AlignmentPhrase</td><td data-label="选项">①删除 ②标记 deprecated（保留历史）</td><td data-label="Why">资产是用户付出心智的沉淀</td></tr>
+            <tr><td data-label="操作">Q2 从历史录制 SOP</td><td data-label="选项">①最近 N 步 ②选时间段 ③手动选步骤</td><td data-label="Why">录制粒度不同产生完全不同的 SOP</td></tr>
+            <tr><td data-label="操作">Q3 批量重命名分组</td><td data-label="选项">①确认 ②预览影响范围</td><td data-label="Why">改名是不可逆的字段变更</td></tr>
+            <tr><td data-label="操作">Q4 清空所有数据 / 重置</td><td data-label="选项">①导出后清空 ②直接清空 ③取消</td><td data-label="Why">不可逆操作必须二次确认</td></tr>
+          </tbody>
+        </table>
+
+        <h4 id="ch07-never">Never do（绝对禁止）</h4>
+        <table class="table-stack">
+          <thead><tr><th>操作</th><th>Trigger</th><th>Why</th></tr></thead>
+          <tbody>
+            <tr><td data-label="操作">N1 任何上传到外部 / 云端 / 第三方服务</td><td data-label="Trigger">任何含 <code>http(s)://</code> 且非 <code>localhost</code> 的网络请求</td><td data-label="Why">§7.3 隐私 + 涉敏业务场景</td></tr>
+            <tr><td data-label="操作">N2 自动调用任何外部 AI 生成内容</td><td data-label="Trigger">任何 LLM API 调用</td><td data-label="Why">spec §8.1：失去自己思考 = 摧毁手动挡核心价值</td></tr>
+            <tr><td data-label="操作">N3 自动发送话术给任何 AI</td><td data-label="Trigger">复制后自动 paste / 自动 send</td><td data-label="Why">spec §8.3：手动复制粘贴是思考的缓冲</td></tr>
+            <tr><td data-label="操作">N4 跨进程 / 跨窗口写入</td><td data-label="Trigger">任何写入非应用 sandbox 的位置</td><td data-label="Why">应用应严格限制在自身数据范围</td></tr>
+            <tr><td data-label="操作">N5 持久化 AlignmentPhrase 到 Macro 类型</td><td data-label="Trigger">任何 INSERT/UPDATE 将 AlignmentPhrase 写入 Macro 表</td><td data-label="Why">哲学七要求物理分离</td></tr>
+          </tbody>
+        </table>
+
+        <h3 id="ch07-security">4.5 安全 / 合规字段（PRD §9）</h3>
+        <p>按「完全本地+离线」档触发——<strong>必填</strong>：A 输入验证 + C 敏感数据销毁；<strong>不必</strong>：B 认证 / D 速率限制 / E 日志审计 / F 加密 / G 供应链。</p>
+
+        <h4 id="ch07-input-validation">A 输入验证（MVP 必填）</h4>
+        <ul>
+          <li><strong>InputSchema</strong>：所有用户输入必须长度限制 + 字符集限制</li>
+          <li><strong>MaxSize</strong>：单条话术 ≤ 5000 字符；总数据导出 JSON ≤ 10 MB</li>
+          <li><strong>AllowedTypes</strong>：文本（UTF-8）+ JSON（数据导入）+ 标准 markdown 符号</li>
+          <li><strong>SanitizationRule</strong>：XSS 过滤（render 时 escape）；JSON 导入时 schema 校验（拒绝 <code>__proto__</code> / <code>constructor</code> 等键）</li>
+        </ul>
+
+        <h4 id="ch07-data-destruction">C 敏感数据销毁（MVP 必填）</h4>
+        <ul>
+          <li><strong>DeleteTrigger</strong>：用户主动删除 Modifier/Macro/Phrase + 配置面板"清空所有数据"</li>
+          <li><strong>ScrubMethod</strong>：localStorage / IndexedDB 物理删除 + 内存中变量置 null + 清空剪贴板（敏感复制后 30 秒）</li>
+          <li><strong>VerifyDeletion</strong>：删除后检查 localStorage 不含相关 key + 内存释放</li>
+        </ul>
+
+      </section>
+
+      <!-- ============================================================
+           Chapter 08 · features.md
+           ============================================================ -->
+      <section class="chapter" id="ch08">
+        <h2><span class="chapter-num">08</span>features.md</h2>
+        <p class="muted" style="font-size: 0.88em; margin-top: -0.5em;">功能清单运营视图 · 功能 × 状态 × 测试覆盖 × 版本（🤖 AI 主笔 + 人审）</p>
+
+        <h3 id="ch08-overview">8.1 功能清单概览</h3>
+
+        <h4 id="ch08-status-def">状态定义</h4>
+        <table class="table-stack">
+          <thead><tr><th>状态</th><th>含义</th><th>触发</th></tr></thead>
+          <tbody>
+            <tr><td data-label="状态"><code>planned</code></td><td data-label="含义">已立项，未开始编码</td><td data-label="触发">spec / prd 收录</td></tr>
+            <tr><td data-label="状态"><code>in-progress</code></td><td data-label="含义">编码中</td><td data-label="触发">第一个 commit 提交</td></tr>
+            <tr><td data-label="状态"><code>done</code></td><td data-label="含义">编码完成，本地跑通</td><td data-label="触发">PR merged to main</td></tr>
+            <tr><td data-label="状态"><code>verified</code></td><td data-label="含义">测试覆盖达标，已上线给真实使用者</td><td data-label="触发">E2E 通过 + 使用者使用 ≥1 周</td></tr>
+            <tr><td data-label="状态"><code>deprecated</code></td><td data-label="含义">已废弃，待移除</td><td data-label="触发">开 ADR 决议废弃</td></tr>
+          </tbody>
+        </table>
+
+        <h4 id="ch08-priority">优先级定义</h4>
+        <table class="table-stack">
+          <thead><tr><th>优先级</th><th>含义</th><th>例子</th></tr></thead>
+          <tbody>
+            <tr><td data-label="优先级"><strong>P0</strong></td><td data-label="含义">MVP 核心，缺失则产品不成立</td><td data-label="例子">主形态唤起、Macro 调用、相位带</td></tr>
+            <tr><td data-label="优先级"><strong>P1</strong></td><td data-label="含义">重要但可延后，缺失则体验打折</td><td data-label="例子">SOP 导航、配置入口、数据导入导出</td></tr>
+            <tr><td data-label="优先级"><strong>P2</strong></td><td data-label="含义">增强型，覆盖少数场景</td><td data-label="例子">辅形态副屏、月度 review 视图</td></tr>
+          </tbody>
+        </table>
+
+        <h4 id="ch08-feature-matrix">阶段交付节奏</h4>
+        <table class="table-stack">
+          <thead><tr><th>阶段</th><th>版本</th><th>功能数</th><th>状态</th></tr></thead>
+          <tbody>
+            <tr><td data-label="阶段">S1 主形态 MVP</td><td data-label="版本">v1.0</td><td data-label="数量">5 模块 + 8 跨模块能力</td><td data-label="状态"><code>planned</code></td></tr>
+            <tr><td data-label="阶段">S2 闭环沉淀</td><td data-label="版本">v1.1</td><td data-label="数量">4 功能</td><td data-label="状态"><code>planned</code></td></tr>
+            <tr><td data-label="阶段">S3 SOP 导航</td><td data-label="版本">v1.2</td><td data-label="数量">3 功能</td><td data-label="状态"><code>planned</code></td></tr>
+            <tr><td data-label="阶段">S4 配置个性化</td><td data-label="版本">v1.3</td><td data-label="数量">4 功能</td><td data-label="状态"><code>planned</code></td></tr>
+            <tr><td data-label="阶段">S5 辅形态副屏</td><td data-label="版本">v2.0</td><td data-label="数量">3 功能</td><td data-label="状态"><code>planned</code></td></tr>
+            <tr><td data-label="阶段"><strong>合计</strong></td><td data-label="版本">—</td><td data-label="数量"><strong>27 项</strong></td><td data-label="状态">—</td></tr>
+          </tbody>
+        </table>
+
+        <h4 id="ch08-coverage">测试覆盖目标</h4>
+        <table class="table-stack">
+          <thead><tr><th>优先级</th><th>目标版本时的最低覆盖</th><th>备注</th></tr></thead>
+          <tbody>
+            <tr><td data-label="优先级">P0</td><td data-label="覆盖">单元 ≥80% + E2E 覆盖核心路径</td><td data-label="备注">MVP 前必须达成</td></tr>
+            <tr><td data-label="优先级">P1</td><td data-label="覆盖">单元 ≥60% + E2E 覆盖主路径</td><td data-label="备注">发布前必须达成</td></tr>
+            <tr><td data-label="优先级">P2</td><td data-label="覆盖">单元 ≥40%</td><td data-label="备注">发布后 1 个月内补齐</td></tr>
+          </tbody>
+        </table>
+
+        <p><strong>当前阶段说明（pre-code）</strong>：LOC: 0 / 通过测试: 0 / 已合并 PR: 0（仅文档 commit）。</p>
+
+      </section>
+
+      <!-- ============================================================
+           Chapter 09 · sitemap.md
+           ============================================================ -->
+      <section class="chapter" id="ch09">
+        <h2><span class="chapter-num">09</span>sitemap.md</h2>
+        <p class="muted" style="font-size: 0.88em; margin-top: -0.5em;">资产对象树 + 视图导航图（桌面应用语境，无 URL 路由）（🤖 AI 主笔 + 人审）</p>
+
+        <h3 id="ch09-asset-tree">9.1 资产对象树（导航视角）</h3>
+        <pre><code>prompt-hub 数据世界
+├── 资产层（用户创作 + 沉淀）
+│   ├── 结构轴（三层）
+│   │   ├── Modifier        — 方法论原子（30 上限）
+│   │   ├── Composition     — 临时态组合（不持久化）
+│   │   └── Macro           — 高频组合的固化（100 上限）
+│   │
+│   ├── 容器轴
+│   │   ├── Scene           — 横切场景（10 上限）
+│   │   │   ├── Phrase      — Scene 内话术（300 总上限）
+│   │   │   └── SubStage    — Scene 子阶段分组
+│   │   └── Phase           — 认知相位（12 上限）
+│   │       └── AlignmentPhrase — 对齐话术（50 上限）⚠️ 孤岛
+│   │
+│   └── 时间轴
+│       └── SOP             — 工作流模板（20 上限）
+│           └── SOPStep     — 引用 Macro 或 Phrase
+│
+└── 观察层（系统自动追加）
+    └── UsageRecord         — append-only，观察所有可复制资产</code></pre>
+
+        <p><strong>关键约束</strong>：AlignmentPhrase 是<strong>孤岛</strong>——只能从「相位带」入口访问；Composition 是<strong>临时态</strong>——无独立视图列表；UsageRecord <strong>不可见</strong>——纯观察层，用户在「状态仪表区」看其聚合数据。</p>
+
+        <h4 id="ch09-views">视图清单（桌面应用"路由"）</h4>
+        <p>桌面应用无 URL，但每个视图有一个触发方式和显式 ID：</p>
+
+        <div class="table-scroll">
+        <table>
+          <thead><tr><th>视图 ID</th><th>触发方式</th><th>容器形态</th><th>数据对象</th></tr></thead>
+          <tbody>
+            <tr><td><code>view:home-main</code></td><td>全局快捷键（⌥ Space）</td><td>主形态全屏覆盖</td><td>全部资产</td></tr>
+            <tr><td><code>view:home-aux</code></td><td>应用启动 / 副屏窗口</td><td>辅形态副屏独立窗口</td><td>全部资产</td></tr>
+            <tr><td><code>view:search-results</code></td><td>home-* 中 ⌘K 输入</td><td>替换首屏</td><td>Macro / Phrase / AlignmentPhrase / SOP</td></tr>
+            <tr><td><code>view:phase-detail</code></td><td>home-* 中悬停/长按 Phase</td><td>弹出层</td><td>AlignmentPhrase[] of one Phase</td></tr>
+            <tr><td><code>view:phase-edit</code></td><td>home-* 中右键 Phase</td><td>子窗口</td><td>Phase + AlignmentPhrase[]</td></tr>
+            <tr><td><code>view:composition</code></td><td>home-* 中 ⌘N</td><td>子窗口</td><td>Composition + Modifier[]</td></tr>
+            <tr><td><code>view:scene-tab</code></td><td>home-* 中点 Scene Tab</td><td>替换 Scene 区内容</td><td>Scene + Phrase[] + SubStage[]</td></tr>
+            <tr><td><code>view:sop-detail</code></td><td>home-* 中点 SOP 步骤</td><td>弹出层</td><td>SOP + SOPStep[]</td></tr>
+            <tr><td><code>view:sop-edit</code></td><td>config → SOP 模板编辑</td><td>子窗口</td><td>SOP + SOPStep[]</td></tr>
+            <tr><td><code>view:config</code></td><td>home-* 中点配置入口</td><td>子窗口（多 Tab）</td><td>Phase / Scene / 快捷键 / 布局</td></tr>
+            <tr><td><code>view:data-io</code></td><td>config → 数据导入导出 Tab</td><td>config 内 Tab</td><td>全部数据（JSON 序列化）</td></tr>
+            <tr><td><code>view:status-panel</code></td><td>home-* 中点状态仪表</td><td>弹出层</td><td>UsageRecord 聚合</td></tr>
+            <tr><td><code>view:monthly-review</code></td><td>home-aux 限定</td><td>辅形态内独立面板</td><td>UsageRecord 长期趋势</td></tr>
+          </tbody>
+        </table>
+        </div>
+
+        <p><strong>视图总数</strong>：13 个，覆盖 prd §6 全部数据对象。</p>
+
+        <h4 id="ch09-nav-constraints">关键导航约束</h4>
+        <table class="table-stack">
+          <thead><tr><th>#</th><th>约束</th></tr></thead>
+          <tbody>
+            <tr><td data-label="#">N1</td><td data-label="约束">主形态任何复制操作 → 自动隐藏窗口</td></tr>
+            <tr><td data-label="#">N2</td><td data-label="约束">辅形态不自动隐藏，常驻在场</td></tr>
+            <tr><td data-label="#">N3</td><td data-label="约束"><code>view:composition</code> 退出时必须确认是否保存</td></tr>
+            <tr><td data-label="#">N4</td><td data-label="约束"><code>view:config</code> 内的删除操作必须二次确认</td></tr>
+            <tr><td data-label="#">N5</td><td data-label="约束">协议层视图（<code>view:phase-*</code>）不允许跳转到任务层 Macro/Phrase 视图</td></tr>
+            <tr><td data-label="#">N6</td><td data-label="约束"><code>view:data-io</code> 导入失败必须回滚到导入前快照</td></tr>
+          </tbody>
+        </table>
+      </section>
+
+
+      <!-- ============================================================
+           Chapter 10 · plan.md
+           ============================================================ -->
+      <section class="chapter" id="ch10">
+        <h2><span class="chapter-num">10</span>plan.md</h2>
+        <p class="muted" style="font-size: 0.88em; margin-top: -0.5em;">五阶段实施任务清单 · 主形态优先 · §0 跨阶段先决条件（🤝 共创 / v0.7）</p>
+
+        <p>按"价值密度"而非"功能完整度"排序。<strong>主形态优先</strong>——80% 使用场景由"主形态 + Macro + 相位带"覆盖，先验证哲学七，再扩展辅形态。</p>
+
+        <h3 id="ch10-precondition">5.1 跨阶段先决条件（§0）</h3>
+        <p>本节汇总跨阶段必须在第一阶段写第一行代码之前完成的全局配置 / 替换 / 决策。</p>
+
+        <h4 id="ch10-t1">T1 · 设计 Token 全量落地</h4>
+        <p>按 design-spec v0.6 token 体系初始化 CSS Variables 根样式表：</p>
+        <pre><code>:root {
+  /* 字号 */
+  --fs-xs: 0.6875rem;  --fs-sm: 0.8125rem;  --fs-base: 0.875rem;
+  --fs-md: 1rem;       --fs-lg: 1.125rem;   --fs-xl: 1.25rem;
+
+  /* 间距 */
+  --space-1: 4px;   --space-2: 8px;   --space-3: 12px;  --space-4: 16px;
+  --space-6: 24px;  --space-8: 32px;  --space-10: 40px; --space-12: 48px;
+  --space-20: 80px;
+
+  /* 颜色 */
+  --color-text-primary: #1A1A1A;
+  --color-bg-default: #FFFFFF;
+  --color-protocol-bg: #EEEDFE;   --color-protocol-border: #534AB7;
+  --color-task-bg: #E1F5EE;       --color-task-border: #178561;
+  --color-aux-bg: #F1EFE8;        --color-aux-border: #888780;
+
+  /* alias */
+  --color-active: var(--color-protocol-border);
+  --color-task-accent: var(--color-task-border);
+  --color-aux-accent: var(--color-aux-border);
+
+  /* 动画 */
+  --duration-instant: 100ms; --duration-fast: 200ms;
+  --duration-base: 300ms;    --duration-slow: 500ms;
+  --ease-out: cubic-bezier(0.16, 1, 0.3, 1);
+  --ease-in-out: cubic-bezier(0.4, 0, 0.2, 1);
+  --ease-spring: cubic-bezier(0.34, 1.56, 0.64, 1);
+}</code></pre>
+
+        <p><strong>约束</strong>：任何组件 CSS / 内联样式禁止使用裸 px / 裸 hex / 裸 ms 值，必须引用 token。</p>
+
+        <h4 id="ch10-t2">T2 · 旧绿色 <code>#1D9E75</code> 全替换</h4>
+        <div class="callout warn">
+          <p>⚠️ <strong>历史 prompt-combiner 改造路径风险</strong>：若复用 prompt-combiner 旧代码，其中可能存在 <code>#1D9E75</code> 字面量——必须先全量替换为 <code>var(--color-task-border)</code> 或 <code>#178561</code>。</p>
+          <p><strong>2026-05-19 ADR-001 后补</strong>：Tauri 2.x 选定后，prompt-combiner 若是 Electron/Node.js 栈，<strong>后端代码无法直接迁移</strong>（需 Rust 重写），仅 React/Vue 前端组件可迁。</p>
+        </div>
+
+        <p><strong>自检命令</strong>（每个阶段开始前跑一次）：</p>
+        <pre><code>rg "#1D9E75|#1d9e75" --type css --type ts --type tsx --type js --type jsx \
+  --glob '!node_modules' --glob '!*.lock'
+# 期望：0 结果。如有命中，全量替换为 var(--color-task-border)</code></pre>
+
+        <h4 id="ch10-t3">T3 · contrast checker 集成（可选，建议第二阶段加）</h4>
+        <p>把 WCAG 对比度计算集成到 CI / 本地 lint：</p>
+        <ul>
+          <li>工具候选：<code>@adobe/leonardo-contrast-colors</code> / <code>wcag-contrast</code> npm 包</li>
+          <li>触发：任何新增 token 或 token 修订时自动跑实测</li>
+          <li>失败阈值：Non-text &lt; 3:1 或文字 &lt; 4.5:1 阻塞合并</li>
+        </ul>
+
+        <h4 id="ch10-t4">T4 · 暗色模式延后确认（v1.1+ 触发）</h4>
+        <p>design-spec §2.5 明确 v1.0 不实现。任何阶段不写 <code>prefers-color-scheme</code> 相关代码，等触发前置条件满足后专项立项。</p>
+
+        <h4 id="ch10-t5">T5 · 全栈技术决策锁定（v0.7 新增，建仓前必读）</h4>
+        <p>第一阶段建仓使用以下全栈组合（来源见 tech-stack §3）：</p>
+
+        <table class="table-stack">
+          <thead><tr><th>维度</th><th>锁定</th><th>ADR</th></tr></thead>
+          <tbody>
+            <tr><td data-label="维度">桌面运行时</td><td data-label="锁定">Tauri 2.x（启用 <code>macos-private-api</code>）</td><td data-label="ADR">ADR-001 / ADR-008</td></tr>
+            <tr><td data-label="维度">前端框架</td><td data-label="锁定">React 19.2 + React-DOM 19.2</td><td data-label="ADR">ADR-002</td></tr>
+            <tr><td data-label="维度">状态管理</td><td data-label="锁定">Zustand 5（四层 store）</td><td data-label="ADR">ADR-006</td></tr>
+            <tr><td data-label="维度">数据持久化</td><td data-label="锁定">rusqlite 0.32 + bundled SQLite（不启 SQLCipher）+ chrono + uuid</td><td data-label="ADR">ADR-003</td></tr>
+            <tr><td data-label="维度">包管理</td><td data-label="锁定">pnpm 9.x（lockfile 提交）</td><td data-label="ADR">ADR-004</td></tr>
+            <tr><td data-label="维度">构建</td><td data-label="锁定">Vite 8.0（Tauri 官方推荐）</td><td data-label="ADR">D1 自动锁定</td></tr>
+            <tr><td data-label="维度">样式</td><td data-label="锁定">CSS Modules + CSS variables</td><td data-label="ADR">ADR-009</td></tr>
+            <tr><td data-label="维度">测试</td><td data-label="锁定">Vitest 4 + Testing Library + jsdom 29 + cargo test + tempfile</td><td data-label="ADR">ADR-007</td></tr>
+            <tr><td data-label="维度">全局快捷键</td><td data-label="锁定">@tauri-apps/plugin-global-shortcut</td><td data-label="ADR">D1 自动锁定</td></tr>
+          </tbody>
+        </table>
+
+        <p><strong>仅剩 D8 阻塞</strong>：prompt-combiner 复用范围（ADR-005 仍 Proposed），第一阶段可走「重写」路径不依赖 D8。</p>
+
+        <p><strong>首次 <code>cargo build</code> 实测项</strong>：rusqlite 0.32 + chrono 0.4 + uuid 1.x 组合在 MSRV 1.77.2 下兼容性需建仓时验证；失败需在 ADR 补记并锁版本。</p>
+
+        <h3 id="ch10-stage1">5.2 第一阶段：主形态 MVP</h3>
+        <p><strong>目标</strong>：跑通"快捷键唤起 → 对齐 → 看全景 → 一键复制 → 自动隐藏"这个核心闭环。</p>
+
+        <h4 id="ch10-stage1-tech">技术形态</h4>
+        <ul>
+          <li>桌面运行时：<strong>Tauri 2.x</strong> + <code>macos-private-api</code> feature</li>
+          <li>前端框架：<strong>React 19.2</strong> + TypeScript 5.x strict</li>
+          <li>状态管理：<strong>Zustand 5</strong> — <code>appStore</code> 管窗口 visibility / <code>promptStore</code> 管 Macro/UsageRecord / <code>searchStore</code> 管 query / <code>settingsStore</code> 管快捷键与 Phase</li>
+          <li>数据层：<strong>rusqlite 0.32 + bundled SQLite</strong>；数据目录 <code>~/Library/Application Support/dev.prompt-hub/</code></li>
+          <li>样式：<strong>CSS Modules + CSS variables</strong>（token 全部引用 §0 T1 根样式表）</li>
+          <li>测试：<strong>Vitest 4 + Testing Library + jsdom 29</strong> 跑前端单元；<strong>cargo test + tempfile</strong> 跑 Rust + SQLite fixture</li>
+          <li>全局快捷键注册（默认 <code>⌥ Space</code>，可配置）</li>
+          <li>主形态：全屏覆盖窗口 + 半透明背景（约 92%）+ NSWindow <code>level</code> 浮于所有应用上方但不抢焦点（macos-private-api）</li>
+          <li>复制即隐藏 + ESC 关闭</li>
+        </ul>
+
+        <h4 id="ch10-stage1-modules">包含的功能模块</h4>
+        <ul>
+          <li>搜索区——⌘K 聚焦，全局兜底</li>
+          <li>相位带——⌘1-⌘8 切相位</li>
+          <li>Macro 快捷区——按热度排序的卡片墙</li>
+          <li>Scene 全景区——Tab 切换</li>
+          <li>最近使用区——5 条历史</li>
+          <li>复制和使用计数（UsageRecord）</li>
+        </ul>
+
+        <p><strong>不包含</strong>：Composition 工作台、SOP 导航、状态仪表、配置入口、副屏形态。</p>
+
+        <h4 id="ch10-stage1-why">为什么先做这些</h4>
+        <ul>
+          <li>80% 使用场景由"主形态 + Macro + 相位带"覆盖——这部分跑通就比现有工具更好用</li>
+          <li>哲学七（协议对齐）是本项目最特别的设计，必须在 MVP 阶段就能验证</li>
+          <li>辅形态（副屏）依赖主形态的所有模块——主形态先稳，辅形态自然顺</li>
+        </ul>
+
+        <h4 id="ch10-stage1-criteria">交付标准</h4>
+        <ul>
+          <li>按下快捷键 0.3 秒内仪表盘弹出</li>
+          <li>点击/回车复制成功，窗口在 200ms 内隐藏</li>
+          <li>任何复制动作都被记录到 UsageRecord</li>
+          <li>相位切换有明显视觉反馈</li>
+          <li>⌘K 搜索能在所有 Macro 和 Phrase 中找到目标</li>
+        </ul>
+
+        <h3 id="ch10-stage2">5.3 第二阶段：闭环沉淀</h3>
+        <p><strong>目标</strong>：实现"使用即沉淀"的哲学。</p>
+        <p><strong>包含</strong>：Composition 工作台（通过 ⌘N 唤起子窗口）；状态仪表区——含相位分布数据；"未分类草稿"识别和提示；"保存为 Macro"的自动提示。</p>
+        <p><strong>交付标准</strong>：使用者重复使用某组合 3 次后，下次唤起时窗口顶部弹出"是否保存为 Macro"提示。状态仪表能展示相位停留分布。</p>
+
+        <h3 id="ch10-stage3">5.4 第三阶段：SOP 导航</h3>
+        <p><strong>目标</strong>：引入"时间"维度，为未来的自动挡做铺垫。</p>
+        <p><strong>包含</strong>：SOP 导航区——首屏底部右侧；SOP 模板的创建和编辑；从使用历史录制 SOP。</p>
+        <p><strong>交付标准</strong>：能按照预设 SOP 一步步执行，每步完成后高亮下一步。</p>
+
+        <h3 id="ch10-stage4">5.5 第四阶段：配置与个性化</h3>
+        <p><strong>目标</strong>：界面本身成为被维护的资产。</p>
+        <p><strong>包含</strong>：配置入口——含 Phase 可配置编辑；数据导入导出；主形态界面布局的可配置性。</p>
+        <p><strong>交付标准</strong>：使用者可以在不碰代码的前提下，完整地调整这个工具以适配自己的工作方式变化，包括增删 Phase、调整快捷键、修改 Scene 结构。</p>
+
+        <h3 id="ch10-stage5">5.6 第五阶段：辅形态（副屏常驻视图）</h3>
+        <p><strong>目标</strong>：扩展辅形态，覆盖 20% 的深度场景。</p>
+        <p><strong>包含</strong>：副屏常驻窗口（应用启动时打开，独立窗口模式）；共享主形态的所有 UI 模块；月度 review 视图（基于 UsageRecord 的长期趋势图）；副屏专属：状态持续可见（不会隐藏）；副屏专属：Composition 工作台可作为侧栏常驻。</p>
+        <p><strong>交付标准</strong>：副屏窗口能呈现完整全景，与主形态 UI 一致；数据完全共享，主形态做的任何修改在副屏即时可见；关闭副屏窗口不影响主形态使用。</p>
+
+        <h4 id="ch10-stage5-why">为什么放最后</h4>
+        <ul>
+          <li>辅形态是主形态的"翻版"，UI 代码可以大量复用</li>
+          <li>主形态需要充分验证后，才能确定辅形态需要哪些"专属优化"</li>
+          <li>副屏不是所有使用者都有——先把主形态做扎实，覆盖最广人群</li>
+        </ul>
+
+        <h3 id="ch10-effort">5.7 总实施周期估计</h3>
+        <ul>
+          <li>如果交给 Claude Code 全权实施：<strong>3-5 周</strong>（前四阶段，Tauri 路径）/ +1-2 周（辅形态）</li>
+          <li>如果手工实现：6-10 周（前四阶段）/ +2-3 周（辅形态）</li>
+          <li>如果基于现有 prompt-combiner 改造：第一阶段可以从 prompt-combiner 的 Composition 功能复用开始，节省约 1-2 周</li>
+        </ul>
+      </section>
+
+
+      <!-- ============================================================
+           Chapter 11 · tech-stack.md
+           ============================================================ -->
+      <section class="chapter" id="ch11">
+        <h2><span class="chapter-num">11</span>tech-stack.md</h2>
+        <p class="muted" style="font-size: 0.88em; margin-top: -0.5em;">全栈技术快照（v1.0 ratified）· AI 生成代码前的工具锚点（🤖 AI 主笔 + 人审）</p>
+
+        <p>AI 在生成代码前可直接按本章操作；遇 dependency major bump 必须先开 ADR。决策项 D1-D11 见下方矩阵，其中仅 D8（prompt-combiner 复用）仍 Proposed，不阻塞 MVP。</p>
+
+        <h3 id="ch11-constraints">6.1 已锁定的技术约束（来自 constitution）</h3>
+        <p>这些不是"选型"，是 constitution 的物理推论，<strong>任何 ADR 不可绕过</strong>：</p>
+
+        <table class="table-stack">
+          <thead><tr><th>维度</th><th>约束</th><th>来源</th></tr></thead>
+          <tbody>
+            <tr><td data-label="维度">应用形态</td><td data-label="约束">桌面原生（非 Web / 非浏览器扩展）</td><td data-label="来源">A1</td></tr>
+            <tr><td data-label="维度">数据存储</td><td data-label="约束">本地存储（localStorage / SQLite / 文件）；禁服务端</td><td data-label="来源">A2</td></tr>
+            <tr><td data-label="维度">网络权限</td><td data-label="约束">不调用自有后端 API；不上传话术</td><td data-label="来源">A2</td></tr>
+            <tr><td data-label="维度">AI SDK</td><td data-label="约束">禁用 anthropic / openai 等 LLM SDK 用于话术生成</td><td data-label="来源">D1</td></tr>
+            <tr><td data-label="维度">性能预算</td><td data-label="约束">主形态唤起 ≤ 200ms P95</td><td data-label="来源">C1</td></tr>
+          </tbody>
+        </table>
+
+        <h3 id="ch11-decision-matrix">6.2 决策项总览</h3>
+
+        <div class="table-scroll">
+        <table>
+          <thead><tr><th>#</th><th>决策项</th><th>选定</th><th>ADR</th><th>状态</th></tr></thead>
+          <tbody>
+            <tr><td><strong>D1</strong></td><td>桌面运行时</td><td>Tauri 2.x</td><td>ADR-001</td><td>✅ Accepted 2026-05-19</td></tr>
+            <tr><td><strong>D2</strong></td><td>前端框架</td><td>React 19.2</td><td>ADR-002</td><td>✅ Accepted</td></tr>
+            <tr><td><strong>D3</strong></td><td>数据持久化</td><td>rusqlite 0.32 + bundled SQLite（不启 SQLCipher）</td><td>ADR-003</td><td>✅ Accepted</td></tr>
+            <tr><td><strong>D4</strong></td><td>包管理器</td><td>pnpm 9.x</td><td>ADR-004</td><td>✅ Accepted</td></tr>
+            <tr><td><strong>D5</strong></td><td>构建工具</td><td>Vite 8.0</td><td>D1 自动锁定</td><td>✅ 由 D1 锁定</td></tr>
+            <tr><td><strong>D6</strong></td><td>状态管理</td><td>Zustand 5（四层 store）</td><td>ADR-006</td><td>✅ Accepted</td></tr>
+            <tr><td><strong>D7</strong></td><td>全局快捷键 API</td><td>@tauri-apps/plugin-global-shortcut</td><td>D1 自动锁定</td><td>✅ 由 D1 锁定</td></tr>
+            <tr><td><strong>D8</strong></td><td>prompt-combiner 复用</td><td>（待 omar 提供仓库后调研）</td><td>ADR-005</td><td>⏳ Proposed</td></tr>
+            <tr><td><strong>D9</strong></td><td>macOS 私有 API</td><td>启用 macos-private-api（永久弃 App Store）</td><td>ADR-008</td><td>✅ Accepted</td></tr>
+            <tr><td><strong>D10</strong></td><td>样式方案</td><td>CSS Modules + CSS variables（不引 Tailwind）</td><td>ADR-009</td><td>✅ Accepted</td></tr>
+            <tr><td><strong>D11</strong></td><td>测试栈</td><td>Vitest 4 + Testing Library + jsdom 29 + cargo test + tempfile</td><td>ADR-007</td><td>✅ Accepted</td></tr>
+          </tbody>
+        </table>
+        </div>
+
+        <p><strong>仅剩 D8 阻塞</strong>：第一阶段 MVP 建仓不依赖 D8（可走「重写」路径），D8 调研结果只影响迁移节奏。</p>
+
+        <h3 id="ch11-runtime">6.3 运行时与框架</h3>
+
+        <table class="table-stack">
+          <thead><tr><th>维度</th><th>选定</th><th>版本</th></tr></thead>
+          <tbody>
+            <tr><td data-label="维度">桌面运行时</td><td data-label="选定">Tauri</td><td data-label="版本">2.x</td></tr>
+            <tr><td data-label="维度">Tauri features</td><td data-label="选定"><code>macos-private-api</code> 启用</td><td data-label="版本">—</td></tr>
+            <tr><td data-label="维度">前端框架</td><td data-label="选定">React + React-DOM</td><td data-label="版本">19.2</td></tr>
+            <tr><td data-label="维度">状态管理</td><td data-label="选定">Zustand</td><td data-label="版本">5.x</td></tr>
+            <tr><td data-label="维度">TypeScript</td><td data-label="选定">TS</td><td data-label="版本">5.x（strict mode）</td></tr>
+            <tr><td data-label="维度">Node 版本</td><td data-label="选定">lts/iron</td><td data-label="版本">20.x 或更新</td></tr>
+            <tr><td data-label="维度">Rust MSRV</td><td data-label="选定">rustc</td><td data-label="版本">1.77.2+</td></tr>
+          </tbody>
+        </table>
+
+        <h4 id="ch11-store">Zustand 四层 store</h4>
+        <table class="table-stack">
+          <thead><tr><th>Store</th><th>职责</th><th>持久化</th></tr></thead>
+          <tbody>
+            <tr><td data-label="Store"><code>appStore</code></td><td data-label="职责">窗口形态（main/aux）/ 当前视图 ID / 主形态可见性</td><td data-label="持久化">部分（视图偏好）</td></tr>
+            <tr><td data-label="Store"><code>promptStore</code></td><td data-label="职责">Modifier / Composition / Macro / UsageRecord（从 Rust IPC 拉取）</td><td data-label="持久化">否（数据源是 SQLite）</td></tr>
+            <tr><td data-label="Store"><code>searchStore</code></td><td data-label="职责">query / filter / 高亮结果</td><td data-label="持久化">否（短期态）</td></tr>
+            <tr><td data-label="Store"><code>settingsStore</code></td><td data-label="职责">快捷键 / 主题 / 副屏开关 / Phase 状态</td><td data-label="持久化">是（localStorage + Rust IPC 同步至 SQLite）</td></tr>
+          </tbody>
+        </table>
+
+        <p>文件结构约定：<code>src/stores/{name}Store.ts</code>。</p>
+
+        <h4 id="ch11-private-api">macOS 私有 API 用途</h4>
+        <table class="table-stack">
+          <thead><tr><th>私有 API</th><th>用途</th></tr></thead>
+          <tbody>
+            <tr><td data-label="API">NSWindow <code>level</code></td><td data-label="用途">主形态浮于所有应用上方但不抢焦点</td></tr>
+            <tr><td data-label="API"><code>setSharingType</code></td><td data-label="用途">控制窗口分享行为（主形态隐私）</td></tr>
+            <tr><td data-label="API"><code>canBecomeMain</code> / <code>canBecomeKey</code></td><td data-label="用途">唤起后立即接收键盘事件而不切换 active app</td></tr>
+          </tbody>
+        </table>
+        <p><strong>不可逆约束</strong>：App Store 上架永久排除。</p>
+
+        <h3 id="ch11-data">6.4 数据层</h3>
+
+        <table class="table-stack">
+          <thead><tr><th>维度</th><th>选定</th><th>版本</th><th>备注</th></tr></thead>
+          <tbody>
+            <tr><td data-label="维度">数据库引擎</td><td data-label="选定">SQLite（rusqlite bundled feature）</td><td data-label="版本">0.32</td><td data-label="备注">bundled SQLite 跨 OS 行为一致</td></tr>
+            <tr><td data-label="维度">加密</td><td data-label="选定">不启 SQLCipher</td><td data-label="版本">—</td><td data-label="备注">A2 + OS 用户密码 + FileVault 已是隐私底线</td></tr>
+            <tr><td data-label="维度">关系/索引</td><td data-label="选定">rusqlite 原生 SQL</td><td data-label="版本">—</td><td data-label="备注">外键 / 索引 / 事务全开</td></tr>
+            <tr><td data-label="维度">时间</td><td data-label="选定"><code>chrono</code></td><td data-label="版本">0.4.x</td><td data-label="备注">UsageRecord 时间戳</td></tr>
+            <tr><td data-label="维度">UUID</td><td data-label="选定"><code>uuid</code> v4</td><td data-label="版本">1.x</td><td data-label="备注">实体主键</td></tr>
+            <tr><td data-label="维度">测试 fixture</td><td data-label="选定"><code>tempfile</code></td><td data-label="版本">3.x</td><td data-label="备注">临时 .db 文件，测后自动清理</td></tr>
+          </tbody>
+        </table>
+
+        <h4 id="ch11-data-dir">数据目录</h4>
+        <pre><code>macOS:   ~/Library/Application Support/dev.prompt-hub/
+Windows: %APPDATA%\dev.prompt-hub\</code></pre>
+        <p>由 Tauri <code>path::app_data_dir()</code> 解析。备份策略：<code>cp .db + WAL</code>。</p>
+
+        <h4 id="ch11-scale">数据规模与索引基线</h4>
+        <table class="table-stack">
+          <thead><tr><th>实体</th><th>预估上限</th><th>索引策略</th></tr></thead>
+          <tbody>
+            <tr><td data-label="实体">Modifier</td><td data-label="上限">≤ 5,000</td><td data-label="策略">全表 + 标签反查</td></tr>
+            <tr><td data-label="实体">Composition</td><td data-label="上限">≤ 1,000</td><td data-label="策略">含 Modifier 引用反查</td></tr>
+            <tr><td data-label="实体">Macro</td><td data-label="上限">≤ 100</td><td data-label="策略">主键即可</td></tr>
+            <tr><td data-label="实体">UsageRecord</td><td data-label="上限">增长无上限（按月归档）</td><td data-label="策略">时间范围 query + 关联实体反查</td></tr>
+            <tr><td data-label="实体">SOP</td><td data-label="上限">≤ 200</td><td data-label="策略">主键</td></tr>
+          </tbody>
+        </table>
+
+        <h3 id="ch11-toolchain">6.5 工具链</h3>
+
+        <div class="table-scroll">
+        <table>
+          <thead><tr><th>维度</th><th>选定</th><th>版本</th></tr></thead>
+          <tbody>
+            <tr><td>包管理</td><td>pnpm</td><td>9.x</td></tr>
+            <tr><td>构建</td><td>Vite</td><td>8.0</td></tr>
+            <tr><td>样式</td><td>CSS Modules + CSS variables</td><td>Vite 内置</td></tr>
+            <tr><td>class 拼接</td><td>clsx</td><td>2.x</td></tr>
+            <tr><td>前端测试</td><td>Vitest + Testing Library + jsdom</td><td>4 / latest / 29</td></tr>
+            <tr><td>Rust 测试</td><td>cargo test + tempfile</td><td>内置 / 3.x</td></tr>
+            <tr><td>E2E</td><td>Playwright</td><td>推到 v1.0+ 评估</td></tr>
+            <tr><td>JS Lint</td><td>ESLint</td><td>9.x（flat config）</td></tr>
+            <tr><td>JS Format</td><td>Prettier</td><td>3.x</td></tr>
+            <tr><td>Rust Lint</td><td>clippy（<code>-D warnings</code>）</td><td>随 toolchain</td></tr>
+            <tr><td>Rust Format</td><td>rustfmt</td><td>随 toolchain</td></tr>
+          </tbody>
+        </table>
+        </div>
+
+        <h4 id="ch11-lockfile">lockfile 政策</h4>
+        <ul>
+          <li><code>pnpm-lock.yaml</code> <strong>必须提交</strong></li>
+          <li><code>package-lock.json</code> / <code>yarn.lock</code> / <code>bun.lockb</code> <strong>必须 gitignore</strong></li>
+          <li>严禁混用其他包管理器（npm install 会产生 lockfile 冲突）</li>
+        </ul>
+
+        <h4 id="ch11-ci">CI 测试 step</h4>
+        <pre><code>pnpm install --frozen-lockfile
+pnpm test                          # Vitest 全量
+pnpm lint                          # ESLint
+cargo test --manifest-path src-tauri/Cargo.toml
+cargo clippy --manifest-path src-tauri/Cargo.toml -- -D warnings</code></pre>
+
+        <h3 id="ch11-version-lock">6.6 版本锁定原因</h3>
+
+        <div class="table-scroll">
+        <table>
+          <thead><tr><th>包</th><th>版本锁定</th><th>原因</th><th>升级触发</th></tr></thead>
+          <tbody>
+            <tr><td><code>tauri</code> (Rust)</td><td><code>^2.0</code></td><td>2.x 不兼容 1.x；私有 API 行为绑定 macOS 版本</td><td>major bump → ADR</td></tr>
+            <tr><td><code>@tauri-apps/api</code></td><td><code>^2.0</code></td><td>与 Rust 端协议绑定</td><td>同上</td></tr>
+            <tr><td><code>@tauri-apps/plugin-global-shortcut</code></td><td><code>^2.0</code></td><td>Tauri 2.x 插件协议</td><td>同上</td></tr>
+            <tr><td><code>@tauri-apps/plugin-updater</code></td><td><code>^2.0</code></td><td>Tauri 2.x 插件协议</td><td>同上</td></tr>
+            <tr><td><code>react</code> / <code>react-dom</code></td><td><code>^19.2</code></td><td>Actions / useOptimistic 是 19 特性，不可降级</td><td>major bump → ADR</td></tr>
+            <tr><td><code>zustand</code></td><td><code>^5.0</code></td><td>v5 类型推断与 v4 不兼容</td><td>major bump → ADR</td></tr>
+            <tr><td><code>rusqlite</code></td><td><code>0.32</code></td><td>bundled SQLite 版本影响 schema 迁移</td><td>minor bump 即评估</td></tr>
+            <tr><td><code>chrono</code></td><td><code>0.4</code></td><td>与 rusqlite 0.32 timestamp 适配</td><td>与 rusqlite 联动</td></tr>
+            <tr><td><code>uuid</code></td><td><code>^1.0</code></td><td>主键格式稳定</td><td>自由</td></tr>
+            <tr><td><code>pnpm</code></td><td><code>9.x</code></td><td>lockfile 格式跨 OS 一致</td><td>major bump → ADR</td></tr>
+            <tr><td><code>vite</code></td><td><code>^8.0</code></td><td>Tauri 2.x 模板基线；HMR / 测试共享配置</td><td>major bump → ADR</td></tr>
+            <tr><td><code>vitest</code></td><td><code>^4.0</code></td><td>bench API 用于 C1 benchmark</td><td>major bump → ADR</td></tr>
+            <tr><td><code>jsdom</code></td><td><code>29.x</code></td><td>与 Vitest 4 适配</td><td>跟随 Vitest</td></tr>
+            <tr><td><code>eslint</code></td><td><code>^9.0</code></td><td>flat config 强制</td><td>major bump → ADR</td></tr>
+          </tbody>
+        </table>
+        </div>
+
+        <h4 id="ch11-vaultx-borrow">VaultX 借鉴的依赖组合</h4>
+        <p>prompt-hub 借鉴 VaultX 的 Rust 依赖组合（rusqlite 0.32 + chrono 最新 + uuid 1.x），在 MSRV 1.77.2 下首次 <code>cargo build</code> 时需实测兼容性；若失败需在 ADR 补记并锁版本。</p>
+
+        <h3 id="ch11-bump">6.7 升级流程</h3>
+        <p>任何 dependency major version bump 必须走：</p>
+        <ol>
+          <li>开 ADR 评估破坏性变更（含 Options Considered + 反悔成本）</li>
+          <li>升级后跑 plan §0-T2 全量自检（含 design token 颜色一致性）</li>
+          <li>跑 plan §0-T1 性能 benchmark（C1 200ms 唤起回归）</li>
+          <li>更新本文件对应条目 + frontmatter <code>updated</code></li>
+          <li>升 frontmatter <code>version</code>（patch bump）</li>
+        </ol>
+
+        <p><strong>禁止行为</strong>：不走 ADR 直接 bump major version；不跑 benchmark 就 ship（C1 200ms 是硬指标）；混用其他包管理器。</p>
+      </section>
+
+
+      <!-- ============================================================
+           Chapter 12 · adr/*.md（决策记录）
+           ============================================================ -->
+      <section class="chapter" id="ch12">
+        <h2><span class="chapter-num">12</span>adr/*.md</h2>
+        <p class="muted" style="font-size: 0.88em; margin-top: -0.5em;">9 个 ADR（Architecture Decision Record）· 8 项 Accepted + 1 项 Proposed 占位（🤝 共创）</p>
+
+        <p>每个 ADR 默认折叠，点击展开查看 Context / Options Considered / Decision / Consequences / 反悔成本。ADR-005（prompt-combiner 复用）仍 Proposed，不阻塞第一阶段 MVP。</p>
+
+        <details class="adr-card" id="ch12-adr001">
+          <summary>ADR-001 · 选择 Tauri 2.x 作为桌面运行时<span class="adr-status">Accepted · 2026-05-19</span></summary>
+          <div class="adr-body">
+            <p><strong>决策</strong>：选择 Tauri 2.x 而非 Electron 30+ / Wails 2.x。</p>
+
+            <h5>触发事件</h5>
+            <p>第一阶段 MVP 建仓阻塞——D1 桌面运行时未决导致 AI 无法生成 import 语句，关键命令无法回填，后续 D2/D4/D5/D7 决策连锁阻塞。</p>
+
+            <h5>Options Considered</h5>
+            <ul>
+              <li><strong>A · Tauri 2.x</strong>：包体 5–15 MB / 内存 50–100 MB，C1 200ms 唤起的隐性预算最宽松；默认严格沙箱契合 A2 本地优先；macOS codesign + notarization 集成在 <code>tauri.conf.json</code>；AI 工具链对 Rust + Tauri 模板支持成熟。缺点：Rust 学习成本（控制在 ≤500 LOC）；跨平台 WebView 行为差异（macOS 优先可延后处理）。</li>
+              <li><strong>B · Electron 30+</strong>：生态最成熟、Chromium 一致性。但包体 80–150 MB / 内存常驻 200–500 MB——<strong>C1 200ms 唤起在 macOS 内存压力大时不稳</strong>；默认松散沙箱与 A2 隐私语境不契合。</li>
+              <li><strong>C · Wails 2.x（Go）</strong>：<strong>多窗口支持弱</strong>（仍在实验）——直接冲突 spec §2.3 辅形态副屏常驻视图；全局快捷键无官方插件。</li>
+            </ul>
+
+            <h5>一句话拍板</h5>
+            <p>选择 <strong>Tauri 2.x</strong>，理由是它是唯一同时满足 C1 200ms 唤起隐性内存预算 + A2 本地优先严格沙箱 + spec §2.3 多窗口副屏的运行时。</p>
+
+            <h5>Consequences</h5>
+            <ul>
+              <li><strong>正向</strong>：D5 自动锁定 Vite；D7 自动锁定 <code>@tauri-apps/plugin-global-shortcut</code>；解锁 D2/D3/D4 独立决策；ops-spec §1.2 打包/签名照 Tauri 官方文档落地。</li>
+              <li><strong>反向</strong>：Rust 学习成本；锁死 OS WebView 路线（未来若需 Chromium 独有 API 需重新评估）；Tauri v2 生态相对新；跨平台时需为 WebView 差异预算调试时间。</li>
+              <li><strong>反悔成本</strong>：约 30–50 个文件改造；Rust 后端（≤500 LOC）→ Node.js + IPC 桥完全重写；UI 部分（React + TypeScript）几乎可零改动；不可逆点：代码签名证书已绑定 Tauri updater 流程。</li>
+            </ul>
+          </div>
+        </details>
+
+        <details class="adr-card" id="ch12-adr002">
+          <summary>ADR-002 · 选择 React 19.2 作为前端框架<span class="adr-status">Accepted</span></summary>
+          <div class="adr-body">
+            <h5>触发事件</h5>
+            <p>ADR-001 锁定 Tauri 2.x 后，前端框架是 MVP 建仓前必须决议的下一个阻塞项。</p>
+
+            <h5>Options Considered</h5>
+            <ul>
+              <li><strong>A · React 19.2</strong>：AI 工具链支持最成熟；VaultX 实战验证 React 19.2 + Tauri 2.x 组合稳定；Actions + useOptimistic 契合"复制即隐藏"乐观更新；生态最大。</li>
+              <li><strong>B · Vue 3.5</strong>：包体小、性能优、中文生态友好。缺点：AI 工具链对 Vue 支持次于 React。</li>
+              <li><strong>C · Svelte 5</strong>：运行时 ~10KB，对 C1 加分。缺点：生态较小，未在同形态项目验证。</li>
+              <li><strong>D · SolidJS</strong>：性能顶级、JSX 接近 React。缺点：生态最小，AI 工具链支持弱。</li>
+            </ul>
+
+            <h5>一句话拍板</h5>
+            <p>选择 <strong>React 19.2</strong>，理由是 AI 协同时代项目对工具链成熟度的需求 &gt; 包体/性能差异，且 VaultX 实战已验证 React 19.2 + Tauri 2.x 组合稳定。</p>
+
+            <h5>Consequences</h5>
+            <ul>
+              <li><strong>正向</strong>：解锁 ADR-006（Zustand 5 完美适配）+ ADR-009（CSS Modules + React 标配）；AI 协同生成 React 代码质量最高。</li>
+              <li><strong>反向</strong>：锁死 React 心智；React 19 仍在生态磨合期，少数老库可能未升级。</li>
+              <li><strong>反悔成本</strong>：所有 <code>.tsx</code> 重写（100-300 个文件）；React hooks 模式 / Context 已渗透组件设计，迁移成本随 LOC 线性增长。</li>
+            </ul>
+          </div>
+        </details>
+
+        <details class="adr-card" id="ch12-adr003">
+          <summary>ADR-003 · 选择 rusqlite 0.32 + bundled SQLite（不启 SQLCipher）<span class="adr-status">Accepted</span></summary>
+          <div class="adr-body">
+            <h5>触发事件</h5>
+            <p>prd 数据模型定义了 Modifier / Composition / Macro / UsageRecord / SOP 等 ≥5 个关联实体，UsageRecord 增长后需 query/index。</p>
+
+            <h5>Options Considered</h5>
+            <ul>
+              <li><strong>A · rusqlite 0.32 + bundled SQLite（不启 SQLCipher）</strong>：关系查询 / 索引 / 外键 / 事务全部满足；bundled SQLite 跨 OS 行为一致；启动 zero overhead，契合 C1 200ms 唤起；备份策略简单（cp .db + WAL）。缺点：.db 文件未加密——但 A2 已声明"不上云 + 本地优先"是隐私底线，OS 用户密码 + FileVault 已是第一道防线。</li>
+              <li><strong>B · rusqlite 0.32 + bundled SQLCipher（整库加密）</strong>：物理访问者无法直读 .db 文件。<strong>但破坏 spec §2.3「召之即来」哲学</strong>（每次启动都要输 master password，C1 200ms 不可达）；prompt-hub 不是凭证管理器，安全等级与 VaultX 不对等。</li>
+              <li><strong>C · JSON 文件 + 内存索引</strong>：UsageRecord 增长后启动加载时间线性恶化；无原子事务；≥1000 条后必重构。</li>
+              <li><strong>D · Tauri Store plugin（KV）</strong>：仅 KV 接口，prompt-hub 关系数据需求超出能力。</li>
+            </ul>
+
+            <h5>一句话拍板</h5>
+            <p>选择 <strong>rusqlite 0.32 + bundled SQLite</strong>，<strong>不启 SQLCipher</strong>——A2 本地优先 + 不上云已达 prompt-hub 隐私底线，整库加密引入解锁交互破坏 C1 召之即来。</p>
+
+            <h5>Consequences</h5>
+            <ul>
+              <li><strong>正向</strong>：prd 字段级 schema 可直接落地；ops-spec 备份策略简化为「cp .db + WAL」；C1 200ms 唤起的数据层零负担；跨设备恢复无需带密钥。</li>
+              <li><strong>反向</strong>：.db 文件物理访问者可直读——依赖 OS 层安全；bundled SQLite 增加包体 ~1MB（在 Tauri 10-20MB 量级中可忽略）。</li>
+              <li><strong>反悔成本</strong>：约 5-15 个文件改造；不可逆点：若用户已分发明文 .db 备份在多处，切换到加密后无法事后追溯销毁明文副本。</li>
+            </ul>
+          </div>
+        </details>
+
+        <details class="adr-card" id="ch12-adr004">
+          <summary>ADR-004 · 选择 pnpm 9.x 作为包管理器<span class="adr-status">Accepted</span></summary>
+          <div class="adr-body">
+            <h5>Options Considered</h5>
+            <ul>
+              <li><strong>A · pnpm 9.x</strong>：content-addressable store + 严格 dep 解析（无幻 hoisting）；Tauri 2.x 项目主流；lockfile 稳定跨 OS 一致；workspace 协议天然支持 monorepo。</li>
+              <li><strong>B · bun 1.x</strong>：安装速度最快、内置 TS。缺点：lockfile 二进制不可 diff；Tauri 模板对 bun 适配略晚。</li>
+              <li><strong>C · npm 10.x</strong>：零额外安装。缺点：慢；hoisting 默认开启，dep 解析松散。</li>
+            </ul>
+
+            <h5>一句话拍板</h5>
+            <p>选择 <strong>pnpm 9.x</strong>，理由是 Tauri 2.x 主流 + 严格 dep 解析（契合"单一真相源"精神）+ 磁盘高效。</p>
+
+            <h5>Consequences</h5>
+            <ul>
+              <li><strong>正向</strong>：CLAUDE §2 <code>&lt;pm&gt;</code> 占位全部替换为 pnpm；CI 缓存 key 可基于 <code>pnpm-lock.yaml</code> 稳定；workspace 协议保留未来拆 packages/ 的可能性。</li>
+              <li><strong>反向</strong>：团队成员若用 npm 跑 <code>npm install</code> 会引入 <code>package-lock.json</code> 冲突——需在 CLAUDE.md 加禁令。</li>
+              <li><strong>反悔成本</strong>：极小——删 lockfile + 重新安装；包管理器是最易切换的决策之一。</li>
+            </ul>
+          </div>
+        </details>
+
+        <details class="adr-card" id="ch12-adr005">
+          <summary>ADR-005 · prompt-combiner 旧代码复用决策（占位）<span class="adr-status proposed">Proposed</span></summary>
+          <div class="adr-body">
+            <div class="callout warn">
+              <p>⚠️ <strong>本 ADR 当前为 Proposed 占位</strong>，Decision 留空待调研。本节列出三候选 + 触发调研的下一步动作，避免 CLAUDE §6 第 8 项「不要复用 prompt-combiner 旧代码而不开 ADR」铁律被绕过。</p>
+            </div>
+
+            <h5>触发事件</h5>
+            <p>ADR-001 锁定 Tauri 2.x 后，prompt-combiner 若是 Electron/Node.js 栈，<strong>后端代码无法直接迁移</strong>（需 Rust 重写）；前端组件视框架是否一致而定。</p>
+
+            <h5>待调研项</h5>
+            <ul>
+              <li>prompt-combiner 的技术栈是什么（前端框架版本 / 后端语言 / 数据层）</li>
+              <li>LOC 规模与模块边界</li>
+              <li>是否存在 constitution 8 条铁律的历史违反点（需在迁移时清理）</li>
+              <li>关键功能与 prompt-hub Modifier/Composition/Macro 三层模型的契合度</li>
+            </ul>
+
+            <h5>Options Considered（待调研后填具体优劣）</h5>
+            <ul>
+              <li><strong>A · 完全重写</strong>：忽略 prompt-combiner，按 spec + prd + product-spec 从零实现。100% 符合 constitution，无历史包袱；周期最长（4-6 周）。</li>
+              <li><strong>B · 部分迁移（仅前端组件）</strong>：保留 prompt-combiner 前端组件，后端全部用 Rust 重写。节省 UI 实现时间；但前端框架版本可能不匹配（React 16/17 → 19 需升级），旧组件可能含禁止的反模式（裸 px / 裸 hex）。</li>
+              <li><strong>C · 全部复用</strong>：与 ADR-001 直接冲突——Tauri 2.x Rust 后端无法承载 Node.js 代码。<strong>本选项已不可行</strong>，仅作为"为何不选"存档。</li>
+            </ul>
+
+            <h5>触发本 ADR 转 Accepted 的下一步动作</h5>
+            <ol>
+              <li>omar 提供 prompt-combiner 仓库位置 / GitHub URL / 本地路径</li>
+              <li>AI 调研：技术栈 / LOC / 模块结构 / 与 spec 的契合度</li>
+              <li>输出调研报告 → 在本 ADR §4/§5 填具体优劣 + Decision</li>
+            </ol>
+
+            <p><strong>当前 Proposed 状态的承诺</strong>：在本 ADR 未转 Accepted 前，AI <strong>不得</strong>自行从 prompt-combiner 复制代码到 prompt-hub 仓库。</p>
+          </div>
+        </details>
+
+        <details class="adr-card" id="ch12-adr006">
+          <summary>ADR-006 · 选择 Zustand 5 作为状态管理<span class="adr-status">Accepted</span></summary>
+          <div class="adr-body">
+            <h5>Options Considered</h5>
+            <ul>
+              <li><strong>A · Zustand 5</strong>：单文件 store + hook 订阅 + middleware（persist / immer / devtools）；TypeScript 体验最佳；VaultX 实战验证多 store 分层模式；persist middleware 直接同步 localStorage。</li>
+              <li><strong>B · Jotai 2</strong>：原子化 state。缺点：prompt-hub state 粒度较大，原子化反碎片化；学习曲线略陡。</li>
+              <li><strong>C · React Context only</strong>：零依赖。缺点：rerender 不可控（与 C1 200ms 唤起冲突）；多 context 嵌套地狱。</li>
+              <li><strong>D · Redux Toolkit</strong>：生态最大。缺点：仍有 reducer / action / slice 心智；prompt-hub 规模不需要这么重。</li>
+            </ul>
+
+            <h5>一句话拍板</h5>
+            <p>选择 <strong>Zustand 5</strong> + 按业务边界分四层 store（<code>appStore</code> / <code>promptStore</code> / <code>searchStore</code> / <code>settingsStore</code>），借鉴 VaultX 实战分层模式。</p>
+
+            <h5>Consequences</h5>
+            <ul>
+              <li><strong>正向</strong>：四层 store 设计明确，与 product-spec 状态机映射一致；persist middleware 直接搞定 settingsStore localStorage；React 19 + Zustand 5 组合在 VaultX 已验证稳定。</li>
+              <li><strong>反向</strong>：跨 store 派生 state 需用 selector 组合；大型 immutable update 需 immer（增加 ~10KB）；store 文件结构需约定（推荐 <code>src/stores/{name}Store.ts</code>）。</li>
+              <li><strong>反悔成本</strong>：所有组件中的 <code>useXxxStore</code> hook 替换；约 50-150 个组件文件；状态管理库切换是相对干净的工程。</li>
+            </ul>
+          </div>
+        </details>
+
+        <details class="adr-card" id="ch12-adr007">
+          <summary>ADR-007 · 选择测试栈（Vitest 4 + RTL + cargo test）<span class="adr-status">Accepted</span></summary>
+          <div class="adr-body">
+            <h5>Options Considered</h5>
+            <ul>
+              <li><strong>A · Vitest 4 + Testing Library + jsdom 29 + cargo test + tempfile</strong>：Vitest 与 Vite 8.0 完美集成（共享 plugin / 配置）；启动 / 跑速最快；Testing Library 强制"as user"测试理念；cargo test 是 Rust 事实标准；tempfile crate 处理 SQLite 文件 fixture。</li>
+              <li><strong>B · Jest 30 + Testing Library + jsdom</strong>：生态最大。缺点：与 Vite 集成需要 vite-jest 桥，配置复杂；启动慢；ESM 支持仍有边角问题。</li>
+              <li><strong>C · Playwright Component + Playwright E2E</strong>：真实浏览器环境。缺点：单元测试 overkill——每个测试启动 Chromium 太慢。</li>
+            </ul>
+
+            <h5>一句话拍板</h5>
+            <p>选择 <strong>Vitest 4 + Testing Library + jsdom 29 + cargo test + tempfile</strong>；E2E 推到 v1.0+ 视需求评估 Playwright。</p>
+
+            <h5>Consequences</h5>
+            <ul>
+              <li><strong>正向</strong>：Vitest 与 Vite 共享配置；测试启动快（HMR-like watch mode）；test-spec §5 性能 benchmark 可用 Vitest bench API；cargo test 与 GitHub Actions 标准 step 集成。</li>
+              <li><strong>反向</strong>：jsdom 限制——不测真实快捷键 / 全屏窗口 / 透明背景（需 Playwright 或手动验收）；Vitest 4 升 5 时可能有 breaking change。</li>
+              <li><strong>反悔成本</strong>：迁移 Vitest → Jest 约 100-200 行测试代码语法调整；测试框架是干净切换。</li>
+            </ul>
+          </div>
+        </details>
+
+        <details class="adr-card" id="ch12-adr008">
+          <summary>ADR-008 · 启用 Tauri macos-private-api feature<span class="adr-status">Accepted</span></summary>
+          <div class="adr-body">
+            <h5>触发事件</h5>
+            <p>spec §2.3 哲学三定义主形态为"全屏覆盖窗口 + 半透明背景（约 92%）"+ 快捷键唤起即时显示；这需要 NSWindow 私有 API 才能完整实现（标准 Tauri API 无法达到"主屏不被遮挡感"效果）。</p>
+
+            <h5>解锁的能力</h5>
+            <ul>
+              <li>NSWindow <code>level</code> 控制（如 <code>NSFloatingWindowLevel</code>，浮于所有应用上方但不抢焦点）</li>
+              <li><code>setSharingType</code> 控制窗口分享行为</li>
+              <li><code>canBecomeMain</code> / <code>canBecomeKey</code> 自定义（主形态唤起后立即接收键盘事件而不切换 active app）</li>
+            </ul>
+
+            <h5>Options Considered</h5>
+            <ul>
+              <li><strong>A · 启用 <code>macos-private-api</code></strong>：主形态全屏覆盖 + 透明 + 不抢焦点完整可达；快捷键唤起无闪烁；spec §2.3 哲学三时间分离效果完整。缺点：永久放弃 macOS App Store 上架可能性。</li>
+              <li><strong>B · 不启用</strong>：保留 App Store 上架选项。缺点：主形态视觉效果打折（强制激活 / 闪烁），与 spec §2.3 哲学三冲突；App Store 上架本就不在 prompt-hub 路线图。</li>
+            </ul>
+
+            <h5>一句话拍板</h5>
+            <p><strong>启用</strong> <code>macos-private-api</code>，理由是 spec §2.3 哲学三时间分离的视觉强度优先于不在路线图内的 App Store 上架可能。</p>
+
+            <h5>Consequences</h5>
+            <ul>
+              <li><strong>正向</strong>：解锁主形态完整视觉效果；ops-spec §1.1 分发渠道明确为 DMG 直链 + tauri-plugin-updater。</li>
+              <li><strong>反向</strong>：<strong>永久关闭</strong> macOS App Store 上架可能性；私有 API 行为依赖 macOS 版本，需 macOS 版本兼容性测试。</li>
+              <li><strong>反悔成本</strong>：主形态窗口管理 ~50-100 LOC 重写为标准 API；不可逆点：用户已习惯私有 API 视觉效果后，回退到标准 API 会感到"降级"。</li>
+            </ul>
+          </div>
+        </details>
+
+        <details class="adr-card" id="ch12-adr009">
+          <summary>ADR-009 · 选择 CSS Modules + CSS variables（不引入 Tailwind）<span class="adr-status">Accepted</span></summary>
+          <div class="adr-body">
+            <h5>触发事件</h5>
+            <p>CLAUDE §4.1 CSS 必须用 token——任何组件 CSS / 内联样式禁止裸 px / 裸 hex / 裸 ms 值。历史事件：plan §0-T2 <code>#1D9E75</code> 字面量混入代码导致颜色不一致（2026-05-18 全量替换）。</p>
+
+            <h5>Options Considered</h5>
+            <ul>
+              <li><strong>A · 纯 CSS variables + CSS Modules</strong>：与"禁止裸值"铁律 100% 契合——任何裸 px / 裸 hex 在 <code>.module.css</code> 中可机械检测；局部作用域；零运行时；学习成本最低。</li>
+              <li><strong>B · Tailwind CSS 4.2 + token preset</strong>：utility class 开发速度快。缺点：与"禁止裸值"铁律<strong>结构性冲突</strong>——Tailwind 默认提供 <code>p-4</code> 等"预定义裸值别名"，团队成员/AI 写 <code>p-4</code> 都会"看起来正确"但违反铁律。</li>
+              <li><strong>C · vanilla-extract</strong>：类型安全 + 零运行时。缺点：学习曲线（独特 API），生态较小。</li>
+              <li><strong>D · Emotion / styled-components</strong>：运行时 CSS-in-JS。缺点：运行时开销与 C1 200ms 唤起冲突。</li>
+            </ul>
+
+            <h5>一句话拍板</h5>
+            <p>选择 <strong>纯 CSS variables + CSS Modules</strong>，理由是与 CLAUDE §4.1「禁止裸值」铁律结构性契合，铁律可机械检测；<strong>第二阶段（组件复杂度上升后）重评估</strong> Tailwind token-only 模式。</p>
+
+            <h5>Consequences</h5>
+            <ul>
+              <li><strong>正向</strong>：CLAUDE §4.1 铁律可用简单 lint 规则机械检测；design-spec token 直接映射 CSS variables，无 preset 中间层；零运行时开销，对 C1 200ms 唤起最友好。</li>
+              <li><strong>反向</strong>：开发速度比 Tailwind 慢（中等组件需要写 10-30 行 .module.css）；需要 clsx 工具处理变体；第二阶段若组件数 &gt;100 且复用频繁，可能感受到 utility class 缺失的痛点。</li>
+              <li><strong>反悔成本</strong>：迁移 CSS Modules → Tailwind 约 50-200 个组件文件改写 class；样式工具切换是干净的工程。</li>
+              <li><strong>第二阶段触发条件</strong>：组件数 &gt;100 / 主形态视图密度上升 / Component variant 数量爆炸时重评估。</li>
+            </ul>
+          </div>
+        </details>
+      </section>
+
+
+      <!-- ============================================================
+           Chapter 13 · ops-spec.md
+           ============================================================ -->
+      <section class="chapter" id="ch13">
+        <h2><span class="chapter-num">13</span>ops-spec.md</h2>
+        <p class="muted" style="font-size: 0.88em; margin-top: -0.5em;">运维规格 · 部署 / 性能预算 / 备份 / 升级回滚 / 监控（🤖 AI 主笔 + 人审）</p>
+
+        <div class="callout">
+          <p><strong>运营语境特殊性</strong>：单人单机桌面应用（constitution A2 / A3），传统"运营"含义（部署集群 / 容量规划 / SRE on-call）大量 N/A。本章保留对单人桌面工具<strong>仍然适用</strong>的 ops 实践。</p>
+        </div>
+
+        <h3 id="ch13-deploy">8.1 部署模式（ops §1）</h3>
+
+        <h4 id="ch13-distrib">分发形态</h4>
+        <p><strong>ADR-001 后</strong>：分发统一走 Tauri bundle + <code>tauri-plugin-updater</code>，跨 OS 一致。</p>
+        <p><strong>ADR-008 后</strong>：启用 <code>macos-private-api</code>，<strong>永久排除</strong> macOS App Store 上架；macOS 分发仅走 DMG 直链 + Developer ID 签名 + notarization。</p>
+
+        <table class="table-stack">
+          <thead><tr><th>平台</th><th>分发方式</th><th>安装包格式</th><th>自动更新</th></tr></thead>
+          <tbody>
+            <tr><td data-label="平台">macOS</td><td data-label="方式">DMG 直链（永久排除 App Store）</td><td data-label="格式"><code>.dmg</code> / <code>.app.tar.gz</code></td><td data-label="更新">tauri-plugin-updater</td></tr>
+            <tr><td data-label="平台">Windows</td><td data-label="方式">MSI 直链</td><td data-label="格式"><code>.msi</code> / <code>.exe.zip</code></td><td data-label="更新">tauri-plugin-updater</td></tr>
+            <tr><td data-label="平台">Linux</td><td data-label="方式">v2.0 后再考虑</td><td data-label="格式">AppImage / .deb</td><td data-label="更新">tauri-plugin-updater</td></tr>
+            <tr><td data-label="平台">iPad（辅形态）</td><td data-label="方式">v2.0+ 暂缓</td><td data-label="格式">TestFlight 或 sideload</td><td data-label="更新">—</td></tr>
+          </tbody>
+        </table>
+
+        <h4 id="ch13-sign">签名 / 公证</h4>
+        <ul>
+          <li>macOS：必须 Apple Developer ID 签名 + 公证（避免 Gatekeeper 拦截）</li>
+          <li>Windows：建议 EV 代码签名（避免 SmartScreen 拦截）</li>
+          <li>签名密钥管理：本地 Keychain / 加密文件，不进 git</li>
+          <li>Tauri 集成：在 <code>tauri.conf.json</code> 配置 <code>bundle.macOS.signingIdentity</code> + <code>bundle.macOS.entitlements</code>，构建时通过 <code>APPLE_ID</code> / <code>APPLE_PASSWORD</code> / <code>APPLE_TEAM_ID</code> 环境变量触发 notarization</li>
+        </ul>
+
+        <h4 id="ch13-no-deploy">不做的部署</h4>
+        <ul>
+          <li>❌ Web 部署（A1 桌面原生 only）</li>
+          <li>❌ Docker / k8s（单人桌面工具，无服务端）</li>
+          <li>❌ 多租户 SaaS（A3 单人）</li>
+        </ul>
+
+        <h3 id="ch13-perf">8.2 性能预算 SLO（ops §2）</h3>
+        <p>本节是 constitution C1 的运营落地。Benchmark 在 test-spec §5 跑，本节定义线上违反时的处理。</p>
+
+        <table class="table-stack">
+          <thead><tr><th>指标</th><th>SLO</th><th>测量</th><th>违反处理</th></tr></thead>
+          <tbody>
+            <tr><td data-label="指标">主形态唤起 P95</td><td data-label="SLO">≤ 200ms</td><td data-label="测量">用户本地 perf API 自采样（不上报）</td><td data-label="处理">用户体感即可，开 issue</td></tr>
+            <tr><td data-label="指标">冷启动 P95</td><td data-label="SLO">≤ 1.5s</td><td data-label="测量">启动到 view:home-* 可交互</td><td data-label="处理">issue + 优先级 P0</td></tr>
+            <tr><td data-label="指标">内存常驻</td><td data-label="SLO">≤ 300MB（含辅形态）</td><td data-label="测量">用户 Activity Monitor</td><td data-label="处理">warning，&gt;500MB 必修</td></tr>
+            <tr><td data-label="指标">包体积</td><td data-label="SLO">≤ 80MB（解压后）</td><td data-label="测量">构建产物 stat</td><td data-label="处理">warning，&gt;120MB 阻塞发布</td></tr>
+          </tbody>
+        </table>
+
+        <p><strong>自采样</strong>：用户本地 perf 数据写入 localStorage <code>metrics_log</code>，仅本地查看，<strong>不上报</strong>（A2）。</p>
+
+        <p><strong>ADR-001 后</strong>：Tauri 2.x 实测内存常驻 50-100MB / 包体 10-20MB，远低于上述上限。本表保留为<strong>警戒线</strong>（regression 防线），非目标——若实际数字接近上限说明出现内存泄漏或资源未压缩。</p>
+
+        <h3 id="ch13-backup">8.3 数据备份策略（ops §3）</h3>
+
+        <h4 id="ch13-backup-trigger">自动备份触发</h4>
+        <table class="table-stack">
+          <thead><tr><th>触发点</th><th>备份内容</th><th>命名规则</th><th>保留期</th></tr></thead>
+          <tbody>
+            <tr><td data-label="触发">启动时 schema_version 不一致</td><td data-label="内容">完整数据 JSON</td><td data-label="命名"><code>backup-{timestamp}-{old_version}.json</code></td><td data-label="保留">永久</td></tr>
+            <tr><td data-label="触发">用户主动「清空所有数据」</td><td data-label="内容">同上</td><td data-label="命名"><code>backup-{timestamp}-pre-wipe.json</code></td><td data-label="保留">永久</td></tr>
+            <tr><td data-label="触发">用户主动导出</td><td data-label="内容">同上</td><td data-label="命名"><code>prompt-hub-{timestamp}.json</code></td><td data-label="保留">用户自管</td></tr>
+            <tr><td data-label="触发">每月 1 号</td><td data-label="内容">同上</td><td data-label="命名"><code>auto-monthly-{YYYY-MM}.json</code></td><td data-label="保留">最近 6 个月</td></tr>
+          </tbody>
+        </table>
+
+        <h4 id="ch13-backup-loc">备份位置</h4>
+        <p>默认：<code>~/Library/Application Support/prompt-hub/backups/</code>（macOS）/ <code>%APPDATA%/prompt-hub/backups/</code>（Windows）。用户可在配置面板改默认目录到 iCloud / Dropbox / Git 仓库。</p>
+
+        <p><strong>关键约束</strong>：恢复前再做一次当前数据备份（防恢复失败丢失现有数据）。</p>
+
+        <h3 id="ch13-upgrade">8.4 升级回滚契约（ops §4）</h3>
+
+        <h4 id="ch13-minor">minor 升级（自动）</h4>
+        <ul>
+          <li>用户感知：无</li>
+          <li>备份：自动</li>
+          <li>失败处理：静默回滚 + 错误日志写入 <code>~/...prompt-hub/logs/</code></li>
+          <li>用户介入门槛：仅在连续 3 次启动迁移失败时弹窗</li>
+        </ul>
+
+        <h4 id="ch13-major">major 升级（强同意）</h4>
+        <ul>
+          <li>用户感知：弹窗</li>
+          <li>备份：强制要求导出到用户指定位置</li>
+          <li>失败处理：回滚 + 弹窗解释 + 建议手工恢复</li>
+          <li>旧版二进制：v2.0 发布后 v1.x 二进制保留 ≥ 12 个月，可下载</li>
+        </ul>
+
+        <h4 id="ch13-version">版本号语义</h4>
+        <ul>
+          <li>应用版本（user-facing）：<code>v{major}.{minor}.{patch}</code></li>
+          <li>schema_version（数据兼容）：<code>{major}.{minor}</code>（不含 patch）</li>
+          <li>两者独立 bump：应用 v1.2.3 可能仍用 schema 1.1</li>
+        </ul>
+
+        <h3 id="ch13-monitor">8.5 监控（ops §5）</h3>
+
+        <h4 id="ch13-monitor-on">启用的监控</h4>
+        <table class="table-stack">
+          <thead><tr><th>类型</th><th>实现</th><th>数据流向</th></tr></thead>
+          <tbody>
+            <tr><td data-label="类型">性能自采样</td><td data-label="实现"><code>metrics_log</code> in localStorage</td><td data-label="流向">本地，用户在 view:status-panel 查看</td></tr>
+            <tr><td data-label="类型">错误日志</td><td data-label="实现">文件日志 <code>~/...prompt-hub/logs/error.log</code></td><td data-label="流向">本地，按 7 天滚动</td></tr>
+            <tr><td data-label="类型">迁移日志</td><td data-label="实现"><code>migration_log</code> in localStorage</td><td data-label="流向">本地，用户在配置面板查看</td></tr>
+            <tr><td data-label="类型">UsageRecord</td><td data-label="实现">主数据</td><td data-label="流向">本地，append-only</td></tr>
+          </tbody>
+        </table>
+
+        <h4 id="ch13-monitor-off">禁用的监控（明确拒绝）</h4>
+        <ul>
+          <li>❌ Sentry / Bugsnag 等错误上报</li>
+          <li>❌ Google Analytics / Mixpanel</li>
+          <li>❌ 任何 telemetry / heartbeat 上报</li>
+          <li>❌ 崩溃日志自动上传</li>
+        </ul>
+
+        <p><strong>用户主动报错 flow</strong>：错误页提供「复制错误信息」按钮，用户<strong>手动</strong>贴到 GitHub issue（用户主动 = 明确知情）。</p>
+
+        <h3 id="ch13-no-ops">8.6 不需要的 ops 能力（ops §6）</h3>
+
+        <table class="table-stack">
+          <thead><tr><th>ops 能力</th><th>是否需要</th><th>理由</th></tr></thead>
+          <tbody>
+            <tr><td data-label="能力">部署集群</td><td data-label="需要">❌</td><td data-label="理由">桌面应用</td></tr>
+            <tr><td data-label="能力">容量规划</td><td data-label="需要">❌</td><td data-label="理由">单人</td></tr>
+            <tr><td data-label="能力">数据库主从</td><td data-label="需要">❌</td><td data-label="理由">本地 SQLite</td></tr>
+            <tr><td data-label="能力">缓存层（Redis 等）</td><td data-label="需要">❌</td><td data-label="理由">本地查询</td></tr>
+            <tr><td data-label="能力">CDN</td><td data-label="需要">仅安装包分发可选</td><td data-label="理由">Cloudflare / GitHub Releases</td></tr>
+            <tr><td data-label="能力">负载均衡</td><td data-label="需要">❌</td><td data-label="理由">无服务端</td></tr>
+            <tr><td data-label="能力">on-call rotation</td><td data-label="需要">❌</td><td data-label="理由">单人项目</td></tr>
+            <tr><td data-label="能力">灾备多活</td><td data-label="需要">❌</td><td data-label="理由">用户自管备份</td></tr>
+            <tr><td data-label="能力">Rate limiting</td><td data-label="需要">❌</td><td data-label="理由">无对外接口</td></tr>
+          </tbody>
+        </table>
+
+        <h3 id="ch13-release">8.7 发布流程（ops §7）</h3>
+        <pre><code>1. version bump (semver) + CHANGELOG 更新
+2. 跑全量 test-spec
+3. 跑性能基准 vs main baseline
+4. 构建多平台安装包
+5. 签名 + 公证
+6. 上传到 GitHub Releases / 自托管 update server
+7. 更新 update manifest（Sparkle / Squirrel）
+8. 跨设备烟雾测试（Mac + Windows + 副屏）
+9. 通过后宣布</code></pre>
+        <p>发布频率：建议 minor ≤ 每月 1 次，major 半年内不超 1 次。</p>
+
+        <h3 id="ch13-disaster">8.8 灾难场景预案（ops §8）</h3>
+        <table class="table-stack">
+          <thead><tr><th>场景</th><th>预案</th></tr></thead>
+          <tbody>
+            <tr><td data-label="场景">用户数据 localStorage 损坏</td><td data-label="预案">自动尝试最近一份备份恢复，失败则提示用户手动选择备份文件</td></tr>
+            <tr><td data-label="场景">升级后无法启动</td><td data-label="预案">v1.x 二进制保留 ≥12 个月，用户可下载旧版回退</td></tr>
+            <tr><td data-label="场景">签名密钥泄露</td><td data-label="预案">立即吊销 + 重新签发新版本 + 通过更新通道告警旧版本不可用</td></tr>
+            <tr><td data-label="场景">GitHub Releases 不可访问</td><td data-label="预案">提供备用下载点（自托管 / 镜像）</td></tr>
+          </tbody>
+        </table>
+
+      </section>
+
+      <!-- ============================================================
+           Chapter 14 · test-spec.md
+           ============================================================ -->
+      <section class="chapter" id="ch14">
+        <h2><span class="chapter-num">14</span>test-spec.md</h2>
+        <p class="muted" style="font-size: 0.88em; margin-top: -0.5em;">三层测试金字塔 · 单元 / 集成 / E2E · 性能基准 · LLM Eval N/A 说明（🤖 AI 主笔 + 人审）</p>
+
+        <h3 id="ch14-test-pyramid">13.1 测试金字塔</h3>
+        <table class="table-stack">
+          <thead><tr><th>层</th><th>工具</th><th>覆盖范围</th><th>触发时机</th></tr></thead>
+          <tbody>
+            <tr><td data-label="层">单元测试</td><td data-label="工具">Vitest 1.x</td><td data-label="覆盖">纯函数 / state machine / 工具函数</td><td data-label="时机">每次 commit pre-push hook</td></tr>
+            <tr><td data-label="层">集成测试</td><td data-label="工具">Vitest + 真实 SQLite</td><td data-label="覆盖">数据层 + 业务逻辑组合</td><td data-label="时机">每次 PR CI</td></tr>
+            <tr><td data-label="层">E2E 测试</td><td data-label="工具">Playwright 1.x</td><td data-label="覆盖">完整用户 flow（含快捷键 / 窗口切换）</td><td data-label="时机">每次 PR CI + 发布前</td></tr>
+            <tr><td data-label="层">性能基准</td><td data-label="工具">tinybench / 手写</td><td data-label="覆盖">唤起延迟 / 渲染 / 数据查询</td><td data-label="时机">主形态相关代码改动 + 发布前</td></tr>
+          </tbody>
+        </table>
+
+        <p><strong>反金字塔禁止</strong>：E2E &gt; 集成 &gt; 单元 数量倒挂时必须重构（违反则 PR 被 block）。</p>
+
+        <h3 id="ch14-unit">8.10 单元测试范围（test §2）</h3>
+
+        <h4 id="ch14-unit-core">核心业务逻辑（必测，覆盖 ≥90%）</h4>
+        <table class="table-stack">
+          <thead><tr><th>函数族</th><th>测试要点</th></tr></thead>
+          <tbody>
+            <tr><td data-label="函数"><code>composition.assemble()</code></td><td data-label="要点">Modifier 按顺序拼接 / 空 modifier 数组返回空串 / role 缺失时跳过</td></tr>
+            <tr><td data-label="函数"><code>usage.record()</code></td><td data-label="要点">append-only 写入 / 不修改已有记录 / target_type 枚举校验</td></tr>
+            <tr><td data-label="函数"><code>sop.advance(step)</code></td><td data-label="要点">步骤推进 / 越界拒绝 / 已完成 SOP 不可再 advance</td></tr>
+            <tr><td data-label="函数"><code>phase.switch(id)</code></td><td data-label="要点">切换触发 UsageRecord (target_type='alignment') / 当前相位状态持久</td></tr>
+            <tr><td data-label="函数"><code>macro.promoteFromComposition()</code></td><td data-label="要点">Composition → Macro 转换保留 expandFrom / native flag 正确</td></tr>
+            <tr><td data-label="函数"><code>schema.validate(json)</code></td><td data-label="要点">拒绝 <code>__proto__</code> / <code>constructor</code> 键 / 超长字段拒绝 / 必填字段缺失拒绝</td></tr>
+          </tbody>
+        </table>
+
+        <h4 id="ch14-unit-fsm">状态机测试（覆盖 ≥80%）</h4>
+        <ul>
+          <li><code>Composition</code> 状态：<code>building → assembled → discarded</code> 或 <code>promoted</code></li>
+          <li><code>SOP</code> 状态：<code>active</code> / <code>paused</code> / <code>completed</code></li>
+          <li><code>Macro</code> 状态：<code>active</code> / <code>deprecated</code></li>
+          <li><code>AlignmentPhrase</code> 状态：<code>active</code> / <code>deprecated</code></li>
+        </ul>
+
+        <h4 id="ch14-unit-bound">边界约束测试（必测）</h4>
+        <ul>
+          <li>B1: 任何代码引入第 4 类资产 schema → 测试编译期失败（类型层面强制）</li>
+          <li>B2: AlignmentPhrase 不能写入 SOP.steps → 数据层 INSERT 拒绝</li>
+          <li>资产数量上限：Modifier 30 / Macro 100 / Scene 10 / Phase 12 / AlignmentPhrase 50 / SOP 20 / Phrase 300——超过时拒绝写入并提示</li>
+          <li>单条话术 ≤ 5000 字符 → 写入前校验</li>
+        </ul>
+
+        <h3 id="ch14-integration">8.11 集成测试范围（test §3）</h3>
+        <ul>
+          <li><strong>数据迁移（覆盖 100%）</strong>：每个 <code>migrate_X_to_Y</code> 函数必须有正向迁移成功用例 / 迁移失败回滚用例 / 备份完整性校验 / schema_version 字段正确更新 / FK 引用完整性校验</li>
+          <li><strong>数据导入导出</strong>：导出 → 清空 → 导入 → 数据完全恢复；导入恶意 JSON（含 <code>__proto__</code>）→ 拒绝 + 数据库无变更；导入超大 JSON（&gt; 10MB）→ 拒绝；跨 schema 版本导入 → 自动迁移</li>
+          <li><strong>UsageRecord 一致性</strong>：每个复制操作 → UsageRecord 写入一条；usage_count 累加与 UsageRecord 条数一致；删除 Macro 后 → UsageRecord 标记 orphaned 而非删除（append-only 铁律）</li>
+        </ul>
+
+        <h3 id="ch14-e2e">8.12 E2E 测试范围（test §4）</h3>
+
+        <h4 id="ch14-e2e-main">主形态核心 flow（必测）</h4>
+        <table class="table-stack">
+          <thead><tr><th>Flow</th><th>步骤</th><th>验证点</th></tr></thead>
+          <tbody>
+            <tr><td data-label="Flow">E1</td><td data-label="步骤">⌥ Space → 窗口出现 → 点 Macro → 复制 → 窗口隐藏</td><td data-label="验证">全程 ≤500ms；剪贴板含 Macro 内容；UsageRecord +1</td></tr>
+            <tr><td data-label="Flow">E2</td><td data-label="步骤">⌥ Space → ⌘K → 输入"调研" → ↓选择 → ⏎</td><td data-label="验证">搜索结果含 Macro+Phrase+AlignmentPhrase；复制后隐藏</td></tr>
+            <tr><td data-label="Flow">E3</td><td data-label="步骤">⌥ Space → 点 Phase → 默认 AlignmentPhrase 复制 → 窗口隐藏</td><td data-label="验证">当前相位状态持久；UsageRecord (target='alignment')</td></tr>
+            <tr><td data-label="Flow">E4</td><td data-label="步骤">⌥ Space → ⌘N → 拼 3 个 Modifier → 复制 → 提示保存为 Macro（重复 3 次后）</td><td data-label="验证">Composition 累计 → Macro 提示触发</td></tr>
+            <tr><td data-label="Flow">E5</td><td data-label="步骤">启动 → 走完 5 步 SOP → 每步高亮 → 完成</td><td data-label="验证">SOP 状态 active → completed；UsageRecord 每步 +1</td></tr>
+          </tbody>
+        </table>
+
+        <h4 id="ch14-e2e-x">异常 flow（必测）</h4>
+        <table class="table-stack">
+          <thead><tr><th>Flow</th><th>场景</th><th>验证点</th></tr></thead>
+          <tbody>
+            <tr><td data-label="Flow">X1</td><td data-label="场景">快捷键冲突</td><td data-label="验证">弹窗 + 备选方案 + 写入 config</td></tr>
+            <tr><td data-label="Flow">X2</td><td data-label="场景">major 升级迁移</td><td data-label="验证">弹窗 + 强制导出 + 迁移完成</td></tr>
+            <tr><td data-label="Flow">X3</td><td data-label="场景">数据导入失败</td><td data-label="验证">事务回滚 + 具体错误显示</td></tr>
+            <tr><td data-label="Flow">X4</td><td data-label="场景">删除高频 Macro</td><td data-label="验证">三选项弹窗（取消/deprecated/永久删除）</td></tr>
+          </tbody>
+        </table>
+
+        <h3 id="ch14-bench">8.13 性能基准 regression（test §5）</h3>
+        <table class="table-stack">
+          <thead><tr><th>指标</th><th>目标</th><th>测试方法</th><th>失败处理</th></tr></thead>
+          <tbody>
+            <tr><td data-label="指标">主形态唤起延迟 P95</td><td data-label="目标">≤ 200ms</td><td data-label="方法">Playwright timing API，跑 100 次取 P95</td><td data-label="处理">block PR</td></tr>
+            <tr><td data-label="指标">任意点击响应 P95</td><td data-label="目标">≤ 100ms</td><td data-label="方法">同上</td><td data-label="处理">block PR</td></tr>
+            <tr><td data-label="指标">冷启动时间</td><td data-label="目标">≤ 1.5s</td><td data-label="方法">启动到 view:home-* 可交互</td><td data-label="处理">warning（非 block）</td></tr>
+            <tr><td data-label="指标">数据写入延迟</td><td data-label="目标">≤ 50ms</td><td data-label="方法">UsageRecord 单条写入</td><td data-label="处理">warning</td></tr>
+            <tr><td data-label="指标">搜索延迟（300 条 Phrase 全文搜索）</td><td data-label="目标">≤ 100ms</td><td data-label="方法">tinybench</td><td data-label="处理">warning</td></tr>
+          </tbody>
+        </table>
+
+        <p><strong>触发</strong>：任何主形态启动路径 / Composition / 数据层改动必须附 benchmark 结果。</p>
+
+        <h3 id="ch14-llm-eval">8.14 LLM Eval 集（N/A 说明）</h3>
+        <div class="callout">
+          <p><strong>本节明确声明 N/A 并说明理由</strong>：方法论 §5.10 要求 test-spec 含 LLM Eval 集，但本项目 constitution D1 禁用 LLM SDK，工具内部无 LLM 调用——无 LLM 行为可 eval。</p>
+          <p><strong>替代方案</strong>：prompt-hub 的"输出"是用户复制到外部 AI 的话术。话术本身的有效性 eval 不在本工具范围（属于用户工作流，应在 Obsidian / 用户笔记内做）。如果未来违反 D1 引入 LLM SDK（须先开 ADR），本节立即升级为完整 LLM Eval 集规范。</p>
+        </div>
+
+        <h3 id="ch14-test-infra">8.15 测试基础设施（test §7）</h3>
+
+        <h4 id="ch14-ci">CI 流水线（建仓后）</h4>
+        <pre><code>on: [push, pull_request]
+jobs:
+  unit:       runs vitest run --coverage
+  integration:runs vitest --config integration.config.ts
+  e2e:        runs playwright test
+  bench:      runs scripts/bench.ts vs main branch baseline
+  coverage:   uploads to codecov；阈值见 features §5</code></pre>
+
+        <h4 id="ch14-pre-commit">本地 pre-commit / pre-push</h4>
+        <ul>
+          <li><strong>pre-commit</strong>：<code>vitest related &lt;changed&gt;</code> + lint</li>
+          <li><strong>pre-push</strong>：<code>vitest run</code> 全量单元测试</li>
+        </ul>
+
+        <h4 id="ch14-fixture">测试数据策略</h4>
+        <ul>
+          <li>单元测试：纯函数无 fixture</li>
+          <li>集成测试：每个测试独立的 in-memory SQLite，beforeEach 重置</li>
+          <li>E2E：固定 seed 数据集（10 Macro / 8 Phase / 1 SOP），存于 <code>tests/fixtures/seed.json</code></li>
+        </ul>
+
+        <h3 id="ch14-not-tested">8.16 不测的项（test §8）</h3>
+        <ul>
+          <li>❌ 第三方依赖本身（Tauri / Electron / React 等不在 prompt-hub 测试范围）</li>
+          <li>❌ 视觉回归（design-spec token 化已经把视觉一致性卡在 lint 层）</li>
+          <li>❌ A11y（暂时手工检查，plan §0-T3 未决）</li>
+          <li>❌ 多端同步一致性（constitution A3 单人单机，无多端实时同步）</li>
+        </ul>
+      </section>
+
+
+      <hr>
+      <p class="muted" style="font-size: 0.85em; text-align: center;">prompt-hub · 项目全景合订本 · 2026-05-19 · 遵循 reading-html-spec v3 路线 A</p>
+
+    </article>
+  </main>
+
+</div>
+
+</body>
+</html>
