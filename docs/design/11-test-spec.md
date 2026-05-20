@@ -8,15 +8,15 @@ author: ai  # 🤖 AI 主笔 + 人审（CLAUDE §5.2）
 audience: [ai, human]
 description: prompt-hub 测试规格——单元/集成/E2E 三层 + 性能基准 + LLM Eval 集（N/A 说明）
 related:
-  - prd
-  - features
-  - ops-spec
+  - 06-prd
+  - 07-features
+  - 10-ops-spec
 ---
 
 # Test Spec: prompt-hub
 
-> 三层测试金字塔 + 性能基准。**LLM Eval 集 N/A**（[[constitution#D1]] 禁用 LLM SDK），本文件 §6 说明替代方案。
-> 覆盖率目标见 [[features#§5]]。
+> 三层测试金字塔 + 性能基准。**LLM Eval 集 N/A**（[[02-constitution#D1]] 禁用 LLM SDK），本文件 §6 说明替代方案。
+> 覆盖率目标见 [[07-features#§5]]。
 
 ---
 
@@ -39,16 +39,16 @@ related:
 
 | 函数族 | 测试要点 | prd 引用 |
 |---|---|---|
-| `composition.assemble()` | Modifier 按顺序拼接 / 空 modifier 数组返回空串 / role 缺失时跳过 | [[prd#5.4]] |
-| `usage.record()` | append-only 写入 / 不修改已有记录 / target_type 枚举校验 | [[prd#6.8]] |
-| `sop.advance(step)` | 步骤推进 / 越界拒绝 / 已完成 SOP 不可再 advance | [[prd#5.6]] |
-| `phase.switch(id)` | 切换触发 UsageRecord (target_type='alignment') / 当前相位状态持久 | [[prd#5.1]] |
-| `macro.promoteFromComposition()` | Composition → Macro 转换保留 expandFrom / native flag 正确 | [[prd#5.2]] |
-| `schema.validate(json)` | 拒绝 `__proto__` / `constructor` 键 / 超长字段拒绝 / 必填字段缺失拒绝 | [[prd#9.1]] |
+| `composition.assemble()` | Modifier 按顺序拼接 / 空 modifier 数组返回空串 / role 缺失时跳过 | [[06-prd#5.4]] |
+| `usage.record()` | append-only 写入 / 不修改已有记录 / target_type 枚举校验 | [[06-prd#6.8]] |
+| `sop.advance(step)` | 步骤推进 / 越界拒绝 / 已完成 SOP 不可再 advance | [[06-prd#5.6]] |
+| `phase.switch(id)` | 切换触发 UsageRecord (target_type='alignment') / 当前相位状态持久 | [[06-prd#5.1]] |
+| `macro.promoteFromComposition()` | Composition → Macro 转换保留 expandFrom / native flag 正确 | [[06-prd#5.2]] |
+| `schema.validate(json)` | 拒绝 `__proto__` / `constructor` 键 / 超长字段拒绝 / 必填字段缺失拒绝 | [[06-prd#9.1]] |
 
 ### 2.2 状态机测试（覆盖 ≥80%）
 
-按 [[prd#7]] 状态机定义：
+按 [[06-prd#7]] 状态机定义：
 - `Composition` 状态：`building` → `assembled` → `discarded` 或 `promoted`
 - `SOP` 状态：`active` / `paused` / `completed`
 - `Macro` 状态：`active` / `deprecated`
@@ -58,7 +58,7 @@ related:
 
 ### 2.3 边界约束测试（必测）
 
-来自 [[constitution]] / [[prd#8]]：
+来自 [[02-constitution]] / [[06-prd#8]]：
 - B1: 任何代码引入第 4 类资产 schema → 测试编译期失败（类型层面强制）
 - B2: AlignmentPhrase 不能写入 SOP.steps → 数据层 INSERT 拒绝
 - 资产数量上限：Modifier 30 / Macro 100 / Scene 10 / Phase 12 / AlignmentPhrase 50 / SOP 20 / Phrase 300——超过时拒绝写入并提示
@@ -68,7 +68,7 @@ related:
 
 ## §3 集成测试范围
 
-### 3.1 数据迁移（[[prd#7.7]]，覆盖 100%）
+### 3.1 数据迁移（[[06-prd#7.7]]，覆盖 100%）
 
 每个 `migrate_X_to_Y` 函数必须有：
 - ✅ 正向迁移成功用例
@@ -77,7 +77,7 @@ related:
 - ✅ schema_version 字段正确更新
 - ✅ FK 引用完整性校验
 
-### 3.2 数据导入导出（[[prd#7.5]]）
+### 3.2 数据导入导出（[[06-prd#7.5]]）
 
 - 导出 → 清空 → 导入 → 数据完全恢复（含 UsageRecord 历史）
 - 导入恶意 JSON（含 `__proto__`）→ 拒绝 + 数据库无变更
@@ -108,10 +108,10 @@ related:
 
 | Flow ID | 场景 | 验证点 |
 |---|---|---|
-| X1 | 快捷键冲突（[[user-flows#§5]]） | 弹窗 + 备选方案 + 写入 config |
-| X2 | major 升级迁移（[[user-flows#§2]]） | 弹窗 + 强制导出 + 迁移完成 |
-| X3 | 数据导入失败（[[user-flows#§3]]） | 事务回滚 + 具体错误显示 |
-| X4 | 删除高频 Macro（[[user-flows#§4]]） | 三选项弹窗（取消/deprecated/永久删除） |
+| X1 | 快捷键冲突（[[04-user-flows#§5]]） | 弹窗 + 备选方案 + 写入 config |
+| X2 | major 升级迁移（[[04-user-flows#§2]]） | 弹窗 + 强制导出 + 迁移完成 |
+| X3 | 数据导入失败（[[04-user-flows#§3]]） | 事务回滚 + 具体错误显示 |
+| X4 | 删除高频 Macro（[[04-user-flows#§4]]） | 三选项弹窗（取消/deprecated/永久删除） |
 
 ### 4.3 跨形态 E2E（部分覆盖）
 
@@ -136,7 +136,7 @@ related:
 
 ## §6 LLM Eval 集（N/A 说明）
 
-> **本节明确声明 N/A 并说明理由**：方法论 §5.10 要求 test-spec 含 LLM Eval 集，但本项目 [[constitution#D1]] 禁用 LLM SDK，工具内部无 LLM 调用——无 LLM 行为可 eval。
+> **本节明确声明 N/A 并说明理由**：方法论 §5.10 要求 test-spec 含 LLM Eval 集，但本项目 [[02-constitution#D1]] 禁用 LLM SDK，工具内部无 LLM 调用——无 LLM 行为可 eval。
 >
 > **替代方案**：
 > - prompt-hub 的"输出"是用户复制到外部 AI 的话术。话术本身的有效性 eval 不在本工具范围（属于用户工作流，应在 Obsidian / 用户笔记内做）
@@ -178,5 +178,5 @@ jobs:
 
 - ❌ 第三方依赖本身（Tauri / Electron / React 等不在 prompt-hub 测试范围）
 - ❌ 视觉回归（design-spec token 化已经把视觉一致性卡在 lint 层）
-- ❌ A11y（暂时手工检查，[[plan#§0-T3]] 未决）
-- ❌ 多端同步一致性（[[constitution#A3]] 单人单机，无多端实时同步）
+- ❌ A11y（暂时手工检查，[[prompt-hub-mvp#§0-T3]] 未决）
+- ❌ 多端同步一致性（[[02-constitution#A3]] 单人单机，无多端实时同步）

@@ -6,11 +6,11 @@ status: Proposed
 date: 2026-05-19
 description: prompt-combiner 旧代码复用决策——Proposed 占位，待调研 prompt-combiner 实际形态后填 Decision；Tauri 2.x（ADR-001）已锁定 Rust 后端，候选自然收窄为「重写 / 部分迁移前端组件 / 不复用」
 related:
-  - tech-stack
+  - 09-tech-stack
   - CLAUDE
-  - plan
-  - adr/001-choose-desktop-runtime
-  - adr/002-choose-frontend-framework
+  - prompt-hub-mvp
+  - 001-choose-desktop-runtime
+  - 002-choose-frontend-framework
 ---
 
 # ADR-005: prompt-combiner 旧代码复用决策（Proposed 占位）
@@ -22,7 +22,7 @@ related:
 - **标题**：prompt-combiner 旧代码复用决策（重写 / 部分迁移 / 全部复用）
 - **日期**：2026-05-19（占位创建）
 - **决策者**：omar（决议时拍板）
-- **影响范围**：[[plan#§0-T2]] 旧色替换风险注 / [[tech-stack#§3-D8]] / 第一阶段 MVP 实施节奏
+- **影响范围**：[[prompt-hub-mvp#§0-T2]] 旧色替换风险注 / [[09-tech-stack#§3-D8]] / 第一阶段 MVP 实施节奏
 
 ## 2. Status
 
@@ -31,13 +31,13 @@ related:
 ## 3. Context
 
 ### 触发事件
-[[adr/001-choose-desktop-runtime]] 锁定 Tauri 2.x 后，prompt-combiner 若是 Electron/Node.js 栈，**后端代码无法直接迁移**（需 Rust 重写）；前端组件视框架是否一致而定（ADR-002 React 19.2 已选定）。
+[[001-choose-desktop-runtime]] 锁定 Tauri 2.x 后，prompt-combiner 若是 Electron/Node.js 栈，**后端代码无法直接迁移**（需 Rust 重写）；前端组件视框架是否一致而定（ADR-002 React 19.2 已选定）。
 
 ### 业务约束
-- [[constitution#A1]] 桌面原生 — 若 prompt-combiner 是 Web 应用，全部不可复用
-- [[constitution#A2]] 本地优先 — 若 prompt-combiner 依赖远程 API，需剥离
-- [[constitution#B1]] 资产三层 — 若 prompt-combiner 用不同数据模型，不能直接抄 schema
-- [[constitution#D1]] 不内嵌 LLM — 若 prompt-combiner 调用过 LLM SDK，须移除
+- [[02-constitution#A1]] 桌面原生 — 若 prompt-combiner 是 Web 应用，全部不可复用
+- [[02-constitution#A2]] 本地优先 — 若 prompt-combiner 依赖远程 API，需剥离
+- [[02-constitution#B1]] 资产三层 — 若 prompt-combiner 用不同数据模型，不能直接抄 schema
+- [[02-constitution#D1]] 不内嵌 LLM — 若 prompt-combiner 调用过 LLM SDK，须移除
 
 ### 技术约束
 - ADR-001 锁定 Tauri 2.x（Rust 后端）→ Node.js 后端代码 0 可迁移
@@ -47,11 +47,11 @@ related:
 ### 待调研项（触发本 ADR Accepted 的前置）
 - [ ] prompt-combiner 的技术栈是什么（前端框架版本 / 后端语言 / 数据层）
 - [ ] LOC 规模与模块边界
-- [ ] 是否存在 [[constitution]] 8 条铁律的历史违反点（需在迁移时清理）
+- [ ] 是否存在 [[02-constitution]] 8 条铁律的历史违反点（需在迁移时清理）
 - [ ] 关键功能与 prompt-hub Modifier/Composition/Macro 三层模型的契合度
 
 ### 不决策的代价
-- [[plan#§0-T2]] 旧色替换风险注无法收口
+- [[prompt-hub-mvp#§0-T2]] 旧色替换风险注无法收口
 - 第一阶段 MVP 实施节奏不确定（重写需 1.5x 工时，部分迁移需评估混搭成本）
 - AI 在生成代码时可能擅自参考 prompt-combiner 旧逻辑（违反 [[CLAUDE#§6]] 第 8 项）
 
@@ -59,10 +59,10 @@ related:
 
 ### Option A: 完全重写
 
-- **描述**：忽略 prompt-combiner，按 [[spec]] + [[prd]] + [[product-spec]] 从零实现
+- **描述**：忽略 prompt-combiner，按 [[01-spec]] + [[06-prd]] + [[03-product-spec]] 从零实现
 - **优点（预估）**：
-  - 100% 符合 [[constitution]] 8 条铁律，无历史包袱
-  - 数据模型按 [[prd#数据模型]] 严格三层
+  - 100% 符合 [[02-constitution]] 8 条铁律，无历史包袱
+  - 数据模型按 [[06-prd#数据模型]] 严格三层
   - Rust 后端从零设计，性能可控
 - **缺点（预估）**：
   - 实施周期最长（基础 CRUD + 主形态 + 辅形态约 4-6 周）
@@ -96,7 +96,7 @@ related:
 
 **触发本 ADR 转 Accepted 的下一步动作**：
 1. omar 提供 prompt-combiner 仓库位置 / GitHub URL / 本地路径
-2. AI 调研：技术栈 / LOC / 模块结构 / 与 [[spec]] 的契合度
+2. AI 调研：技术栈 / LOC / 模块结构 / 与 [[01-spec]] 的契合度
 3. 输出调研报告 → 在本 ADR §4/§5 填具体优劣 + Decision
 
 ## 6. Consequences
@@ -107,7 +107,7 @@ related:
 
 - 在本 ADR 未转 Accepted 前，AI **不得**自行从 prompt-combiner 复制代码到 prompt-hub 仓库
 - [[CLAUDE#§6]] 第 8 项 持续生效
-- [[plan#§0-T2]] 旧色替换风险注保留警示
+- [[prompt-hub-mvp#§0-T2]] 旧色替换风险注保留警示
 
 ---
 
@@ -119,6 +119,6 @@ related:
 
 ## 相关链接
 
-- **触发本决策的文档**：[[CLAUDE#§6]] 第 8 项 / [[plan#§0-T2]] / [[tech-stack#§3-D8]]
-- **被本决策影响的文档**：[[plan#§0]] / [[plan#第一阶段]] / [[features]]（若复用前端组件，需登记影响范围）
+- **触发本决策的文档**：[[CLAUDE#§6]] 第 8 项 / [[prompt-hub-mvp#§0-T2]] / [[09-tech-stack#§3-D8]]
+- **被本决策影响的文档**：[[prompt-hub-mvp#§0]] / [[prompt-hub-mvp#第一阶段]] / [[07-features]]（若复用前端组件，需登记影响范围）
 - **相关 ADR**：前置 ADR-001（锁定 Rust 后端，收窄候选）/ ADR-002（锁定 React 19.2，决定前端组件可迁性）

@@ -6,8 +6,8 @@ status: Accepted
 date: 2026-05-19
 description: 选择 pnpm 作为包管理器——Tauri 2.x 项目主流选择 + 严格 dep 解析（无幻 hoisting） + content-addressable store 节省磁盘
 related:
-  - tech-stack
-  - adr/001-choose-desktop-runtime
+  - 09-tech-stack
+  - 001-choose-desktop-runtime
   - CLAUDE
 ---
 
@@ -18,7 +18,7 @@ related:
 - **标题**：选择 pnpm 9.x 作为前端包管理器
 - **日期**：2026-05-19
 - **决策者**：omar
-- **影响范围**：[[tech-stack#§3-D4]] resolved / [[CLAUDE#§2]] 关键命令 `<pm>` 占位全部替换 `pnpm` / CI 脚本（`.github/workflows/*.yml`）
+- **影响范围**：[[09-tech-stack#§3-D4]] resolved / [[CLAUDE#§2]] 关键命令 `<pm>` 占位全部替换 `pnpm` / CI 脚本（`.github/workflows/*.yml`）
 
 ## 2. Status
 
@@ -27,11 +27,11 @@ related:
 ## 3. Context
 
 ### 触发事件
-[[CLAUDE#§2]] 关键命令中 `<pm>` 占位待解锁；[[adr/001-choose-desktop-runtime]] 后所有依赖管理需要明确工具。
+[[CLAUDE#§2]] 关键命令中 `<pm>` 占位待解锁；[[001-choose-desktop-runtime]] 后所有依赖管理需要明确工具。
 
 ### 业务约束
-- [[constitution#A2]] 本地优先 — 包管理器自身不能引入云依赖（pnpm/bun/npm 都满足）
-- [[constitution#C1]] 主形态 200ms 唤起 — 与包管理器无关，但启动时依赖加载路径有间接影响
+- [[02-constitution#A2]] 本地优先 — 包管理器自身不能引入云依赖（pnpm/bun/npm 都满足）
+- [[02-constitution#C1]] 主形态 200ms 唤起 — 与包管理器无关，但启动时依赖加载路径有间接影响
 
 ### 技术约束
 - 与 Tauri 2.x / Vite / TypeScript 兼容
@@ -97,7 +97,7 @@ VaultX 未明示，但 Tauri 2.x 官方模板 + 主流社区项目（含 1Passwo
 ## 6. Consequences
 
 ### 正向后果
-- 解 [[tech-stack#§3-D4]]
+- 解 [[09-tech-stack#§3-D4]]
 - [[CLAUDE#§2]] `<pm>` 占位全部替换为 `pnpm`（涟漪改动）
 - CI 缓存 key 可基于 `pnpm-lock.yaml` 内容稳定
 - workspace 协议保留未来拆 packages/ 的可能性
@@ -122,6 +122,6 @@ VaultX 未明示，但 Tauri 2.x 官方模板 + 主流社区项目（含 1Passwo
 
 ## 相关链接
 
-- **触发本决策的文档**：[[tech-stack#§3-D4]] / [[CLAUDE#§2]]
+- **触发本决策的文档**：[[09-tech-stack#§3-D4]] / [[CLAUDE#§2]]
 - **被本决策影响的文档**：[[CLAUDE#§2]]（涟漪 `<pm>` → `pnpm`）/ CI workflow 待建
 - **相关 ADR**：前置 ADR-001 / 独立于 ADR-002/003/006

@@ -6,10 +6,10 @@ status: Accepted
 date: 2026-05-19
 description: 选择 Zustand 5 作为状态管理；借鉴 VaultX 多 store 分层模式——appStore / promptStore / searchStore / settingsStore 四层
 related:
-  - tech-stack
-  - product-spec
-  - adr/001-choose-desktop-runtime
-  - adr/002-choose-frontend-framework
+  - 09-tech-stack
+  - 03-product-spec
+  - 001-choose-desktop-runtime
+  - 002-choose-frontend-framework
 ---
 
 # ADR-006: 选择 Zustand 5 作为状态管理
@@ -19,7 +19,7 @@ related:
 - **标题**：选择 Zustand 5 作为前端状态管理；按业务边界分四层 store
 - **日期**：2026-05-19
 - **决策者**：omar
-- **影响范围**：[[tech-stack#§3-D6]] resolved / [[product-spec]] 状态机映射 / 后续 React 组件订阅模式
+- **影响范围**：[[09-tech-stack#§3-D6]] resolved / [[03-product-spec]] 状态机映射 / 后续 React 组件订阅模式
 
 ## 2. Status
 
@@ -28,13 +28,13 @@ related:
 ## 3. Context
 
 ### 触发事件
-[[adr/002-choose-frontend-framework]] 锁定 React 19.2 后，状态管理是下一个组件实施前必决项。
+[[002-choose-frontend-framework]] 锁定 React 19.2 后，状态管理是下一个组件实施前必决项。
 
 ### 业务约束
-- [[spec#2.3]] 主形态 + 辅形态共享数据 — 需要跨窗口（Tauri 多 webview）共享 state
-- [[spec#2.8]] 主辅形态同一份数据 — 状态层须支持响应式同步
-- [[constitution#C1]] 200ms 唤起 — 状态层运行时开销需可控
-- [[product-spec]] 状态机（用户态 / 视图态 / 数据态）需要明确分层
+- [[01-spec#2.3]] 主形态 + 辅形态共享数据 — 需要跨窗口（Tauri 多 webview）共享 state
+- [[01-spec#2.8]] 主辅形态同一份数据 — 状态层须支持响应式同步
+- [[02-constitution#C1]] 200ms 唤起 — 状态层运行时开销需可控
+- [[03-product-spec]] 状态机（用户态 / 视图态 / 数据态）需要明确分层
 
 ### 技术约束
 - 与 React 19.2 兼容
@@ -108,8 +108,8 @@ VaultX 用 Zustand 5 实战分四层 store：appStore（全局窗口/锁定）/ 
 ## 6. Consequences
 
 ### 正向后果
-- 解 [[tech-stack#§3-D6]]
-- 四层 store 设计明确（与 [[product-spec]] 状态机映射一致）：
+- 解 [[09-tech-stack#§3-D6]]
+- 四层 store 设计明确（与 [[03-product-spec]] 状态机映射一致）：
   | Store | 职责 | 持久化 |
   |---|---|---|
   | **appStore** | 窗口形态（main/aux）/ 当前视图 ID / 主形态可见性 | 部分（视图偏好）|
@@ -140,6 +140,6 @@ VaultX 用 Zustand 5 实战分四层 store：appStore（全局窗口/锁定）/ 
 
 ## 相关链接
 
-- **触发本决策的文档**：[[tech-stack#§3-D6]] / [[product-spec]]
-- **被本决策影响的文档**：所有 React 组件 / [[product-spec]] 状态机章节
+- **触发本决策的文档**：[[09-tech-stack#§3-D6]] / [[03-product-spec]]
+- **被本决策影响的文档**：所有 React 组件 / [[03-product-spec]] 状态机章节
 - **相关 ADR**：前置 ADR-002（强绑 React）/ 独立于其他

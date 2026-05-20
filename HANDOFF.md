@@ -8,8 +8,8 @@ audience: [ai]
 description: prompt-hub 会话断点——单文件阅读型 HTML 已构建（14 章 1:1 映射 13 主文档 + 9 ADR）
 related:
   - CLAUDE
-  - plan
-  - tech-stack
+  - prompt-hub-mvp
+  - 09-tech-stack
 ---
 
 # Handoff — single-file reading HTML build
@@ -78,11 +78,11 @@ related:
 
 ### 优先级 P0 — 推进项目阶段
 
-1. **建仓第一阶段 MVP**（per [[plan#§0]] + [[plan#第一阶段]]）
+1. **建仓第一阶段 MVP**（per [[prompt-hub-mvp#§0]] + [[prompt-hub-mvp#第一阶段]]）
    - 跑 `pnpm create tauri-app prompt-hub --template react-ts`（[[CLAUDE#§2]] 命令列表）
-   - 落实 [[plan#§0-T1]] 设计 Token 全量初始化
-   - 落实 [[plan#§0-T5]] 全栈技术形态锁定 → `package.json` + `Cargo.toml` 版本号严格按 [[tech-stack#§3]] 锁定
-   - 实现 200ms 主形态唤起 benchmark（[[constitution#C1]]）
+   - 落实 [[prompt-hub-mvp#§0-T1]] 设计 Token 全量初始化
+   - 落实 [[prompt-hub-mvp#§0-T5]] 全栈技术形态锁定 → `package.json` + `Cargo.toml` 版本号严格按 [[09-tech-stack#§3]] 锁定
+   - 实现 200ms 主形态唤起 benchmark（[[02-constitution#C1]]）
 2. **或推进 ADR-005**：等 omar 提供 prompt-combiner 仓库 → 跑技术调研 → ADR-005 Proposed → Accepted
 
 ### 优先级 P1 — 阅读型 HTML 后续
@@ -107,23 +107,23 @@ related:
 
 ```bash
 # 文件存在 + 大小合理
-ls -la /Users/apple/Desktop/人机协作/prompt-hub/prompt-hub.html
+ls -la /Users/apple/Desktop/人机协作/prompt-hub/dist/prompt-hub.html
 # 期望: ~214 KB
 
 # 章节结构完整
-grep -c '<section class="chapter"' /Users/apple/Desktop/人机协作/prompt-hub/prompt-hub.html
+grep -c '<section class="chapter"' /Users/apple/Desktop/人机协作/prompt-hub/dist/prompt-hub.html
 # 期望: 14
 
-grep -c '^      </section>$' /Users/apple/Desktop/人机协作/prompt-hub/prompt-hub.html
+grep -c '^      </section>$' /Users/apple/Desktop/人机协作/prompt-hub/dist/prompt-hub.html
 # 期望: 14
 
 # anchor id 前缀按章节号分布
-grep -oE 'id="ch[0-9]+-[^"]+"' /Users/apple/Desktop/人机协作/prompt-hub/prompt-hub.html \
+grep -oE 'id="ch[0-9]+-[^"]+"' /Users/apple/Desktop/人机协作/prompt-hub/dist/prompt-hub.html \
   | awk -F'"' '{split($2, a, "-"); print a[1]}' | sort | uniq -c
 # 期望: ch01..ch14 各有合理数量，无空缺章节
 
 # 浏览器打开（macOS）
-open /Users/apple/Desktop/人机协作/prompt-hub/prompt-hub.html
+open /Users/apple/Desktop/人机协作/prompt-hub/dist/prompt-hub.html
 
 # git 状态
 git log --oneline -3

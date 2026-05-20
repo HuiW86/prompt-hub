@@ -8,14 +8,14 @@ author: ai  # 🤖 AI 主笔 + 人审（CLAUDE §5.2）
 audience: [ai, human]
 description: prompt-hub 运营规格——部署/性能预算/备份/升级回滚/监控（本地单人语境）
 related:
-  - prd
-  - constitution
-  - test-spec
+  - 06-prd
+  - 02-constitution
+  - 11-test-spec
 ---
 
 # Ops Spec: prompt-hub
 
-> **运营语境特殊性**：单人单机桌面应用（[[constitution#A2]] [[constitution#A3]]），传统"运营"含义（部署集群/容量规划/SRE on-call）大量 N/A。本文件保留对单人桌面工具**仍然适用**的 ops 实践。
+> **运营语境特殊性**：单人单机桌面应用（[[02-constitution#A2]] [[02-constitution#A3]]），传统"运营"含义（部署集群/容量规划/SRE on-call）大量 N/A。本文件保留对单人桌面工具**仍然适用**的 ops 实践。
 
 ---
 
@@ -23,35 +23,35 @@ related:
 
 ### 1.1 分发形态
 
-> **2026-05-19 [[adr/001-choose-desktop-runtime]] 后**：分发统一走 Tauri bundle + `tauri-plugin-updater`，跨 OS 一致。
+> **2026-05-19 [[001-choose-desktop-runtime]] 后**：分发统一走 Tauri bundle + `tauri-plugin-updater`，跨 OS 一致。
 >
-> **2026-05-19 [[adr/008-enable-macos-private-api]] 后**：启用 `macos-private-api` feature 以满足 [[spec#2.3]] 主形态视觉效果，**永久排除** macOS App Store 上架（违反 Mac App Store Review Guidelines 2.5.1 私有 API 禁令）；macOS 分发仅走 DMG 直链 + Developer ID 签名 + notarization。若未来需上架 App Store 需开新 ADR superseding ADR-008 并重写主形态窗口管理代码。
+> **2026-05-19 [[008-enable-macos-private-api]] 后**：启用 `macos-private-api` feature 以满足 [[01-spec#2.3]] 主形态视觉效果，**永久排除** macOS App Store 上架（违反 Mac App Store Review Guidelines 2.5.1 私有 API 禁令）；macOS 分发仅走 DMG 直链 + Developer ID 签名 + notarization。若未来需上架 App Store 需开新 ADR superseding ADR-008 并重写主形态窗口管理代码。
 
 | 平台 | 分发方式 | 安装包格式 | 自动更新 |
 |---|---|---|---|
-| macOS | DMG 直链（**永久排除 App Store**，见 [[adr/008-enable-macos-private-api#6]]）| `.dmg` / `.app` / `.app.tar.gz`（updater）| **tauri-plugin-updater** |
+| macOS | DMG 直链（**永久排除 App Store**，见 [[008-enable-macos-private-api#6]]）| `.dmg` / `.app` / `.app.tar.gz`（updater）| **tauri-plugin-updater** |
 | Windows | MSI 直链 | `.msi` / `.exe.zip`（updater）| **tauri-plugin-updater** |
 | Linux | （v2.0 后再考虑） | AppImage / .deb | tauri-plugin-updater |
-| iPad（辅形态） | （v2.0+，[[prd#7.4]] 次要设备，Tauri 2 支持 iOS 但本项目暂缓） | TestFlight 或 sideload | — |
+| iPad（辅形态） | （v2.0+，[[06-prd#7.4]] 次要设备，Tauri 2 支持 iOS 但本项目暂缓） | TestFlight 或 sideload | — |
 
 ### 1.2 签名 / 公证
 
 - macOS：必须 Apple Developer ID 签名 + 公证（避免 Gatekeeper 拦截）
 - Windows：建议 EV 代码签名（避免 SmartScreen 拦截）
 - 签名密钥管理：本地 Keychain / 加密文件，不进 git
-- **Tauri 集成方式**（[[adr/001-choose-desktop-runtime]] 后）：在 `tauri.conf.json` 配置 `bundle.macOS.signingIdentity` + `bundle.macOS.entitlements` + `bundle.macOS.providerShortName`，构建时通过 `APPLE_ID` / `APPLE_PASSWORD` / `APPLE_TEAM_ID` 环境变量触发 notarization，无需自建 shell 脚本
+- **Tauri 集成方式**（[[001-choose-desktop-runtime]] 后）：在 `tauri.conf.json` 配置 `bundle.macOS.signingIdentity` + `bundle.macOS.entitlements` + `bundle.macOS.providerShortName`，构建时通过 `APPLE_ID` / `APPLE_PASSWORD` / `APPLE_TEAM_ID` 环境变量触发 notarization，无需自建 shell 脚本
 
 ### 1.3 不做的部署
 
-- ❌ Web 部署（[[constitution#A1]] 桌面原生 only）
+- ❌ Web 部署（[[02-constitution#A1]] 桌面原生 only）
 - ❌ Docker / k8s（单人桌面工具，无服务端）
-- ❌ 多租户 SaaS（[[constitution#A3]] 单人）
+- ❌ 多租户 SaaS（[[02-constitution#A3]] 单人）
 
 ---
 
 ## §2 性能预算（生产线 SLO）
 
-> 本节是 [[constitution#C1]] 的运营落地。Benchmark 在 [[test-spec#§5]] 跑，本节定义线上违反时的处理。
+> 本节是 [[02-constitution#C1]] 的运营落地。Benchmark 在 [[11-test-spec#§5]] 跑，本节定义线上违反时的处理。
 
 | 指标 | SLO | 测量 | 违反处理 |
 |---|---|---|---|
@@ -60,9 +60,9 @@ related:
 | 内存常驻 | ≤300MB（含辅形态） | 用户 Activity Monitor / 任务管理器 | warning，>500MB 必修 |
 | 包体积 | ≤80MB（解压后） | 构建产物 stat | warning，>120MB 阻塞发布 |
 
-**自采样**：用户本地 perf 数据写入 localStorage `metrics_log`，仅本地查看，**不上报**（[[constitution#A2]]）。
+**自采样**：用户本地 perf 数据写入 localStorage `metrics_log`，仅本地查看，**不上报**（[[02-constitution#A2]]）。
 
-> **2026-05-19 [[adr/001-choose-desktop-runtime]] 后**：Tauri 2.x 实测内存常驻 50-100MB / 包体 10-20MB，远低于上述上限。本表保留为**警戒线**（regression 防线），非目标——若实际数字接近上限说明出现内存泄漏或资源未压缩，需调查。
+> **2026-05-19 [[001-choose-desktop-runtime]] 后**：Tauri 2.x 实测内存常驻 50-100MB / 包体 10-20MB，远低于上述上限。本表保留为**警戒线**（regression 防线），非目标——若实际数字接近上限说明出现内存泄漏或资源未压缩，需调查。
 
 ---
 
@@ -84,13 +84,13 @@ related:
 
 ### 3.3 恢复 flow
 
-详见 [[user-flows#§3]]。关键约束：恢复前再做一次当前数据备份（防恢复失败丢失现有数据）。
+详见 [[04-user-flows#§3]]。关键约束：恢复前再做一次当前数据备份（防恢复失败丢失现有数据）。
 
 ---
 
 ## §4 升级回滚契约
 
-> 详见 [[prd#7.7]] 升级回滚契约。本节是 ops 视角的执行细则。
+> 详见 [[06-prd#7.7]] 升级回滚契约。本节是 ops 视角的执行细则。
 
 ### 4.1 minor 升级（自动）
 
@@ -127,8 +127,8 @@ related:
 
 ### 5.2 禁用的监控（明确拒绝）
 
-- ❌ Sentry / Bugsnag 等错误上报（[[prd#7.3]]）
-- ❌ Google Analytics / Mixpanel（[[prd#7.3]]）
+- ❌ Sentry / Bugsnag 等错误上报（[[06-prd#7.3]]）
+- ❌ Google Analytics / Mixpanel（[[06-prd#7.3]]）
 - ❌ 任何 telemetry / heartbeat 上报
 - ❌ 崩溃日志自动上传
 
@@ -148,7 +148,7 @@ related:
 | 负载均衡 | ❌ | 无服务端 |
 | on-call rotation | ❌ | 单人项目 |
 | 灾备多活 | ❌ | 用户自管备份 |
-| 合规审计日志 | ❌ | [[prd#9]] 本地无审计要求 |
+| 合规审计日志 | ❌ | [[06-prd#9]] 本地无审计要求 |
 | Rate limiting | ❌ | 无对外接口 |
 
 ---
@@ -159,7 +159,7 @@ related:
 
 ```
 1. version bump (semver) + CHANGELOG 更新
-2. 跑全量 test-spec（[[test-spec]]）
+2. 跑全量 test-spec（[[11-test-spec]]）
 3. 跑性能基准 vs main baseline
 4. 构建多平台安装包
 5. 签名 + 公证
@@ -169,7 +169,7 @@ related:
 9. 通过后宣布
 ```
 
-发布频率：建议 minor ≤每月 1 次，major 半年内不超 1 次（[[constitution#E1]] 类似精神）。
+发布频率：建议 minor ≤每月 1 次，major 半年内不超 1 次（[[02-constitution#E1]] 类似精神）。
 
 ---
 

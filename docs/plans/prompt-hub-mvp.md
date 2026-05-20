@@ -6,14 +6,14 @@ created: 2026-05-18
 last_modified: 2026-05-19
 status: pre-code
 author: co  # 🤝 人机共创（CLAUDE §5.2）
-related: [[spec]], [[product-spec]], [[prd]], [[tech-stack]], [[adr/001-choose-desktop-runtime]], [[adr/002-choose-frontend-framework]], [[adr/003-choose-data-persistence]], [[adr/004-choose-package-manager]], [[adr/006-choose-state-management]], [[adr/007-choose-test-stack]], [[adr/008-enable-macos-private-api]], [[adr/009-choose-styling]]
+related: [[01-spec]], [[03-product-spec]], [[06-prd]], [[09-tech-stack]], [[001-choose-desktop-runtime]], [[002-choose-frontend-framework]], [[003-choose-data-persistence]], [[004-choose-package-manager]], [[006-choose-state-management]], [[007-choose-test-stack]], [[008-enable-macos-private-api]], [[009-choose-styling]]
 description: 手动 AI 编程仪表盘的五阶段实施任务清单——主形态优先 + v0.7 锁定全栈技术形态（Tauri 2.x + React 19.2 + Zustand 5 + rusqlite 0.32 + pnpm 9.x + CSS Modules + Vitest 4）
 ---
 
 # Plan: prompt-hub（五阶段实施任务清单）
 
 > 本文件是 `prompt-hub-prd.md` 拆分版的 **plan.md**——承载实施任务清单。
-> 项目定位见 [[spec]]、UI 契约见 [[product-spec]]、数据契约见 [[prd]]。
+> 项目定位见 [[01-spec]]、UI 契约见 [[03-product-spec]]、数据契约见 [[06-prd]]。
 
 ---
 
@@ -31,7 +31,7 @@ description: 手动 AI 编程仪表盘的五阶段实施任务清单——主形
 
 ### T1 设计 Token 全量落地（必做于第一阶段编码前）
 
-按 [[design-spec]] v0.6 token 体系初始化 CSS Variables 根样式表：
+按 [[05-design-spec]] v0.6 token 体系初始化 CSS Variables 根样式表：
 
 ```css
 :root {
@@ -89,27 +89,27 @@ rg "#1D9E75|#1d9e75" --type css --type ts --type tsx --type js --type jsx \
 
 ### T4 暗色模式延后确认（v1.1+ 触发）
 
-[[design-spec#2.5 暗色模式（v1.0 占位声明）]] 明确 v1.0 不实现。任何阶段不写 `prefers-color-scheme` 相关代码，等触发前置条件满足后专项立项。
+[[05-design-spec#2.5 暗色模式（v1.0 占位声明）]] 明确 v1.0 不实现。任何阶段不写 `prefers-color-scheme` 相关代码，等触发前置条件满足后专项立项。
 
 ### T5 全栈技术决策锁定（v0.7 新增，建仓前必读）
 
-第一阶段建仓使用以下全栈组合（来源见 [[tech-stack#§3]]）：
+第一阶段建仓使用以下全栈组合（来源见 [[09-tech-stack#§3]]）：
 
 | 维度 | 锁定 | ADR |
 |---|---|---|
-| 桌面运行时 | Tauri 2.x（启用 `macos-private-api`）| [[adr/001-choose-desktop-runtime]] / [[adr/008-enable-macos-private-api]] |
-| 前端框架 | React 19.2 + React-DOM 19.2 | [[adr/002-choose-frontend-framework]] |
-| 状态管理 | Zustand 5（四层 store：appStore / promptStore / searchStore / settingsStore）| [[adr/006-choose-state-management]] |
-| 数据持久化 | rusqlite 0.32 + bundled SQLite（不启 SQLCipher）+ chrono + uuid | [[adr/003-choose-data-persistence]] |
-| 包管理 | pnpm 9.x（lockfile 提交，禁用 npm/yarn/bun）| [[adr/004-choose-package-manager]] |
+| 桌面运行时 | Tauri 2.x（启用 `macos-private-api`）| [[001-choose-desktop-runtime]] / [[008-enable-macos-private-api]] |
+| 前端框架 | React 19.2 + React-DOM 19.2 | [[002-choose-frontend-framework]] |
+| 状态管理 | Zustand 5（四层 store：appStore / promptStore / searchStore / settingsStore）| [[006-choose-state-management]] |
+| 数据持久化 | rusqlite 0.32 + bundled SQLite（不启 SQLCipher）+ chrono + uuid | [[003-choose-data-persistence]] |
+| 包管理 | pnpm 9.x（lockfile 提交，禁用 npm/yarn/bun）| [[004-choose-package-manager]] |
 | 构建 | Vite 8.0（Tauri 官方推荐）| D1 自动锁定 |
-| 样式 | CSS Modules + CSS variables（不引 Tailwind / CSS-in-JS）| [[adr/009-choose-styling]] |
-| 测试 | Vitest 4 + Testing Library + jsdom 29 + cargo test + tempfile | [[adr/007-choose-test-stack]] |
+| 样式 | CSS Modules + CSS variables（不引 Tailwind / CSS-in-JS）| [[009-choose-styling]] |
+| 测试 | Vitest 4 + Testing Library + jsdom 29 + cargo test + tempfile | [[007-choose-test-stack]] |
 | 全局快捷键 | @tauri-apps/plugin-global-shortcut | D1 自动锁定 |
 
-**仅剩 D8 阻塞**：prompt-combiner 复用范围（[[adr/005-prompt-combiner-reuse]] 仍 Proposed），第一阶段可走「重写」路径不依赖 D8。
+**仅剩 D8 阻塞**：prompt-combiner 复用范围（[[005-prompt-combiner-reuse]] 仍 Proposed），第一阶段可走「重写」路径不依赖 D8。
 
-**首次 `cargo build` 实测项**（[[tech-stack#§7.1]]）：rusqlite 0.32 + chrono 0.4 + uuid 1.x 组合在 MSRV 1.77.2 下兼容性需建仓时验证；失败需在 ADR 补记并锁版本。
+**首次 `cargo build` 实测项**（[[09-tech-stack#§7.1]]）：rusqlite 0.32 + chrono 0.4 + uuid 1.x 组合在 MSRV 1.77.2 下兼容性需建仓时验证；失败需在 ADR 补记并锁版本。
 
 ---
 
@@ -119,24 +119,24 @@ rg "#1D9E75|#1d9e75" --type css --type ts --type tsx --type js --type jsx \
 
 **技术形态**（全栈基线见 [[#T5]]）：
 
-- 桌面运行时：**Tauri 2.x** + `macos-private-api` feature（[[adr/001-choose-desktop-runtime]] / [[adr/008-enable-macos-private-api]]）
-- 前端框架：**React 19.2** + TypeScript 5.x strict（[[adr/002-choose-frontend-framework]]）
-- 状态管理：**Zustand 5** — `appStore` 管窗口 visibility / `promptStore` 管 Macro/UsageRecord / `searchStore` 管 query / `settingsStore` 管快捷键与 Phase（[[adr/006-choose-state-management]]）
-- 数据层：**rusqlite 0.32 + bundled SQLite** + `chrono` 0.4 + `uuid` v4；数据目录 `~/Library/Application Support/dev.prompt-hub/`（[[adr/003-choose-data-persistence]]）
-- 样式：**CSS Modules + CSS variables**（token 全部引用 §0 T1 根样式表，禁止裸值；[[adr/009-choose-styling]]）
-- 包管理：**pnpm 9.x**；构建：**Vite 8.0**（[[adr/004-choose-package-manager]]）
-- 测试：**Vitest 4 + Testing Library + jsdom 29** 跑前端单元；**cargo test + tempfile** 跑 Rust + SQLite fixture（[[adr/007-choose-test-stack]]）
+- 桌面运行时：**Tauri 2.x** + `macos-private-api` feature（[[001-choose-desktop-runtime]] / [[008-enable-macos-private-api]]）
+- 前端框架：**React 19.2** + TypeScript 5.x strict（[[002-choose-frontend-framework]]）
+- 状态管理：**Zustand 5** — `appStore` 管窗口 visibility / `promptStore` 管 Macro/UsageRecord / `searchStore` 管 query / `settingsStore` 管快捷键与 Phase（[[006-choose-state-management]]）
+- 数据层：**rusqlite 0.32 + bundled SQLite** + `chrono` 0.4 + `uuid` v4；数据目录 `~/Library/Application Support/dev.prompt-hub/`（[[003-choose-data-persistence]]）
+- 样式：**CSS Modules + CSS variables**（token 全部引用 §0 T1 根样式表，禁止裸值；[[009-choose-styling]]）
+- 包管理：**pnpm 9.x**；构建：**Vite 8.0**（[[004-choose-package-manager]]）
+- 测试：**Vitest 4 + Testing Library + jsdom 29** 跑前端单元；**cargo test + tempfile** 跑 Rust + SQLite fixture（[[007-choose-test-stack]]）
 - 全局快捷键注册（默认 `⌥ Space`，可配置）via `@tauri-apps/plugin-global-shortcut`
 - 主形态：全屏覆盖窗口 + 半透明背景（约 92%）+ NSWindow `level` 浮于所有应用上方但不抢焦点（macos-private-api）
 - 复制即隐藏 + ESC 关闭
 
 **包含的功能模块**：
 
-- 搜索区（[[prd#5.0-搜索区]]）——⌘K 聚焦，全局兜底
-- 相位带（[[prd#5.1-相位带]]）——⌘1-⌘8 切相位
-- Macro 快捷区（[[prd#5.2-Macro-快捷区]]）——按热度排序的卡片墙
-- Scene 全景区（[[prd#5.3-Scene-全景区]]）——Tab 切换
-- 最近使用区（[[prd#5.5-最近使用区]]）——5 条历史
+- 搜索区（[[06-prd#5.0-搜索区]]）——⌘K 聚焦，全局兜底
+- 相位带（[[06-prd#5.1-相位带]]）——⌘1-⌘8 切相位
+- Macro 快捷区（[[06-prd#5.2-Macro-快捷区]]）——按热度排序的卡片墙
+- Scene 全景区（[[06-prd#5.3-Scene-全景区]]）——Tab 切换
+- 最近使用区（[[06-prd#5.5-最近使用区]]）——5 条历史
 - 复制和使用计数（UsageRecord）
 
 **不包含**：Composition 工作台、SOP 导航、状态仪表、配置入口、副屏形态
@@ -163,8 +163,8 @@ rg "#1D9E75|#1d9e75" --type css --type ts --type tsx --type js --type jsx \
 
 **包含**：
 
-- Composition 工作台（[[prd#5.4-Composition-组合工作台]]，通过 ⌘N 唤起子窗口）
-- 状态仪表区（[[prd#5.7-状态仪表区]]）——含相位分布数据
+- Composition 工作台（[[06-prd#5.4-Composition-组合工作台]]，通过 ⌘N 唤起子窗口）
+- 状态仪表区（[[06-prd#5.7-状态仪表区]]）——含相位分布数据
 - "未分类草稿"识别和提示
 - "保存为 Macro"的自动提示
 
@@ -178,7 +178,7 @@ rg "#1D9E75|#1d9e75" --type css --type ts --type tsx --type js --type jsx \
 
 **包含**：
 
-- SOP 导航区（[[prd#5.6-SOP-导航区]]）——首屏底部右侧
+- SOP 导航区（[[06-prd#5.6-SOP-导航区]]）——首屏底部右侧
 - SOP 模板的创建和编辑
 - 从使用历史录制 SOP
 
@@ -192,8 +192,8 @@ rg "#1D9E75|#1d9e75" --type css --type ts --type tsx --type js --type jsx \
 
 **包含**：
 
-- 配置入口（[[prd#5.8-配置与迭代入口]]）——含 Phase 可配置编辑
-- 数据导入导出（[[prd#6.9-数据导出-JSON-Schema]]）
+- 配置入口（[[06-prd#5.8-配置与迭代入口]]）——含 Phase 可配置编辑
+- 数据导入导出（[[06-prd#6.9-数据导出-JSON-Schema]]）
 - 主形态界面布局的可配置性
 
 **交付标准**：使用者可以在不碰代码的前提下，完整地调整这个工具以适配自己的工作方式变化，包括增删 Phase、调整快捷键、修改 Scene 结构。
@@ -235,6 +235,6 @@ rg "#1D9E75|#1d9e75" --type css --type ts --type tsx --type js --type jsx \
 ---
 
 **关联文件**：
-- [[spec]] — 项目定位与哲学
-- [[product-spec]] — UI 契约
-- [[prd]] — 工程契约（数据模型 / 模块字段 / NFR / Boundaries）
+- [[01-spec]] — 项目定位与哲学
+- [[03-product-spec]] — UI 契约
+- [[06-prd]] — 工程契约（数据模型 / 模块字段 / NFR / Boundaries）

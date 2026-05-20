@@ -6,17 +6,17 @@ created: 2026-05-18
 last_modified: 2026-05-18
 status: pre-code
 author: co  # 🤝 人机共创（CLAUDE §5.2）
-related: [[spec]], [[product-spec]]
+related: [[01-spec]], [[03-product-spec]]
 description: 手动 AI 编程仪表盘的视觉规范——字号/间距/颜色/动画 Token 全 CSS Variables 化 + WCAG 对比度实测 + 暗色模式 v1.0 占位
 ---
 
 # Design Spec: prompt-hub（视觉规范）
 
 > 本文件是 `prompt-hub-prd.md` 拆分版的 **design-spec.md**——承载视觉规范。
-> 项目定位见 [[spec]]、UI 契约见 [[product-spec]]。
+> 项目定位见 [[01-spec]]、UI 契约见 [[03-product-spec]]。
 >
 > 本文件来源：原 PRD §4.3「视觉设计原则」的视觉 Token 部分 + §13 UI 草案的颜色编码。
-> 原 §4.3 中的「交互频率与路径」表（属行为契约）已迁至 [[product-spec#4.3-交互频率与路径-行为契约]]。
+> 原 §4.3 中的「交互频率与路径」表（属行为契约）已迁至 [[03-product-spec#4.3-交互频率与路径-行为契约]]。
 
 ---
 
@@ -276,8 +276,8 @@ description: 手动 AI 编程仪表盘的视觉规范——字号/间距/颜色/
 ---
 
 **关联文件**：
-- [[spec]] — 项目定位与哲学
-- [[product-spec]] — UI 契约（信息架构 / 模块布局 / 用户旅程 / UI 草案）
+- [[01-spec]] — 项目定位与哲学
+- [[03-product-spec]] — UI 契约（信息架构 / 模块布局 / 用户旅程 / UI 草案）
 
 ---
 

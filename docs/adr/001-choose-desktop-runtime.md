@@ -6,10 +6,10 @@ status: Accepted
 date: 2026-05-19
 description: 选择 Tauri 2.x 作为 prompt-hub 桌面运行时——Electron 内存常驻 200-500MB 与 C1 200ms 唤起冲突，Wails 多窗口弱与 spec §2.3 副屏常驻冲突
 related:
-  - constitution
-  - spec
-  - tech-stack
-  - plan
+  - 02-constitution
+  - 01-spec
+  - 09-tech-stack
+  - prompt-hub-mvp
 ---
 
 # ADR-001: 选择 Tauri 2.x 作为桌面运行时
@@ -19,7 +19,7 @@ related:
 - **标题**：选择 Tauri 2.x 而非 Electron 30+ / Wails 2.x 作为桌面运行时
 - **日期**：2026-05-19
 - **决策者**：omar
-- **影响范围**：[[tech-stack#§3-D1]]（resolved）/ 后续 ADR-002（前端框架，解锁独立决策）/ ADR-004（包管理）/ ADR-005（prompt-combiner 复用，前端组件可迁移评估）/ D7 自动锁定（无独立 ADR — tauri-plugin-global-shortcut 由 Tauri 选定后内生）/ [[plan#§0]] 跨阶段先决条件解锁 / [[ops-spec#§1.2]] 打包签名章节方向锁定
+- **影响范围**：[[09-tech-stack#§3-D1]]（resolved）/ 后续 ADR-002（前端框架，解锁独立决策）/ ADR-004（包管理）/ ADR-005（prompt-combiner 复用，前端组件可迁移评估）/ D7 自动锁定（无独立 ADR — tauri-plugin-global-shortcut 由 Tauri 选定后内生）/ [[prompt-hub-mvp#§0]] 跨阶段先决条件解锁 / [[10-ops-spec#§1.2]] 打包签名章节方向锁定
 
 ## 2. Status
 
@@ -28,10 +28,10 @@ related:
 ## 3. Context
 
 ### 触发事件
-第一阶段 MVP 建仓阻塞 — [[tech-stack#§3]] `D1 桌面运行时` 未决导致：
+第一阶段 MVP 建仓阻塞 — [[09-tech-stack#§3]] `D1 桌面运行时` 未决导致：
 - AI 无法生成 import 语句（违反 [[产品文档体系方法论#§5.3]] tech-stack 验收④）
 - [[CLAUDE#§2]] 关键命令无法回填（dev / build / test 命令依赖运行时选择）
-- [[plan#§0]] 跨阶段先决条件 T1（design token）以外的任务全部阻塞
+- [[prompt-hub-mvp#§0]] 跨阶段先决条件 T1（design token）以外的任务全部阻塞
 - 后续 D2 / D4 / D5 / D7 决策连锁阻塞
 
 ### 业务约束（来自 constitution）
@@ -40,9 +40,9 @@ related:
 - **A3 单人单机** — 不引入用户系统，运行时无需鉴权 / IAM 集成
 
 ### 技术约束（来自 spec + constitution）
-- **C1 主形态唤起 ≤ 200ms P95**（[[constitution#C1]]）—— 隐性内存预算约束：常驻进程内存越低，系统调度越快、唤起越稳
-- **主形态全屏覆盖窗口 + 全局快捷键唤起**（[[spec#2.3]]）—— 需要 global-shortcut + 全屏 + 透明背景 + always-on-top 组合
-- **辅形态副屏常驻视图**（[[spec#2.3]] [[spec#2.8]]）—— 需要多窗口 + 多显示器 API
+- **C1 主形态唤起 ≤ 200ms P95**（[[02-constitution#C1]]）—— 隐性内存预算约束：常驻进程内存越低，系统调度越快、唤起越稳
+- **主形态全屏覆盖窗口 + 全局快捷键唤起**（[[01-spec#2.3]]）—— 需要 global-shortcut + 全屏 + 透明背景 + always-on-top 组合
+- **辅形态副屏常驻视图**（[[01-spec#2.3]] [[01-spec#2.8]]）—— 需要多窗口 + 多显示器 API
 
 ### 不决策的代价
 - tech-stack 永远 stub，违反 §5.3 验收 ①②④（v1.2 §5.3 stub 例外限期升 v1.0）
@@ -86,7 +86,7 @@ related:
 - **描述**：Go 后端 + OS WebView + TypeScript 前端
 - **优点**：包体小、Go 部署友好、并发模型简单
 - **缺点**：
-  - **多窗口支持弱**（仍在实验）—— 直接冲突 [[spec#2.3]] 辅形态副屏常驻视图
+  - **多窗口支持弱**（仍在实验）—— 直接冲突 [[01-spec#2.3]] 辅形态副屏常驻视图
   - 生态比 Tauri 更浅，AI 工具链对 Go + Wails 组合支持一般
   - 全局快捷键无官方插件，需手写跨平台抽象
 - **预估成本**：MVP 可达，但辅形态实现时高概率撞墙
@@ -97,16 +97,16 @@ related:
 
 **为什么不选其他**：
 - 不选 Electron 因为：内存常驻 200–500MB 让 C1 200ms 唤起在 macOS 内存压力大时不稳；默认松散沙箱与 A2 隐私语境不契合
-- 不选 Wails 因为：多窗口支持弱，[[spec#2.3]] 辅形态副屏常驻在 Wails 上要踩坑
+- 不选 Wails 因为：多窗口支持弱，[[01-spec#2.3]] 辅形态副屏常驻在 Wails 上要踩坑
 
 ## 6. Consequences
 
 ### 正向后果
-- 解 [[tech-stack#§3-D1]]，第一阶段 MVP 建仓可启动
+- 解 [[09-tech-stack#§3-D1]]，第一阶段 MVP 建仓可启动
 - **D5 构建工具**自动锁定为 Vite（Tauri 官方推荐栈）— 节省 ADR-005 决策
 - **D7 全局快捷键**自动锁定为 `@tauri-apps/plugin-global-shortcut` — 节省 ADR-007 决策
 - 解锁 D2（前端框架）/ D3（数据持久化）/ D4（包管理）独立决策
-- [[ops-spec#§1.2]] 打包/签名流程可照 Tauri 官方文档落地（不需自建）
+- [[10-ops-spec#§1.2]] 打包/签名流程可照 Tauri 官方文档落地（不需自建）
 - 默认沙箱契合 A2，可在 ADR-001 后续的安全加固决策中省去额外步骤
 
 ### 反向后果
@@ -142,8 +142,8 @@ related:
 
 ## 相关链接
 
-- **触发本决策的文档**：[[tech-stack#§3-D1]] / [[spec#1.3]] / [[spec#2.3]] / [[spec#2.8]] / [[constitution#A1]] / [[constitution#A2]] / [[constitution#C1]]
-- **被本决策影响的文档**：[[tech-stack]]（D1 resolved，§4 等所有 D 全决议后回填升 v1.0）/ [[plan#§0]]（解锁 T1 之后任务）/ [[ops-spec#§1.2]]（签名流程方向锁定 Tauri）/ [[CLAUDE#§2]]（建仓后关键命令回填 `pnpm tauri dev` 等）
+- **触发本决策的文档**：[[09-tech-stack#§3-D1]] / [[01-spec#1.3]] / [[01-spec#2.3]] / [[01-spec#2.8]] / [[02-constitution#A1]] / [[02-constitution#A2]] / [[02-constitution#C1]]
+- **被本决策影响的文档**：[[09-tech-stack]]（D1 resolved，§4 等所有 D 全决议后回填升 v1.0）/ [[prompt-hub-mvp#§0]]（解锁 T1 之后任务）/ [[10-ops-spec#§1.2]]（签名流程方向锁定 Tauri）/ [[CLAUDE#§2]]（建仓后关键命令回填 `pnpm tauri dev` 等）
 - **相关 ADR**：
   - 前置：无
   - 后续独立：ADR-002（前端框架 React/Vue/Svelte/Solid）/ ADR-003（数据持久化 SQLite/JSON）/ ADR-004（包管理 pnpm/bun）

@@ -8,9 +8,9 @@ author: co  # 🤝 人机共创（CLAUDE §5.2）
 audience: [human]
 description: prompt-hub 关键用户流程补充——product-spec §4.5 未覆盖的边缘/异常/跨形态流程
 related:
-  - product-spec
-  - prd
-  - sitemap
+  - 03-product-spec
+  - 06-prd
+  - 08-sitemap
 ---
 
 # User Flows: prompt-hub
@@ -18,11 +18,11 @@ related:
 > **本文件定位**：product-spec §4.5 已覆盖 3 个核心叙事 flow（SOP 驱动型 / 单点调用型 / 组合沉淀型）。本文件**只补充其未覆盖的流程**，避免重复。
 >
 > 已覆盖（不在本文件重复）：
-> - [[product-spec#4.5.1]] 完整 SOP 驱动型（方案设计任务）
-> - [[product-spec#4.5.2]] 单点快速调用型（日常排查任务）
-> - [[product-spec#4.5.3]] 组合工作台沉淀型（新型任务）
+> - [[03-product-spec#4.5.1]] 完整 SOP 驱动型（方案设计任务）
+> - [[03-product-spec#4.5.2]] 单点快速调用型（日常排查任务）
+> - [[03-product-spec#4.5.3]] 组合工作台沉淀型（新型任务）
 >
-> 本文件补充的 flow 来自 [[product-spec#4.5.5]]「未被覆盖的 flow（明示）」+ 边缘/异常场景。
+> 本文件补充的 flow 来自 [[03-product-spec#4.5.5]]「未被覆盖的 flow（明示）」+ 边缘/异常场景。
 
 ---
 
@@ -38,7 +38,7 @@ related:
 ```
 
 **关键约束**：
-- 主辅形态共享同一数据后端（[[constitution#A2]] 本地优先推论——单本地后端，双形态共享）
+- 主辅形态共享同一数据后端（[[02-constitution#A2]] 本地优先推论——单本地后端，双形态共享）
 - 主形态复制触发 UsageRecord 写入 → 辅形态 reactive 监听更新
 - 辅形态**不要**因主形态唤起而隐藏（独立窗口，互不影响）
 
@@ -60,7 +60,7 @@ related:
     → 导出失败 → 中止迁移，保持 v1.x
 ```
 
-**关键约束**（[[prd#7.7.4]]）：
+**关键约束**（[[06-prd#7.7.4]]）：
 - minor 升级零感知（无弹窗，无导出要求）
 - major 升级强同意（弹窗 + 强制导出 + 显式按钮）
 - 任何迁移前自动备份（无备份不迁移）
@@ -69,7 +69,7 @@ related:
 
 ## §3 数据导入失败 flow
 
-**场景**：用户从其他工具导入 JSON 数据，格式不兼容或含恶意字段（[[prd#9.1]]）。
+**场景**：用户从其他工具导入 JSON 数据，格式不兼容或含恶意字段（[[06-prd#9.1]]）。
 
 ```
 view:data-io → 选择 JSON 文件 → 导入按钮
@@ -88,7 +88,7 @@ view:data-io → 选择 JSON 文件 → 导入按钮
 
 ---
 
-## §4 删除资产的 ask-first flow（[[prd#8.2-Q1]]）
+## §4 删除资产的 ask-first flow（[[06-prd#8.2-Q1]]）
 
 **场景**：用户在配置面板尝试删除一个使用过 48 次的 Macro。
 
@@ -150,7 +150,7 @@ view:config → Macro 列表 → 点删除
 **反约束**：
 - 不强制导入示例（用户的资产应是自己的沉淀）
 - 不弹出"教程视频"（哲学一手动挡阶段拒绝过度引导）
-- 不要求账号注册（[[constitution#A3]]）
+- 不要求账号注册（[[02-constitution#A3]]）
 
 ---
 
@@ -165,7 +165,7 @@ Mac 上：view:config → view:data-io → 导出 JSON → 保存到 iCloud Driv
     [否] → 保持当前数据
 ```
 
-**关键约束**（[[prd#7.4]]）：
+**关键约束**（[[06-prd#7.4]]）：
 - 不做实时同步（单人使用，最终一致性即可）
 - iPad 只读为主，不主动写回（避免冲突）
 - 通过 Git / iCloud / 手动 USB 同步 JSON，工具不绑定具体同步方式
@@ -176,7 +176,7 @@ Mac 上：view:config → view:data-io → 导出 JSON → 保存到 iCloud Driv
 
 | Flow | Owner | Due（按 plan 阶段） | 触发条件 |
 |---|---|---|---|
-| **AI 协作分位变化 flow**（[[product-spec#4.5.1]] 部分覆盖，待补「连续切相位 3 次」边缘场景） | omar | S1 / 第一阶段 | 主形态 MVP 跑通后 |
-| **SOP 录制 flow**：从 UsageRecord 历史录制 SOP（[[prd#8.2-Q2]]）的具体粒度选择 UI | omar | S3 / 第三阶段 | SOP 导航模块开工前 |
+| **AI 协作分位变化 flow**（[[03-product-spec#4.5.1]] 部分覆盖，待补「连续切相位 3 次」边缘场景） | omar | S1 / 第一阶段 | 主形态 MVP 跑通后 |
+| **SOP 录制 flow**：从 UsageRecord 历史录制 SOP（[[06-prd#8.2-Q2]]）的具体粒度选择 UI | omar | S3 / 第三阶段 | SOP 导航模块开工前 |
 | **副屏断开 flow**：辅形态运行中物理副屏被拔出（应优雅降级为窗口模式） | omar | S5 / 第五阶段 | 辅形态实施时 |
 | **存储满 flow**：localStorage 达到配额上限（IndexedDB 兜底策略待定） | omar | S1 / 第一阶段 | 待 ADR-003（数据持久化）决议后 |

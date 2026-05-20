@@ -9,24 +9,24 @@ author: ai  # 🤖 AI 主笔 + 人审（CLAUDE §5.2）
 audience: [ai]
 description: prompt-hub 技术栈快照——全栈拍板：Tauri 2.x + React 19.2 + rusqlite 0.32 + pnpm 9.x + Zustand 5 + Vitest 4 + CSS Modules，macos-private-api 启用
 related:
-  - constitution
-  - plan
-  - adr/001-choose-desktop-runtime
-  - adr/002-choose-frontend-framework
-  - adr/003-choose-data-persistence
-  - adr/004-choose-package-manager
-  - adr/005-prompt-combiner-reuse
-  - adr/006-choose-state-management
-  - adr/007-choose-test-stack
-  - adr/008-enable-macos-private-api
-  - adr/009-choose-styling
+  - 02-constitution
+  - prompt-hub-mvp
+  - 001-choose-desktop-runtime
+  - 002-choose-frontend-framework
+  - 003-choose-data-persistence
+  - 004-choose-package-manager
+  - 005-prompt-combiner-reuse
+  - 006-choose-state-management
+  - 007-choose-test-stack
+  - 008-enable-macos-private-api
+  - 009-choose-styling
 ---
 
 # Tech Stack: prompt-hub
 
 > 全栈技术选型已通过 ADR-001~009 拍板（除 ADR-005 prompt-combiner 复用仍 Proposed）。AI 在生成代码前可直接按本文件 §4~§7 操作；遇 dependency major bump 必须先开 ADR（[[#§8-升级流程]]）。
 >
-> 跨阶段先决条件见 [[plan#§0]]；第一阶段 MVP 建仓基线见 [[plan#第一阶段]]。
+> 跨阶段先决条件见 [[prompt-hub-mvp#§0]]；第一阶段 MVP 建仓基线见 [[prompt-hub-mvp#第一阶段]]。
 
 ---
 
@@ -36,11 +36,11 @@ related:
 
 | 维度 | 约束 | 来源 |
 |---|---|---|
-| 应用形态 | 桌面原生（非 Web / 非浏览器扩展） | [[constitution#A1]] |
-| 数据存储 | 本地存储（localStorage / SQLite / 文件）；禁服务端 | [[constitution#A2]] |
-| 网络权限 | 不调用自有后端 API；不上传话术 | [[constitution#A2]] |
-| AI SDK | 禁用 anthropic / openai 等 LLM SDK 用于话术生成 | [[constitution#D1]] |
-| 性能预算 | 主形态唤起 ≤ 200ms P95 | [[constitution#C1]] |
+| 应用形态 | 桌面原生（非 Web / 非浏览器扩展） | [[02-constitution#A1]] |
+| 数据存储 | 本地存储（localStorage / SQLite / 文件）；禁服务端 | [[02-constitution#A2]] |
+| 网络权限 | 不调用自有后端 API；不上传话术 | [[02-constitution#A2]] |
+| AI SDK | 禁用 anthropic / openai 等 LLM SDK 用于话术生成 | [[02-constitution#D1]] |
+| 性能预算 | 主形态唤起 ≤ 200ms P95 | [[02-constitution#C1]] |
 
 ---
 
@@ -48,7 +48,7 @@ related:
 
 ### 2.1 设计 Token 系统
 
-已在 [[design-spec]] v0.6 与 [[plan#§0-T1]] 落地，**任何组件 CSS 禁止使用裸 px / 裸 hex / 裸 ms 值**。
+已在 [[05-design-spec]] v0.6 与 [[prompt-hub-mvp#§0-T1]] 落地，**任何组件 CSS 禁止使用裸 px / 裸 hex / 裸 ms 值**。
 
 - CSS Variables 根样式表见 `plan.md §0 T1`
 - 颜色 / 字号 / 间距 / 动画时长全部 token 化
@@ -58,7 +58,7 @@ related:
 
 ### 2.2 设计契约
 
-详见 [[design-spec]] v0.6，含 WCAG 对比度要求（Non-text ≥3:1，文字 ≥4.5:1）。
+详见 [[05-design-spec]] v0.6，含 WCAG 对比度要求（Non-text ≥3:1，文字 ≥4.5:1）。
 
 ---
 
@@ -66,17 +66,17 @@ related:
 
 | # | 决策项 | 选定 | ADR | 状态 |
 |---|---|---|---|---|
-| **D1** | 桌面运行时 | Tauri 2.x | [[adr/001-choose-desktop-runtime]] | ✅ Accepted 2026-05-19 |
-| **D2** | 前端框架 | React 19.2 | [[adr/002-choose-frontend-framework]] | ✅ Accepted 2026-05-19 |
-| **D3** | 数据持久化 | rusqlite 0.32 + bundled SQLite（不启 SQLCipher）| [[adr/003-choose-data-persistence]] | ✅ Accepted 2026-05-19 |
-| **D4** | 包管理器 | pnpm 9.x | [[adr/004-choose-package-manager]] | ✅ Accepted 2026-05-19 |
+| **D1** | 桌面运行时 | Tauri 2.x | [[001-choose-desktop-runtime]] | ✅ Accepted 2026-05-19 |
+| **D2** | 前端框架 | React 19.2 | [[002-choose-frontend-framework]] | ✅ Accepted 2026-05-19 |
+| **D3** | 数据持久化 | rusqlite 0.32 + bundled SQLite（不启 SQLCipher）| [[003-choose-data-persistence]] | ✅ Accepted 2026-05-19 |
+| **D4** | 包管理器 | pnpm 9.x | [[004-choose-package-manager]] | ✅ Accepted 2026-05-19 |
 | **D5** | 构建工具 | Vite 8.0 | D1 自动锁定（无独立 ADR）| ✅ 由 D1 锁定 |
-| **D6** | 状态管理 | Zustand 5（四层 store）| [[adr/006-choose-state-management]] | ✅ Accepted 2026-05-19 |
+| **D6** | 状态管理 | Zustand 5（四层 store）| [[006-choose-state-management]] | ✅ Accepted 2026-05-19 |
 | **D7** | 全局快捷键 API | @tauri-apps/plugin-global-shortcut | D1 自动锁定（无独立 ADR）| ✅ 由 D1 锁定 |
-| **D8** | prompt-combiner 复用 | （待 omar 提供仓库后调研）| [[adr/005-prompt-combiner-reuse]] | ⏳ Proposed |
-| **D9** | macOS 私有 API | 启用 macos-private-api（永久弃 App Store）| [[adr/008-enable-macos-private-api]] | ✅ Accepted 2026-05-19 |
-| **D10** | 样式方案 | CSS Modules + CSS variables（不引 Tailwind）| [[adr/009-choose-styling]] | ✅ Accepted 2026-05-19 |
-| **D11** | 测试栈 | Vitest 4 + Testing Library + jsdom 29 + cargo test + tempfile | [[adr/007-choose-test-stack]] | ✅ Accepted 2026-05-19 |
+| **D8** | prompt-combiner 复用 | （待 omar 提供仓库后调研）| [[005-prompt-combiner-reuse]] | ⏳ Proposed |
+| **D9** | macOS 私有 API | 启用 macos-private-api（永久弃 App Store）| [[008-enable-macos-private-api]] | ✅ Accepted 2026-05-19 |
+| **D10** | 样式方案 | CSS Modules + CSS variables（不引 Tailwind）| [[009-choose-styling]] | ✅ Accepted 2026-05-19 |
+| **D11** | 测试栈 | Vitest 4 + Testing Library + jsdom 29 + cargo test + tempfile | [[007-choose-test-stack]] | ✅ Accepted 2026-05-19 |
 
 **仅剩 D8 阻塞**：第一阶段 MVP 建仓不依赖 D8（可走「重写」路径），D8 调研结果只影响迁移节奏。
 
@@ -86,10 +86,10 @@ related:
 
 | 维度 | 选定 | 版本 | 来源 |
 |---|---|---|---|
-| **桌面运行时** | Tauri | 2.x | [[adr/001-choose-desktop-runtime]] |
-| **Tauri features** | `macos-private-api` 启用 | — | [[adr/008-enable-macos-private-api]] |
-| **前端框架** | React + React-DOM | 19.2 | [[adr/002-choose-frontend-framework]] |
-| **状态管理** | Zustand | 5.x | [[adr/006-choose-state-management]] |
+| **桌面运行时** | Tauri | 2.x | [[001-choose-desktop-runtime]] |
+| **Tauri features** | `macos-private-api` 启用 | — | [[008-enable-macos-private-api]] |
+| **前端框架** | React + React-DOM | 19.2 | [[002-choose-frontend-framework]] |
+| **状态管理** | Zustand | 5.x | [[006-choose-state-management]] |
 | **TypeScript** | TS | 5.x（strict mode）| 标配 |
 | **Node 版本** | lts/iron | 20.x 或更新 | Tauri 2.x + Vite 8 要求 |
 | **Rust MSRV** | rustc | 1.77.2+ | Tauri 2.x 要求 |
@@ -103,17 +103,17 @@ related:
 | `searchStore` | query / filter / 高亮结果 | 否（短期态）|
 | `settingsStore` | 快捷键 / 主题 / 副屏开关 / Phase 状态 | 是（localStorage + Rust IPC 同步至 SQLite）|
 
-文件结构约定：`src/stores/{name}Store.ts`。完整设计见 [[adr/006-choose-state-management#6]]。
+文件结构约定：`src/stores/{name}Store.ts`。完整设计见 [[006-choose-state-management#6]]。
 
 ### 4.2 macOS 私有 API 用途
 
 | 私有 API | 用途 | spec 依据 |
 |---|---|---|
-| NSWindow `level` | 主形态浮于所有应用上方但不抢焦点 | [[spec#2.3]] 哲学三时间分离 |
+| NSWindow `level` | 主形态浮于所有应用上方但不抢焦点 | [[01-spec#2.3]] 哲学三时间分离 |
 | `setSharingType` | 控制窗口分享行为 | 主形态隐私 |
-| `canBecomeMain` / `canBecomeKey` | 唤起后立即接收键盘事件而不切换 active app | [[constitution#C1]] 200ms 唤起 |
+| `canBecomeMain` / `canBecomeKey` | 唤起后立即接收键盘事件而不切换 active app | [[02-constitution#C1]] 200ms 唤起 |
 
-**不可逆约束**：App Store 上架永久排除（[[adr/008-enable-macos-private-api#6]]）。
+**不可逆约束**：App Store 上架永久排除（[[008-enable-macos-private-api#6]]）。
 
 ---
 
@@ -135,7 +135,7 @@ macOS:   ~/Library/Application Support/dev.prompt-hub/
 Windows: %APPDATA%\dev.prompt-hub\
 ```
 
-由 Tauri `path::app_data_dir()` 解析。完整备份策略见 [[ops-spec#§3]]（`cp .db + WAL`）。
+由 Tauri `path::app_data_dir()` 解析。完整备份策略见 [[10-ops-spec#§3]]（`cp .db + WAL`）。
 
 ### 5.2 数据规模与索引基线
 
@@ -153,13 +153,13 @@ Windows: %APPDATA%\dev.prompt-hub\
 
 | 维度 | 选定 | 版本 | 来源 |
 |---|---|---|---|
-| **包管理** | pnpm | 9.x | [[adr/004-choose-package-manager]] |
+| **包管理** | pnpm | 9.x | [[004-choose-package-manager]] |
 | **构建** | Vite | 8.0 | D1 自动锁定（Tauri 官方推荐）|
-| **样式** | CSS Modules + CSS variables | Vite 内置 | [[adr/009-choose-styling]] |
+| **样式** | CSS Modules + CSS variables | Vite 内置 | [[009-choose-styling]] |
 | **class 拼接** | clsx | 2.x | 变体合并 |
-| **前端测试** | Vitest + Testing Library + jsdom | 4 / latest / 29 | [[adr/007-choose-test-stack]] |
-| **Rust 测试** | cargo test + tempfile | 内置 / 3.x | [[adr/007-choose-test-stack]] |
-| **E2E** | Playwright | 推到 v1.0+ 评估 | [[adr/007-choose-test-stack#5]] |
+| **前端测试** | Vitest + Testing Library + jsdom | 4 / latest / 29 | [[007-choose-test-stack]] |
+| **Rust 测试** | cargo test + tempfile | 内置 / 3.x | [[007-choose-test-stack]] |
+| **E2E** | Playwright | 推到 v1.0+ 评估 | [[007-choose-test-stack#5]] |
 | **JS Lint** | ESLint | 9.x（flat config）| 标配 |
 | **JS Format** | Prettier | 3.x | 标配 |
 | **Rust Lint** | clippy（`-D warnings`）| 随 toolchain | 标配 |
@@ -217,12 +217,12 @@ prompt-hub 借鉴 VaultX 的 Rust 依赖组合（rusqlite 0.32 + chrono 最新 +
 任何 dependency major version bump 必须走：
 
 1. 开 ADR 评估破坏性变更（含 Options Considered + 反悔成本）
-2. 升级后跑 [[plan#§0-T2]] 全量自检（含 design token 颜色一致性）
-3. 跑 [[plan#§0-T1]] 性能 benchmark（C1 200ms 唤起回归）
+2. 升级后跑 [[prompt-hub-mvp#§0-T2]] 全量自检（含 design token 颜色一致性）
+3. 跑 [[prompt-hub-mvp#§0-T1]] 性能 benchmark（C1 200ms 唤起回归）
 4. 更新本文件 `§4~§7` 对应条目 + frontmatter `updated`
 5. 升 frontmatter `version`（patch bump，如 v1.0 → v1.1）
 
 **禁止行为**：
 - 不走 ADR 直接 bump major version
-- 不跑 benchmark 就 ship（[[constitution#C1]] 200ms 是硬指标）
-- 混用其他包管理器（[[adr/004-choose-package-manager#6]]）
+- 不跑 benchmark 就 ship（[[02-constitution#C1]] 200ms 是硬指标）
+- 混用其他包管理器（[[004-choose-package-manager#6]]）

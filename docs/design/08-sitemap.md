@@ -8,9 +8,9 @@ author: ai  # 🤖 AI 主笔 + 人审（CLAUDE §5.2）
 audience: [human, ai]
 description: prompt-hub 资产对象树 + 视图导航图（无 URL 路由，桌面应用语境）
 related:
-  - prd
-  - product-spec
-  - user-flows
+  - 06-prd
+  - 03-product-spec
+  - 04-user-flows
 ---
 
 # Sitemap: prompt-hub
@@ -19,13 +19,13 @@ related:
 > 1. 系统里**有什么对象**？（资产对象树）
 > 2. 用户**怎么从一个视图跳到另一个视图**？（视图导航图）
 >
-> 不画 UI wireframe（[[product-spec#13]] 管），不画交互细节（[[product-spec#4.3]] 管）。
+> 不画 UI wireframe（[[03-product-spec#13]] 管），不画交互细节（[[03-product-spec#4.3]] 管）。
 
 ---
 
 ## §1 资产对象树
 
-完整 mermaid 关系图见 [[prd#6.0]]。本节是**导航视角**的简化版：
+完整 mermaid 关系图见 [[06-prd#6.0]]。本节是**导航视角**的简化版：
 
 ```
 prompt-hub 数据世界
@@ -124,7 +124,7 @@ graph TD
 **图例**：
 - 紫色 = 主形态入口（哲学三时间分离）
 - 米色 = 辅形态入口（哲学三空间分离）
-- 红色 = 协议层视图（[[constitution#B2]] 物理隔离）
+- 红色 = 协议层视图（[[02-constitution#B2]] 物理隔离）
 - 绿色 = 任务层视图
 
 ---
@@ -133,17 +133,17 @@ graph TD
 
 | # | 约束 | 来源 |
 |---|---|---|
-| N1 | 主形态任何复制操作 → 自动隐藏窗口 | [[prd#8.2-A1]] |
-| N2 | 辅形态不自动隐藏，常驻在场 | [[prd#8.2-A1-exception]] |
-| N3 | `view:composition` 退出时必须确认是否保存（Q2 ask-first） | [[prd#8.2-Q1]] |
-| N4 | `view:config` 内的删除操作必须二次确认 | [[prd#8.2-Q1]] |
-| N5 | 协议层视图（`view:phase-*`）不允许跳转到任务层 Macro/Phrase 视图 | [[constitution#B2]] |
-| N6 | `view:data-io` 导入失败必须回滚到导入前快照 | [[prd#7.7.4]] |
+| N1 | 主形态任何复制操作 → 自动隐藏窗口 | [[06-prd#8.2-A1]] |
+| N2 | 辅形态不自动隐藏，常驻在场 | [[06-prd#8.2-A1-exception]] |
+| N3 | `view:composition` 退出时必须确认是否保存（Q2 ask-first） | [[06-prd#8.2-Q1]] |
+| N4 | `view:config` 内的删除操作必须二次确认 | [[06-prd#8.2-Q1]] |
+| N5 | 协议层视图（`view:phase-*`）不允许跳转到任务层 Macro/Phrase 视图 | [[02-constitution#B2]] |
+| N6 | `view:data-io` 导入失败必须回滚到导入前快照 | [[06-prd#7.7.4]] |
 
 ---
 
 ## §5 待决议的视图细节
 
-- `view:monthly-review` 的具体数据维度（哪些字段聚合）→ 详见 [[product-spec#4.5.5]] 未覆盖 flow
-- ✅ `view:status-panel` 是否包含 schema_version 升级状态 → 已由 [[ops-spec#§5.1]] 决议：迁移日志在 `view:config` 配置面板，**不在** status-panel
+- `view:monthly-review` 的具体数据维度（哪些字段聚合）→ 详见 [[03-product-spec#4.5.5]] 未覆盖 flow
+- ✅ `view:status-panel` 是否包含 schema_version 升级状态 → 已由 [[10-ops-spec#§5.1]] 决议：迁移日志在 `view:config` 配置面板，**不在** status-panel
 - 配置入口的 Tab 划分（4 Tab 还是 5 Tab）→ 待 product-spec 修订

@@ -6,10 +6,10 @@ status: Accepted
 date: 2026-05-19
 description: 选择测试栈——前端 Vitest 4 + Testing Library + jsdom 29；Rust cargo test + tempfile；E2E Playwright 推到 v1.0+ 视需求加
 related:
-  - tech-stack
-  - test-spec
-  - adr/001-choose-desktop-runtime
-  - adr/002-choose-frontend-framework
+  - 09-tech-stack
+  - 11-test-spec
+  - 001-choose-desktop-runtime
+  - 002-choose-frontend-framework
 ---
 
 # ADR-007: 选择测试栈（Vitest 4 + RTL + cargo test）
@@ -19,7 +19,7 @@ related:
 - **标题**：选择 Vitest 4 + Testing Library + jsdom 29 + cargo test + tempfile 为测试栈
 - **日期**：2026-05-19
 - **决策者**：omar
-- **影响范围**：[[tech-stack#§3]] 测试工具行 / [[test-spec]] 用例书写格式 / CI 测试 step / [[features#§5]] 测试覆盖目标
+- **影响范围**：[[09-tech-stack#§3]] 测试工具行 / [[11-test-spec]] 用例书写格式 / CI 测试 step / [[07-features#§5]] 测试覆盖目标
 
 ## 2. Status
 
@@ -28,11 +28,11 @@ related:
 ## 3. Context
 
 ### 触发事件
-[[test-spec]] 定义了金字塔比例与用例格式，但工具未拍板；MVP 建仓前必须确定。
+[[11-test-spec]] 定义了金字塔比例与用例格式，但工具未拍板；MVP 建仓前必须确定。
 
 ### 业务约束
-- [[test-spec#§5]] benchmark 测量 C1 200ms 唤起 — 需要可执行的性能 assertion 工具
-- [[constitution#D1]] 不内嵌 LLM — Eval 集对 prompt-hub 是 N/A（[[test-spec#§6]]），但通用单元/集成/E2E 必须有
+- [[11-test-spec#§5]] benchmark 测量 C1 200ms 唤起 — 需要可执行的性能 assertion 工具
+- [[02-constitution#D1]] 不内嵌 LLM — Eval 集对 prompt-hub 是 N/A（[[11-test-spec#§6]]），但通用单元/集成/E2E 必须有
 
 ### 技术约束
 - 与 Vite 8.0 集成（共享配置 vite.config.ts）
@@ -44,7 +44,7 @@ related:
 VaultX 实战使用 Vitest 4 + Testing Library（react/jest-dom/user-event）+ jsdom 29 + cargo test + tempfile 完整组合。
 
 ### 不决策的代价
-- [[test-spec]] 用例格式无法定型
+- [[11-test-spec]] 用例格式无法定型
 - CI 测试 step 无法实施
 - AI 生成测试时不知用哪个框架
 
@@ -97,10 +97,10 @@ VaultX 实战使用 Vitest 4 + Testing Library（react/jest-dom/user-event）+ j
 ## 6. Consequences
 
 ### 正向后果
-- 解 [[test-spec]] 工具选型悬置
+- 解 [[11-test-spec]] 工具选型悬置
 - Vitest 与 Vite 共享配置（`vitest.config.ts` 可继承 `vite.config.ts`）
 - 测试启动快（HMR-like，watch mode 几乎实时）
-- [[test-spec#§5]] 性能 benchmark 可用 Vitest bench API（`bench()` + `expect(...).toBeLessThan(200)`）
+- [[11-test-spec#§5]] 性能 benchmark 可用 Vitest bench API（`bench()` + `expect(...).toBeLessThan(200)`）
 - cargo test 与 GitHub Actions 标准 step 集成
 
 ### 反向后果
@@ -126,6 +126,6 @@ VaultX 实战使用 Vitest 4 + Testing Library（react/jest-dom/user-event）+ j
 
 ## 相关链接
 
-- **触发本决策的文档**：[[test-spec]] / [[tech-stack#§3]]
-- **被本决策影响的文档**：[[test-spec]] 用例格式 / [[features]] 测试覆盖列定义 / CI workflow（待建）
+- **触发本决策的文档**：[[11-test-spec]] / [[09-tech-stack#§3]]
+- **被本决策影响的文档**：[[11-test-spec]] 用例格式 / [[07-features]] 测试覆盖列定义 / CI workflow（待建）
 - **相关 ADR**：前置 ADR-001 / ADR-002 / 未来 E2E 决议 → 新开 ADR-NNN
