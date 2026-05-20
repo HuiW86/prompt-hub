@@ -162,4 +162,4 @@ AI 不得擅自起草人主笔文档（spec / constitution），可起草共创 
 - 文档体系：**13/13 全部落盘**，2026-05-20 迁移至 `docs/` 分层——11 篇核心设计文档 `docs/design/01-11-*.md`、实施方案 `docs/plans/`、决策记录 `docs/adr/`（详见 [[010-doc-directory-restructure]]，索引见 `docs/design/README.md`）
 - ADR 进度：**10/10 已落盘**——001/002/003/004/006/007/008/009 Accepted（2026-05-19）、010（文档目录重构）Accepted（2026-05-20）；005（prompt-combiner 复用）仍 Proposed，等 omar 提供仓库后调研
 - tech-stack 状态：**v1.0 ratified**（[[09-tech-stack]]）—— 全栈拍板：Tauri 2.x + React 19.2 + Zustand 5 + rusqlite 0.32 + pnpm 9.x + Vite 8.0 + Vitest 4 + CSS Modules + macos-private-api
-- 下一动作：第一阶段 MVP 建仓（按 [[prompt-hub-mvp#§0]] + [[prompt-hub-mvp#第一阶段]]）；或推进 ADR-005 调研；见 [[HANDOFF#Next-Actions]]
+- 下一动作：先跑 **M0 技术验证里程碑**（建仓 + `cargo build` 实测 + 200ms 唤起 spike + 签名公证链路，按 [[prompt-hub-mvp#M0]]），通过后再进第一阶段 MVP（[[prompt-hub-mvp#第一阶段]]）；或推进 ADR-005 调研；见 [[HANDOFF#Next-Actions]]

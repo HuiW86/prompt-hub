@@ -1,13 +1,13 @@
 ---
 type: plan
 project: prompt-hub
-version: v0.7
+version: v0.8
 created: 2026-05-18
-last_modified: 2026-05-19
+last_modified: 2026-05-20
 status: pre-code
 author: co  # 🤝 人机共创（CLAUDE §5.2）
 related: [[01-spec]], [[03-product-spec]], [[06-prd]], [[09-tech-stack]], [[001-choose-desktop-runtime]], [[002-choose-frontend-framework]], [[003-choose-data-persistence]], [[004-choose-package-manager]], [[006-choose-state-management]], [[007-choose-test-stack]], [[008-enable-macos-private-api]], [[009-choose-styling]]
-description: 手动 AI 编程仪表盘的五阶段实施任务清单——主形态优先 + v0.7 锁定全栈技术形态（Tauri 2.x + React 19.2 + Zustand 5 + rusqlite 0.32 + pnpm 9.x + CSS Modules + Vitest 4）
+description: 手动 AI 编程仪表盘的实施任务清单——M0 技术验证里程碑 + 五阶段（主形态优先）；v0.8 新增 M0 风险前移（cargo build 实测 / 200ms 唤起 spike / 签名公证链路）
 ---
 
 # Plan: prompt-hub（五阶段实施任务清单）
@@ -109,13 +109,54 @@ rg "#1D9E75|#1d9e75" --type css --type ts --type tsx --type js --type jsx \
 
 **仅剩 D8 阻塞**：prompt-combiner 复用范围（[[005-prompt-combiner-reuse]] 仍 Proposed），第一阶段可走「重写」路径不依赖 D8。
 
-**首次 `cargo build` 实测项**（[[09-tech-stack#§7.1]]）：rusqlite 0.32 + chrono 0.4 + uuid 1.x 组合在 MSRV 1.77.2 下兼容性需建仓时验证；失败需在 ADR 补记并锁版本。
+**首次 `cargo build` 实测项**（[[09-tech-stack#§7.1]]）：rusqlite 0.32 + chrono 0.4 + uuid 1.x 组合在 MSRV 1.77.2 下兼容性需建仓时验证；失败需在 ADR 补记并锁版本。执行落点见下文 M0 里程碑。
+
+---
+
+## M0 技术验证里程碑（建仓 + 风险前移）
+
+> 本节是 v0.8 新增——按「快速交付工作流」的「风险驱动排序：高技术风险任务前置」原则插入。M0 在第一阶段写第一行功能代码之前，用最小 spike 一次性验证三个最高技术风险：依赖组合实测、200ms 唤起可行性、签名公证链路。
+
+**目标**：用最小代价证明技术形态（[[#T5]]）真的跑得起来，而非停在纸面 ADR。任一项不通过——回流对应 ADR / [[02-constitution]] 修订，而非带病进入第一阶段。
+
+**为什么需要 M0**：
+
+- [[09-tech-stack#§7.1]] 已明确 rusqlite + chrono + uuid 组合「需建仓时验证」——这个验证不应混在第一阶段功能开发里才暴露
+- [[02-constitution#C1]] 200ms 唤起是「违反即死」铁律，必须在投入功能开发前确认物理可达
+- `macos-private-api` 启用后签名/公证链路（[[10-ops-spec#§1.2]]）从未跑通，是「本地 OK、发布爆炸」的高发区
+
+**包含**：
+
+- 建仓：`pnpm create tauri-app prompt-hub --template react-ts`
+- 依赖实测：首次 `cargo build`，验证 rusqlite 0.32 + chrono 0.4 + uuid 1.x 在 MSRV 1.77.2 下兼容（[[09-tech-stack#§7.1]]）
+- 唤起 spike：注册全局快捷键 → 唤起一个空白透明 always-on-top 窗口，用 Vitest bench 量 P95 延迟（[[CLAUDE#§2]] `bench:hotkey-wake` 雏形）
+- 签名 spike：对空壳 `.app` 走一次 Developer ID 签名 + notarization，确认本机 Gatekeeper 放行
+- [[#T1]] 设计 Token 根样式表落地（本就是建仓前置，顺带在 M0 完成）
+
+**不包含**：任何业务功能、UI 模块、数据 schema、IPC 命令——M0 只验证技术可行性，不碰 [[06-prd]] 任何功能点
+
+**交付标准**：
+
+- `pnpm tauri dev` 能起；`cargo build` 通过
+- 快捷键唤起空窗口 P95 ≤ 200ms（[[02-constitution#C1]]）
+- 空壳 `.dmg` 通过 notarization，本机 Gatekeeper 放行
+- [[#T1]] token 根样式表已 commit
+
+**风险出口**（任一不通过的处理）：
+
+- `cargo build` 依赖冲突 → 在 [[003-choose-data-persistence]] 补记并锁定可行版本，不擅自换库
+- 唤起 P95 > 200ms → **不进第一阶段**，先做窗口预创建 / 隐藏代替销毁等优化 spike；优化无效则开 ADR superseding [[001-choose-desktop-runtime]] 重评运行时
+- 签名/公证链路卡住 → 属 ops 问题，不阻塞第一阶段功能开发，但阻塞任何对外发布，记入 [[10-ops-spec#§7]]
+
+**周期估计**：1-3 天。
 
 ---
 
 ## 第一阶段：主形态 MVP（快捷键唤起 + 核心调用）
 
 **目标**：跑通"快捷键唤起 → 对齐 → 看全景 → 一键复制 → 自动隐藏"这个核心闭环。
+
+**前置**：M0 三项验证全部通过（cargo build / 200ms 唤起 / 签名公证链路）。
 
 **技术形态**（全栈基线见 [[#T5]]）：
 
@@ -228,7 +269,7 @@ rg "#1D9E75|#1d9e75" --type css --type ts --type tsx --type js --type jsx \
 
 ## 总实施周期估计
 
-- 如果交给 Claude Code 全权实施：3-5 周（前四阶段，Tauri 路径）/ +1-2 周（辅形态）
+- 如果交给 Claude Code 全权实施：M0 技术验证 1-3 天 + 3-5 周（前四阶段，Tauri 路径）/ +1-2 周（辅形态）
 - 如果手工实现：6-10 周（前四阶段）/ +2-3 周（辅形态）
 - 如果基于现有 prompt-combiner 改造：第一阶段可以从 prompt-combiner 的 Composition 功能复用开始，节省约 1-2 周
 
