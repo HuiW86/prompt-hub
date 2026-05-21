@@ -1,13 +1,13 @@
 ---
 type: tech-stack
 project: prompt-hub
-version: v1.0
+version: v1.1
 created: 2026-05-19
-updated: 2026-05-19
+updated: 2026-05-20
 status: ratified  # ADR-001~004/006~009 全部 Accepted；ADR-005（prompt-combiner 复用）仍 Proposed
 author: ai  # 🤖 AI 主笔 + 人审（CLAUDE §5.2）
 audience: [ai]
-description: prompt-hub 技术栈快照——全栈拍板：Tauri 2.x + React 19.2 + rusqlite 0.32 + pnpm 9.x + Zustand 5 + Vitest 4 + CSS Modules，macos-private-api 启用
+description: prompt-hub 技术栈快照——全栈拍板：Tauri 2.x + React 19.2 + rusqlite 0.32 + pnpm 10.x + Zustand 5 + Vitest 4 + CSS Modules，macos-private-api 启用
 related:
   - 02-constitution
   - prompt-hub-mvp
@@ -69,8 +69,8 @@ related:
 | **D1** | 桌面运行时 | Tauri 2.x | [[001-choose-desktop-runtime]] | ✅ Accepted 2026-05-19 |
 | **D2** | 前端框架 | React 19.2 | [[002-choose-frontend-framework]] | ✅ Accepted 2026-05-19 |
 | **D3** | 数据持久化 | rusqlite 0.32 + bundled SQLite（不启 SQLCipher）| [[003-choose-data-persistence]] | ✅ Accepted 2026-05-19 |
-| **D4** | 包管理器 | pnpm 9.x | [[004-choose-package-manager]] | ✅ Accepted 2026-05-19 |
-| **D5** | 构建工具 | Vite 8.0 | D1 自动锁定（无独立 ADR）| ✅ 由 D1 锁定 |
+| **D4** | 包管理器 | pnpm 10.x | [[004-choose-package-manager]] | ✅ Accepted 2026-05-19（基线 9.x→10.x 修订 2026-05-20）|
+| **D5** | 构建工具 | Vite 7.x | D1 自动锁定（无独立 ADR）| ✅ 由 D1 锁定 |
 | **D6** | 状态管理 | Zustand 5（四层 store）| [[006-choose-state-management]] | ✅ Accepted 2026-05-19 |
 | **D7** | 全局快捷键 API | @tauri-apps/plugin-global-shortcut | D1 自动锁定（无独立 ADR）| ✅ 由 D1 锁定 |
 | **D8** | prompt-combiner 复用 | （待 omar 提供仓库后调研）| [[005-prompt-combiner-reuse]] | ⏳ Proposed |
@@ -91,7 +91,7 @@ related:
 | **前端框架** | React + React-DOM | 19.2 | [[002-choose-frontend-framework]] |
 | **状态管理** | Zustand | 5.x | [[006-choose-state-management]] |
 | **TypeScript** | TS | 5.x（strict mode）| 标配 |
-| **Node 版本** | lts/iron | 20.x 或更新 | Tauri 2.x + Vite 8 要求 |
+| **Node 版本** | lts/iron | 20.x 或更新 | Tauri 2.x + Vite 7 要求 |
 | **Rust MSRV** | rustc | 1.77.2+ | Tauri 2.x 要求 |
 
 ### 4.1 Zustand 四层 store
@@ -153,8 +153,8 @@ Windows: %APPDATA%\dev.prompt-hub\
 
 | 维度 | 选定 | 版本 | 来源 |
 |---|---|---|---|
-| **包管理** | pnpm | 9.x | [[004-choose-package-manager]] |
-| **构建** | Vite | 8.0 | D1 自动锁定（Tauri 官方推荐）|
+| **包管理** | pnpm | 10.x | [[004-choose-package-manager]] |
+| **构建** | Vite | 7.x | D1 自动锁定（create-tauri-app 模板基线）|
 | **样式** | CSS Modules + CSS variables | Vite 内置 | [[009-choose-styling]] |
 | **class 拼接** | clsx | 2.x | 变体合并 |
 | **前端测试** | Vitest + Testing Library + jsdom | 4 / latest / 29 | [[007-choose-test-stack]] |
@@ -197,8 +197,8 @@ cargo clippy --manifest-path src-tauri/Cargo.toml -- -D warnings
 | `rusqlite` | `0.32` | bundled SQLite 版本影响 schema 迁移 | minor bump 即评估 |
 | `chrono` | `0.4` | 与 rusqlite 0.32 timestamp 适配 | 与 rusqlite 联动 |
 | `uuid` | `^1.0` | 主键格式稳定 | 自由 |
-| `pnpm` | `9.x` | lockfile 格式跨 OS 一致 | major bump → ADR |
-| `vite` | `^8.0` | Tauri 2.x 模板基线；HMR / 测试共享配置 | major bump → ADR |
+| `pnpm` | `10.x` | lockfile 格式跨 OS 一致；build script 需 `onlyBuiltDependencies` 白名单 | major bump → ADR |
+| `vite` | `^7.0` | create-tauri-app 2.x 模板基线（建仓实测 7.3.x）；HMR / 测试共享配置 | major bump → ADR |
 | `vitest` | `^4.0` | bench API 用于 C1 benchmark | major bump → ADR |
 | `@testing-library/react` | latest | 与 React 19 同步 | 跟随 react |
 | `jsdom` | `29.x` | 与 Vitest 4 适配 | 跟随 Vitest |

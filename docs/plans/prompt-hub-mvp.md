@@ -101,8 +101,8 @@ rg "#1D9E75|#1d9e75" --type css --type ts --type tsx --type js --type jsx \
 | 前端框架 | React 19.2 + React-DOM 19.2 | [[002-choose-frontend-framework]] |
 | 状态管理 | Zustand 5（四层 store：appStore / promptStore / searchStore / settingsStore）| [[006-choose-state-management]] |
 | 数据持久化 | rusqlite 0.32 + bundled SQLite（不启 SQLCipher）+ chrono + uuid | [[003-choose-data-persistence]] |
-| 包管理 | pnpm 9.x（lockfile 提交，禁用 npm/yarn/bun）| [[004-choose-package-manager]] |
-| 构建 | Vite 8.0（Tauri 官方推荐）| D1 自动锁定 |
+| 包管理 | pnpm 10.x（lockfile 提交，禁用 npm/yarn/bun；build script 走 `onlyBuiltDependencies`）| [[004-choose-package-manager]] |
+| 构建 | Vite 7.x（create-tauri-app 模板基线）| D1 自动锁定 |
 | 样式 | CSS Modules + CSS variables（不引 Tailwind / CSS-in-JS）| [[009-choose-styling]] |
 | 测试 | Vitest 4 + Testing Library + jsdom 29 + cargo test + tempfile | [[007-choose-test-stack]] |
 | 全局快捷键 | @tauri-apps/plugin-global-shortcut | D1 自动锁定 |
@@ -165,7 +165,7 @@ rg "#1D9E75|#1d9e75" --type css --type ts --type tsx --type js --type jsx \
 - 状态管理：**Zustand 5** — `appStore` 管窗口 visibility / `promptStore` 管 Macro/UsageRecord / `searchStore` 管 query / `settingsStore` 管快捷键与 Phase（[[006-choose-state-management]]）
 - 数据层：**rusqlite 0.32 + bundled SQLite** + `chrono` 0.4 + `uuid` v4；数据目录 `~/Library/Application Support/dev.prompt-hub/`（[[003-choose-data-persistence]]）
 - 样式：**CSS Modules + CSS variables**（token 全部引用 §0 T1 根样式表，禁止裸值；[[009-choose-styling]]）
-- 包管理：**pnpm 9.x**；构建：**Vite 8.0**（[[004-choose-package-manager]]）
+- 包管理：**pnpm 10.x**；构建：**Vite 7.x**（[[004-choose-package-manager]]）
 - 测试：**Vitest 4 + Testing Library + jsdom 29** 跑前端单元；**cargo test + tempfile** 跑 Rust + SQLite fixture（[[007-choose-test-stack]]）
 - 全局快捷键注册（默认 `⌥ Space`，可配置）via `@tauri-apps/plugin-global-shortcut`
 - 主形态：全屏覆盖窗口 + 半透明背景（约 92%）+ NSWindow `level` 浮于所有应用上方但不抢焦点（macos-private-api）

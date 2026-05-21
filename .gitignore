@@ -1,8 +1,36 @@
+# Dependencies
 node_modules/
-.DS_Store
+
+# Build output
 dist/
+dist-ssr/
 build/
+.cache/
+
+# Rust / Tauri
+src-tauri/target/
+src-tauri/gen/
+
+# Logs
+logs
+*.log
+npm-debug.log*
+pnpm-debug.log*
+
+# Env
 .env
 .env.local
-*.log
-.cache/
+*.local
+
+# Editor
+.vscode/*
+!.vscode/extensions.json
+.idea
+*.suo
+*.ntvs*
+*.njsproj
+*.sln
+*.sw?
+
+# OS
+.DS_Store

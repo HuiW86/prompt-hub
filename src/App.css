@@ -1,0 +1,24 @@
+/* M0-3 spike — transparent blank window. Real UI styling lands in phase 1. */
+html,
+body,
+#root {
+  margin: 0;
+  height: 100%;
+  background: transparent;
+}
+
+.spike-root {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  height: 100vh;
+}
+
+.spike-hint {
+  padding: var(--space-2) var(--space-4);
+  font-family: -apple-system, BlinkMacSystemFont, sans-serif;
+  font-size: var(--fs-sm);
+  color: var(--color-text-primary);
+  background: var(--color-bg-default);
+  border-radius: var(--space-2);
+}

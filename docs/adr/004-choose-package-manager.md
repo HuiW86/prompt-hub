@@ -15,14 +15,14 @@ related:
 
 ## 1. 标题与日期
 
-- **标题**：选择 pnpm 9.x 作为前端包管理器
+- **标题**：选择 pnpm 10.x 作为前端包管理器
 - **日期**：2026-05-19
 - **决策者**：omar
 - **影响范围**：[[09-tech-stack#§3-D4]] resolved / [[CLAUDE#§2]] 关键命令 `<pm>` 占位全部替换 `pnpm` / CI 脚本（`.github/workflows/*.yml`）
 
 ## 2. Status
 
-`Accepted`（2026-05-19）
+`Accepted`（2026-05-19）｜版本基线 9.x → 10.x 修订于 2026-05-20（见文末「修订记录」）
 
 ## 3. Context
 
@@ -48,7 +48,7 @@ VaultX 未明示，但 Tauri 2.x 官方模板 + 主流社区项目（含 1Passwo
 
 ## 4. Options Considered
 
-### Option A: pnpm 9.x
+### Option A: pnpm 10.x
 
 - **描述**：content-addressable store + 严格 dep 解析（无幻 hoisting）
 - **优点**：
@@ -88,7 +88,7 @@ VaultX 未明示，但 Tauri 2.x 官方模板 + 主流社区项目（含 1Passwo
 
 ## 5. Decision
 
-> **一句话拍板**：选择 **pnpm 9.x**，理由是 Tauri 2.x 主流 + 严格 dep 解析（契合 prompt-hub 单一真相源精神）+ 磁盘高效（适合长期常驻桌面工具的本地开发环境）。
+> **一句话拍板**：选择 **pnpm 10.x**，理由是 Tauri 2.x 主流 + 严格 dep 解析（契合 prompt-hub 单一真相源精神）+ 磁盘高效（适合长期常驻桌面工具的本地开发环境）。
 
 **为什么不选其他**：
 - 不选 bun 因为：lockfile 二进制不可 diff，2026 跨 OS 一致性还在磨合，不适合作为 MVP 阶段的关键基础设施
@@ -113,6 +113,16 @@ VaultX 未明示，但 Tauri 2.x 官方模板 + 主流社区项目（含 1Passwo
 - **不可逆点**：无 — 包管理器是最易切换的决策之一
 
 ---
+
+## 修订记录
+
+### 2026-05-20 — 版本基线 9.x → 10.x（建仓校正）
+
+M0 建仓（[[prompt-hub-mvp#M0]]）时本机 pnpm 为 **10.29.3**。本决策 2026-05-19 拍板时项目仍 pre-code、未实际 scaffold，"9.x" 是当时的当前大版本；建仓时 pnpm 已迭代至 10.x，无降级理由，故将版本基线校正为 **pnpm 10.x**。
+
+- **包管理器选择不变**：仍是 pnpm，§4 Options 与 §5 Decision 理由全部成立
+- **唯一行为差异**：pnpm 10 默认不再自动执行依赖的 build script，需在 `package.json` 的 `pnpm.onlyBuiltDependencies` 显式白名单——当前已加入 `esbuild`（Vite 传递依赖）
+- **不构成 §8 意义上的 major bump**：项目此前 0 LOC、无 lockfile，不存在「从 9.x 升级」的迁移，仅是初始基线校正，故沿用本 ADR 而非新开 ADR
 
 ## 反模式（写完自检）
 
