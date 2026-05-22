@@ -1,0 +1,11 @@
+# Build output
+dist
+src-tauri/target
+src-tauri/gen
+
+# Lockfiles
+pnpm-lock.yaml
+
+# Docs are governed by the doc methodology, not prettier
+docs
+*.md

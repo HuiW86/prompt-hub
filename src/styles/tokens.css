@@ -24,13 +24,13 @@
   --space-20: 80px;
 
   /* Color — design-spec §2.4 */
-  --color-text-primary: #1A1A1A;
-  --color-bg-default: #FFFFFF;
-  --color-protocol-bg: #EEEDFE;
-  --color-protocol-border: #534AB7;
-  --color-task-bg: #E1F5EE;
+  --color-text-primary: #1a1a1a;
+  --color-bg-default: #ffffff;
+  --color-protocol-bg: #eeedfe;
+  --color-protocol-border: #534ab7;
+  --color-task-bg: #e1f5ee;
   --color-task-border: #178561; /* revised from #1D9E75, 2026-05-18 */
-  --color-aux-bg: #F1EFE8;
+  --color-aux-bg: #f1efe8;
   --color-aux-border: #888780;
 
   /* Color aliases */

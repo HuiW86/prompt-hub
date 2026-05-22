@@ -7,6 +7,12 @@ dist-ssr/
 build/
 .cache/
 
+# TypeScript build artifacts
+*.tsbuildinfo
+# tsc emit from vite.config.ts (source is .ts) — must not shadow the source config
+vite.config.js
+vite.config.d.ts
+
 # Rust / Tauri
 src-tauri/target/
 src-tauri/gen/

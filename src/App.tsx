@@ -4,7 +4,9 @@ import "./App.css";
 function App() {
   return (
     <main className="spike-root">
-      <p className="spike-hint">prompt-hub · M0 wake spike — ⌥Space toggles this window</p>
+      <p className="spike-hint">
+        prompt-hub · M0 wake spike — ⌥Space toggles this window
+      </p>
     </main>
   );
 }
