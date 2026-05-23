@@ -12,6 +12,10 @@ pub enum AppError {
     Tauri(#[from] tauri::Error),
     #[error("state lock poisoned")]
     LockPoisoned,
+    #[error("target_id `{target_id}` not found in `{table}`")]
+    TargetNotFound { table: String, target_id: String },
+    #[error("target_id required for target_type `{0}`")]
+    TargetIdRequired(String),
     #[error("{0}")]
     Other(String),
 }

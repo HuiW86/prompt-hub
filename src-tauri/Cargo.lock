@@ -2410,6 +2410,7 @@ dependencies = [
  "tauri-plugin-global-shortcut",
  "tempfile",
  "thiserror 2.0.18",
+ "tokio",
  "uuid",
 ]
 

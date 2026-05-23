@@ -284,4 +284,34 @@ describe("Dashboard click → IPC flow", () => {
       ),
     );
   });
+
+  it("ESC inside SearchBar with non-empty value does NOT hide window", async () => {
+    // Regression: App-level ESC listener used to fire even when SearchBar's
+    // input had content, because React's synthetic stopPropagation cannot
+    // block document-level native listeners. App must check the target.
+    const { container } = render(<App />);
+    await screen.findByRole("button", { name: "借力最优解" });
+    const input = container.querySelector(
+      "[role='search'] input",
+    ) as HTMLInputElement;
+    expect(input).not.toBeNull();
+    fireEvent.change(input, { target: { value: "hello" } });
+    expect(input.value).toBe("hello");
+
+    fireEvent.keyDown(input, { key: "Escape", bubbles: true });
+    // Give microtasks a chance to flush.
+    await new Promise((r) => setTimeout(r, 0));
+    expect(invokeMock.mock.calls.some((c) => c[0] === "hide_window")).toBe(
+      false,
+    );
+
+    // Second ESC after the field is empty must fall through and hide.
+    fireEvent.change(input, { target: { value: "" } });
+    fireEvent.keyDown(input, { key: "Escape", bubbles: true });
+    await waitFor(() =>
+      expect(invokeMock.mock.calls.some((c) => c[0] === "hide_window")).toBe(
+        true,
+      ),
+    );
+  });
 });

@@ -1,5 +1,5 @@
 use chrono::{DateTime, Utc};
-use rusqlite::{params, Connection, Row};
+use rusqlite::{params, Connection, OptionalExtension, Row};
 use uuid::Uuid;
 
 use crate::error::{AppError, AppResult};
@@ -261,7 +261,45 @@ pub fn record_usage(conn: &Connection, input: RecordUsageInput) -> AppResult<Usa
         .map(serde_json::to_string)
         .transpose()?;
 
+    // Map target_type -> underlying asset table. Composition has no row to
+    // bump; everything else MUST resolve to a concrete table and a real row.
+    // SAFETY: `table` comes from this closed Rust enum, never user input —
+    // no SQL injection surface even though we format! it into UPDATE below.
+    let table = match input.target_type {
+        UsageTargetType::Macro => Some("macros"),
+        UsageTargetType::Phrase => Some("phrases"),
+        UsageTargetType::Alignment => Some("alignment_phrases"),
+        UsageTargetType::Modifier => Some("modifiers"),
+        UsageTargetType::Composition => None,
+    };
+
     let tx = conn.unchecked_transaction()?;
+
+    // Validate target_id BEFORE writing the usage_records row, so a buggy
+    // or malicious invoke can't poison recents with dangling references.
+    // usage_records has no FK on target_id (target table varies by
+    // target_type), so this check is the only line of defense.
+    if let Some(table) = table {
+        let target_id = input
+            .target_id
+            .as_deref()
+            .ok_or_else(|| AppError::TargetIdRequired(input.target_type.as_str().to_string()))?;
+        let exists: i64 = tx
+            .query_row(
+                &format!("SELECT 1 FROM {table} WHERE id = ?1"),
+                params![target_id],
+                |row| row.get(0),
+            )
+            .optional()?
+            .unwrap_or(0);
+        if exists == 0 {
+            return Err(AppError::TargetNotFound {
+                table: table.to_string(),
+                target_id: target_id.to_string(),
+            });
+        }
+    }
+
     tx.execute(
         "INSERT INTO usage_records
             (id, timestamp, target_type, target_id, source, modifier_ids,
@@ -283,21 +321,22 @@ pub fn record_usage(conn: &Connection, input: RecordUsageInput) -> AppResult<Usa
     // Bump usage_count / last_used_at on the underlying asset so the dashboard
     // can reflect heat without recomputing from usage_records on every render.
     let now_str = now.to_rfc3339();
-    if let Some(target_id) = input.target_id.as_deref() {
-        let table = match input.target_type {
-            UsageTargetType::Macro => Some("macros"),
-            UsageTargetType::Phrase => Some("phrases"),
-            UsageTargetType::Alignment => Some("alignment_phrases"),
-            UsageTargetType::Modifier => Some("modifiers"),
-            UsageTargetType::Composition => None,
-        };
-        if let Some(table) = table {
-            tx.execute(
-                &format!(
-                    "UPDATE {table} SET usage_count = usage_count + 1, last_used_at = ?1 WHERE id = ?2"
-                ),
-                params![now_str, target_id],
-            )?;
+    if let Some(table) = table {
+        let target_id = input.target_id.as_deref().expect("validated above");
+        let affected = tx.execute(
+            &format!(
+                "UPDATE {table} SET usage_count = usage_count + 1, last_used_at = ?1 WHERE id = ?2"
+            ),
+            params![now_str, target_id],
+        )?;
+        // Belt-and-suspenders: SELECT 1 above already guarantees the row
+        // exists in this transaction. If the UPDATE somehow misses, abort
+        // before commit rather than silently producing a stale record.
+        if affected != 1 {
+            return Err(AppError::TargetNotFound {
+                table: table.to_string(),
+                target_id: target_id.to_string(),
+            });
         }
     }
     tx.commit()?;
@@ -486,6 +525,53 @@ mod tests {
             .expect("same macro");
         assert_eq!(bumped.usage_count, initial + 1);
         assert!(bumped.last_used_at.is_some());
+    }
+
+    #[test]
+    fn record_usage_rejects_dangling_target_id() {
+        let conn = db::open_in_memory().expect("open db");
+        let result = record_usage(
+            &conn,
+            RecordUsageInput {
+                target_type: UsageTargetType::Macro,
+                target_id: Some("nonexistent-id".to_string()),
+                source: UsageSource::MacroArea,
+                modifier_ids: None,
+                sop_id: None,
+                sop_step_order: None,
+                phase_id: None,
+            },
+        );
+        assert!(
+            matches!(result, Err(AppError::TargetNotFound { .. })),
+            "expected TargetNotFound, got {result:?}"
+        );
+        // The usage_records row must NOT have been inserted (transaction rolled back).
+        let count: i64 = conn
+            .query_row("SELECT COUNT(*) FROM usage_records", [], |r| r.get(0))
+            .expect("count");
+        assert_eq!(count, 0);
+    }
+
+    #[test]
+    fn record_usage_rejects_missing_target_id_for_concrete_type() {
+        let conn = db::open_in_memory().expect("open db");
+        let result = record_usage(
+            &conn,
+            RecordUsageInput {
+                target_type: UsageTargetType::Macro,
+                target_id: None,
+                source: UsageSource::MacroArea,
+                modifier_ids: None,
+                sop_id: None,
+                sop_step_order: None,
+                phase_id: None,
+            },
+        );
+        assert!(
+            matches!(result, Err(AppError::TargetIdRequired(_))),
+            "expected TargetIdRequired, got {result:?}"
+        );
     }
 
     #[test]

@@ -1,3 +1,4 @@
+use std::sync::atomic::{AtomicU64, Ordering};
 use std::sync::Mutex;
 
 use tauri::{Manager, RunEvent};
@@ -20,6 +21,7 @@ pub fn run() {
             let conn = db::open_at(&db_path).expect("open prompt-hub db");
             app.manage(AppState {
                 conn: Mutex::new(conn),
+                copy_seq: AtomicU64::new(0),
             });
 
             #[cfg(desktop)]
@@ -34,6 +36,11 @@ pub fn run() {
                             let Some(window) = app.get_webview_window("main") else {
                                 return;
                             };
+                            // Bump copy_seq so any pending delayed hide from
+                            // an earlier copy can't trample this toggle.
+                            app.state::<AppState>()
+                                .copy_seq
+                                .fetch_add(1, Ordering::SeqCst);
                             if window.is_visible().unwrap_or(false) {
                                 let _ = window.hide();
                             } else {

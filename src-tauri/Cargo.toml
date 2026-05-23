@@ -28,6 +28,10 @@ rusqlite = { version = "0.32", features = ["bundled"] }
 chrono = { version = "0.4", features = ["serde"] }
 uuid = { version = "1", features = ["v4", "serde"] }
 thiserror = "2"
+# Already pulled in transitively by Tauri 2; declared explicitly so we can
+# use tokio::time::sleep inside tauri::async_runtime::spawn (P1-1 cancelable
+# 200ms hide). `time` feature is the only thing we need.
+tokio = { version = "1", features = ["time"] }
 
 [dev-dependencies]
 tempfile = "3"
