@@ -35,8 +35,16 @@ export function ScenePanel() {
 
   if (!current) {
     return (
-      <section className={styles.scenePanel} aria-label="Scene 全景区">
-        <p className={styles.empty}>暂无 Scene</p>
+      <section
+        className={styles.scenePanel}
+        aria-label="Scene 全景区"
+        aria-describedby="scene-panel-empty-msg"
+        data-region="scene-panel"
+        tabIndex={0}
+      >
+        <p id="scene-panel-empty-msg" className={styles.empty}>
+          暂无 Scene
+        </p>
       </section>
     );
   }
@@ -48,6 +56,7 @@ export function ScenePanel() {
       className={styles.scenePanel}
       aria-label="Scene 全景区"
       data-region="scene-panel"
+      tabIndex={0}
     >
       <h2 className={styles.heading}>Scene</h2>
       <nav className={styles.tabs} aria-label="Scene tabs">

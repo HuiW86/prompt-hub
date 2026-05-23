@@ -13,6 +13,7 @@ export function RecentList() {
       className={styles.recentList}
       aria-label="最近使用"
       data-region="recent-list"
+      tabIndex={0}
     >
       <h3 className={styles.heading}>最近使用</h3>
       {recent.length === 0 ? (

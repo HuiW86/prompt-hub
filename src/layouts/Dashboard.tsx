@@ -23,9 +23,14 @@ export function Dashboard() {
   }
 
   return (
+    // role="main" (not "application") so VoiceOver / NVDA keep their landmark
+    // and heading rotors (VO+U / H / K). The dashboard is composed of standard
+    // landmarks (search, nav, sections, contentinfo); switching the whole shell
+    // into application mode would suppress that AT navigation, defeating the
+    // five Tab-reachable regions added in B5-5. See review C-P1-1.
     <div
       className={styles.dashboard}
-      role="application"
+      role="main"
       aria-label="prompt-hub dashboard"
     >
       <SearchBar />

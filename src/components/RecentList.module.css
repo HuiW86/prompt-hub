@@ -9,6 +9,12 @@
   border-radius: var(--space-2);
 }
 
+/* B5-5: region-level Tab landing (03-product-spec §13.4). */
+.recentList:focus-visible {
+  outline: var(--border-thick) solid var(--color-protocol-border);
+  outline-offset: var(--space-1);
+}
+
 .heading {
   font-size: var(--fs-sm);
   font-weight: 600;

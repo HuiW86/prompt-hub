@@ -15,6 +15,7 @@ vi.mock("@tauri-apps/api/core", () => ({
 }));
 
 import App from "./App";
+import { useAppStore } from "./stores/appStore";
 import { usePromptStore } from "./stores/promptStore";
 
 const fakePhases: Phase[] = [
@@ -99,10 +100,12 @@ const fakeScenes: SceneWithChildren[] = [
 const fakeRecent: RecentUsageEntry[] = [];
 
 const initialStore = usePromptStore.getState();
+const initialAppStore = useAppStore.getState();
 
 describe("Dashboard end-to-end render", () => {
   beforeEach(() => {
     usePromptStore.setState(initialStore, true);
+    useAppStore.setState(initialAppStore, true);
     invokeMock.mockReset();
     invokeMock.mockImplementation((cmd: string) => {
       switch (cmd) {
@@ -116,6 +119,8 @@ describe("Dashboard end-to-end render", () => {
           return Promise.resolve(fakeScenes);
         case "list_recent_usage":
           return Promise.resolve(fakeRecent);
+        case "count_today_usage":
+          return Promise.resolve(0);
         default:
           return Promise.reject(new Error(`unexpected ${cmd}`));
       }
@@ -151,6 +156,50 @@ describe("Dashboard end-to-end render", () => {
     expect(r.statusBar).not.toBeNull();
   });
 
+  // B5-5: per 03-product-spec §13.4 the 5 working regions must be Tab-reachable
+  // (相位带 / Macro / Scene / 最近 / SOP). SearchBar relies on its native input
+  // for focus and StatusBar is read-only, so neither carries tabindex.
+  it("five working regions expose tabindex='0' for region-level Tab navigation", async () => {
+    const { container } = render(<App />);
+    await waitFor(() =>
+      expect(
+        container.querySelector("[data-region='phase-bar']"),
+      ).not.toBeNull(),
+    );
+    const r = regions(container);
+    expect(r.phaseBar?.getAttribute("tabindex")).toBe("0");
+    expect(r.macroGrid?.getAttribute("tabindex")).toBe("0");
+    expect(r.scenePanel?.getAttribute("tabindex")).toBe("0");
+    expect(r.recentList?.getAttribute("tabindex")).toBe("0");
+    expect(r.sopProgress?.getAttribute("tabindex")).toBe("0");
+    // SearchBar wrapper is a role=search div, not tabbable itself.
+    expect(r.search?.getAttribute("tabindex")).toBeNull();
+    // StatusBar is non-interactive, not in the Tab cycle.
+    expect(r.statusBar?.getAttribute("tabindex")).toBeNull();
+  });
+
+  it("region DOM order matches 03-product-spec §13.4 Tab sequence", async () => {
+    const { container } = render(<App />);
+    await waitFor(() =>
+      expect(
+        container.querySelector("[data-region='phase-bar']"),
+      ).not.toBeNull(),
+    );
+    const ordered = Array.from(container.querySelectorAll("[data-region]")).map(
+      (el) => el.getAttribute("data-region"),
+    );
+    // SearchBar's wrapper has role=search (no data-region) and is first in the
+    // tree; the data-region landmarks below it must appear in the spec order.
+    expect(ordered).toEqual([
+      "phase-bar",
+      "macro-grid",
+      "scene-panel",
+      "recent-list",
+      "sop-progress",
+      "status-bar",
+    ]);
+  });
+
   it("renders all 8 phases inside the phase bar", async () => {
     const { container } = render(<App />);
     await waitFor(() =>
@@ -181,11 +230,52 @@ describe("Dashboard end-to-end render", () => {
     );
     expect(screen.getByText("为项目设计数据导出模块。")).toBeInTheDocument();
   });
+
+  // B5-6: the old StatusBar used recentUsage.length (capped at 5) which
+  // misrepresented the real day total. Override the mock to return 17 and
+  // verify the StatusBar shows it rather than the empty recents length.
+  it("StatusBar shows the IPC today count, not the recent list length", async () => {
+    invokeMock.mockImplementation((cmd: string) => {
+      switch (cmd) {
+        case "list_phases":
+          return Promise.resolve(fakePhases);
+        case "list_alignment_phrases":
+          return Promise.resolve(fakeAlignments);
+        case "list_macros":
+          return Promise.resolve(fakeMacros);
+        case "list_scenes_with_children":
+          return Promise.resolve(fakeScenes);
+        case "list_recent_usage":
+          return Promise.resolve(fakeRecent); // empty
+        case "count_today_usage":
+          return Promise.resolve(17);
+        default:
+          return Promise.reject(new Error(`unexpected ${cmd}`));
+      }
+    });
+    const { container } = render(<App />);
+    await waitFor(() => {
+      const bar = container.querySelector("[data-region='status-bar']");
+      expect(bar?.textContent).toContain("今日复制 17 次");
+    });
+  });
+
+  it("StatusBar shows '当前相位：未选' when no phase is active", async () => {
+    const { container } = render(<App />);
+    await waitFor(() =>
+      expect(
+        container.querySelector("[data-region='status-bar']"),
+      ).not.toBeNull(),
+    );
+    const bar = container.querySelector("[data-region='status-bar']");
+    expect(bar?.textContent).toContain("当前相位：未选");
+  });
 });
 
 describe("Dashboard click → IPC flow", () => {
   beforeEach(() => {
     usePromptStore.setState(initialStore, true);
+    useAppStore.setState(initialAppStore, true);
     invokeMock.mockReset();
     invokeMock.mockImplementation((cmd: string) => {
       switch (cmd) {
@@ -199,6 +289,8 @@ describe("Dashboard click → IPC flow", () => {
           return Promise.resolve(fakeScenes);
         case "list_recent_usage":
           return Promise.resolve(fakeRecent);
+        case "count_today_usage":
+          return Promise.resolve(0);
         case "record_usage":
           return Promise.resolve({
             id: "rec-x",
@@ -300,6 +392,17 @@ describe("Dashboard click → IPC flow", () => {
     expect(input.targetType).toBe("alignment");
     expect(input.source).toBe("phase_bar");
     expect(input.phaseId).toBe("phase-0");
+  });
+
+  it("after ⌘1 the StatusBar reflects the active phase name", async () => {
+    const { container } = render(<App />);
+    await screen.findByRole("button", { name: "借力最优解" });
+    const bar = container.querySelector("[data-region='status-bar']");
+    expect(bar?.textContent).toContain("当前相位：未选");
+    fireEvent.keyDown(document, { key: "1", metaKey: true });
+    await waitFor(() => {
+      expect(bar?.textContent).toContain("当前相位：发散");
+    });
   });
 
   it("⌘9 does not trigger record_usage (out of range)", async () => {

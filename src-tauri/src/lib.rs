@@ -60,6 +60,7 @@ pub fn run() {
             commands::list_macros,
             commands::list_scenes_with_children,
             commands::list_recent_usage,
+            commands::count_today_usage,
             commands::record_usage,
             commands::hide_window,
             commands::show_window,

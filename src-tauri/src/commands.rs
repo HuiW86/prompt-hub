@@ -72,6 +72,11 @@ pub fn list_recent_usage(
 }
 
 #[tauri::command]
+pub fn count_today_usage(state: State<'_, AppState>) -> AppResult<i64> {
+    with_conn(&state, repo::count_today_usage)
+}
+
+#[tauri::command]
 pub fn record_usage(
     state: State<'_, AppState>,
     app: AppHandle,

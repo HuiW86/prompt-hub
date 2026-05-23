@@ -17,6 +17,7 @@ export function MacroGrid() {
       className={styles.macroGrid}
       aria-label="Macro 快捷区"
       data-region="macro-grid"
+      tabIndex={0}
     >
       <header className={styles.heading}>
         <h2 className={styles.title}>Macro</h2>

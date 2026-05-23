@@ -19,6 +19,7 @@ export const ipc = {
     invoke<SceneWithChildren[]>("list_scenes_with_children"),
   listRecentUsage: (limit: number) =>
     invoke<RecentUsageEntry[]>("list_recent_usage", { limit }),
+  countTodayUsage: () => invoke<number>("count_today_usage"),
   recordUsage: (input: RecordUsageInput) =>
     invoke<UsageRecord>("record_usage", { input }),
   hideWindow: () => invoke<void>("hide_window"),

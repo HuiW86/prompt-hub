@@ -19,6 +19,9 @@ interface PromptState {
   macros: Macro[];
   scenes: SceneWithChildren[];
   recentUsage: RecentUsageEntry[];
+  // Real day-bounded count. Independent of recentUsage (which is capped at
+  // RECENT_LIMIT) so the StatusBar reflects every copy across the local day.
+  todayCount: number;
   loadState: LoadState;
   loadError: string | null;
 
@@ -85,31 +88,35 @@ function bumpUsageCount(
   }
 }
 
-export const usePromptStore = create<PromptState>()((set, get) => ({
+export const usePromptStore = create<PromptState>()((set) => ({
   phases: [],
   alignmentPhrasesByPhase: {},
   macros: [],
   scenes: [],
   recentUsage: [],
+  todayCount: 0,
   loadState: "idle",
   loadError: null,
 
   refreshAll: async () => {
     set({ loadState: "loading", loadError: null });
     try {
-      const [phases, alignments, macros, scenes, recent] = await Promise.all([
-        ipc.listPhases(),
-        ipc.listAlignmentPhrases(),
-        ipc.listMacros(),
-        ipc.listScenesWithChildren(),
-        ipc.listRecentUsage(RECENT_LIMIT),
-      ]);
+      const [phases, alignments, macros, scenes, recent, todayCount] =
+        await Promise.all([
+          ipc.listPhases(),
+          ipc.listAlignmentPhrases(),
+          ipc.listMacros(),
+          ipc.listScenesWithChildren(),
+          ipc.listRecentUsage(RECENT_LIMIT),
+          ipc.countTodayUsage(),
+        ]);
       set({
         phases,
         alignmentPhrasesByPhase: indexByPhase(alignments),
         macros,
         scenes,
         recentUsage: recent,
+        todayCount,
         loadState: "ready",
       });
     } catch (err) {
@@ -125,10 +132,13 @@ export const usePromptStore = create<PromptState>()((set, get) => ({
     set((state) =>
       bumpUsageCount(state, input.targetType, input.targetId, record.timestamp),
     );
-    // Refresh recent list so the new copy lands at the top with the right
-    // target_name JOIN data. Cheap enough — bounded by RECENT_LIMIT rows.
-    const recent = await ipc.listRecentUsage(RECENT_LIMIT);
-    set({ recentUsage: recent });
-    void get; // unused — kept for future selectors
+    // Refresh recent list + today count in parallel so the new copy lands at
+    // the top of recents with target_name JOINed AND the StatusBar increments
+    // in lockstep. Both are bounded queries — cheap.
+    const [recent, todayCount] = await Promise.all([
+      ipc.listRecentUsage(RECENT_LIMIT),
+      ipc.countTodayUsage(),
+    ]);
+    set({ recentUsage: recent, todayCount });
   },
 }));

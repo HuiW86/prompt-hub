@@ -440,6 +440,33 @@ pub fn list_recent_usage(conn: &Connection, limit: i64) -> AppResult<Vec<RecentU
     Ok(out)
 }
 
+// B5-6: StatusBar's "今日复制 N 次" needs the real day-bounded count, not the
+// length of the (capped) recent list. SQLite's date(...,'localtime') projects
+// both the stored UTC timestamp and "now" into the user's local date so the
+// counter rolls over at local midnight without us having to plumb timezone
+// info through every call.
+//
+// Timezone semantics (B-P1-3): "today" is always evaluated against the CURRENT
+// system timezone. If the user changes their OS timezone between two calls
+// (e.g., laptop crosses ZN/DST boundary mid-day), the count will jump — that's
+// intentional. We respect "wall clock now" rather than freezing the timezone
+// at record-insertion time. Don't normalize to UTC here unless we ship an
+// explicit "always-UTC day boundary" setting.
+//
+// Performance caveat (B-P1-1, deferred): date(timestamp,'localtime') is not
+// sargable so idx_usage_records_timestamp gets a full COVERING-INDEX SCAN
+// instead of SEARCH. Fine while usage_records < 10k; revisit when StatusBar
+// refresh shows up in a profile.
+pub fn count_today_usage(conn: &Connection) -> AppResult<i64> {
+    let count: i64 = conn.query_row(
+        "SELECT COUNT(*) FROM usage_records
+         WHERE date(timestamp, 'localtime') = date('now', 'localtime')",
+        [],
+        |row| row.get(0),
+    )?;
+    Ok(count)
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -572,6 +599,92 @@ mod tests {
             matches!(result, Err(AppError::TargetIdRequired(_))),
             "expected TargetIdRequired, got {result:?}"
         );
+    }
+
+    // Cross-midnight boundary test (review B-P1-2). record_usage always stamps
+    // Utc::now(), so any test routed through it would only ever see "today".
+    // Bypass it with raw INSERTs at hand-picked local times around midnight to
+    // verify date(...,'localtime') actually filters by local day, not UTC day,
+    // and won't silently swallow yesterday's records if the SQL ever drops the
+    // 'localtime' modifier. Times picked outside the DST 02:00 danger window.
+    #[test]
+    fn count_today_usage_filters_records_on_local_day_boundary() {
+        use chrono::{Duration as ChronoDuration, Local, TimeZone};
+
+        let conn = db::open_in_memory().expect("open db");
+        let macros = list_macros(&conn).expect("list");
+        let mid = macros[0].id.clone();
+
+        let today = Local::now().date_naive();
+        let yesterday = today - ChronoDuration::days(1);
+
+        let to_utc_rfc3339 = |d: chrono::NaiveDate, h: u32| {
+            let naive = d.and_hms_opt(h, 0, 0).expect("valid hms");
+            Local
+                .from_local_datetime(&naive)
+                .single()
+                .expect("non-DST hour never ambiguous")
+                .with_timezone(&Utc)
+                .to_rfc3339()
+        };
+
+        // 2 outside today's local window + 3 inside.
+        let fixtures = [
+            ("rec-y-noon", to_utc_rfc3339(yesterday, 12), false),
+            ("rec-y-2300", to_utc_rfc3339(yesterday, 23), false),
+            ("rec-t-0100", to_utc_rfc3339(today, 1), true),
+            ("rec-t-noon", to_utc_rfc3339(today, 12), true),
+            ("rec-t-2300", to_utc_rfc3339(today, 23), true),
+        ];
+        for (id, ts, _) in &fixtures {
+            conn.execute(
+                "INSERT INTO usage_records (id, timestamp, target_type, target_id, source)
+                 VALUES (?1, ?2, 'macro', ?3, 'macro_area')",
+                params![id, ts, mid],
+            )
+            .expect("raw insert");
+        }
+
+        let expected: i64 = fixtures.iter().filter(|(_, _, in_today)| *in_today).count() as i64;
+        assert_eq!(count_today_usage(&conn).expect("count"), expected);
+    }
+
+    #[test]
+    fn count_today_usage_zero_on_empty_then_increments_after_record() {
+        let conn = db::open_in_memory().expect("open db");
+        assert_eq!(count_today_usage(&conn).expect("count empty"), 0);
+
+        let macros = list_macros(&conn).expect("list");
+        let target = &macros[0];
+        record_usage(
+            &conn,
+            RecordUsageInput {
+                target_type: UsageTargetType::Macro,
+                target_id: Some(target.id.clone()),
+                source: UsageSource::MacroArea,
+                modifier_ids: None,
+                sop_id: None,
+                sop_step_order: None,
+                phase_id: None,
+            },
+        )
+        .expect("record");
+        assert_eq!(count_today_usage(&conn).expect("count after 1"), 1);
+
+        record_usage(
+            &conn,
+            RecordUsageInput {
+                target_type: UsageTargetType::Macro,
+                target_id: Some(target.id.clone()),
+                source: UsageSource::MacroArea,
+                modifier_ids: None,
+                sop_id: None,
+                sop_step_order: None,
+                phase_id: None,
+            },
+        )
+        .expect("record");
+        assert_eq!(count_today_usage(&conn).expect("count after 2"), 2);
     }
 
     #[test]

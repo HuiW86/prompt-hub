@@ -12,6 +12,12 @@
   overflow-y: auto;
 }
 
+/* B5-5: region-level Tab landing (03-product-spec §13.4). */
+.macroGrid:focus-visible {
+  outline: var(--border-thick) solid var(--color-protocol-border);
+  outline-offset: var(--space-1);
+}
+
 .heading {
   display: flex;
   align-items: baseline;

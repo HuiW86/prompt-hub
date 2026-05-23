@@ -109,6 +109,8 @@ function mockListAll() {
         return Promise.resolve(fakeScenes);
       case "list_recent_usage":
         return Promise.resolve(fakeRecent);
+      case "count_today_usage":
+        return Promise.resolve(0);
       default:
         return Promise.reject(new Error(`unexpected command ${cmd}`));
     }
@@ -163,6 +165,7 @@ describe("promptStore", () => {
     invokeMock.mockImplementation((cmd: string) => {
       if (cmd === "record_usage") return Promise.resolve(fakeRecord);
       if (cmd === "list_recent_usage") return Promise.resolve(refreshedRecent);
+      if (cmd === "count_today_usage") return Promise.resolve(1);
       return Promise.reject(new Error(`unexpected ${cmd}`));
     });
 
@@ -181,6 +184,8 @@ describe("promptStore", () => {
     expect(bumped?.usageCount).toBe(4); // was 3, +1
     expect(bumped?.lastUsedAt).toBe("2026-05-23T10:00:00Z");
     expect(state.recentUsage).toEqual(refreshedRecent);
+    // B5-6: today count refreshes alongside recents so StatusBar stays live.
+    expect(state.todayCount).toBe(1);
   });
 
   it("recordCopy bumps Phrase usageCount within its scene", async () => {
@@ -201,6 +206,7 @@ describe("promptStore", () => {
     invokeMock.mockImplementation((cmd: string) => {
       if (cmd === "record_usage") return Promise.resolve(fakeRecord);
       if (cmd === "list_recent_usage") return Promise.resolve([]);
+      if (cmd === "count_today_usage") return Promise.resolve(0);
       return Promise.reject(new Error(`unexpected ${cmd}`));
     });
 

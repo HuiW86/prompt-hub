@@ -20,6 +20,7 @@ export function PhaseBar() {
       className={styles.phaseBar}
       aria-label="相位带"
       data-region="phase-bar"
+      tabIndex={0}
     >
       {visible.map((phase, idx) => {
         const isActive = phase.id === activePhaseId;

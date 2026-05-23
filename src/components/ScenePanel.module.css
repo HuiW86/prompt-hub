@@ -11,6 +11,12 @@
   overflow: hidden;
 }
 
+/* B5-5: region-level Tab landing (03-product-spec §13.4). */
+.scenePanel:focus-visible {
+  outline: var(--border-thick) solid var(--color-protocol-border);
+  outline-offset: var(--space-1);
+}
+
 .heading {
   font-size: var(--fs-base);
   font-weight: 600;
