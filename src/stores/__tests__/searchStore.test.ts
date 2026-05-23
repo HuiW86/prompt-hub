@@ -20,27 +20,22 @@ describe("searchStore", () => {
     expect(useSearchStore.getState().query).toBe("");
   });
 
+  it("setQuery resets selectedIndex to 0", () => {
+    useSearchStore.getState().setSelectedIndex(3);
+    expect(useSearchStore.getState().selectedIndex).toBe(3);
+    useSearchStore.getState().setQuery("调研");
+    expect(useSearchStore.getState().selectedIndex).toBe(0);
+  });
+
   it("selectIsSearching ignores whitespace-only queries", () => {
-    expect(
-      selectIsSearching({
-        query: "",
-        setQuery: () => {},
-        clearQuery: () => {},
-      }),
-    ).toBe(false);
-    expect(
-      selectIsSearching({
-        query: "   ",
-        setQuery: () => {},
-        clearQuery: () => {},
-      }),
-    ).toBe(false);
-    expect(
-      selectIsSearching({
-        query: "x",
-        setQuery: () => {},
-        clearQuery: () => {},
-      }),
-    ).toBe(true);
+    const stub = {
+      selectedIndex: 0,
+      setQuery: () => {},
+      clearQuery: () => {},
+      setSelectedIndex: () => {},
+    };
+    expect(selectIsSearching({ ...stub, query: "" })).toBe(false);
+    expect(selectIsSearching({ ...stub, query: "   " })).toBe(false);
+    expect(selectIsSearching({ ...stub, query: "x" })).toBe(true);
   });
 });

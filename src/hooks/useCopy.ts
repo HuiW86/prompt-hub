@@ -1,3 +1,5 @@
+import { useCallback } from "react";
+
 import type { RecordUsageInput } from "../ipc/types";
 import { usePromptStore } from "../stores/promptStore";
 import { useToastStore } from "../stores/toastStore";
@@ -10,21 +12,27 @@ import { writeClipboard } from "./useClipboard";
 //   2. show flash + toast immediately so the feedback overlaps with the
 //      200ms server-side delay before window.hide();
 //   3. record_usage runs last; failure surfaces in console but does not block.
+// The returned function is wrapped in useCallback so callers can safely put it
+// in useEffect deps without tearing down document-level keydown listeners on
+// every keystroke (see App.tsx ⌘1-8 and SearchOverlay ↑↓⏎ effects).
 export function useCopy() {
   const recordCopy = usePromptStore((s) => s.recordCopy);
   const showToast = useToastStore((s) => s.show);
 
-  return async function copy(
-    content: string,
-    input: RecordUsageInput,
-    flashId?: string,
-  ): Promise<void> {
-    await writeClipboard(content);
-    showToast("已复制", flashId);
-    try {
-      await recordCopy(input);
-    } catch (err) {
-      console.error("recordCopy failed", err);
-    }
-  };
+  return useCallback(
+    async function copy(
+      content: string,
+      input: RecordUsageInput,
+      flashId?: string,
+    ): Promise<void> {
+      await writeClipboard(content);
+      showToast("已复制", flashId);
+      try {
+        await recordCopy(input);
+      } catch (err) {
+        console.error("recordCopy failed", err);
+      }
+    },
+    [recordCopy, showToast],
+  );
 }

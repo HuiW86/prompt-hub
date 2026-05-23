@@ -3,6 +3,7 @@ import { PhaseBar } from "../components/PhaseBar";
 import { RecentList } from "../components/RecentList";
 import { ScenePanel } from "../components/ScenePanel";
 import { SearchBar } from "../components/SearchBar";
+import { SearchOverlay } from "../components/SearchOverlay";
 import { SopProgress } from "../components/SopProgress";
 import { StatusBar } from "../components/StatusBar";
 import { Toast } from "../components/Toast";
@@ -28,14 +29,17 @@ export function Dashboard() {
       aria-label="prompt-hub dashboard"
     >
       <SearchBar />
-      <PhaseBar />
-      <div className={styles.rowMain}>
-        <MacroGrid />
-        <ScenePanel />
-      </div>
-      <div className={styles.rowFooter}>
-        <RecentList />
-        <SopProgress />
+      <div className={styles.mainStack}>
+        <PhaseBar />
+        <div className={styles.rowMain}>
+          <MacroGrid />
+          <ScenePanel />
+        </div>
+        <div className={styles.rowFooter}>
+          <RecentList />
+          <SopProgress />
+        </div>
+        <SearchOverlay />
       </div>
       <StatusBar />
       <Toast />

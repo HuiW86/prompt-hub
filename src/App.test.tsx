@@ -285,6 +285,107 @@ describe("Dashboard click → IPC flow", () => {
     );
   });
 
+  it("⌘1 selects the first visible phase and records phase_bar usage", async () => {
+    render(<App />);
+    await screen.findByRole("button", { name: "借力最优解" });
+    fireEvent.keyDown(document, { key: "1", metaKey: true });
+    await waitFor(() =>
+      expect(findRecordUsageInputs().length).toBeGreaterThan(0),
+    );
+    const input = findRecordUsageInputs()[0].input as {
+      targetType: string;
+      source: string;
+      phaseId: string | null;
+    };
+    expect(input.targetType).toBe("alignment");
+    expect(input.source).toBe("phase_bar");
+    expect(input.phaseId).toBe("phase-0");
+  });
+
+  it("⌘9 does not trigger record_usage (out of range)", async () => {
+    render(<App />);
+    await screen.findByRole("button", { name: "借力最优解" });
+    fireEvent.keyDown(document, { key: "9", metaKey: true });
+    await new Promise((r) => setTimeout(r, 0));
+    expect(findRecordUsageInputs().length).toBe(0);
+  });
+
+  it("plain '1' without metaKey does not trigger phase select", async () => {
+    render(<App />);
+    await screen.findByRole("button", { name: "借力最优解" });
+    fireEvent.keyDown(document, { key: "1" });
+    await new Promise((r) => setTimeout(r, 0));
+    expect(findRecordUsageInputs().length).toBe(0);
+  });
+
+  it("on Linux platform, Ctrl+1 (not ⌘1) triggers phase select", async () => {
+    // P1-4: cross-platform modifier — utils/platform.isMacLike reads
+    // navigator.platform on each call, so flipping it mid-test exercises the
+    // non-mac code path. Restore in afterEach (handled by individual reset).
+    const originalPlatform = navigator.platform;
+    Object.defineProperty(navigator, "platform", {
+      value: "Linux x86_64",
+      configurable: true,
+      writable: true,
+    });
+    try {
+      render(<App />);
+      await screen.findByRole("button", { name: "借力最优解" });
+      // ⌘1 should now be IGNORED on Linux
+      fireEvent.keyDown(document, { key: "1", metaKey: true });
+      await new Promise((r) => setTimeout(r, 0));
+      expect(findRecordUsageInputs().length).toBe(0);
+      // Ctrl+1 should fire
+      fireEvent.keyDown(document, { key: "1", ctrlKey: true });
+      await waitFor(() =>
+        expect(findRecordUsageInputs().length).toBeGreaterThan(0),
+      );
+    } finally {
+      Object.defineProperty(navigator, "platform", {
+        value: originalPlatform,
+        configurable: true,
+        writable: true,
+      });
+    }
+  });
+
+  it("⌘K focuses the search input and selects existing query text", async () => {
+    const { container } = render(<App />);
+    await screen.findByRole("button", { name: "借力最优解" });
+    const input = container.querySelector(
+      "[role='search'] input",
+    ) as HTMLInputElement;
+    fireEvent.change(input, { target: { value: "hello" } });
+    expect(document.activeElement).not.toBe(input);
+
+    fireEvent.keyDown(document, { key: "k", metaKey: true });
+    expect(document.activeElement).toBe(input);
+    expect(input.selectionStart).toBe(0);
+    expect(input.selectionEnd).toBe("hello".length);
+  });
+
+  it("shift+⌘K does not focus the search input", async () => {
+    const { container } = render(<App />);
+    await screen.findByRole("button", { name: "借力最优解" });
+    const input = container.querySelector(
+      "[role='search'] input",
+    ) as HTMLInputElement;
+    expect(document.activeElement).not.toBe(input);
+    fireEvent.keyDown(document, { key: "k", metaKey: true, shiftKey: true });
+    expect(document.activeElement).not.toBe(input);
+  });
+
+  it("plain 'k' without metaKey does not focus the search input", async () => {
+    const { container } = render(<App />);
+    await screen.findByRole("button", { name: "借力最优解" });
+    const input = container.querySelector(
+      "[role='search'] input",
+    ) as HTMLInputElement;
+    expect(document.activeElement).not.toBe(input);
+    fireEvent.keyDown(document, { key: "k" });
+    expect(document.activeElement).not.toBe(input);
+  });
+
   it("ESC inside SearchBar with non-empty value does NOT hide window", async () => {
     // Regression: App-level ESC listener used to fire even when SearchBar's
     // input had content, because React's synthetic stopPropagation cannot

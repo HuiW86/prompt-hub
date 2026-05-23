@@ -1,0 +1,134 @@
+/* SearchOverlay — covers the main work area when query is non-empty.
+ * Sits inside Dashboard's .mainStack via position:absolute so the
+ * background regions stay mounted underneath. */
+.overlay {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3);
+  padding: var(--space-4);
+  background: var(--color-bg-default);
+  border: var(--border-thin) solid var(--color-aux-border);
+  border-radius: var(--space-2);
+  overflow-y: auto;
+  z-index: 1;
+}
+
+.header {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  padding-bottom: var(--space-2);
+  border-bottom: var(--border-thin) solid var(--color-aux-bg);
+}
+
+.title {
+  font-size: var(--fs-md);
+  font-weight: 600;
+  color: var(--color-text-primary);
+}
+
+.count {
+  font-size: var(--fs-xs);
+  color: var(--color-aux-border);
+}
+
+.groups {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: var(--space-4);
+}
+
+.group {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+}
+
+.groupHead {
+  font-size: var(--fs-sm);
+  font-weight: 600;
+  color: var(--color-text-primary);
+}
+
+.groupCount {
+  font-weight: 400;
+  color: var(--color-aux-border);
+}
+
+.list {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-1);
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.item {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-3);
+  padding: var(--space-2) var(--space-3);
+  background: var(--color-bg-default);
+  border: var(--border-thin) solid var(--color-aux-bg);
+  border-radius: var(--space-1);
+  color: inherit;
+  text-align: left;
+  font: inherit;
+  cursor: pointer;
+  transition: background var(--duration-instant) var(--ease-out);
+}
+
+.item:hover {
+  background: var(--color-aux-bg);
+}
+
+.selected {
+  background: var(--color-protocol-bg);
+  border-color: var(--color-protocol-border);
+  box-shadow: inset var(--border-thick) 0 0 0 var(--color-protocol-border);
+}
+
+.selected:hover {
+  background: var(--color-protocol-bg);
+}
+
+.itemName {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  font-size: var(--fs-sm);
+  color: var(--color-text-primary);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.itemScope {
+  padding: 0 var(--space-2);
+  background: var(--color-aux-bg);
+  border-radius: var(--space-1);
+  font-size: var(--fs-xs);
+  color: var(--color-aux-border);
+}
+
+.itemMeta {
+  flex-shrink: 0;
+  font-size: var(--fs-xs);
+  color: var(--color-aux-border);
+}
+
+.groupEmpty,
+.empty {
+  font-size: var(--fs-xs);
+  color: var(--color-aux-border);
+}
+
+.empty {
+  padding: var(--space-8);
+  text-align: center;
+  font-size: var(--fs-sm);
+}

@@ -1,33 +1,69 @@
-import { useSearchStore } from "../stores/searchStore";
+import { useEffect, useRef } from "react";
+
+import {
+  SEARCH_LISTBOX_ID,
+  searchOptionId,
+  selectIsSearching,
+  useSearchStore,
+} from "../stores/searchStore";
+import { isPrimaryModifier, primaryModifierLabel } from "../utils/platform";
 
 import styles from "./SearchBar.module.css";
 
+// Implements the WAI-ARIA combobox half of the search pattern (SearchOverlay
+// owns the listbox half). Virtual focus stays on this input; aria-activedescendant
+// points at the option currently highlighted by ↑↓ navigation so screen
+// readers announce selection changes without us moving DOM focus.
 export function SearchBar() {
   const query = useSearchStore((s) => s.query);
   const setQuery = useSearchStore((s) => s.setQuery);
-  const clearQuery = useSearchStore((s) => s.clearQuery);
+  const isSearching = useSearchStore(selectIsSearching);
+  const selectedIndex = useSearchStore((s) => s.selectedIndex);
+  const inputRef = useRef<HTMLInputElement>(null);
+
+  useEffect(() => {
+    function onKey(e: KeyboardEvent) {
+      if (
+        !isPrimaryModifier(e) ||
+        e.shiftKey ||
+        e.altKey ||
+        e.key.toLowerCase() !== "k"
+      ) {
+        return;
+      }
+      e.preventDefault();
+      const el = inputRef.current;
+      if (!el) return;
+      el.focus();
+      // Pre-select existing text so the user's next keystroke overwrites it —
+      // matches the standard ⌘K behavior in Linear / Slack / VSCode.
+      el.select();
+    }
+    document.addEventListener("keydown", onKey);
+    return () => document.removeEventListener("keydown", onKey);
+  }, []);
 
   return (
     <div className={styles.searchBar} role="search">
       <label className={styles.field}>
         <input
+          ref={inputRef}
           className={styles.input}
           type="text"
           value={query}
           onChange={(e) => setQuery(e.target.value)}
-          onKeyDown={(e) => {
-            if (e.key === "Escape" && query.length > 0) {
-              // Eat the first ESC so it just clears the query; the second ESC
-              // bubbles to App and hides the window.
-              clearQuery();
-              e.stopPropagation();
-            }
-          }}
           placeholder="搜索 Macro / Phrase / SOP / 对齐话术…"
           aria-label="搜索"
+          role="combobox"
+          aria-expanded={isSearching}
+          aria-controls={SEARCH_LISTBOX_ID}
+          aria-autocomplete="list"
+          aria-activedescendant={
+            isSearching ? searchOptionId(selectedIndex) : undefined
+          }
         />
         <span className={styles.fallback}>兜底</span>
-        <kbd className={styles.shortcut}>⌘K</kbd>
+        <kbd className={styles.shortcut}>{primaryModifierLabel()}K</kbd>
       </label>
     </div>
   );

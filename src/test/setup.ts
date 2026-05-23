@@ -16,3 +16,13 @@ Object.defineProperty(navigator, "clipboard", {
   configurable: true,
   writable: true,
 });
+
+// Default jsdom navigator.platform is empty / "Linux x86_64", which would make
+// utils/platform.ts treat the test environment as non-Mac and require Ctrl
+// modifiers everywhere. Pin to MacIntel so keyboard tests match the primary
+// target platform; per-test overrides can re-set this for Win/Linux scenarios.
+Object.defineProperty(navigator, "platform", {
+  value: "MacIntel",
+  configurable: true,
+  writable: true,
+});
