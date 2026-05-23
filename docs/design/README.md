@@ -1,7 +1,7 @@
 ---
 type: index
 project: prompt-hub
-description: docs/design 文档索引——11 篇核心设计文档（契约/状态/知识）的编号、主笔人与内容速查
+description: docs/design 文档索引——11 篇核心设计文档（契约/状态/知识）+ L5 派生上下文（与外部 AI 工具的协作契约）的编号、主笔人与内容速查
 ---
 
 # prompt-hub 设计文档
@@ -28,6 +28,15 @@ prompt-hub 的项目文档体系——主文档分三类：契约层（spec / co
 | 10 | [ops-spec](./10-ops-spec.md) | 🤖 AI | 运营规格——部署 / 性能预算 / 备份 / 升级回滚 / 监控（本地单人语境） |
 | 11 | [test-spec](./11-test-spec.md) | 🤖 AI | 测试规格——单元 / 集成 / E2E 三层 + 性能基准 + LLM Eval 集 |
 | — | [变更日志](./CHANGELOG.md) | — | 设计文档体系修订历史 |
+
+## L5 派生上下文（协作契约）
+
+> 派生自 L0 + L1 + ADR，是人/AI 与外部 AI 工具（Claude Design / v0 / Cursor 等）的接口契约。**不能独立起草**，上游变更触发 bump。详见 [[产品文档体系方法论]] v1.3 §5.15-16。
+
+| 路径 | 用途 | 派生自 | 状态 |
+|---|---|---|---|
+| [CLAUDE-DESIGN](./CLAUDE-DESIGN.md) | 喂给 claude.ai/design 的 sticky context | 02-constitution + 05-design-spec + ADR-012 | active v0.1 |
+| [claude-design-prompts](../workflows/claude-design-prompts.md) | 在 Claude Design 跑 task 的 prompt 模板 + 迭代 checklist | CLAUDE-DESIGN | active v0.1 |
 
 ## 关联目录
 

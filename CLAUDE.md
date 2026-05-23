@@ -75,14 +75,16 @@ cargo clippy --manifest-path src-tauri/Cargo.toml -- -D warnings  # Rust lint
 - `docs/design/06-prd.md` — 写后端 / 数据层时
 - `docs/design/03-product-spec.md` — 写 UI 时
 - `docs/design/05-design-spec.md` — 写 CSS / 视觉时
+- `docs/design/CLAUDE-DESIGN.md` — 用 Claude Design (claude.ai/design) 设计 UI 时（L5 sticky context）
+- `docs/workflows/claude-design-prompts.md` — 在 Claude Design 跑 task 时（L5 prompt 模板 + 迭代 checklist）
 - `docs/plans/prompt-hub-mvp.md` — 实施任务清单
 - `docs/design/09-tech-stack.md` — 生成 import 语句时
 - `docs/adr/*` — 决策追溯时
 
 ### 冷区（仅显式查询时取）
-- `~/Vault/知识库/方案模板/产品文档体系方法论.md` — 文档体系治理时
+- `docs/MANIFEST.md` — 项目全文件清单（六层架构总览，AI 进项目读完 CLAUDE.md 接读拿全貌）
+- `~/Vault/知识库/方案模板/产品文档体系方法论.md` v1.3 — 文档体系治理时
 - git history — 变更追溯
-- 未来：`docs/design/07-features.md` / `docs/design/08-sitemap.md` / `docs/design/11-test-spec.md` / `docs/design/10-ops-spec.md`（待 W2-W4 补齐）
 
 ---
 
@@ -159,8 +161,8 @@ AI 不得擅自起草人主笔文档（spec / constitution），可起草共创 
 
 ## §7 当前状态指针
 
-- 项目阶段：**M0 技术验证完成（M0-4 除外）**——M0-1 建仓 / M0-2 依赖实测 / T1 token / M0-3 唤起 spike 全部交付；M0-3 实测数据（2026-05-23）：手动 ⌥Space P95=10.49ms（n=4 全链路）/ automated bench P95=0.04ms（n=40，仅 Rust show 调用），双双远低于 [[02-constitution#C1]] 200ms 死线；M0-4 签名 spike 仍待 Developer ID 证书
-- 文档体系：**13/13 全部落盘**，2026-05-20 迁移至 `docs/` 分层——11 篇核心设计文档 `docs/design/01-11-*.md`、实施方案 `docs/plans/`、决策记录 `docs/adr/`（详见 [[010-doc-directory-restructure]]，索引见 `docs/design/README.md`）
-- ADR 进度：**10/10 已落盘**——001/002/003/004/006/007/008/009 Accepted（2026-05-19）、010（文档目录重构）Accepted（2026-05-20）；005（prompt-combiner 复用）仍 Proposed，等 omar 提供仓库后调研
+- 项目阶段：**第一阶段 MVP 全链路验证通过**（2026-05-23）——M0-1/M0-2/M0-3 已交付，M0-3 实测 P95=10.49ms 远低于 [[02-constitution#C1]] 200ms 死线；手动 `pnpm tauri dev` 6 步全过（含修 macOS fullscreen Space bug，commit `0fbab2d`）；M0-4 签名 spike 仍待 Developer ID 证书
+- 文档体系：**13 核心 + L5 协作契约 2 + MANIFEST 全部落盘**（2026-05-24 引入 L5 协作契约层）——11 篇核心设计文档 `docs/design/01-11-*.md` + L5 派生 [[CLAUDE-DESIGN]] + [[claude-design-prompts]]；全文件清单见 [[MANIFEST]]
+- ADR 进度：**11 Accepted + 1 Proposed + 1 Reserved**——001/002/003/004/006/007/008/009/010 + 012（lock-visual-quality-anchor，2026-05-24 Accepted，Linear 整体气质锚定）；005（prompt-combiner 复用）仍 Proposed；011 Reserved（计划：search UsageSource，详见 HANDOFF backlog）
 - tech-stack 状态：**v1.1 ratified**（[[09-tech-stack]]）—— 全栈拍板：Tauri 2.x + React 19.2 + Zustand 5 + rusqlite 0.32 + pnpm 10.x + Vite 7.x + Vitest 4 + CSS Modules + macos-private-api
-- 下一动作：**进第一阶段 MVP**（[[prompt-hub-mvp#第一阶段]]）——主形态仪表盘的搜索区 / 相位带 / Macro 快捷区 / Scene 全景 / 最近使用 + 复制计数。同步顺带处理：审查中低优先级项（lib.rs bench 剥离 + unregister_all、窗口配置补全、scaffold 残留清理）、CLAUDE.md §2 同步（ESLint 9→10 / test:watch / bench:* 推后说明）、CSP dev 实测中观察到的 Tauri HMR 干净退出现象；M0-4 签名 spike 待 Developer ID 证书；ADR-005 待 omar 提供 prompt-combiner 仓库；详见 [[HANDOFF#Next-Actions]]
+- 下一动作：**ADR-012 涟漪 + 第一阶段收尾**——L5 sticky context + prompts + MANIFEST 已落盘，等 omar 上传 [[CLAUDE-DESIGN]] 到 claude.ai/design 创建 design system → 跑 Task β 单组件 MacroGrid 卡验证整条管线；同步待办：bump design-spec v0.7（加 6 章）/ 重做 mockup / 8 组件 CSS 升级 / CLAUDE §7 阶段指针 / bench 脚本 / M0-4 签名；详见 [[HANDOFF#Next-Actions]]
