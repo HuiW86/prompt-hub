@@ -3,24 +3,24 @@
  */
 .toast {
   position: fixed;
-  top: var(--space-6);
-  right: var(--space-8);
+  top: var(--s-6);
+  right: var(--s-8);
   z-index: 100;
-  padding: var(--space-2) var(--space-4);
-  background: var(--color-task-bg);
-  border: var(--border-thin) solid var(--color-task-border);
-  border-radius: var(--space-2);
-  color: var(--color-text-primary);
-  font-size: var(--fs-sm);
+  padding: var(--s-2) var(--s-4);
+  background: var(--task-16);
+  border: var(--hairline) solid var(--task);
+  border-radius: var(--s-2);
+  color: var(--fg-1);
+  font-size: var(--t-13);
   font-weight: 600;
-  animation: fadeIn var(--duration-fast) var(--ease-out);
+  animation: fadeIn var(--d-slow) var(--ease);
   pointer-events: none;
 }
 
 @keyframes fadeIn {
   from {
     opacity: 0;
-    transform: translateY(calc(-1 * var(--space-2)));
+    transform: translateY(calc(-1 * var(--s-2)));
   }
   to {
     opacity: 1;

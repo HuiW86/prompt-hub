@@ -3,22 +3,22 @@
   display: flex;
   align-items: center;
   justify-content: space-between;
-  gap: var(--space-4);
-  min-height: var(--space-8);
-  padding: 0 var(--space-4);
-  background: var(--color-aux-bg);
-  border: var(--border-thin) solid var(--color-aux-border);
-  border-radius: var(--space-2);
-  font-size: var(--fs-xs);
-  color: var(--color-text-primary);
+  gap: var(--s-4);
+  min-height: var(--s-8);
+  padding: 0 var(--s-4);
+  background: var(--surface-2);
+  border: var(--hairline) solid var(--aux);
+  border-radius: var(--s-2);
+  font-size: var(--t-12);
+  color: var(--fg-1);
 }
 
 .left,
 .right {
   display: flex;
   align-items: center;
-  gap: var(--space-4);
-  color: var(--color-aux-border);
+  gap: var(--s-4);
+  color: var(--aux);
 }
 
 .shortcut {

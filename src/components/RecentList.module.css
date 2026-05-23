@@ -2,49 +2,49 @@
 .recentList {
   display: flex;
   flex-direction: column;
-  gap: var(--space-2);
-  padding: var(--space-4);
-  background: var(--color-aux-bg);
-  border: var(--border-thin) solid var(--color-aux-border);
-  border-radius: var(--space-2);
+  gap: var(--s-2);
+  padding: var(--s-4);
+  background: var(--surface-2);
+  border: var(--hairline) solid var(--aux);
+  border-radius: var(--s-2);
 }
 
 /* B5-5: region-level Tab landing (03-product-spec §13.4). */
 .recentList:focus-visible {
-  outline: var(--border-thick) solid var(--color-protocol-border);
-  outline-offset: var(--space-1);
+  outline: var(--border-thick) solid var(--protocol);
+  outline-offset: var(--s-1);
 }
 
 .heading {
-  font-size: var(--fs-sm);
+  font-size: var(--t-13);
   font-weight: 600;
-  color: var(--color-text-primary);
+  color: var(--fg-1);
 }
 
 .list {
   display: flex;
   flex-direction: column;
-  gap: var(--space-1);
+  gap: var(--s-1);
 }
 
 .item {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  gap: var(--space-3);
-  padding: var(--space-2) var(--space-3);
-  background: var(--color-bg-default);
-  border: var(--border-thin) solid var(--color-aux-border);
-  border-radius: var(--space-2);
+  gap: var(--s-3);
+  padding: var(--s-2) var(--s-3);
+  background: var(--canvas);
+  border: var(--hairline) solid var(--aux);
+  border-radius: var(--s-2);
   color: inherit;
   text-align: left;
   font: inherit;
   cursor: pointer;
-  transition: background var(--duration-instant) var(--ease-out);
+  transition: background var(--d-fast) var(--ease);
 }
 
 .item:hover {
-  background: var(--color-aux-bg);
+  background: var(--surface-2);
 }
 
 .item:disabled {
@@ -57,18 +57,18 @@
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
-  font-size: var(--fs-sm);
-  color: var(--color-text-primary);
+  font-size: var(--t-13);
+  color: var(--fg-1);
 }
 
 .itemTime {
-  font-size: var(--fs-xs);
-  color: var(--color-aux-border);
+  font-size: var(--t-12);
+  color: var(--aux);
 }
 
 .empty {
-  padding: var(--space-4);
+  padding: var(--s-4);
   text-align: center;
-  font-size: var(--fs-xs);
-  color: var(--color-aux-border);
+  font-size: var(--t-12);
+  color: var(--aux);
 }

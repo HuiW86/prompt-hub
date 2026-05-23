@@ -2,113 +2,113 @@
 .scenePanel {
   display: flex;
   flex-direction: column;
-  gap: var(--space-3);
+  gap: var(--s-3);
   min-height: 0;
-  padding: var(--space-4);
-  background: var(--color-task-bg);
-  border: var(--border-thin) solid var(--color-task-border);
-  border-radius: var(--space-2);
+  padding: var(--s-4);
+  background: var(--task-16);
+  border: var(--hairline) solid var(--task);
+  border-radius: var(--s-2);
   overflow: hidden;
 }
 
 /* B5-5: region-level Tab landing (03-product-spec §13.4). */
 .scenePanel:focus-visible {
-  outline: var(--border-thick) solid var(--color-protocol-border);
-  outline-offset: var(--space-1);
+  outline: var(--border-thick) solid var(--protocol);
+  outline-offset: var(--s-1);
 }
 
 .heading {
-  font-size: var(--fs-base);
+  font-size: var(--t-14);
   font-weight: 600;
-  color: var(--color-text-primary);
+  color: var(--fg-1);
 }
 
 .tabs {
   display: flex;
   flex-wrap: wrap;
-  gap: var(--space-2);
+  gap: var(--s-2);
 }
 
 .tab {
   display: inline-flex;
   align-items: center;
-  gap: var(--space-1);
-  min-height: var(--space-6);
-  padding: 0 var(--space-3);
-  background: var(--color-bg-default);
-  border: var(--border-thin) solid var(--color-aux-border);
-  border-radius: var(--space-6);
-  color: var(--color-text-primary);
-  font-size: var(--fs-sm);
+  gap: var(--s-1);
+  min-height: var(--s-6);
+  padding: 0 var(--s-3);
+  background: var(--canvas);
+  border: var(--hairline) solid var(--aux);
+  border-radius: var(--s-6);
+  color: var(--fg-1);
+  font-size: var(--t-13);
   cursor: pointer;
 }
 
 .tab.active {
-  background: var(--color-protocol-bg);
-  border-color: var(--color-protocol-border);
-  color: var(--color-protocol-border);
+  background: var(--protocol-16);
+  border-color: var(--protocol);
+  color: var(--protocol);
   font-weight: 600;
 }
 
 .icon {
-  font-size: var(--fs-sm);
+  font-size: var(--t-13);
 }
 
 .phrases {
   display: flex;
   flex-direction: column;
-  gap: var(--space-2);
+  gap: var(--s-2);
   min-height: 0;
   overflow-y: auto;
 }
 
 .subStage {
-  margin-top: var(--space-2);
-  font-size: var(--fs-xs);
-  color: var(--color-aux-border);
+  margin-top: var(--s-2);
+  font-size: var(--t-12);
+  color: var(--aux);
   text-transform: uppercase;
 }
 
 .phrase {
   display: flex;
   flex-direction: column;
-  gap: var(--space-1);
-  padding: var(--space-2) var(--space-3);
-  background: var(--color-bg-default);
-  border: var(--border-thin) solid var(--color-task-border);
-  border-radius: var(--space-2);
+  gap: var(--s-1);
+  padding: var(--s-2) var(--s-3);
+  background: var(--canvas);
+  border: var(--hairline) solid var(--task);
+  border-radius: var(--s-2);
   color: inherit;
   text-align: left;
   font: inherit;
   cursor: pointer;
-  transition: background var(--duration-instant) var(--ease-out);
+  transition: background var(--d-fast) var(--ease);
 }
 
 .phrase:hover {
-  background: var(--color-task-bg);
+  background: var(--task-16);
 }
 
 .phraseFlash {
-  animation: phraseCopyFlash var(--duration-fast) var(--ease-out);
+  animation: phraseCopyFlash var(--d-slow) var(--ease);
 }
 
 @keyframes phraseCopyFlash {
   0% {
-    background: var(--color-task-bg);
+    background: var(--task-16);
   }
   50% {
-    background: var(--color-task-border);
-    color: var(--color-bg-default);
+    background: var(--task);
+    color: var(--canvas);
   }
   100% {
-    background: var(--color-bg-default);
+    background: var(--canvas);
   }
 }
 
 .phraseTitle {
-  font-size: var(--fs-sm);
+  font-size: var(--t-13);
   font-weight: 600;
-  color: var(--color-text-primary);
+  color: var(--fg-1);
 }
 
 .phraseContent {
@@ -116,14 +116,14 @@
   -webkit-line-clamp: 2;
   -webkit-box-orient: vertical;
   overflow: hidden;
-  font-size: var(--fs-xs);
-  color: var(--color-text-primary);
+  font-size: var(--t-12);
+  color: var(--fg-1);
   line-height: 1.4;
 }
 
 .empty {
-  padding: var(--space-6);
+  padding: var(--s-6);
   text-align: center;
-  font-size: var(--fs-sm);
-  color: var(--color-aux-border);
+  font-size: var(--t-13);
+  color: var(--aux);
 }

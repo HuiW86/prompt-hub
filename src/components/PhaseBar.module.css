@@ -4,18 +4,18 @@
 .phaseBar {
   display: grid;
   grid-template-columns: repeat(8, minmax(0, 1fr));
-  gap: var(--space-3);
-  min-height: var(--space-20);
-  padding: var(--space-3);
-  background: var(--color-protocol-bg);
-  border: var(--border-thin) solid var(--color-protocol-border);
-  border-radius: var(--space-2);
+  gap: var(--s-3);
+  min-height: var(--s-20);
+  padding: var(--s-3);
+  background: var(--protocol-16);
+  border: var(--hairline) solid var(--protocol);
+  border-radius: var(--s-2);
 }
 
 /* B5-5: region-level Tab landing (03-product-spec §13.4). */
 .phaseBar:focus-visible {
-  outline: var(--border-thick) solid var(--color-protocol-border);
-  outline-offset: var(--space-1);
+  outline: var(--border-thick) solid var(--protocol);
+  outline-offset: var(--s-1);
 }
 
 .phase {
@@ -23,58 +23,58 @@
   flex-direction: column;
   align-items: center;
   justify-content: center;
-  gap: var(--space-1);
-  min-height: var(--space-12);
-  padding: var(--space-3) var(--space-2);
-  background: var(--color-bg-default);
-  border: var(--border-thin) solid var(--color-aux-border);
-  border-radius: var(--space-2);
-  color: var(--color-text-primary);
+  gap: var(--s-1);
+  min-height: var(--s-12);
+  padding: var(--s-3) var(--s-2);
+  background: var(--canvas);
+  border: var(--hairline) solid var(--aux);
+  border-radius: var(--s-2);
+  color: var(--fg-1);
   font: inherit;
   cursor: pointer;
   transition:
-    border-color var(--duration-instant) var(--ease-out),
-    background var(--duration-instant) var(--ease-out);
+    border-color var(--d-fast) var(--ease),
+    background var(--d-fast) var(--ease);
 }
 
 .phase:hover {
-  border-color: var(--color-protocol-border);
+  border-color: var(--protocol);
 }
 
 .flash {
-  animation: phaseCopyFlash var(--duration-fast) var(--ease-out);
+  animation: phaseCopyFlash var(--d-slow) var(--ease);
 }
 
 @keyframes phaseCopyFlash {
   0% {
-    background: var(--color-protocol-bg);
+    background: var(--protocol-16);
   }
   50% {
-    background: var(--color-protocol-border);
-    color: var(--color-bg-default);
+    background: var(--protocol);
+    color: var(--canvas);
   }
   100% {
-    background: var(--color-protocol-bg);
+    background: var(--protocol-16);
   }
 }
 
 .active {
-  background: var(--color-protocol-bg);
-  border: var(--border-thick) solid var(--color-protocol-border);
+  background: var(--protocol-16);
+  border: var(--border-thick) solid var(--protocol);
   font-weight: 600;
 }
 
 .name {
-  font-size: var(--fs-sm);
+  font-size: var(--t-13);
   font-weight: 600;
 }
 
 .shortcut {
   font-family: inherit;
-  font-size: var(--fs-xs);
-  color: var(--color-aux-border);
+  font-size: var(--t-12);
+  color: var(--aux);
 }
 
 .active .shortcut {
-  color: var(--color-protocol-border);
+  color: var(--protocol);
 }

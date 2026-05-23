@@ -1,56 +1,204 @@
 /*
  * Design tokens — single source of truth for all CSS values.
- * Defined per plan §0 T1 / design-spec v0.6. Literal px/hex/ms values are
- * permitted ONLY in this file; all component CSS must reference these tokens.
+ * Migrated to bundle naming (Phase 2 of ADR-012 / Claude Design handoff).
+ * Literal px/hex/ms values are permitted ONLY in this file; all component
+ * CSS must reference these tokens.
  */
+
+/* ============================================================
+   0. Webfonts (self-hosted, see src/assets/fonts/)
+   ============================================================ */
+@font-face {
+  font-family: "Geist";
+  src: url("../assets/fonts/Geist-Variable.woff2") format("woff2-variations");
+  font-weight: 100 900;
+  font-style: normal;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: "Geist Mono";
+  src: url("../assets/fonts/GeistMono-Variable.woff2")
+    format("woff2-variations");
+  font-weight: 100 900;
+  font-style: normal;
+  font-display: swap;
+}
+
+/* ============================================================
+   1. Color tokens — DARK mode (default)
+   Cool-neutral grays, slight blue lift. No pure black / pure white.
+   ============================================================ */
 :root {
-  /* Font size — design-spec §2.1 */
-  --fs-xs: 0.6875rem;
-  --fs-sm: 0.8125rem;
-  --fs-base: 0.875rem;
-  --fs-md: 1rem;
-  --fs-lg: 1.125rem;
-  --fs-xl: 1.25rem;
+  /* Ontology — carry MEANING. Use ONLY on the surfaces of their layer. */
+  --protocol: #534ab7; /* Modifier, AlignmentPhrase, PhaseBar */
+  --protocol-fg: #ffffff;
+  --protocol-8: rgba(83, 74, 183, 0.08); /* active press fill */
+  --protocol-16: rgba(83, 74, 183, 0.16); /* selected fill */
 
-  /* Spacing — design-spec §2.2 */
-  --space-1: 4px;
-  --space-2: 8px;
-  --space-3: 12px;
-  --space-4: 16px;
-  --space-6: 24px;
-  --space-8: 32px;
-  --space-10: 40px;
-  --space-12: 48px;
-  --space-20: 80px;
+  --task: #178561; /* Macro, Scene */
+  --task-fg: #ffffff;
+  --task-8: rgba(23, 133, 97, 0.08);
+  --task-16: rgba(23, 133, 97, 0.16);
 
-  /* Color — design-spec §2.4 */
-  --color-text-primary: #1a1a1a;
-  --color-bg-default: #ffffff;
-  --color-protocol-bg: #eeedfe;
-  --color-protocol-border: #534ab7;
-  --color-task-bg: #e1f5ee;
-  --color-task-border: #178561; /* revised from #1D9E75, 2026-05-18 */
-  --color-aux-bg: #f1efe8;
-  --color-aux-border: #888780;
+  --aux: #888780; /* meta text ONLY, never bg */
 
-  /* Color aliases */
-  --color-active: var(--color-protocol-border);
-  --color-task-accent: var(--color-task-border);
-  --color-aux-accent: var(--color-aux-border);
+  /* Neutral scale */
+  --canvas: #0e0e10;
+  --surface-1: #141417;
+  --surface-2: #1a1a1e;
+  --surface-3: #232328;
 
-  /* Border width — pragmatic addition during B3 component build.
-   * design-spec v0.6 §2.2 only covers spacing tokens; 1/2px border widths
-   * are CSS-conventional and unlikely to fit a 4px grid. Backfill into
-   * design-spec §2.2 when the next ratification round happens. */
-  --border-thin: 1px;
-  --border-thick: 2px;
+  --border-1: #232328;
+  --border-2: #2e2e34;
+  --border-3: #3a3a42;
 
-  /* Motion — design-spec §3 */
-  --duration-instant: 100ms;
-  --duration-fast: 200ms;
-  --duration-base: 300ms;
-  --duration-slow: 500ms;
-  --ease-out: cubic-bezier(0.16, 1, 0.3, 1);
-  --ease-in-out: cubic-bezier(0.4, 0, 0.2, 1);
-  --ease-spring: cubic-bezier(0.34, 1.56, 0.64, 1);
+  --fg-1: #ececee;
+  --fg-2: #b4b4b8;
+  --fg-3: #7e7e84;
+  --fg-4: #55555b;
+
+  --skeleton: #1f1f23;
+  --skeleton-hi: #26262b;
+}
+
+/* ============================================================
+   1a. LIGHT mode override (system preference + .light class)
+   ============================================================ */
+@media (prefers-color-scheme: light) {
+  :root:not(.dark) {
+    --canvas: #fafaf9;
+    --surface-1: #f2f2f0;
+    --surface-2: #eaeae7;
+    --surface-3: #ddddd9;
+
+    --border-1: #e2e2de;
+    --border-2: #cfcfca;
+    --border-3: #b6b6b0;
+
+    --fg-1: #18181b;
+    --fg-2: #44444a;
+    --fg-3: #6f6f75;
+    --fg-4: #a5a5a8;
+
+    --skeleton: #e8e8e5;
+    --skeleton-hi: #dededb;
+  }
+}
+
+:root.light {
+  --canvas: #fafaf9;
+  --surface-1: #f2f2f0;
+  --surface-2: #eaeae7;
+  --surface-3: #ddddd9;
+  --border-1: #e2e2de;
+  --border-2: #cfcfca;
+  --border-3: #b6b6b0;
+  --fg-1: #18181b;
+  --fg-2: #44444a;
+  --fg-3: #6f6f75;
+  --fg-4: #a5a5a8;
+  --skeleton: #e8e8e5;
+  --skeleton-hi: #dededb;
+}
+
+/* ============================================================
+   2. Type tokens
+   ============================================================ */
+:root {
+  --font-sans:
+    "Geist", ui-sans-serif, system-ui, -apple-system, "Segoe UI",
+    "Helvetica Neue", Arial, sans-serif;
+  --font-mono:
+    "Geist Mono", ui-monospace, SFMono-Regular, "SF Mono", Menlo, Consolas,
+    monospace;
+
+  /* Sizes */
+  --t-12: 12px;
+  --t-13: 13px;
+  --t-14: 14px;
+  --t-16: 16px;
+  --t-20: 20px;
+
+  /* Line heights */
+  --lh-tight: 1.2;
+  --lh-body: 1.45;
+
+  /* Weights */
+  --w-400: 400;
+  --w-500: 500;
+  --w-600: 600;
+
+  /* Tracking */
+  --tr-tight: -0.01em;
+  --tr-normal: 0em;
+}
+
+/* ============================================================
+   3. Spacing / radii
+   ============================================================ */
+:root {
+  --s-1: 4px;
+  --s-2: 8px;
+  --s-3: 12px;
+  --s-4: 16px;
+  --s-5: 20px;
+  --s-6: 24px;
+  --s-8: 32px;
+  /* Extensions — prompt-hub-specific, off-primary surface only. Bundle caps
+     primary at 32px; modals / full-screen overlay can use larger. */
+  --s-10: 40px;
+  --s-12: 48px;
+  --s-20: 80px;
+
+  --r-1: 2px; /* tags, tiny pills */
+  --r-2: 3px; /* chips */
+  --r-3: 4px; /* default — most surfaces */
+  --r-4: 6px; /* outer cards */
+  --r-frame: 8px; /* overlay frame ONLY */
+
+  --hairline: 1px;
+  --border-thick: 2px; /* focus outlines only */
+}
+
+/* ============================================================
+   4. Motion
+   Constitution C1: ≤200ms on primary; bundle caps animations at 200ms.
+   ============================================================ */
+:root {
+  --ease: cubic-bezier(0.2, 0, 0, 1);
+  --d-fast: 120ms;
+  --d-base: 160ms;
+  --d-slow: 200ms;
+}
+
+/* ============================================================
+   5. Base resets
+   ============================================================ */
+html,
+body {
+  background: var(--canvas);
+  color: var(--fg-1);
+  font-family: var(--font-sans);
+  font-size: var(--t-13);
+  line-height: var(--lh-body);
+  font-feature-settings: "ss01", "cv11";
+  -webkit-font-smoothing: antialiased;
+  text-rendering: optimizeLegibility;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+button,
+input,
+select,
+textarea {
+  font: inherit;
+  color: inherit;
+}
+
+::selection {
+  background: var(--protocol-16);
 }

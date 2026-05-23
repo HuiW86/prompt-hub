@@ -9,18 +9,18 @@
 .field {
   display: flex;
   align-items: center;
-  gap: var(--space-3);
+  gap: var(--s-3);
   width: 60%;
-  min-width: var(--space-20);
-  height: var(--space-10);
-  padding: 0 var(--space-4);
-  background: var(--color-aux-bg);
-  border: var(--border-thin) solid var(--color-aux-border);
-  border-radius: var(--space-2);
+  min-width: var(--s-20);
+  height: var(--s-10);
+  padding: 0 var(--s-4);
+  background: var(--surface-2);
+  border: var(--hairline) solid var(--aux);
+  border-radius: var(--s-2);
 }
 
 .field:focus-within {
-  border-color: var(--color-protocol-border);
+  border-color: var(--protocol);
 }
 
 .input {
@@ -28,24 +28,24 @@
   background: transparent;
   border: none;
   outline: none;
-  color: var(--color-text-primary);
-  font-size: var(--fs-md);
+  color: var(--fg-1);
+  font-size: var(--t-16);
   font-family: inherit;
 }
 
 .input::placeholder {
-  color: var(--color-aux-border);
+  color: var(--aux);
 }
 
 .fallback {
-  font-size: var(--fs-xs);
-  color: var(--color-aux-border);
+  font-size: var(--t-12);
+  color: var(--aux);
   text-transform: uppercase;
-  letter-spacing: var(--border-thin);
+  letter-spacing: var(--hairline);
 }
 
 .shortcut {
   font-family: inherit;
-  font-size: var(--fs-xs);
-  color: var(--color-aux-border);
+  font-size: var(--t-12);
+  color: var(--aux);
 }
