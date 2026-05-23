@@ -1,7 +1,7 @@
 use std::sync::atomic::{AtomicU64, Ordering};
 use std::sync::Mutex;
 
-use tauri::{Manager, RunEvent};
+use tauri::{Manager, PhysicalPosition, PhysicalSize, RunEvent};
 use tauri_plugin_global_shortcut::{Code, GlobalShortcutExt, Modifiers, Shortcut, ShortcutState};
 
 mod commands;
@@ -26,6 +26,20 @@ pub fn run() {
 
             #[cfg(desktop)]
             {
+                // Resize the main window to cover the primary monitor instead
+                // of using tauri.conf.json `fullscreen: true`, which on macOS
+                // creates a system fullscreen Space (independent space, no
+                // alwaysOnTop, transparency disabled — incompatible with
+                // spec §1.1 "全屏覆盖窗口浮于所有应用上方不抢焦点").
+                if let Some(window) = app.get_webview_window("main") {
+                    if let Ok(Some(monitor)) = window.primary_monitor() {
+                        let size = monitor.size();
+                        let pos = monitor.position();
+                        let _ = window.set_size(PhysicalSize::new(size.width, size.height));
+                        let _ = window.set_position(PhysicalPosition::new(pos.x, pos.y));
+                    }
+                }
+
                 let toggle = Shortcut::new(Some(Modifiers::ALT), Code::Space);
                 app.handle().plugin(
                     tauri_plugin_global_shortcut::Builder::new()
