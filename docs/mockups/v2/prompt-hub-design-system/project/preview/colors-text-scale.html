@@ -1,0 +1,21 @@
+<!doctype html>
+<html lang="en" class="dark">
+<head><meta charset="utf-8"><link rel="stylesheet" href="_card.css">
+<style>
+  .row2 { display: grid; grid-template-columns: repeat(4, 1fr); gap: 16px; }
+  .row2 .col { gap: 4px; }
+  .row2 .sample { font: var(--w-500) 18px/1 var(--font-sans); letter-spacing: -0.01em; }
+  .row2 .name { font: var(--w-400) 11px/1 var(--font-mono); color: var(--fg-3); }
+  .row2 .hex  { font: var(--w-400) 11px/1 var(--font-mono); color: var(--fg-3); }
+</style>
+</head>
+<body>
+<div class="card">
+  <div class="row2">
+    <div class="col"><div class="sample" style="color:#ECECEE">Active scene</div><div class="name">fg-1 · primary</div><div class="hex">#ECECEE</div></div>
+    <div class="col"><div class="sample" style="color:#B4B4B8">3 runs · 12m</div><div class="name">fg-2 · secondary</div><div class="hex">#B4B4B8</div></div>
+    <div class="col"><div class="sample" style="color:#7E7E84">No macros</div><div class="name">fg-3 · tertiary</div><div class="hex">#7E7E84</div></div>
+    <div class="col"><div class="sample" style="color:#55555B">disabled</div><div class="name">fg-4 · disabled</div><div class="hex">#55555B</div></div>
+  </div>
+</div>
+</body></html>

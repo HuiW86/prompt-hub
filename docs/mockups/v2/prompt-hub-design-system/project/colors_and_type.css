@@ -1,0 +1,232 @@
+/* =============================================================
+   prompt-hub design tokens
+   ============================================================= */
+
+/* ---- Webfonts (self-hosted) ---------------------------------- */
+@font-face {
+  font-family: "Geist";
+  src: url("fonts/Geist-Variable.woff2") format("woff2-variations");
+  font-weight: 100 900;
+  font-style: normal;
+  font-display: swap;
+}
+@font-face {
+  font-family: "Geist Mono";
+  src: url("fonts/GeistMono-Variable.woff2") format("woff2-variations");
+  font-weight: 100 900;
+  font-style: normal;
+  font-display: swap;
+}
+
+/* =============================================================
+   1. COLOR TOKENS
+   ============================================================= */
+:root {
+  /* Ontology — colors that carry MEANING.
+     Use ONLY on the surfaces of their layer. */
+  --protocol:        #534AB7;   /* Modifier, AlignmentPhrase */
+  --protocol-fg:     #FFFFFF;   /* fg on solid protocol bg */
+  --protocol-8:      rgba(83, 74, 183, 0.08);   /* active fill */
+  --protocol-16:     rgba(83, 74, 183, 0.16);   /* selected fill */
+
+  --task:            #178561;   /* Macro, Scene */
+  --task-fg:         #FFFFFF;
+  --task-8:          rgba(23, 133, 97, 0.08);
+  --task-16:         rgba(23, 133, 97, 0.16);
+
+  --aux:             #888780;   /* meta only */
+
+  /* Neutral scale — DARK mode (default). Cool-neutral, slight blue lift. */
+  --canvas:          #0E0E10;   /* root background */
+  --surface-1:       #141417;   /* card / region background */
+  --surface-2:       #1A1A1E;   /* hover surface, sunken input */
+  --surface-3:       #232328;   /* pressed surface */
+
+  --border-1:        #232328;   /* default hairlines */
+  --border-2:        #2E2E34;   /* hover hairlines */
+  --border-3:        #3A3A42;   /* focused / emphasized */
+
+  --fg-1:            #ECECEE;   /* primary text */
+  --fg-2:            #B4B4B8;   /* secondary text */
+  --fg-3:            #7E7E84;   /* tertiary text / empty state */
+  --fg-4:            #55555B;   /* disabled */
+
+  /* Skeleton */
+  --skeleton:        #1F1F23;
+  --skeleton-hi:     #26262B;
+}
+
+/* LIGHT mode override */
+@media (prefers-color-scheme: light) {
+  :root.auto, :root:not(.dark):not(.light) {
+    --canvas:        #FAFAF9;
+    --surface-1:     #F2F2F0;
+    --surface-2:     #EAEAE7;
+    --surface-3:     #DDDDD9;
+
+    --border-1:      #E2E2DE;
+    --border-2:      #CFCFCA;
+    --border-3:      #B6B6B0;
+
+    --fg-1:          #18181B;
+    --fg-2:          #44444A;
+    --fg-3:          #6F6F75;
+    --fg-4:          #A5A5A8;
+
+    --skeleton:      #E8E8E5;
+    --skeleton-hi:   #DEDEDB;
+  }
+}
+
+:root.light {
+  --canvas:          #FAFAF9;
+  --surface-1:       #F2F2F0;
+  --surface-2:       #EAEAE7;
+  --surface-3:       #DDDDD9;
+  --border-1:        #E2E2DE;
+  --border-2:        #CFCFCA;
+  --border-3:        #B6B6B0;
+  --fg-1:            #18181B;
+  --fg-2:            #44444A;
+  --fg-3:            #6F6F75;
+  --fg-4:            #A5A5A8;
+  --skeleton:        #E8E8E5;
+  --skeleton-hi:     #DEDEDB;
+}
+
+/* =============================================================
+   2. TYPE TOKENS
+   ============================================================= */
+:root {
+  --font-sans: "Geist", ui-sans-serif, system-ui, -apple-system, "Segoe UI",
+               "Helvetica Neue", Arial, sans-serif;
+  --font-mono: "Geist Mono", ui-monospace, SFMono-Regular, "SF Mono",
+               Menlo, Consolas, monospace;
+
+  /* sizes */
+  --t-12: 12px;
+  --t-13: 13px;
+  --t-14: 14px;
+  --t-16: 16px;
+  --t-20: 20px;
+
+  /* line-heights */
+  --lh-tight: 1.2;
+  --lh-body:  1.45;
+
+  /* weights */
+  --w-400: 400;
+  --w-500: 500;
+  --w-600: 600;
+
+  /* tracking */
+  --tr-tight:   -0.01em;
+  --tr-normal:  0em;
+  --tr-meta:     0em;
+}
+
+/* =============================================================
+   3. SPACING / RADII
+   ============================================================= */
+:root {
+  --s-1:  4px;
+  --s-2:  8px;
+  --s-3: 12px;
+  --s-4: 16px;
+  --s-5: 20px;
+  --s-6: 24px;
+  --s-8: 32px;
+
+  --r-1: 2px;     /* tags, tiny pills */
+  --r-2: 3px;     /* chips */
+  --r-3: 4px;     /* default — most surfaces */
+  --r-4: 6px;     /* outer cards */
+  --r-frame: 8px; /* overlay frame ONLY */
+
+  --hairline: 1px;
+}
+
+/* =============================================================
+   4. MOTION
+   ============================================================= */
+:root {
+  --ease: cubic-bezier(0.2, 0, 0, 1);
+  --d-fast: 120ms;
+  --d-base: 160ms;
+  --d-slow: 200ms;
+}
+
+/* =============================================================
+   5. SEMANTIC CLASSES
+   ============================================================= */
+
+html, body {
+  background: var(--canvas);
+  color: var(--fg-1);
+  font-family: var(--font-sans);
+  font-size: var(--t-13);
+  line-height: var(--lh-body);
+  font-feature-settings: "ss01", "cv11";
+  -webkit-font-smoothing: antialiased;
+  text-rendering: optimizeLegibility;
+}
+
+/* Region header — 14 / 600 / -0.01em */
+.ph-region-header {
+  font: var(--w-600) var(--t-14)/var(--lh-tight) var(--font-sans);
+  letter-spacing: var(--tr-tight);
+  color: var(--fg-1);
+}
+
+/* Card title — 14 / 500 */
+.ph-card-title {
+  font: var(--w-500) var(--t-14)/var(--lh-tight) var(--font-sans);
+  color: var(--fg-1);
+}
+
+/* Card body — 13 / 400 / secondary / 1.45 */
+.ph-card-body {
+  font: var(--w-400) var(--t-13)/var(--lh-body) var(--font-sans);
+  color: var(--fg-2);
+}
+
+/* Meta — 12 / 400 / aux / tabular */
+.ph-meta {
+  font: var(--w-400) var(--t-12)/var(--lh-tight) var(--font-sans);
+  color: var(--aux);
+  font-variant-numeric: tabular-nums;
+  font-feature-settings: "tnum";
+}
+
+/* Hotkey badge — 12 / 500 / mono */
+.ph-hotkey {
+  font: var(--w-500) var(--t-12)/1 var(--font-mono);
+  color: var(--fg-2);
+  padding: 2px 5px;
+  border: var(--hairline) solid var(--border-1);
+  border-radius: var(--r-2);
+  background: var(--surface-2);
+  white-space: nowrap;
+}
+
+/* Empty state — 13 / 400 / tertiary / centered */
+.ph-empty {
+  font: var(--w-400) var(--t-13)/var(--lh-body) var(--font-sans);
+  color: var(--fg-3);
+  text-align: center;
+}
+
+/* Code / path — 13 / 400 / mono */
+.ph-code {
+  font: var(--w-400) var(--t-13)/var(--lh-tight) var(--font-mono);
+  color: var(--fg-2);
+}
+
+/* =============================================================
+   6. RESETS / PRIMITIVES
+   ============================================================= */
+* { box-sizing: border-box; }
+
+button, input, select, textarea { font: inherit; color: inherit; }
+
+::selection { background: var(--protocol-16); }

@@ -1,0 +1,36 @@
+<!doctype html>
+<html lang="en" class="dark">
+<head><meta charset="utf-8"><link rel="stylesheet" href="_card.css">
+<style>
+  .row { display: flex; gap: 12px; flex-wrap: wrap; align-items: center; }
+  .pill {
+    display: inline-flex; align-items: center; gap: 6px;
+    height: 22px; padding: 0 8px;
+    border-radius: 3px;
+    border: 1px solid var(--border-1);
+    background: var(--surface-1);
+    font: 500 12px/1 var(--font-sans);
+    color: var(--fg-2);
+  }
+  .pill .dot { width: 6px; height: 6px; border-radius: 50%; }
+  .pill.ok .dot   { background: var(--task); }
+  .pill.warn .dot { background: #C8941F; }
+  .pill.err .dot  { background: #C2433D; }
+  .pill.idle .dot { background: var(--fg-4); }
+  .pill.proto .dot{ background: var(--protocol); }
+  .mono { font-family: var(--font-mono); }
+</style>
+</head>
+<body>
+<div class="card">
+  <div class="row">
+    <span class="pill ok"><span class="dot"></span>connected</span>
+    <span class="pill proto"><span class="dot"></span>phase: planning</span>
+    <span class="pill warn"><span class="dot"></span>rate-limited</span>
+    <span class="pill err"><span class="dot"></span>disconnected</span>
+    <span class="pill idle"><span class="dot"></span>idle</span>
+    <span class="pill"><span class="mono">claude-haiku-4.5</span></span>
+    <span class="pill mono">tokens 12,481</span>
+  </div>
+</div>
+</body></html>

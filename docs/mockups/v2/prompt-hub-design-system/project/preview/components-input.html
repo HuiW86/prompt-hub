@@ -1,0 +1,49 @@
+<!doctype html>
+<html lang="en" class="dark">
+<head><meta charset="utf-8"><link rel="stylesheet" href="_card.css">
+<style>
+  .stack { display: flex; flex-direction: column; gap: 10px; }
+  .field {
+    display: flex; align-items: center; gap: 8px;
+    height: 30px; padding: 0 10px;
+    border: 1px solid var(--border-1);
+    background: var(--surface-1);
+    border-radius: 4px;
+    color: var(--fg-1);
+  }
+  .field.hover { border-color: var(--border-2); }
+  .field.focused { outline: 2px solid var(--protocol); outline-offset: 0; border-color: var(--protocol); }
+  .field input {
+    background: transparent; border: 0; outline: 0;
+    font: 400 13px/1 var(--font-sans);
+    color: var(--fg-1); width: 100%;
+  }
+  .field input::placeholder { color: var(--fg-3); }
+  .field svg { color: var(--fg-3); flex: 0 0 auto; }
+  .hk { font: 500 11px/1 var(--font-mono); color: var(--fg-2); padding: 2px 5px; border:1px solid var(--border-1); border-radius:3px; background: var(--surface-2); }
+  .state { font: 500 10px/1 var(--font-mono); color: var(--fg-3); width: 70px; }
+  .row { display: flex; align-items: center; gap: 10px; }
+</style>
+</head>
+<body>
+<div class="card">
+  <div class="stack">
+    <div class="row">
+      <span class="state">default</span>
+      <div class="field" style="flex:1;">
+        <img src="../assets/icons/search.svg" width="14" height="14" style="filter: invert(70%);">
+        <input placeholder="Find macros, scenes, files…">
+        <span class="hk">⌘K</span>
+      </div>
+    </div>
+    <div class="row">
+      <span class="state">focused</span>
+      <div class="field focused" style="flex:1;">
+        <img src="../assets/icons/search.svg" width="14" height="14" style="filter: invert(70%);">
+        <input value="refactor selection" autofocus>
+        <span class="hk">⌘K</span>
+      </div>
+    </div>
+  </div>
+</div>
+</body></html>

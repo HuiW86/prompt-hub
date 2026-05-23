@@ -1,0 +1,46 @@
+<!doctype html>
+<html lang="en" class="dark">
+<head><meta charset="utf-8"><link rel="stylesheet" href="_card.css">
+<style>
+  .onto { display: grid; grid-template-columns: repeat(3, 1fr); gap: 20px; }
+  .onto .block { display: flex; gap: 14px; align-items: flex-start; }
+  .onto .swatch-lg {
+    width: 56px; height: 56px; border-radius: var(--r-3);
+    border: var(--hairline) solid var(--border-1); flex: 0 0 auto;
+  }
+  .onto .meta { display: flex; flex-direction: column; gap: 4px; }
+  .onto .layer { font: var(--w-600) 12px/1 var(--font-mono); color: var(--fg-3); text-transform: uppercase; letter-spacing: 0.08em; }
+  .onto .hex { font: var(--w-500) 13px/1 var(--font-mono); color: var(--fg-1); }
+  .onto .use { font: var(--w-400) 12px/1.4 var(--font-sans); color: var(--fg-2); max-width: 160px; }
+</style>
+</head>
+<body>
+<div class="card">
+  <div class="onto">
+    <div class="block">
+      <div class="swatch-lg" style="background:#534AB7;"></div>
+      <div class="meta">
+        <div class="layer">protocol</div>
+        <div class="hex">#534AB7</div>
+        <div class="use">PhaseBar · AlignmentPhrase · Modifier</div>
+      </div>
+    </div>
+    <div class="block">
+      <div class="swatch-lg" style="background:#178561;"></div>
+      <div class="meta">
+        <div class="layer">task</div>
+        <div class="hex">#178561</div>
+        <div class="use">MacroGrid · SceneList</div>
+      </div>
+    </div>
+    <div class="block">
+      <div class="swatch-lg" style="background:#888780;"></div>
+      <div class="meta">
+        <div class="layer">aux</div>
+        <div class="hex">#888780</div>
+        <div class="use">counts · timestamps · meta</div>
+      </div>
+    </div>
+  </div>
+</div>
+</body></html>

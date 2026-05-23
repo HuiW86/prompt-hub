@@ -157,6 +157,8 @@ Windows: %APPDATA%\dev.prompt-hub\
 | **构建** | Vite | 7.x | D1 自动锁定（create-tauri-app 模板基线）|
 | **样式** | CSS Modules + CSS variables | Vite 内置 | [[009-choose-styling]] |
 | **class 拼接** | clsx | 2.x | 变体合并 |
+| **图标库** | lucide-react | 0.460.0 | ADR-012 派生（stroke 1.5，[[CLAUDE-DESIGN]]）|
+| **字体** | Geist Sans + Geist Mono（variable woff2） | — | ADR-012 派生，自托管于 `src/assets/fonts/` |
 | **前端测试** | Vitest + Testing Library + jsdom | 4 / latest / 29 | [[007-choose-test-stack]] |
 | **Rust 测试** | cargo test + tempfile | 内置 / 3.x | [[007-choose-test-stack]] |
 | **E2E** | Playwright | 推到 v1.0+ 评估 | [[007-choose-test-stack#5]] |

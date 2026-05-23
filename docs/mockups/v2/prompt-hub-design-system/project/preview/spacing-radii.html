@@ -1,0 +1,27 @@
+<!doctype html>
+<html lang="en" class="dark">
+<head><meta charset="utf-8"><link rel="stylesheet" href="_card.css">
+<style>
+  .rs { display: flex; align-items: flex-end; gap: 22px; }
+  .rs .col { display: flex; flex-direction: column; align-items: center; gap: 8px; }
+  .rs .box {
+    width: 48px; height: 48px;
+    border: var(--hairline) solid var(--border-2);
+    background: var(--surface-1);
+  }
+  .rs .lbl { font: 500 11px/1 var(--font-mono); color: var(--fg-3); }
+  .rs .use { font: 400 10px/1.2 var(--font-sans); color: var(--fg-3); text-align: center; max-width: 70px; }
+</style>
+</head>
+<body>
+<div class="card">
+  <div class="rs">
+    <div class="col"><div class="box" style="border-radius:2px;"></div><div class="lbl">r-1 · 2</div><div class="use">tags</div></div>
+    <div class="col"><div class="box" style="border-radius:3px;"></div><div class="lbl">r-2 · 3</div><div class="use">chips, hotkey</div></div>
+    <div class="col"><div class="box" style="border-radius:4px;"></div><div class="lbl">r-3 · 4</div><div class="use">default</div></div>
+    <div class="col"><div class="box" style="border-radius:6px;"></div><div class="lbl">r-4 · 6</div><div class="use">outer card max</div></div>
+    <div class="col"><div class="box" style="border-radius:8px;"></div><div class="lbl">r-frame · 8</div><div class="use">overlay frame only</div></div>
+  </div>
+  <div style="font: 400 12px/1.4 var(--font-sans); color: var(--fg-3);">Hard cap: 6px on functional surfaces. 8px is reserved for the outermost overlay edge.</div>
+</div>
+</body></html>

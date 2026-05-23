@@ -1,0 +1,33 @@
+<!doctype html>
+<html lang="en" class="dark">
+<head><meta charset="utf-8"><link rel="stylesheet" href="_card.css">
+<style>
+  .grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 10px; }
+  .mc {
+    background: var(--surface-1);
+    border: 1px solid var(--border-1);
+    border-radius: 4px;
+    padding: 10px 12px;
+    display: flex; flex-direction: column; gap: 6px;
+    min-height: 78px;
+    position: relative;
+  }
+  .mc .title { font: 500 13px/1.2 var(--font-sans); color: var(--fg-1); }
+  .mc .meta { font: 400 11px/1 var(--font-sans); color: var(--aux); font-variant-numeric: tabular-nums; }
+  .mc.hover { border-color: var(--border-2); }
+  .mc.active { background: var(--task-8); }
+  .mc.focused { outline: 2px solid var(--task); outline-offset: 0; border-color: var(--task); }
+  .mc.disabled { opacity: 0.4; }
+  .state { position: absolute; top: 6px; right: 8px; font: 500 10px/1 var(--font-mono); color: var(--fg-3); text-transform: lowercase; }
+</style>
+</head>
+<body>
+<div class="card">
+  <div class="grid">
+    <div class="mc"><div class="state">default</div><div class="title">Refactor selection</div><div class="meta">⌘1 · 14 uses</div></div>
+    <div class="mc hover"><div class="state">hover</div><div class="title">Refactor selection</div><div class="meta">⌘1 · 14 uses</div></div>
+    <div class="mc active"><div class="state">active</div><div class="title">Refactor selection</div><div class="meta">⌘1 · 14 uses</div></div>
+    <div class="mc focused"><div class="state">focused</div><div class="title">Refactor selection</div><div class="meta">⌘1 · 14 uses</div></div>
+  </div>
+</div>
+</body></html>

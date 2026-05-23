@@ -1,0 +1,32 @@
+<!doctype html>
+<html lang="en" class="dark">
+<head><meta charset="utf-8"><link rel="stylesheet" href="_card.css">
+<style>
+  .grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 10px; align-items: start; }
+  .col { display: flex; flex-direction: column; gap: 6px; align-items: flex-start; }
+  .chip {
+    display: inline-flex; align-items: center; gap: 6px;
+    height: 24px; padding: 0 9px;
+    border-radius: 3px;
+    border: 1px solid var(--border-1);
+    background: var(--surface-1);
+    color: var(--fg-1);
+    font: 500 12px/1 var(--font-sans);
+  }
+  .chip .dot { width:6px; height:6px; border-radius: 50%; background: var(--protocol); }
+  .chip.hover { border-color: var(--border-2); }
+  .chip.active { background: var(--protocol-8); border-color: var(--protocol); color: var(--fg-1); }
+  .chip.focused { outline: 2px solid var(--protocol); outline-offset: 0; }
+  .state { font: 500 10px/1 var(--font-mono); color: var(--fg-3); }
+</style>
+</head>
+<body>
+<div class="card">
+  <div class="grid">
+    <div class="col"><span class="state">default</span><span class="chip"><span class="dot"></span>tight-loop</span></div>
+    <div class="col"><span class="state">hover</span><span class="chip hover"><span class="dot"></span>tight-loop</span></div>
+    <div class="col"><span class="state">active</span><span class="chip active"><span class="dot"></span>tight-loop</span></div>
+    <div class="col"><span class="state">focused</span><span class="chip focused"><span class="dot"></span>tight-loop</span></div>
+  </div>
+</div>
+</body></html>

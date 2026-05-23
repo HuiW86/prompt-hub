@@ -1,0 +1,37 @@
+<!doctype html>
+<html lang="en" class="dark">
+<head><meta charset="utf-8"><link rel="stylesheet" href="_card.css">
+<style>
+  .row { display: flex; gap: 10px; flex-wrap: wrap; align-items: center; }
+  button {
+    appearance: none; border: 1px solid var(--border-1); background: var(--surface-1);
+    color: var(--fg-1); padding: 0 12px; height: 28px;
+    border-radius: 4px;
+    font: 500 13px/1 var(--font-sans);
+    cursor: pointer;
+    display: inline-flex; align-items: center; gap: 6px;
+    transition: border-color var(--d-fast) var(--ease), background-color var(--d-fast) var(--ease);
+  }
+  button:hover { border-color: var(--border-2); }
+  button.primary { background: var(--task); border-color: var(--task); color: #fff; }
+  button.primary:hover { background: #149b6e; border-color: #149b6e; }
+  button.protocol { background: var(--protocol); border-color: var(--protocol); color: #fff; }
+  button.protocol:hover { background: #5d54ca; border-color: #5d54ca; }
+  button.ghost { background: transparent; }
+  button[disabled] { opacity: 0.4; cursor: not-allowed; }
+  .label-sm { width: 100%; margin-bottom: -4px; }
+</style>
+</head>
+<body>
+<div class="card">
+  <div class="row"><div class="label-sm">primary · task</div></div>
+  <div class="row">
+    <button class="primary">Run macro</button>
+    <button class="primary">+ New scene</button>
+    <button class="protocol">Set phase</button>
+    <button>Cancel</button>
+    <button class="ghost">More</button>
+    <button disabled>Disabled</button>
+  </div>
+</div>
+</body></html>

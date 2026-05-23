@@ -1,0 +1,43 @@
+<!doctype html>
+<html lang="en" class="dark">
+<head><meta charset="utf-8"><link rel="stylesheet" href="_card.css">
+<style>
+  .stack { display: flex; flex-direction: column; gap: 12px; }
+  .row { display: flex; align-items: center; gap: 14px; }
+  .name { font: 500 12px/1 var(--font-mono); color: var(--fg-2); width: 80px; }
+  .val { font: 400 11px/1 var(--font-mono); color: var(--fg-3); width: 70px; }
+  .track {
+    flex: 1; height: 6px;
+    background: var(--surface-1);
+    border: var(--hairline) solid var(--border-1);
+    overflow: hidden;
+    position: relative;
+  }
+  .fill {
+    position: absolute; top: 0; left: 0; height: 100%; width: 0;
+    background: var(--task);
+    animation: sweep var(--dur) var(--ease) infinite;
+  }
+  @keyframes sweep { 0%{width:0;} 50%{width:100%;} 100%{width:0;} }
+  .note { font: 400 12px/1.4 var(--font-sans); color: var(--fg-3); }
+</style>
+</head>
+<body>
+<div class="card">
+  <div class="stack">
+    <div class="row">
+      <span class="name">d-fast</span><span class="val">120ms</span>
+      <div class="track"><div class="fill" style="--dur:1.6s; --ease:cubic-bezier(0.2,0,0,1);"></div></div>
+    </div>
+    <div class="row">
+      <span class="name">d-base</span><span class="val">160ms</span>
+      <div class="track"><div class="fill" style="--dur:1.8s; --ease:cubic-bezier(0.2,0,0,1);"></div></div>
+    </div>
+    <div class="row">
+      <span class="name">d-slow</span><span class="val">200ms</span>
+      <div class="track"><div class="fill" style="--dur:2.0s; --ease:cubic-bezier(0.2,0,0,1);"></div></div>
+    </div>
+    <div class="note">Easing <span style="font-family:var(--font-mono);color:var(--fg-2);">cubic-bezier(0.2, 0, 0, 1)</span>. Hard cap: 200ms. No bounce, no spring.</div>
+  </div>
+</div>
+</body></html>

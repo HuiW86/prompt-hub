@@ -1,0 +1,29 @@
+<!doctype html>
+<html lang="en" class="dark">
+<head><meta charset="utf-8"><link rel="stylesheet" href="_card.css">
+<style>
+  .fam { display: grid; grid-template-columns: 1fr 1fr; gap: 24px; align-items: start; }
+  .fam .col { display: flex; flex-direction: column; gap: 8px; }
+  .fam .lbl { font: var(--w-500) 11px/1 var(--font-mono); color: var(--fg-3); text-transform: uppercase; letter-spacing: 0.06em; }
+  .fam .smp { font-size: 28px; line-height: 1.1; letter-spacing: -0.01em; color: var(--fg-1); }
+  .fam .smp2 { font-size: 13px; line-height: 1.4; color: var(--fg-2); }
+  .geist-sans { font-family: var(--font-sans); }
+  .geist-mono { font-family: var(--font-mono); }
+</style>
+</head>
+<body>
+<div class="card">
+  <div class="fam">
+    <div class="col">
+      <div class="lbl">Geist Sans · UI</div>
+      <div class="smp geist-sans">Aa Gg 1234</div>
+      <div class="smp2 geist-sans">No active scenes. Press ⌘N to create.</div>
+    </div>
+    <div class="col">
+      <div class="lbl">Geist Mono · paths / hotkeys</div>
+      <div class="smp geist-mono">Aa Gg 1234</div>
+      <div class="smp2 geist-mono">~/repo/src/composer.tsx:42</div>
+    </div>
+  </div>
+</div>
+</body></html>

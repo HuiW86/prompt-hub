@@ -1,0 +1,47 @@
+/* shared frame for design-system cards */
+@import url("../colors_and_type.css");
+
+html, body {
+  margin: 0;
+  padding: 0;
+  background: var(--canvas);
+  color: var(--fg-1);
+  font-family: var(--font-sans);
+}
+.card {
+  padding: 20px 24px;
+  min-height: 110px;
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+.card .row { display: flex; align-items: center; gap: 12px; flex-wrap: wrap; }
+.card .col { display: flex; flex-direction: column; gap: 8px; }
+.swatch {
+  display: inline-flex;
+  flex-direction: column;
+  gap: 6px;
+}
+.swatch .chip {
+  width: 56px;
+  height: 40px;
+  border-radius: var(--r-3);
+  border: var(--hairline) solid var(--border-1);
+}
+.swatch .name { font-size: 11px; color: var(--fg-2); font-family: var(--font-mono); }
+.swatch .hex  { font-size: 11px; color: var(--fg-3); font-family: var(--font-mono); }
+.kbd { /* alias */
+  font: var(--w-500) 12px/1 var(--font-mono);
+  color: var(--fg-2);
+  padding: 3px 6px;
+  border: var(--hairline) solid var(--border-1);
+  border-radius: var(--r-2);
+  background: var(--surface-2);
+}
+.label-sm {
+  font-family: var(--font-mono);
+  font-size: 10px;
+  color: var(--fg-3);
+  text-transform: lowercase;
+  letter-spacing: 0.04em;
+}

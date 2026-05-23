@@ -1,0 +1,55 @@
+<!doctype html>
+<html lang="en" class="dark">
+<head><meta charset="utf-8"><link rel="stylesheet" href="_card.css">
+<style>
+  .wrap { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 12px; align-items: stretch; }
+  .layer {
+    border: 1px solid var(--border-1);
+    border-radius: 4px;
+    padding: 12px;
+    display: flex; flex-direction: column; gap: 8px;
+    background: var(--surface-1);
+    position: relative;
+  }
+  .layer .tag {
+    font: 500 10px/1 var(--font-mono);
+    color: var(--fg-3);
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+  }
+  .layer .name {
+    display: flex; align-items: center; gap: 8px;
+    font: 600 13px/1 var(--font-sans);
+    letter-spacing: -0.01em;
+  }
+  .layer .name .swatch { width: 10px; height: 10px; border-radius: 2px; }
+  .layer .uses {
+    font: 400 12px/1.45 var(--font-sans);
+    color: var(--fg-2);
+  }
+  .layer.p { border-top: 2px solid var(--protocol); }
+  .layer.t { border-top: 2px solid var(--task); }
+  .layer.a { border-top: 2px solid var(--aux); }
+</style>
+</head>
+<body>
+<div class="card">
+  <div class="wrap">
+    <div class="layer p">
+      <div class="tag">layer · protocol</div>
+      <div class="name"><span class="swatch" style="background:#534AB7;"></span>#534AB7</div>
+      <div class="uses">Modifier · AlignmentPhrase · PhaseBar</div>
+    </div>
+    <div class="layer t">
+      <div class="tag">layer · task</div>
+      <div class="name"><span class="swatch" style="background:#178561;"></span>#178561</div>
+      <div class="uses">Composition · Macro · Scene</div>
+    </div>
+    <div class="layer a">
+      <div class="tag">layer · aux</div>
+      <div class="name"><span class="swatch" style="background:#888780;"></span>#888780</div>
+      <div class="uses">Counts · timestamps · paths · meta</div>
+    </div>
+  </div>
+</div>
+</body></html>

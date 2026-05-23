@@ -1,0 +1,44 @@
+<!doctype html>
+<html lang="en" class="dark">
+<head><meta charset="utf-8"><link rel="stylesheet" href="_card.css">
+<style>
+  .lock {
+    display: flex; align-items: center; gap: 14px;
+  }
+  .mark {
+    display: inline-flex; align-items: center; gap: 0;
+    border: 1px solid var(--border-2);
+    border-radius: 4px;
+    padding: 4px;
+    background: var(--surface-1);
+  }
+  .mark .sq { width: 14px; height: 14px; border-radius: 2px; }
+  .mark .sq.p { background: var(--protocol); }
+  .mark .sq.t { background: var(--task); margin-left: -4px; }
+  .word {
+    font: 600 22px/1 var(--font-sans);
+    letter-spacing: -0.02em;
+    color: var(--fg-1);
+  }
+  .word .dot {
+    color: var(--task);
+  }
+  .row2 { margin-top: 16px; display: flex; gap: 12px; align-items: center; }
+  .row2 .lbl { font: 500 11px/1 var(--font-mono); color: var(--fg-3); }
+  .mono { font-family: var(--font-mono); font-size: 14px; color: var(--fg-2); }
+</style>
+</head>
+<body>
+<div class="card">
+  <div class="lock">
+    <span class="mark"><span class="sq p"></span><span class="sq t"></span></span>
+    <span class="word">prompt<span class="dot">·</span>hub</span>
+  </div>
+  <div class="row2">
+    <span class="lbl">monogram</span>
+    <span class="mark"><span class="sq p"></span><span class="sq t"></span></span>
+    <span class="lbl" style="margin-left:18px;">mono lockup</span>
+    <span class="mono">prompt·hub</span>
+  </div>
+</div>
+</body></html>
