@@ -158,8 +158,8 @@ AI 不得擅自起草人主笔文档（spec / constitution），可起草共创 
 
 ## §7 当前状态指针
 
-- 项目阶段：**M0 技术验证中**——Tauri 2.x + React 19.2 仓已建（scaffold 合并见 [[prompt-hub-mvp#M0]]）；M0-1 建仓 / M0-2 依赖实测 / T1 token 已交付，M0-3 唤起 spike 基础设施就绪待人工实测 P95，M0-4 签名 spike 因缺 Developer ID 证书推后
+- 项目阶段：**M0 技术验证完成（M0-4 除外）**——M0-1 建仓 / M0-2 依赖实测 / T1 token / M0-3 唤起 spike 全部交付；M0-3 实测数据（2026-05-23）：手动 ⌥Space P95=10.49ms（n=4 全链路）/ automated bench P95=0.04ms（n=40，仅 Rust show 调用），双双远低于 [[02-constitution#C1]] 200ms 死线；M0-4 签名 spike 仍待 Developer ID 证书
 - 文档体系：**13/13 全部落盘**，2026-05-20 迁移至 `docs/` 分层——11 篇核心设计文档 `docs/design/01-11-*.md`、实施方案 `docs/plans/`、决策记录 `docs/adr/`（详见 [[010-doc-directory-restructure]]，索引见 `docs/design/README.md`）
 - ADR 进度：**10/10 已落盘**——001/002/003/004/006/007/008/009 Accepted（2026-05-19）、010（文档目录重构）Accepted（2026-05-20）；005（prompt-combiner 复用）仍 Proposed，等 omar 提供仓库后调研
 - tech-stack 状态：**v1.1 ratified**（[[09-tech-stack]]）—— 全栈拍板：Tauri 2.x + React 19.2 + Zustand 5 + rusqlite 0.32 + pnpm 10.x + Vite 7.x + Vitest 4 + CSS Modules + macos-private-api
-- 下一动作：**完成 M0-3 唤起 spike 实测**——跑 `pnpm tauri dev`、按 ⌥Space ≥30 次，读终端 `[wake-spike]` 日志确认 P95 ≤ 200ms（[[02-constitution#C1]]）；通过后进第一阶段 MVP（[[prompt-hub-mvp#第一阶段]]）。M0-4 签名 spike 待 Developer ID 证书后补；ADR-005 仍待 omar 提供 prompt-combiner 仓库；见 [[HANDOFF#Next-Actions]]
+- 下一动作：**进第一阶段 MVP**（[[prompt-hub-mvp#第一阶段]]）——主形态仪表盘的搜索区 / 相位带 / Macro 快捷区 / Scene 全景 / 最近使用 + 复制计数。同步顺带处理：审查中低优先级项（lib.rs bench 剥离 + unregister_all、窗口配置补全、scaffold 残留清理）、CLAUDE.md §2 同步（ESLint 9→10 / test:watch / bench:* 推后说明）、CSP dev 实测中观察到的 Tauri HMR 干净退出现象；M0-4 签名 spike 待 Developer ID 证书；ADR-005 待 omar 提供 prompt-combiner 仓库；详见 [[HANDOFF#Next-Actions]]

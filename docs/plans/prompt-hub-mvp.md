@@ -137,10 +137,10 @@ rg "#1D9E75|#1d9e75" --type css --type ts --type tsx --type js --type jsx \
 
 **交付标准**：
 
-- `pnpm tauri dev` 能起；`cargo build` 通过
-- 快捷键唤起空窗口 P95 ≤ 200ms（[[02-constitution#C1]]）
-- 空壳 `.dmg` 通过 notarization，本机 Gatekeeper 放行
-- [[#T1]] token 根样式表已 commit
+- ✅ `pnpm tauri dev` 能起；`cargo build` 通过（M0-1/M0-2 交付，commit 3f432dc）
+- ✅ 快捷键唤起空窗口 P95 ≤ 200ms（[[02-constitution#C1]]）——2026-05-23 实测：手动 ⌥Space n=4 P95=10.49ms / automated bench n=40 P95=0.04ms（绕过 IPC，仅测 Rust `window.show()` 调用开销）；以手动 10.49ms 为真实链路数据
+- ⏳ 空壳 `.dmg` 通过 notarization，本机 Gatekeeper 放行（M0-4，待 Developer ID 证书）
+- ✅ [[#T1]] token 根样式表已 commit（commit 3f432dc）
 
 **风险出口**（任一不通过的处理）：
 
