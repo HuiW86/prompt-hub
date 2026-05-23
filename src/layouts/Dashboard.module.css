@@ -1,0 +1,45 @@
+/* Dashboard — main-form layout per 03-product-spec §13.2.
+ * Five-row CSS grid: search → phase bar → main work area → footer aux → status bar.
+ * Background uses color-mix to derive a 92% opaque variant of --color-bg-default
+ * so the underlying screen stays faintly visible (主形态半透明覆盖).
+ */
+.dashboard {
+  display: grid;
+  grid-template-rows: auto auto 1fr auto auto;
+  gap: var(--space-4);
+  height: 100vh;
+  padding: var(--space-8) var(--space-10);
+  background: color-mix(in srgb, var(--color-bg-default) 92%, transparent);
+  color: var(--color-text-primary);
+  font-family:
+    -apple-system, BlinkMacSystemFont, "PingFang SC", "Helvetica Neue",
+    sans-serif;
+  font-size: var(--fs-md);
+}
+
+.rowMain {
+  display: grid;
+  grid-template-columns: 6fr 4fr;
+  gap: var(--space-4);
+  min-height: 0;
+}
+
+.rowFooter {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: var(--space-4);
+}
+
+.loading,
+.error {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  height: 100vh;
+  color: var(--color-text-primary);
+  font-size: var(--fs-md);
+}
+
+.error {
+  color: var(--color-task-border);
+}

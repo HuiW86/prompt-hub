@@ -1,0 +1,29 @@
+/* Floating "已复制" indicator anchored top-right of the dashboard.
+ * Visible window is bounded by toastStore.VISIBLE_MS; CSS animates fade-in only.
+ */
+.toast {
+  position: fixed;
+  top: var(--space-6);
+  right: var(--space-8);
+  z-index: 100;
+  padding: var(--space-2) var(--space-4);
+  background: var(--color-task-bg);
+  border: var(--border-thin) solid var(--color-task-border);
+  border-radius: var(--space-2);
+  color: var(--color-text-primary);
+  font-size: var(--fs-sm);
+  font-weight: 600;
+  animation: fadeIn var(--duration-fast) var(--ease-out);
+  pointer-events: none;
+}
+
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+    transform: translateY(calc(-1 * var(--space-2)));
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}

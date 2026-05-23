@@ -1,14 +1,29 @@
-import "./App.css";
+import { useEffect } from "react";
 
-// M0-3 spike placeholder — a blank transparent window. Real UI lands in phase 1.
+import "./App.css";
+import { ipc } from "./ipc";
+import { Dashboard } from "./layouts/Dashboard";
+import { usePromptStore } from "./stores/promptStore";
+
 function App() {
-  return (
-    <main className="spike-root">
-      <p className="spike-hint">
-        prompt-hub · M0 wake spike — ⌥Space toggles this window
-      </p>
-    </main>
-  );
+  const refreshAll = usePromptStore((s) => s.refreshAll);
+
+  useEffect(() => {
+    void refreshAll();
+  }, [refreshAll]);
+
+  useEffect(() => {
+    function onKey(e: KeyboardEvent) {
+      if (e.key !== "Escape") return;
+      // Search field swallows ESC first (clears query) — handled in SearchBar
+      // via stopPropagation. Bubble reaching here means no field consumed it.
+      void ipc.hideWindow();
+    }
+    document.addEventListener("keydown", onKey);
+    return () => document.removeEventListener("keydown", onKey);
+  }, []);
+
+  return <Dashboard />;
 }
 
 export default App;

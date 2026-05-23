@@ -1,0 +1,68 @@
+/* RecentList — 5 most recent copies per 03-product-spec §13.3 区域 5. */
+.recentList {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+  padding: var(--space-4);
+  background: var(--color-aux-bg);
+  border: var(--border-thin) solid var(--color-aux-border);
+  border-radius: var(--space-2);
+}
+
+.heading {
+  font-size: var(--fs-sm);
+  font-weight: 600;
+  color: var(--color-text-primary);
+}
+
+.list {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-1);
+}
+
+.item {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-3);
+  padding: var(--space-2) var(--space-3);
+  background: var(--color-bg-default);
+  border: var(--border-thin) solid var(--color-aux-border);
+  border-radius: var(--space-2);
+  color: inherit;
+  text-align: left;
+  font: inherit;
+  cursor: pointer;
+  transition: background var(--duration-instant) var(--ease-out);
+}
+
+.item:hover {
+  background: var(--color-aux-bg);
+}
+
+.item:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.itemName {
+  flex: 1;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  font-size: var(--fs-sm);
+  color: var(--color-text-primary);
+}
+
+.itemTime {
+  font-size: var(--fs-xs);
+  color: var(--color-aux-border);
+}
+
+.empty {
+  padding: var(--space-4);
+  text-align: center;
+  font-size: var(--fs-xs);
+  color: var(--color-aux-border);
+}

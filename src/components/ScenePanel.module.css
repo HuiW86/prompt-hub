@@ -1,0 +1,123 @@
+/* ScenePanel — Scene tabs + expanded phrase list per 03-product-spec §13.3 区域 4. */
+.scenePanel {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3);
+  min-height: 0;
+  padding: var(--space-4);
+  background: var(--color-task-bg);
+  border: var(--border-thin) solid var(--color-task-border);
+  border-radius: var(--space-2);
+  overflow: hidden;
+}
+
+.heading {
+  font-size: var(--fs-base);
+  font-weight: 600;
+  color: var(--color-text-primary);
+}
+
+.tabs {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-2);
+}
+
+.tab {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-1);
+  min-height: var(--space-6);
+  padding: 0 var(--space-3);
+  background: var(--color-bg-default);
+  border: var(--border-thin) solid var(--color-aux-border);
+  border-radius: var(--space-6);
+  color: var(--color-text-primary);
+  font-size: var(--fs-sm);
+  cursor: pointer;
+}
+
+.tab.active {
+  background: var(--color-protocol-bg);
+  border-color: var(--color-protocol-border);
+  color: var(--color-protocol-border);
+  font-weight: 600;
+}
+
+.icon {
+  font-size: var(--fs-sm);
+}
+
+.phrases {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+  min-height: 0;
+  overflow-y: auto;
+}
+
+.subStage {
+  margin-top: var(--space-2);
+  font-size: var(--fs-xs);
+  color: var(--color-aux-border);
+  text-transform: uppercase;
+}
+
+.phrase {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-1);
+  padding: var(--space-2) var(--space-3);
+  background: var(--color-bg-default);
+  border: var(--border-thin) solid var(--color-task-border);
+  border-radius: var(--space-2);
+  color: inherit;
+  text-align: left;
+  font: inherit;
+  cursor: pointer;
+  transition: background var(--duration-instant) var(--ease-out);
+}
+
+.phrase:hover {
+  background: var(--color-task-bg);
+}
+
+.phraseFlash {
+  animation: phraseCopyFlash var(--duration-fast) var(--ease-out);
+}
+
+@keyframes phraseCopyFlash {
+  0% {
+    background: var(--color-task-bg);
+  }
+  50% {
+    background: var(--color-task-border);
+    color: var(--color-bg-default);
+  }
+  100% {
+    background: var(--color-bg-default);
+  }
+}
+
+.phraseTitle {
+  font-size: var(--fs-sm);
+  font-weight: 600;
+  color: var(--color-text-primary);
+}
+
+.phraseContent {
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+  font-size: var(--fs-xs);
+  color: var(--color-text-primary);
+  line-height: 1.4;
+}
+
+.empty {
+  padding: var(--space-6);
+  text-align: center;
+  font-size: var(--fs-sm);
+  color: var(--color-aux-border);
+}

@@ -1,0 +1,521 @@
+use chrono::{DateTime, Utc};
+use rusqlite::{params, Connection, Row};
+use uuid::Uuid;
+
+use crate::error::{AppError, AppResult};
+use crate::models::{
+    AlignmentPhrase, Macro, Phase, Phrase, RecentUsageEntry, RecordUsageInput, Scene,
+    SceneWithChildren, SubStage, UsageRecord, UsageSource, UsageTargetType,
+};
+
+fn parse_ts(s: String) -> AppResult<DateTime<Utc>> {
+    DateTime::parse_from_rfc3339(&s)
+        .map(|d| d.with_timezone(&Utc))
+        .map_err(|e| AppError::Other(format!("invalid timestamp `{s}`: {e}")))
+}
+
+fn parse_ts_opt(s: Option<String>) -> AppResult<Option<DateTime<Utc>>> {
+    s.map(parse_ts).transpose()
+}
+
+fn phase_from_row(row: &Row<'_>) -> rusqlite::Result<Phase> {
+    Ok(Phase {
+        id: row.get("id")?,
+        name: row.get("name")?,
+        order_index: row.get("order_index")?,
+        color: row.get("color")?,
+        description: row.get("description")?,
+        visible: row.get::<_, i64>("visible")? != 0,
+        default_alignment_phrase_id: row.get("default_alignment_phrase_id")?,
+    })
+}
+
+pub fn list_phases(conn: &Connection) -> AppResult<Vec<Phase>> {
+    let mut stmt = conn.prepare(
+        "SELECT id, name, order_index, color, description, visible, default_alignment_phrase_id
+         FROM phases
+         WHERE visible = 1
+         ORDER BY order_index ASC",
+    )?;
+    let rows = stmt.query_map([], phase_from_row)?;
+    Ok(rows.collect::<rusqlite::Result<Vec<_>>>()?)
+}
+
+pub fn list_alignment_phrases(conn: &Connection) -> AppResult<Vec<AlignmentPhrase>> {
+    let mut stmt = conn.prepare(
+        "SELECT id, phase_id, name, content, is_default, usage_count, last_used_at,
+                created_at, notes, deprecated
+         FROM alignment_phrases
+         WHERE deprecated = 0
+         ORDER BY phase_id ASC, is_default DESC, usage_count DESC, created_at ASC",
+    )?;
+    let raw = stmt.query_map([], |row| {
+        Ok((
+            AlignmentPhrase {
+                id: row.get("id")?,
+                phase_id: row.get("phase_id")?,
+                name: row.get("name")?,
+                content: row.get("content")?,
+                is_default: row.get::<_, i64>("is_default")? != 0,
+                usage_count: row.get("usage_count")?,
+                last_used_at: None,
+                created_at: Utc::now(),
+                notes: row.get("notes")?,
+                deprecated: row.get::<_, i64>("deprecated")? != 0,
+            },
+            row.get::<_, Option<String>>("last_used_at")?,
+            row.get::<_, String>("created_at")?,
+        ))
+    })?;
+    let mut out = Vec::new();
+    for r in raw {
+        let (mut ap, last, created) = r?;
+        ap.last_used_at = parse_ts_opt(last)?;
+        ap.created_at = parse_ts(created)?;
+        out.push(ap);
+    }
+    Ok(out)
+}
+
+pub fn list_macros(conn: &Connection) -> AppResult<Vec<Macro>> {
+    let mut stmt = conn.prepare(
+        "SELECT id, name, content, expand_from, native, role, task, usage_count,
+                last_used_at, created_at, notes, scene_id, deprecated
+         FROM macros
+         WHERE deprecated = 0
+         ORDER BY usage_count DESC, created_at ASC",
+    )?;
+    let raw = stmt.query_map([], |row| {
+        let expand_from_json: Option<String> = row.get("expand_from")?;
+        Ok((
+            row.get::<_, String>("id")?,
+            row.get::<_, String>("name")?,
+            row.get::<_, String>("content")?,
+            expand_from_json,
+            row.get::<_, i64>("native")? != 0,
+            row.get::<_, Option<String>>("role")?,
+            row.get::<_, Option<String>>("task")?,
+            row.get::<_, i64>("usage_count")?,
+            row.get::<_, Option<String>>("last_used_at")?,
+            row.get::<_, String>("created_at")?,
+            row.get::<_, Option<String>>("notes")?,
+            row.get::<_, Option<String>>("scene_id")?,
+            row.get::<_, i64>("deprecated")? != 0,
+        ))
+    })?;
+    let mut out = Vec::new();
+    for r in raw {
+        let (
+            id,
+            name,
+            content,
+            expand_json,
+            native,
+            role,
+            task,
+            usage,
+            last,
+            created,
+            notes,
+            scene_id,
+            deprecated,
+        ) = r?;
+        let expand_from = match expand_json {
+            Some(j) => Some(serde_json::from_str::<Vec<String>>(&j)?),
+            None => None,
+        };
+        out.push(Macro {
+            id,
+            name,
+            content,
+            expand_from,
+            native,
+            role,
+            task,
+            usage_count: usage,
+            last_used_at: parse_ts_opt(last)?,
+            created_at: parse_ts(created)?,
+            notes,
+            scene_id,
+            deprecated,
+        });
+    }
+    Ok(out)
+}
+
+pub fn list_scenes_with_children(conn: &Connection) -> AppResult<Vec<SceneWithChildren>> {
+    let mut stmt = conn.prepare(
+        "SELECT id, name, icon, order_index, visible, role_presets, color
+         FROM scenes
+         WHERE visible = 1
+         ORDER BY order_index ASC",
+    )?;
+    let scenes_raw = stmt
+        .query_map([], |row| {
+            let role_presets_json: String = row.get("role_presets")?;
+            Ok((
+                Scene {
+                    id: row.get("id")?,
+                    name: row.get("name")?,
+                    icon: row.get("icon")?,
+                    order_index: row.get("order_index")?,
+                    visible: row.get::<_, i64>("visible")? != 0,
+                    role_presets: Vec::new(),
+                    color: row.get("color")?,
+                },
+                role_presets_json,
+            ))
+        })?
+        .collect::<rusqlite::Result<Vec<_>>>()?;
+
+    let mut out = Vec::with_capacity(scenes_raw.len());
+    for (mut scene, presets_json) in scenes_raw {
+        scene.role_presets = serde_json::from_str(&presets_json)?;
+        let sub_stages = list_sub_stages_by_scene(conn, &scene.id)?;
+        let phrases = list_phrases_by_scene(conn, &scene.id)?;
+        out.push(SceneWithChildren {
+            scene,
+            sub_stages,
+            phrases,
+        });
+    }
+    Ok(out)
+}
+
+fn list_sub_stages_by_scene(conn: &Connection, scene_id: &str) -> AppResult<Vec<SubStage>> {
+    let mut stmt = conn.prepare(
+        "SELECT id, scene_id, name, order_index
+         FROM sub_stages
+         WHERE scene_id = ?1
+         ORDER BY order_index ASC",
+    )?;
+    let rows = stmt.query_map(params![scene_id], |row| {
+        Ok(SubStage {
+            id: row.get("id")?,
+            scene_id: row.get("scene_id")?,
+            name: row.get("name")?,
+            order_index: row.get("order_index")?,
+        })
+    })?;
+    Ok(rows.collect::<rusqlite::Result<Vec<_>>>()?)
+}
+
+fn list_phrases_by_scene(conn: &Connection, scene_id: &str) -> AppResult<Vec<Phrase>> {
+    let mut stmt = conn.prepare(
+        "SELECT id, scene_id, name, content, usage_count, last_used_at, created_at,
+                notes, deprecated, sub_stage_id
+         FROM phrases
+         WHERE scene_id = ?1 AND deprecated = 0
+         ORDER BY usage_count DESC, created_at ASC",
+    )?;
+    let raw = stmt.query_map(params![scene_id], |row| {
+        Ok((
+            row.get::<_, String>("id")?,
+            row.get::<_, String>("scene_id")?,
+            row.get::<_, String>("name")?,
+            row.get::<_, String>("content")?,
+            row.get::<_, i64>("usage_count")?,
+            row.get::<_, Option<String>>("last_used_at")?,
+            row.get::<_, String>("created_at")?,
+            row.get::<_, Option<String>>("notes")?,
+            row.get::<_, i64>("deprecated")? != 0,
+            row.get::<_, Option<String>>("sub_stage_id")?,
+        ))
+    })?;
+    let mut out = Vec::new();
+    for r in raw {
+        let (
+            id,
+            scene_id,
+            name,
+            content,
+            usage_count,
+            last_used,
+            created,
+            notes,
+            deprecated,
+            sub_stage_id,
+        ) = r?;
+        out.push(Phrase {
+            id,
+            scene_id,
+            name,
+            content,
+            usage_count,
+            last_used_at: parse_ts_opt(last_used)?,
+            created_at: parse_ts(created)?,
+            notes,
+            deprecated,
+            sub_stage_id,
+        });
+    }
+    Ok(out)
+}
+
+pub fn record_usage(conn: &Connection, input: RecordUsageInput) -> AppResult<UsageRecord> {
+    let id = Uuid::new_v4().to_string();
+    let now = Utc::now();
+    let modifier_ids_json = input
+        .modifier_ids
+        .as_ref()
+        .map(serde_json::to_string)
+        .transpose()?;
+
+    let tx = conn.unchecked_transaction()?;
+    tx.execute(
+        "INSERT INTO usage_records
+            (id, timestamp, target_type, target_id, source, modifier_ids,
+             sop_id, sop_step_order, phase_id)
+         VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7, ?8, ?9)",
+        params![
+            id,
+            now.to_rfc3339(),
+            input.target_type.as_str(),
+            input.target_id,
+            input.source.as_str(),
+            modifier_ids_json,
+            input.sop_id,
+            input.sop_step_order,
+            input.phase_id,
+        ],
+    )?;
+
+    // Bump usage_count / last_used_at on the underlying asset so the dashboard
+    // can reflect heat without recomputing from usage_records on every render.
+    let now_str = now.to_rfc3339();
+    if let Some(target_id) = input.target_id.as_deref() {
+        let table = match input.target_type {
+            UsageTargetType::Macro => Some("macros"),
+            UsageTargetType::Phrase => Some("phrases"),
+            UsageTargetType::Alignment => Some("alignment_phrases"),
+            UsageTargetType::Modifier => Some("modifiers"),
+            UsageTargetType::Composition => None,
+        };
+        if let Some(table) = table {
+            tx.execute(
+                &format!(
+                    "UPDATE {table} SET usage_count = usage_count + 1, last_used_at = ?1 WHERE id = ?2"
+                ),
+                params![now_str, target_id],
+            )?;
+        }
+    }
+    tx.commit()?;
+
+    Ok(UsageRecord {
+        id,
+        timestamp: now,
+        target_type: input.target_type,
+        target_id: input.target_id,
+        source: input.source,
+        modifier_ids: input.modifier_ids,
+        sop_id: input.sop_id,
+        sop_step_order: input.sop_step_order,
+        phase_id: input.phase_id,
+    })
+}
+
+pub fn list_recent_usage(conn: &Connection, limit: i64) -> AppResult<Vec<RecentUsageEntry>> {
+    // LEFT JOIN each possible target table so a single query returns name/content
+    // alongside the usage row. SQLite COALESCE picks the right column per row.
+    let mut stmt = conn.prepare(
+        "SELECT
+            u.id, u.timestamp, u.target_type, u.target_id, u.source, u.modifier_ids,
+            u.sop_id, u.sop_step_order, u.phase_id,
+            COALESCE(m.name, p.name, a.name, mo.name) AS target_name,
+            COALESCE(m.content, p.content, a.content, mo.content) AS target_content
+         FROM usage_records u
+         LEFT JOIN macros m
+            ON u.target_type = 'macro' AND u.target_id = m.id
+         LEFT JOIN phrases p
+            ON u.target_type = 'phrase' AND u.target_id = p.id
+         LEFT JOIN alignment_phrases a
+            ON u.target_type = 'alignment' AND u.target_id = a.id
+         LEFT JOIN modifiers mo
+            ON u.target_type = 'modifier' AND u.target_id = mo.id
+         ORDER BY u.timestamp DESC
+         LIMIT ?1",
+    )?;
+    let raw = stmt.query_map(params![limit], |row| {
+        Ok((
+            row.get::<_, String>("id")?,
+            row.get::<_, String>("timestamp")?,
+            row.get::<_, String>("target_type")?,
+            row.get::<_, Option<String>>("target_id")?,
+            row.get::<_, String>("source")?,
+            row.get::<_, Option<String>>("modifier_ids")?,
+            row.get::<_, Option<String>>("sop_id")?,
+            row.get::<_, Option<i64>>("sop_step_order")?,
+            row.get::<_, Option<String>>("phase_id")?,
+            row.get::<_, Option<String>>("target_name")?,
+            row.get::<_, Option<String>>("target_content")?,
+        ))
+    })?;
+
+    let mut out = Vec::new();
+    for r in raw {
+        let (
+            id,
+            ts,
+            target_type_s,
+            target_id,
+            source_s,
+            modifier_ids_json,
+            sop_id,
+            sop_step_order,
+            phase_id,
+            target_name,
+            target_content,
+        ) = r?;
+        let target_type = UsageTargetType::from_str(&target_type_s)
+            .ok_or_else(|| AppError::Other(format!("unknown target_type: {target_type_s}")))?;
+        let source = match source_s.as_str() {
+            "macro_area" => UsageSource::MacroArea,
+            "scene" => UsageSource::Scene,
+            "recent" => UsageSource::Recent,
+            "sop" => UsageSource::Sop,
+            "composition" => UsageSource::Composition,
+            "phase_bar" => UsageSource::PhaseBar,
+            other => return Err(AppError::Other(format!("unknown source: {other}"))),
+        };
+        let modifier_ids = match modifier_ids_json {
+            Some(j) => Some(serde_json::from_str::<Vec<String>>(&j)?),
+            None => None,
+        };
+        out.push(RecentUsageEntry {
+            record: UsageRecord {
+                id,
+                timestamp: parse_ts(ts)?,
+                target_type,
+                target_id,
+                source,
+                modifier_ids,
+                sop_id,
+                sop_step_order,
+                phase_id,
+            },
+            target_name,
+            target_content,
+        });
+    }
+    Ok(out)
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use crate::db;
+
+    #[test]
+    fn seed_lists_eight_phases_in_order() {
+        let conn = db::open_in_memory().expect("open db");
+        let phases = list_phases(&conn).expect("list phases");
+        assert_eq!(phases.len(), 8);
+        let names: Vec<&str> = phases.iter().map(|p| p.name.as_str()).collect();
+        assert_eq!(
+            names,
+            vec!["发散", "理解", "规划", "生成", "执行", "收敛", "沉淀", "迭代"]
+        );
+        // Every phase must have a default AlignmentPhrase pointer.
+        for p in &phases {
+            assert!(
+                p.default_alignment_phrase_id.is_some(),
+                "{} has no default",
+                p.name
+            );
+        }
+    }
+
+    #[test]
+    fn seed_lists_eight_default_alignment_phrases() {
+        let conn = db::open_in_memory().expect("open db");
+        let aps = list_alignment_phrases(&conn).expect("list ap");
+        assert_eq!(aps.len(), 8);
+        assert!(aps.iter().all(|a| a.is_default));
+    }
+
+    #[test]
+    fn seed_lists_four_macros_active() {
+        let conn = db::open_in_memory().expect("open db");
+        let macros = list_macros(&conn).expect("list macros");
+        assert_eq!(macros.len(), 4);
+        assert!(macros.iter().all(|m| m.native));
+    }
+
+    #[test]
+    fn seed_lists_three_scenes_each_with_phrases() {
+        let conn = db::open_in_memory().expect("open db");
+        let scenes = list_scenes_with_children(&conn).expect("list scenes");
+        assert_eq!(scenes.len(), 3);
+        for s in &scenes {
+            assert!(
+                !s.phrases.is_empty(),
+                "scene {} has no phrases",
+                s.scene.name
+            );
+        }
+    }
+
+    #[test]
+    fn record_usage_bumps_macro_usage_count_and_returns_record() {
+        let conn = db::open_in_memory().expect("open db");
+        let before = list_macros(&conn).expect("before");
+        let target = &before[0];
+        let initial = target.usage_count;
+
+        let rec = record_usage(
+            &conn,
+            RecordUsageInput {
+                target_type: UsageTargetType::Macro,
+                target_id: Some(target.id.clone()),
+                source: UsageSource::MacroArea,
+                modifier_ids: None,
+                sop_id: None,
+                sop_step_order: None,
+                phase_id: None,
+            },
+        )
+        .expect("record");
+        assert_eq!(rec.target_type, UsageTargetType::Macro);
+        assert_eq!(rec.target_id.as_deref(), Some(target.id.as_str()));
+
+        let after = list_macros(&conn).expect("after");
+        let bumped = after
+            .iter()
+            .find(|m| m.id == target.id)
+            .expect("same macro");
+        assert_eq!(bumped.usage_count, initial + 1);
+        assert!(bumped.last_used_at.is_some());
+    }
+
+    #[test]
+    fn list_recent_usage_returns_descending_with_target_name() {
+        let conn = db::open_in_memory().expect("open db");
+        let macros = list_macros(&conn).expect("list");
+        // Record three usages on three different macros so timestamps differ.
+        for m in macros.iter().take(3) {
+            record_usage(
+                &conn,
+                RecordUsageInput {
+                    target_type: UsageTargetType::Macro,
+                    target_id: Some(m.id.clone()),
+                    source: UsageSource::MacroArea,
+                    modifier_ids: None,
+                    sop_id: None,
+                    sop_step_order: None,
+                    phase_id: None,
+                },
+            )
+            .expect("record");
+            std::thread::sleep(std::time::Duration::from_millis(2));
+        }
+        let recent = list_recent_usage(&conn, 5).expect("recent");
+        assert_eq!(recent.len(), 3);
+        // Timestamps strictly descending.
+        for w in recent.windows(2) {
+            assert!(w[0].record.timestamp >= w[1].record.timestamp);
+        }
+        // Every entry has the target name populated by the JOIN.
+        assert!(recent.iter().all(|e| e.target_name.is_some()));
+    }
+}

@@ -38,6 +38,13 @@
   --color-task-accent: var(--color-task-border);
   --color-aux-accent: var(--color-aux-border);
 
+  /* Border width — pragmatic addition during B3 component build.
+   * design-spec v0.6 §2.2 only covers spacing tokens; 1/2px border widths
+   * are CSS-conventional and unlikely to fit a 4px grid. Backfill into
+   * design-spec §2.2 when the next ratification round happens. */
+  --border-thin: 1px;
+  --border-thick: 2px;
+
   /* Motion — design-spec §3 */
   --duration-instant: 100ms;
   --duration-fast: 200ms;

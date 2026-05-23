@@ -1,0 +1,51 @@
+/* SearchBar — visually muted entry point per 03-product-spec §4.1 / §13.3 区域 1.
+ * Width ~60% centered; aux palette; right-side "兜底" tag flags it as fallback. */
+.searchBar {
+  display: flex;
+  justify-content: center;
+  width: 100%;
+}
+
+.field {
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+  width: 60%;
+  min-width: var(--space-20);
+  height: var(--space-10);
+  padding: 0 var(--space-4);
+  background: var(--color-aux-bg);
+  border: var(--border-thin) solid var(--color-aux-border);
+  border-radius: var(--space-2);
+}
+
+.field:focus-within {
+  border-color: var(--color-protocol-border);
+}
+
+.input {
+  flex: 1;
+  background: transparent;
+  border: none;
+  outline: none;
+  color: var(--color-text-primary);
+  font-size: var(--fs-md);
+  font-family: inherit;
+}
+
+.input::placeholder {
+  color: var(--color-aux-border);
+}
+
+.fallback {
+  font-size: var(--fs-xs);
+  color: var(--color-aux-border);
+  text-transform: uppercase;
+  letter-spacing: var(--border-thin);
+}
+
+.shortcut {
+  font-family: inherit;
+  font-size: var(--fs-xs);
+  color: var(--color-aux-border);
+}

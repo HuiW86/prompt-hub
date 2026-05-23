@@ -1,8 +1,8 @@
 [package]
 name = "prompt-hub"
 version = "0.1.0"
-description = "A Tauri App"
-authors = ["you"]
+description = "Manual-transmission desktop dashboard for prompt assets and human-AI alignment"
+authors = ["omar saleem <omarsaleem1232020@gmail.com>"]
 edition = "2021"
 
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
@@ -20,7 +20,6 @@ tauri-build = { version = "2", features = [] }
 [dependencies]
 # macos-private-api: required for transparent always-on-top window (ADR-008)
 tauri = { version = "2", features = ["macos-private-api"] }
-tauri-plugin-opener = "2"
 tauri-plugin-global-shortcut = "2"
 serde = { version = "1", features = ["derive"] }
 serde_json = "1"
@@ -28,4 +27,8 @@ serde_json = "1"
 rusqlite = { version = "0.32", features = ["bundled"] }
 chrono = { version = "0.4", features = ["serde"] }
 uuid = { version = "1", features = ["v4", "serde"] }
+thiserror = "2"
+
+[dev-dependencies]
+tempfile = "3"
 

@@ -1,0 +1,23 @@
+/* SopProgress — placeholder until phase 3 ships the real SOP navigator. */
+.sopProgress {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+  padding: var(--space-4);
+  background: var(--color-aux-bg);
+  border: var(--border-thin) dashed var(--color-aux-border);
+  border-radius: var(--space-2);
+}
+
+.heading {
+  font-size: var(--fs-sm);
+  font-weight: 600;
+  color: var(--color-text-primary);
+}
+
+.placeholder {
+  padding: var(--space-3) 0;
+  text-align: center;
+  font-size: var(--fs-xs);
+  color: var(--color-aux-border);
+}
