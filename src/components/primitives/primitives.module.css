@@ -1,0 +1,101 @@
+/* Shared primitives (Kbd, RegionHeader, EmptyState).
+ * Patterns mirror docs/mockups/v2/.../ui_kits/prompt-hub/styles.css.
+ */
+
+/* ============================
+   Hotkey badge
+   ============================ */
+.kbd {
+  display: inline-flex;
+  align-items: center;
+  padding: 2px 5px;
+  font-family: var(--font-mono);
+  font-size: var(--t-12);
+  font-weight: var(--w-500);
+  line-height: 1;
+  color: var(--fg-2);
+  background: var(--surface-2);
+  border: var(--hairline) solid var(--border-1);
+  border-radius: var(--r-2);
+  white-space: nowrap;
+}
+
+.kbdSm {
+  padding: 2px 4px;
+  font-size: 11px;
+}
+
+/* ============================
+   Region header
+   ============================ */
+.regionHeader {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  height: var(--s-10);
+  padding: 10px 14px;
+  border-bottom: var(--hairline) solid var(--border-1);
+}
+
+.regionHeaderLeft {
+  display: flex;
+  align-items: baseline;
+  gap: 10px;
+}
+
+.regionHeaderRight {
+  display: flex;
+  align-items: center;
+  gap: var(--s-2);
+  color: var(--fg-3);
+}
+
+.regionHeaderTitle {
+  font-family: var(--font-sans);
+  font-size: var(--t-14);
+  font-weight: var(--w-600);
+  line-height: 1;
+  letter-spacing: var(--tr-tight);
+  color: var(--fg-1);
+}
+
+.regionHeaderCount {
+  font-family: var(--font-mono);
+  font-size: 11px;
+  font-weight: var(--w-500);
+  line-height: 1;
+  color: var(--aux);
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+}
+
+.regionHeaderHint {
+  font-family: var(--font-sans);
+  font-size: var(--t-12);
+  font-weight: var(--w-400);
+  line-height: 1;
+  color: var(--fg-3);
+}
+
+/* ============================
+   Empty state
+   ============================ */
+.empty {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  color: var(--fg-3);
+  font-family: var(--font-sans);
+  font-size: var(--t-13);
+  line-height: var(--lh-body);
+  text-align: center;
+}
+
+.emptyHint {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+}
