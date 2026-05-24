@@ -1,29 +1,29 @@
-/* SopProgress — placeholder until phase 3 ships the real SOP navigator. */
+/* SopProgress — placeholder until phase 3 ships the real SOP navigator.
+ * Dashed border preserved as visual cue for "draft/placeholder" state. */
 .sopProgress {
   display: flex;
   flex-direction: column;
   gap: var(--s-2);
-  padding: var(--s-4);
-  background: var(--surface-2);
-  border: var(--hairline) dashed var(--aux);
-  border-radius: var(--s-2);
+  padding: var(--s-3);
+  background: var(--surface-1);
+  border: var(--hairline) dashed var(--border-2);
+  border-radius: var(--r-3);
 }
 
 /* B5-5: region-level Tab landing (03-product-spec §13.4). */
 .sopProgress:focus-visible {
   outline: var(--border-thick) solid var(--protocol);
-  outline-offset: var(--s-1);
+  outline-offset: calc(-1 * var(--border-thick));
 }
 
 .heading {
-  font-size: var(--t-13);
-  font-weight: 600;
+  font: var(--w-600) var(--t-13) / 1 var(--font-sans);
   color: var(--fg-1);
 }
 
 .placeholder {
   padding: var(--s-3) 0;
   text-align: center;
-  font-size: var(--t-12);
-  color: var(--aux);
+  font: var(--w-400) var(--t-12) / var(--lh-body) var(--font-sans);
+  color: var(--fg-3);
 }

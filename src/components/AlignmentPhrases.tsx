@@ -45,7 +45,7 @@ export function AlignmentPhrases() {
                 void copy(
                   p.content,
                   {
-                    targetType: "alignment_phrase",
+                    targetType: "alignment",
                     targetId: p.id,
                     source: "phase_bar",
                     modifierIds: null,

@@ -1,39 +1,69 @@
-/* StatusBar — bottom band per 03-product-spec §13.3 区域 7. */
+/* StatusBar — 28px footer band, dense metadata + shortcut hints.
+   Visual per Claude Design bundle styles.css §283-298 (ADR-012). */
+
 .statusBar {
   display: flex;
   align-items: center;
-  justify-content: space-between;
-  gap: var(--s-4);
-  min-height: var(--s-8);
-  padding: 0 var(--s-4);
-  background: var(--surface-2);
-  border: var(--hairline) solid var(--aux);
-  border-radius: var(--s-2);
-  font-size: var(--t-12);
-  color: var(--fg-1);
+  gap: var(--s-3_5);
+  height: var(--h-statusbar);
+  padding: 0 var(--s-3_5);
+  border-top: var(--hairline) solid var(--border-1);
+  background: var(--canvas);
+  font: var(--w-500) var(--t-12) / 1 var(--font-sans);
+  color: var(--fg-2);
 }
 
-.left,
-.right {
+.grp {
   display: flex;
   align-items: center;
-  gap: var(--s-4);
+  gap: var(--s-1_5);
+  white-space: nowrap;
+}
+
+.mono {
+  font-family: var(--font-mono);
+  font-size: var(--t-11);
   color: var(--aux);
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
 }
 
-.shortcut {
-  font-family: inherit;
+.dot {
+  width: var(--s-1_5);
+  height: var(--s-1_5);
+  border-radius: 50%;
 }
 
-/* Visually-hidden utility for screen-reader-only punctuation (C-P1-4). Keep
- * scoped to StatusBar for now; promote to a shared util if a second component
- * needs the same hidden-text pattern. */
+.dotOk {
+  background: var(--task);
+}
+
+.dotProto {
+  background: var(--protocol);
+}
+
+.dotIdle {
+  background: var(--fg-4);
+}
+
+.sep {
+  width: var(--hairline);
+  height: var(--s-3);
+  background: var(--border-1);
+}
+
+.spacer {
+  flex: 1;
+}
+
+/* Visually-hidden utility for screen-reader-only punctuation (C-P1-4).
+ * Keeps the visible `·` decorative without losing sentence breaks for VO/NVDA. */
 .srOnly {
   position: absolute;
-  width: 1px;
-  height: 1px;
+  width: var(--hairline);
+  height: var(--hairline);
   padding: 0;
-  margin: -1px;
+  margin: calc(-1 * var(--hairline));
   border: 0;
   overflow: hidden;
   clip: rect(0 0 0 0);

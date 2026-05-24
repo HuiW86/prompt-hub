@@ -5,6 +5,7 @@ import type { Phrase, SubStage } from "../ipc/types";
 import { usePromptStore } from "../stores/promptStore";
 import { useToastStore } from "../stores/toastStore";
 
+import { EmptyState, RegionHeader } from "./primitives";
 import styles from "./ScenePanel.module.css";
 
 type Grouped = Array<{ subStage: SubStage | null; phrases: Phrase[] }>;
@@ -36,15 +37,16 @@ export function ScenePanel() {
   if (!current) {
     return (
       <section
-        className={styles.scenePanel}
+        className={styles.region}
         aria-label="Scene 全景区"
         aria-describedby="scene-panel-empty-msg"
         data-region="scene-panel"
         tabIndex={0}
       >
-        <p id="scene-panel-empty-msg" className={styles.empty}>
-          暂无 Scene
-        </p>
+        <RegionHeader title="Scene" count={0} />
+        <EmptyState>
+          <span id="scene-panel-empty-msg">暂无 Scene</span>
+        </EmptyState>
       </section>
     );
   }
@@ -53,38 +55,44 @@ export function ScenePanel() {
 
   return (
     <section
-      className={styles.scenePanel}
+      className={styles.region}
       aria-label="Scene 全景区"
       data-region="scene-panel"
       tabIndex={0}
     >
-      <h2 className={styles.heading}>Scene</h2>
+      <RegionHeader title="Scene" count={scenes.length} />
       <nav className={styles.tabs} aria-label="Scene tabs">
-        {scenes.map((sc, idx) => (
-          <button
-            key={sc.scene.id}
-            type="button"
-            className={`${styles.tab} ${idx === activeIdx ? styles.active : ""}`}
-            onClick={() => setActiveIdx(idx)}
-            aria-current={idx === activeIdx ? "page" : undefined}
-          >
-            {sc.scene.icon && (
-              <span className={styles.icon} aria-hidden>
-                {sc.scene.icon}
-              </span>
-            )}
-            {sc.scene.name}
-          </button>
-        ))}
+        {scenes.map((sc, idx) => {
+          const isActive = idx === activeIdx;
+          return (
+            <button
+              key={sc.scene.id}
+              type="button"
+              className={`${styles.tab} ${isActive ? styles.active : ""}`}
+              onClick={() => setActiveIdx(idx)}
+              aria-current={isActive ? "page" : undefined}
+            >
+              {sc.scene.icon && (
+                <span className={styles.icon} aria-hidden>
+                  {sc.scene.icon}
+                </span>
+              )}
+              {sc.scene.name}
+            </button>
+          );
+        })}
       </nav>
       <div className={styles.phrases}>
         {groups.length === 0 ? (
-          <p className={styles.empty}>该 Scene 暂无话术</p>
+          <EmptyState>该 Scene 暂无话术</EmptyState>
         ) : (
           groups.map((g) => (
-            <div key={g.subStage?.id ?? "__ungrouped__"}>
+            <div
+              key={g.subStage?.id ?? "__ungrouped__"}
+              className={styles.group}
+            >
               {g.subStage && (
-                <div className={styles.subStage}>▸ {g.subStage.name}</div>
+                <div className={styles.subStage}>{g.subStage.name}</div>
               )}
               {g.phrases.map((p) => {
                 const cls = `${styles.phrase} ${flashId === p.id ? styles.phraseFlash : ""}`;

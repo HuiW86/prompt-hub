@@ -1,0 +1,89 @@
+/* Alignment phrases — protocol-layer chip row anchored under PhaseBar.
+   Visual per Claude Design bundle styles.css §121-160 (ADR-012). */
+
+.phrases {
+  display: flex;
+  align-items: center;
+  gap: var(--s-2);
+  padding: var(--s-2) var(--s-3_5);
+  flex-wrap: nowrap;
+  overflow-x: auto;
+  scrollbar-width: none;
+  border-bottom: var(--hairline) solid var(--border-1);
+  height: var(--h-phrases);
+  background: var(--canvas);
+}
+
+.phrases::-webkit-scrollbar {
+  display: none;
+}
+
+.label {
+  font: var(--w-500) var(--t-11) / 1 var(--font-mono);
+  color: var(--fg-3);
+  text-transform: uppercase;
+  letter-spacing: var(--tr-meta);
+  margin-right: var(--s-1);
+  white-space: nowrap;
+}
+
+.empty {
+  font: var(--w-400) var(--t-12) / 1 var(--font-sans);
+  color: var(--fg-3);
+}
+
+.chip {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--s-1_5);
+  height: var(--h-chip);
+  padding: 0 var(--s-2_25);
+  border: var(--hairline) solid var(--border-1);
+  border-radius: var(--r-2);
+  background: var(--surface-1);
+  color: var(--fg-1);
+  font: var(--w-500) var(--t-12) / 1 var(--font-sans);
+  cursor: pointer;
+  user-select: none;
+  white-space: nowrap;
+  appearance: none;
+  transition:
+    border-color var(--d-fast) var(--ease),
+    background-color var(--d-fast) var(--ease);
+}
+
+.chip:hover {
+  border-color: var(--border-2);
+}
+
+.chip:focus-visible {
+  outline: var(--border-thick) solid var(--protocol);
+  outline-offset: 0;
+  border-color: var(--protocol);
+}
+
+.chip.active {
+  background: var(--protocol-8);
+  border-color: var(--protocol);
+}
+
+.chip.dim {
+  opacity: var(--op-dim);
+}
+
+.dot {
+  width: var(--s-1_5);
+  height: var(--s-1_5);
+  border-radius: 50%;
+  background: var(--protocol);
+}
+
+.chip.dim .dot {
+  background: var(--fg-4);
+}
+
+/* Flash highlight when phrase is copied (mirrors macro/scene flash pattern). */
+.chip.flash {
+  background: var(--protocol-16);
+  border-color: var(--protocol);
+}

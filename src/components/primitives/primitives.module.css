@@ -8,7 +8,7 @@
 .kbd {
   display: inline-flex;
   align-items: center;
-  padding: 2px 5px;
+  padding: var(--s-0_5) var(--s-1_25);
   font-family: var(--font-mono);
   font-size: var(--t-12);
   font-weight: var(--w-500);
@@ -21,8 +21,8 @@
 }
 
 .kbdSm {
-  padding: 2px 4px;
-  font-size: 11px;
+  padding: var(--s-0_5) var(--s-1);
+  font-size: var(--t-11);
 }
 
 /* ============================
@@ -32,15 +32,15 @@
   display: flex;
   align-items: center;
   justify-content: space-between;
-  height: var(--s-10);
-  padding: 10px 14px;
+  height: var(--h-region-header);
+  padding: var(--s-2_5) var(--s-3_5);
   border-bottom: var(--hairline) solid var(--border-1);
 }
 
 .regionHeaderLeft {
   display: flex;
   align-items: baseline;
-  gap: 10px;
+  gap: var(--s-2_5);
 }
 
 .regionHeaderRight {
@@ -61,7 +61,7 @@
 
 .regionHeaderCount {
   font-family: var(--font-mono);
-  font-size: 11px;
+  font-size: var(--t-11);
   font-weight: var(--w-500);
   line-height: 1;
   color: var(--aux);
@@ -86,7 +86,7 @@
   flex-direction: column;
   align-items: center;
   justify-content: center;
-  gap: 10px;
+  gap: var(--s-2_5);
   color: var(--fg-3);
   font-family: var(--font-sans);
   font-size: var(--t-13);
@@ -97,5 +97,5 @@
 .emptyHint {
   display: inline-flex;
   align-items: center;
-  gap: 6px;
+  gap: var(--s-1_5);
 }

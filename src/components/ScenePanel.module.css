@@ -1,91 +1,141 @@
-/* ScenePanel — Scene tabs + expanded phrase list per 03-product-spec §13.3 区域 4. */
-.scenePanel {
+/* ScenePanel — Scene tabs + grouped phrase list.
+   Bundle pattern (border-only / hover border-darken / active 8% fill).
+   Visual per Claude Design bundle styles.css §141-258 (ADR-012). */
+
+.region {
   display: flex;
   flex-direction: column;
-  gap: var(--s-3);
   min-height: 0;
-  padding: var(--s-4);
-  background: var(--task-16);
-  border: var(--hairline) solid var(--task);
-  border-radius: var(--s-2);
-  overflow: hidden;
+  background: var(--canvas);
 }
 
 /* B5-5: region-level Tab landing (03-product-spec §13.4). */
-.scenePanel:focus-visible {
+.region:focus-visible {
   outline: var(--border-thick) solid var(--protocol);
-  outline-offset: var(--s-1);
-}
-
-.heading {
-  font-size: var(--t-14);
-  font-weight: 600;
-  color: var(--fg-1);
+  outline-offset: calc(-1 * var(--border-thick));
 }
 
 .tabs {
   display: flex;
-  flex-wrap: wrap;
+  align-items: center;
   gap: var(--s-2);
+  padding: var(--s-2) var(--s-3_5);
+  flex-wrap: nowrap;
+  overflow-x: auto;
+  scrollbar-width: none;
+  border-bottom: var(--hairline) solid var(--border-1);
+}
+
+.tabs::-webkit-scrollbar {
+  display: none;
 }
 
 .tab {
   display: inline-flex;
   align-items: center;
-  gap: var(--s-1);
-  min-height: var(--s-6);
-  padding: 0 var(--s-3);
-  background: var(--canvas);
-  border: var(--hairline) solid var(--aux);
-  border-radius: var(--s-6);
+  gap: var(--s-1_5);
+  height: var(--h-chip);
+  padding: 0 var(--s-2_25);
+  border: var(--hairline) solid var(--border-1);
+  border-radius: var(--r-2);
+  background: var(--surface-1);
   color: var(--fg-1);
-  font-size: var(--t-13);
+  font: var(--w-500) var(--t-12) / 1 var(--font-sans);
   cursor: pointer;
+  user-select: none;
+  white-space: nowrap;
+  appearance: none;
+  transition:
+    border-color var(--d-fast) var(--ease),
+    background-color var(--d-fast) var(--ease);
+}
+
+.tab:hover {
+  border-color: var(--border-2);
+}
+
+.tab:focus-visible {
+  outline: var(--border-thick) solid var(--task);
+  outline-offset: 0;
+  border-color: var(--task);
 }
 
 .tab.active {
-  background: var(--protocol-16);
-  border-color: var(--protocol);
-  color: var(--protocol);
-  font-weight: 600;
+  background: var(--task-8);
+  border-color: var(--task);
 }
 
 .icon {
   font-size: var(--t-13);
+  line-height: 1;
 }
 
 .phrases {
   display: flex;
   flex-direction: column;
-  gap: var(--s-2);
   min-height: 0;
   overflow-y: auto;
 }
 
+.group {
+  display: flex;
+  flex-direction: column;
+}
+
 .subStage {
-  margin-top: var(--s-2);
-  font-size: var(--t-12);
-  color: var(--aux);
+  padding: var(--s-2) var(--s-3_5) var(--s-1);
+  font: var(--w-500) var(--t-11) / 1 var(--font-mono);
+  color: var(--fg-3);
   text-transform: uppercase;
+  letter-spacing: var(--tr-meta);
+  border-bottom: var(--hairline) solid var(--border-1);
 }
 
 .phrase {
   display: flex;
   flex-direction: column;
   gap: var(--s-1);
-  padding: var(--s-2) var(--s-3);
-  background: var(--canvas);
-  border: var(--hairline) solid var(--task);
-  border-radius: var(--s-2);
+  padding: var(--s-2) var(--s-3_5);
+  background: transparent;
+  border: 0;
+  border-bottom: var(--hairline) solid var(--border-1);
   color: inherit;
   text-align: left;
+  appearance: none;
   font: inherit;
   cursor: pointer;
-  transition: background var(--d-fast) var(--ease);
+  user-select: none;
+  transition: background-color var(--d-fast) var(--ease);
 }
 
 .phrase:hover {
-  background: var(--task-16);
+  background: var(--surface-1);
+}
+
+.phrase:active {
+  background: var(--task-8);
+}
+
+.phrase:focus-visible {
+  outline: var(--border-thick) solid var(--task);
+  outline-offset: calc(-1 * var(--border-thick));
+}
+
+.phraseTitle {
+  font: var(--w-500) var(--t-13) / 1 var(--font-sans);
+  color: var(--fg-1);
+  margin: 0;
+}
+
+.phraseContent {
+  margin: 0;
+  font: var(--w-400) var(--t-12) / var(--lh-body) var(--font-sans);
+  color: var(--fg-2);
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
 }
 
 .phraseFlash {
@@ -101,29 +151,6 @@
     color: var(--canvas);
   }
   100% {
-    background: var(--canvas);
+    background: transparent;
   }
-}
-
-.phraseTitle {
-  font-size: var(--t-13);
-  font-weight: 600;
-  color: var(--fg-1);
-}
-
-.phraseContent {
-  display: -webkit-box;
-  -webkit-line-clamp: 2;
-  -webkit-box-orient: vertical;
-  overflow: hidden;
-  font-size: var(--t-12);
-  color: var(--fg-1);
-  line-height: 1.4;
-}
-
-.empty {
-  padding: var(--s-6);
-  text-align: center;
-  font-size: var(--t-13);
-  color: var(--aux);
 }

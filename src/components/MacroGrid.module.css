@@ -1,75 +1,106 @@
-/* MacroGrid — 2-column card wall per 03-product-spec §13.3 区域 3.
- * Hot macros (top by usage_count, picked in the component) get a thicker border. */
-.macroGrid {
+/* MacroGrid — task-layer macro cards (3-column grid).
+   Visual per Claude Design bundle styles.css §174-219 (ADR-012). */
+
+.region {
   display: flex;
   flex-direction: column;
-  gap: var(--s-3);
   min-height: 0;
-  padding: var(--s-4);
-  background: var(--task-16);
-  border: var(--hairline) solid var(--task);
-  border-radius: var(--s-2);
-  overflow-y: auto;
+  background: var(--canvas);
 }
 
 /* B5-5: region-level Tab landing (03-product-spec §13.4). */
-.macroGrid:focus-visible {
+.region:focus-visible {
   outline: var(--border-thick) solid var(--protocol);
-  outline-offset: var(--s-1);
-}
-
-.heading {
-  display: flex;
-  align-items: baseline;
-  justify-content: space-between;
-}
-
-.title {
-  font-size: var(--t-14);
-  font-weight: 600;
-  color: var(--fg-1);
-}
-
-.count {
-  font-size: var(--t-12);
-  color: var(--aux);
+  outline-offset: calc(-1 * var(--border-thick));
 }
 
 .grid {
   display: grid;
-  grid-template-columns: repeat(2, minmax(0, 1fr));
-  gap: var(--s-3);
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: var(--s-2_5);
+  padding: var(--s-3_5);
+  overflow: auto;
+  min-height: 0;
 }
 
 .card {
+  background: var(--surface-1);
+  border: var(--hairline) solid var(--border-1);
+  border-radius: var(--r-3);
+  padding: var(--s-3);
   display: flex;
   flex-direction: column;
   gap: var(--s-2);
-  min-height: var(--s-12);
-  padding: var(--s-3) var(--s-4);
-  background: var(--canvas);
-  border: var(--hairline) solid var(--task);
-  border-radius: var(--s-2);
-  color: inherit;
-  text-align: left;
-  font: inherit;
   cursor: pointer;
-  transition: background var(--d-fast) var(--ease);
+  text-align: left;
+  appearance: none;
+  font: inherit;
+  color: inherit;
+  position: relative;
+  min-width: 0;
+  transition:
+    border-color var(--d-fast) var(--ease),
+    background-color var(--d-fast) var(--ease);
 }
 
 .card:hover {
-  background: var(--task-16);
+  border-color: var(--border-2);
 }
 
-.hot {
-  border: var(--border-thick) solid var(--task);
+.card:active {
+  background: var(--task-8);
+}
+
+.card:focus-visible {
+  outline: var(--border-thick) solid var(--task);
+  outline-offset: 0;
+  border-color: var(--task);
+}
+
+.title {
+  display: flex;
+  align-items: center;
+  gap: var(--s-1);
+  min-width: 0;
+  word-break: break-word;
+  font: var(--w-500) var(--t-14) / var(--lh-tight) var(--font-sans);
+  color: var(--fg-1);
+}
+
+.hotIc {
+  color: var(--task);
+  flex-shrink: 0;
+}
+
+.body {
+  margin: 0;
+  font: var(--w-400) var(--t-13) / var(--lh-body) var(--font-sans);
+  color: var(--fg-2);
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+
+.meta {
+  display: flex;
+  align-items: center;
+  gap: var(--s-2);
+  font: var(--w-400) var(--t-11) / 1 var(--font-mono);
+  color: var(--aux);
+  font-variant-numeric: tabular-nums;
+}
+
+.sep {
+  color: var(--border-2);
 }
 
 .flash {
-  animation: copyFlash var(--d-slow) var(--ease);
+  animation: macroCopyFlash var(--d-slow) var(--ease);
 }
 
-@keyframes copyFlash {
+@keyframes macroCopyFlash {
   0% {
     background: var(--task-16);
   }
@@ -78,44 +109,6 @@
     color: var(--canvas);
   }
   100% {
-    background: var(--canvas);
+    background: var(--surface-1);
   }
-}
-
-.cardTitle {
-  display: flex;
-  align-items: center;
-  gap: var(--s-2);
-  font-size: var(--t-14);
-  font-weight: 600;
-  color: var(--fg-1);
-}
-
-.flame {
-  font-size: var(--t-13);
-}
-
-.cardContent {
-  display: -webkit-box;
-  -webkit-line-clamp: 2;
-  -webkit-box-orient: vertical;
-  overflow: hidden;
-  font-size: var(--t-13);
-  line-height: 1.4;
-  color: var(--fg-1);
-}
-
-.meta {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  font-size: var(--t-12);
-  color: var(--aux);
-}
-
-.empty {
-  padding: var(--s-6);
-  text-align: center;
-  font-size: var(--t-13);
-  color: var(--aux);
 }

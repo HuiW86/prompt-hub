@@ -1,46 +1,102 @@
-/* PhaseBar — 8 phases laid out horizontally per 03-product-spec §13.3 区域 2.
- * Active phase uses protocol (purple) palette; idle phases stay aux-grey.
- */
+/* PhaseBar — protocol-layer segmented bar (5+ phases equal-flex).
+   Visual per Claude Design bundle styles.css §76-119 (ADR-012). */
+
 .phaseBar {
-  display: grid;
-  grid-template-columns: repeat(8, minmax(0, 1fr));
-  gap: var(--s-3);
-  min-height: var(--s-20);
-  padding: var(--s-3);
-  background: var(--protocol-16);
-  border: var(--hairline) solid var(--protocol);
-  border-radius: var(--s-2);
+  display: flex;
+  align-items: stretch;
+  height: var(--h-phasebar);
+  border-bottom: var(--hairline) solid var(--border-1);
+  background: var(--canvas);
 }
 
 /* B5-5: region-level Tab landing (03-product-spec §13.4). */
 .phaseBar:focus-visible {
   outline: var(--border-thick) solid var(--protocol);
-  outline-offset: var(--s-1);
+  outline-offset: calc(-1 * var(--border-thick));
 }
 
 .phase {
+  flex: 1;
   display: flex;
-  flex-direction: column;
   align-items: center;
   justify-content: center;
-  gap: var(--s-1);
-  min-height: var(--s-12);
-  padding: var(--s-3) var(--s-2);
-  background: var(--canvas);
-  border: var(--hairline) solid var(--aux);
-  border-radius: var(--s-2);
-  color: var(--fg-1);
-  font: inherit;
+  gap: var(--s-2);
+  font: var(--w-500) var(--t-13) / 1 var(--font-sans);
+  color: var(--fg-2);
   cursor: pointer;
+  border: 0;
+  border-right: var(--hairline) solid var(--border-1);
+  background: transparent;
+  appearance: none;
+  position: relative;
   transition:
-    border-color var(--d-fast) var(--ease),
-    background var(--d-fast) var(--ease);
+    background-color var(--d-fast) var(--ease),
+    color var(--d-fast) var(--ease);
+}
+
+.phase:last-child {
+  border-right: 0;
 }
 
 .phase:hover {
-  border-color: var(--protocol);
+  color: var(--fg-1);
+  background: var(--surface-1);
 }
 
+.phase:focus-visible {
+  outline: var(--border-thick) solid var(--protocol);
+  outline-offset: calc(-1 * var(--border-thick));
+}
+
+.phase.active {
+  background: var(--protocol-8);
+  color: var(--fg-1);
+}
+
+.phase.active::after {
+  content: "";
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: calc(-1 * var(--hairline));
+  height: var(--border-thick);
+  background: var(--protocol);
+}
+
+.num {
+  width: var(--s-4);
+  height: var(--s-4);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border: var(--hairline) solid var(--border-2);
+  border-radius: var(--r-1);
+  font: var(--w-500) var(--t-10) / 1 var(--font-mono);
+  color: var(--fg-3);
+}
+
+.phase.active .num {
+  border-color: var(--protocol);
+  color: var(--fg-1);
+  background: var(--protocol-16);
+}
+
+.label {
+  font: var(--w-500) var(--t-13) / 1 var(--font-sans);
+  letter-spacing: var(--tr-tight);
+}
+
+.shortcut {
+  font: var(--w-400) var(--t-11) / 1 var(--font-mono);
+  color: var(--aux);
+  font-variant-numeric: tabular-nums;
+}
+
+.phase.active .shortcut {
+  color: var(--protocol);
+}
+
+/* Copy flash highlight (preserved from previous PhaseBar). */
 .flash {
   animation: phaseCopyFlash var(--d-slow) var(--ease);
 }
@@ -56,25 +112,4 @@
   100% {
     background: var(--protocol-16);
   }
-}
-
-.active {
-  background: var(--protocol-16);
-  border: var(--border-thick) solid var(--protocol);
-  font-weight: 600;
-}
-
-.name {
-  font-size: var(--t-13);
-  font-weight: 600;
-}
-
-.shortcut {
-  font-family: inherit;
-  font-size: var(--t-12);
-  color: var(--aux);
-}
-
-.active .shortcut {
-  color: var(--protocol);
 }

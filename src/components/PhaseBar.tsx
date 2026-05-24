@@ -35,12 +35,15 @@ export function PhaseBar() {
           <button
             key={phase.id}
             type="button"
-            className={cls}
             aria-current={isActive ? "true" : undefined}
+            className={cls}
             data-phase-id={phase.id}
             onClick={() => selectPhase(phase.id)}
           >
-            <span className={styles.name}>{phase.name}</span>
+            <span className={styles.num} aria-hidden>
+              {idx + 1}
+            </span>
+            <span className={styles.label}>{phase.name}</span>
             <kbd className={styles.shortcut}>
               {primaryModifierLabel()}
               {idx + 1}

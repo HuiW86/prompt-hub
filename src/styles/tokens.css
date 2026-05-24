@@ -132,6 +132,11 @@
   /* Tracking */
   --tr-tight: -0.01em;
   --tr-normal: 0em;
+  --tr-meta: 0.08em; /* uppercase meta labels (region count, key labels) */
+
+  /* Sub-grid type sizes — bundle precision tier (ADR-012) */
+  --t-10: 10px; /* num badge */
+  --t-11: 11px; /* meta key, count, kbd-sm */
 }
 
 /* ============================================================
@@ -151,6 +156,15 @@
   --s-12: 48px;
   --s-20: 80px;
 
+  /* Sub-grid spacing — bundle precision tier (ADR-012).
+     Off the 4×n grid; use only where bundle calls for it. */
+  --s-0_5: 2px; /* kbd badge vertical inset */
+  --s-1_25: 5px; /* kbd badge horizontal inset */
+  --s-1_5: 6px; /* chip gap, small dot diameter */
+  --s-2_25: 9px; /* chip horizontal padding */
+  --s-2_5: 10px; /* small grid gap (region-header inner gap) */
+  --s-3_5: 14px; /* region horizontal padding */
+
   --r-1: 2px; /* tags, tiny pills */
   --r-2: 3px; /* chips */
   --r-3: 4px; /* default — most surfaces */
@@ -159,6 +173,27 @@
 
   --hairline: 1px;
   --border-thick: 2px; /* focus outlines only */
+}
+
+/* ============================================================
+   3a. Component anchor heights — bundle precision (ADR-012)
+   ============================================================ */
+:root {
+  --h-chip: 24px;
+  --h-phasebar: 44px;
+  --h-phrases: 44px;
+  --h-statusbar: 28px;
+  --h-quickfind: 36px;
+  --h-scene-row: 32px;
+  --h-region-header: 40px;
+}
+
+/* ============================================================
+   3b. Opacity tokens — bundle precision (ADR-012)
+   ============================================================ */
+:root {
+  --op-icon: 0.7;
+  --op-dim: 0.5;
 }
 
 /* ============================================================

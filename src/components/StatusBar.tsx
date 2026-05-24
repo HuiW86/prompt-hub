@@ -1,6 +1,7 @@
 import { useAppStore } from "../stores/appStore";
 import { usePromptStore } from "../stores/promptStore";
 
+import { Kbd } from "./primitives";
 import styles from "./StatusBar.module.css";
 
 // B5-6: real day-bounded copy count + live active-phase label.
@@ -18,6 +19,7 @@ export function StatusBar() {
       ? "未选"
       : (s.phases.find((p) => p.id === activePhaseId)?.name ?? "未选"),
   );
+  const hasActivePhase = activePhaseId != null;
 
   return (
     <footer
@@ -25,26 +27,37 @@ export function StatusBar() {
       aria-label="状态栏"
       data-region="status-bar"
     >
-      <div className={styles.left}>
-        {/* The visible `·` is decorative; screen readers would otherwise concat
-         * "今日复制 17 次当前相位：发散" with no pause. Each data span ends with
-         * an sr-only 句号 so VoiceOver / NVDA insert a natural sentence break.
-         * Review C-P1-4. */}
-        <span>
-          今日复制 {todayCount} 次<span className={styles.srOnly}>。</span>
-        </span>
-        <span aria-hidden>·</span>
+      <span className={styles.grp}>
+        <span
+          className={`${styles.dot} ${hasActivePhase ? styles.dotProto : styles.dotIdle}`}
+          aria-hidden
+        />
         <span>
           当前相位：{activePhaseName}
           <span className={styles.srOnly}>。</span>
         </span>
-      </div>
-      <div className={styles.right}>
-        <kbd className={styles.shortcut}>⌘K 搜索</kbd>
-        <kbd className={styles.shortcut}>⏎ 复制</kbd>
-        <kbd className={styles.shortcut}>⌘N 新建</kbd>
-        <kbd className={styles.shortcut}>⌘, 设置</kbd>
-      </div>
+      </span>
+      <span className={styles.sep} aria-hidden />
+      <span className={`${styles.grp} ${styles.mono}`}>
+        今日复制 {todayCount} 次<span className={styles.srOnly}>。</span>
+      </span>
+      <span className={styles.spacer} />
+      <span className={styles.grp}>
+        <span>搜索</span>
+        <Kbd sm>⌘K</Kbd>
+      </span>
+      <span className={styles.grp}>
+        <span>复制</span>
+        <Kbd sm>⏎</Kbd>
+      </span>
+      <span className={styles.grp}>
+        <span>新建</span>
+        <Kbd sm>⌘N</Kbd>
+      </span>
+      <span className={styles.grp}>
+        <span>设置</span>
+        <Kbd sm>⌘,</Kbd>
+      </span>
     </footer>
   );
 }

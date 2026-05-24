@@ -1,51 +1,56 @@
-/* SearchBar — visually muted entry point per 03-product-spec §4.1 / §13.3 区域 1.
- * Width ~60% centered; aux palette; right-side "兜底" tag flags it as fallback. */
+/* SearchBar — permanent quick-find row anchored at the top of the overlay.
+   Bundle .quickfind vocabulary, adapted from modal to always-on (ADR-012).
+   §4.1 / §13.3 区域 1 mark this entry as visually muted with "兜底" tag. */
+
 .searchBar {
   display: flex;
-  justify-content: center;
+  align-items: center;
+  gap: var(--s-2_5);
   width: 100%;
+  height: var(--h-quickfind);
+  padding: 0 var(--s-3_5);
+  background: var(--surface-1);
+  border-bottom: var(--hairline) solid var(--border-1);
+}
+
+.icon {
+  flex: 0 0 auto;
+  color: var(--fg-3);
+  opacity: var(--op-icon);
 }
 
 .field {
   display: flex;
   align-items: center;
-  gap: var(--s-3);
-  width: 60%;
-  min-width: var(--s-20);
-  height: var(--s-10);
-  padding: 0 var(--s-4);
-  background: var(--surface-2);
-  border: var(--hairline) solid var(--aux);
-  border-radius: var(--s-2);
-}
-
-.field:focus-within {
-  border-color: var(--protocol);
+  flex: 1;
+  gap: var(--s-2);
+  min-width: 0;
 }
 
 .input {
   flex: 1;
+  min-width: 0;
   background: transparent;
-  border: none;
-  outline: none;
+  border: 0;
+  outline: 0;
   color: var(--fg-1);
-  font-size: var(--t-16);
-  font-family: inherit;
+  font: var(--w-400) var(--t-13) / 1 var(--font-sans);
+  font-family: var(--font-sans);
 }
 
 .input::placeholder {
-  color: var(--aux);
+  color: var(--fg-3);
+}
+
+.field:focus-within .icon {
+  color: var(--protocol);
+  opacity: 1;
 }
 
 .fallback {
-  font-size: var(--t-12);
-  color: var(--aux);
+  flex: 0 0 auto;
+  font: var(--w-500) var(--t-11) / 1 var(--font-mono);
+  color: var(--fg-3);
   text-transform: uppercase;
-  letter-spacing: var(--hairline);
-}
-
-.shortcut {
-  font-family: inherit;
-  font-size: var(--t-12);
-  color: var(--aux);
+  letter-spacing: var(--tr-meta);
 }

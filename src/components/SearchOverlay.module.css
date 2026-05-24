@@ -1,16 +1,17 @@
 /* SearchOverlay — covers the main work area when query is non-empty.
- * Sits inside Dashboard's .mainStack via position:absolute so the
- * background regions stay mounted underneath. */
+ * Sits inside Dashboard's main row via position:absolute so the
+ * background regions stay mounted underneath.
+ * Bundle pattern (border-1 default / surface-1 hover / focus protocol outline). */
 .overlay {
   position: absolute;
   inset: 0;
   display: flex;
   flex-direction: column;
   gap: var(--s-3);
-  padding: var(--s-4);
+  padding: var(--s-3_5);
   background: var(--canvas);
-  border: var(--hairline) solid var(--aux);
-  border-radius: var(--s-2);
+  border: var(--hairline) solid var(--border-1);
+  border-radius: var(--r-3);
   overflow-y: auto;
   z-index: 1;
 }
@@ -20,24 +21,25 @@
   align-items: baseline;
   justify-content: space-between;
   padding-bottom: var(--s-2);
-  border-bottom: var(--hairline) solid var(--surface-2);
+  border-bottom: var(--hairline) solid var(--border-1);
 }
 
 .title {
-  font-size: var(--t-16);
-  font-weight: 600;
+  font: var(--w-600) var(--t-16) / var(--lh-tight) var(--font-sans);
+  letter-spacing: var(--tr-tight);
   color: var(--fg-1);
 }
 
 .count {
-  font-size: var(--t-12);
+  font: var(--w-500) var(--t-11) / 1 var(--font-mono);
   color: var(--aux);
+  font-variant-numeric: tabular-nums;
 }
 
 .groups {
   display: grid;
   grid-template-columns: repeat(2, minmax(0, 1fr));
-  gap: var(--s-4);
+  gap: var(--s-3_5);
 }
 
 .group {
@@ -47,20 +49,18 @@
 }
 
 .groupHead {
-  font-size: var(--t-13);
-  font-weight: 600;
+  font: var(--w-600) var(--t-13) / 1 var(--font-sans);
   color: var(--fg-1);
 }
 
 .groupCount {
-  font-weight: 400;
+  font-weight: var(--w-400);
   color: var(--aux);
 }
 
 .list {
   display: flex;
   flex-direction: column;
-  gap: var(--s-1);
   margin: 0;
   padding: 0;
   list-style: none;
@@ -72,24 +72,32 @@
   justify-content: space-between;
   gap: var(--s-3);
   padding: var(--s-2) var(--s-3);
-  background: var(--canvas);
-  border: var(--hairline) solid var(--surface-2);
-  border-radius: var(--s-1);
+  background: transparent;
+  border: var(--hairline) solid transparent;
+  border-bottom-color: var(--border-1);
   color: inherit;
   text-align: left;
+  appearance: none;
   font: inherit;
   cursor: pointer;
-  transition: background var(--d-fast) var(--ease);
+  transition:
+    background-color var(--d-fast) var(--ease),
+    border-color var(--d-fast) var(--ease);
 }
 
 .item:hover {
-  background: var(--surface-2);
+  background: var(--surface-1);
+}
+
+.item:focus-visible {
+  outline: var(--border-thick) solid var(--protocol);
+  outline-offset: calc(-1 * var(--border-thick));
 }
 
 .selected {
-  background: var(--protocol-16);
+  background: var(--protocol-8);
   border-color: var(--protocol);
-  box-shadow: inset var(--border-thick) 0 0 0 var(--protocol);
+  border-radius: var(--r-2);
 }
 
 .selected:hover {
@@ -100,7 +108,7 @@
   display: flex;
   align-items: center;
   gap: var(--s-2);
-  font-size: var(--t-13);
+  font: var(--w-400) var(--t-13) / 1 var(--font-sans);
   color: var(--fg-1);
   overflow: hidden;
   text-overflow: ellipsis;
@@ -110,21 +118,22 @@
 .itemScope {
   padding: 0 var(--s-2);
   background: var(--surface-2);
-  border-radius: var(--s-1);
-  font-size: var(--t-12);
+  border-radius: var(--r-1);
+  font: var(--w-500) var(--t-11) / 1 var(--font-mono);
   color: var(--aux);
 }
 
 .itemMeta {
   flex-shrink: 0;
-  font-size: var(--t-12);
+  font: var(--w-400) var(--t-11) / 1 var(--font-mono);
   color: var(--aux);
+  font-variant-numeric: tabular-nums;
 }
 
 .groupEmpty,
 .empty {
   font-size: var(--t-12);
-  color: var(--aux);
+  color: var(--fg-3);
 }
 
 .empty {

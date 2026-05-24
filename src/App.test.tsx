@@ -131,6 +131,9 @@ describe("Dashboard end-to-end render", () => {
     return {
       search: container.querySelector("[role='search']"),
       phaseBar: container.querySelector("[data-region='phase-bar']"),
+      alignmentPhrases: container.querySelector(
+        "[data-region='alignment-phrases']",
+      ),
       macroGrid: container.querySelector("[data-region='macro-grid']"),
       scenePanel: container.querySelector("[data-region='scene-panel']"),
       recentList: container.querySelector("[data-region='recent-list']"),
@@ -139,7 +142,7 @@ describe("Dashboard end-to-end render", () => {
     };
   }
 
-  it("renders all seven regions after refreshAll resolves", async () => {
+  it("renders all eight regions after refreshAll resolves", async () => {
     const { container } = render(<App />);
     await waitFor(() =>
       expect(
@@ -149,6 +152,7 @@ describe("Dashboard end-to-end render", () => {
     const r = regions(container);
     expect(r.search).not.toBeNull();
     expect(r.phaseBar).not.toBeNull();
+    expect(r.alignmentPhrases).not.toBeNull();
     expect(r.macroGrid).not.toBeNull();
     expect(r.scenePanel).not.toBeNull();
     expect(r.recentList).not.toBeNull();
@@ -156,10 +160,12 @@ describe("Dashboard end-to-end render", () => {
     expect(r.statusBar).not.toBeNull();
   });
 
-  // B5-5: per 03-product-spec §13.4 the 5 working regions must be Tab-reachable
-  // (相位带 / Macro / Scene / 最近 / SOP). SearchBar relies on its native input
-  // for focus and StatusBar is read-only, so neither carries tabindex.
-  it("five working regions expose tabindex='0' for region-level Tab navigation", async () => {
+  // B5-5: per 03-product-spec §13.4 the working regions must be Tab-reachable
+  // (相位带 / 对齐话术 / Macro / Scene / 最近 / SOP). SearchBar relies on its
+  // native input for focus and StatusBar is read-only, so neither carries
+  // tabindex. AlignmentPhrases joined the Tab cycle in Phase 3 of ADR-012 — a
+  // §13.4 bump is queued for Phase 4 of the design handoff.
+  it("six working regions expose tabindex='0' for region-level Tab navigation", async () => {
     const { container } = render(<App />);
     await waitFor(() =>
       expect(
@@ -168,6 +174,7 @@ describe("Dashboard end-to-end render", () => {
     );
     const r = regions(container);
     expect(r.phaseBar?.getAttribute("tabindex")).toBe("0");
+    expect(r.alignmentPhrases?.getAttribute("tabindex")).toBe("0");
     expect(r.macroGrid?.getAttribute("tabindex")).toBe("0");
     expect(r.scenePanel?.getAttribute("tabindex")).toBe("0");
     expect(r.recentList?.getAttribute("tabindex")).toBe("0");
@@ -192,6 +199,7 @@ describe("Dashboard end-to-end render", () => {
     // tree; the data-region landmarks below it must appear in the spec order.
     expect(ordered).toEqual([
       "phase-bar",
+      "alignment-phrases",
       "macro-grid",
       "scene-panel",
       "recent-list",

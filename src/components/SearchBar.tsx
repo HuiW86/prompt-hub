@@ -1,3 +1,4 @@
+import { Search } from "lucide-react";
 import { useEffect, useRef } from "react";
 
 import {
@@ -8,6 +9,7 @@ import {
 } from "../stores/searchStore";
 import { isPrimaryModifier, primaryModifierLabel } from "../utils/platform";
 
+import { Kbd } from "./primitives";
 import styles from "./SearchBar.module.css";
 
 // Implements the WAI-ARIA combobox half of the search pattern (SearchOverlay
@@ -46,6 +48,7 @@ export function SearchBar() {
   return (
     <div className={styles.searchBar} role="search">
       <label className={styles.field}>
+        <Search size={14} className={styles.icon} aria-hidden strokeWidth={2} />
         <input
           ref={inputRef}
           className={styles.input}
@@ -62,9 +65,9 @@ export function SearchBar() {
             isSearching ? searchOptionId(selectedIndex) : undefined
           }
         />
-        <span className={styles.fallback}>兜底</span>
-        <kbd className={styles.shortcut}>{primaryModifierLabel()}K</kbd>
       </label>
+      <span className={styles.fallback}>兜底</span>
+      <Kbd sm>{primaryModifierLabel()}K</Kbd>
     </div>
   );
 }

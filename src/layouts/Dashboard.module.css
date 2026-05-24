@@ -1,43 +1,50 @@
-/* Dashboard — main-form layout per 03-product-spec §13.2.
- * Three-row CSS grid: search → main stack (phase bar + work area + footer) → status bar.
- * The mainStack wrapper provides a positioning context for SearchOverlay so the
- * overlay can absolute-cover the work area without disturbing search/status rows.
- * Background uses color-mix to derive a 92% opaque variant of --canvas
- * so the underlying screen stays faintly visible (主形态半透明覆盖).
- */
+/* Dashboard — overlay-frame layout per Claude Design bundle App.jsx (ADR-012).
+ * 5 rows: SearchBar / PhaseBar / AlignmentPhrases / panorama(3 col) / StatusBar.
+ * Overlay sits 12px inset on a transparent root so the OS desktop shows behind
+ * the frame; canvas + hairline border + r-frame round give the floating card
+ * aesthetic described in [[01-spec]] §8 (主形态半透明覆盖). */
+
 .dashboard {
+  position: fixed;
+  inset: var(--s-3);
   display: grid;
-  grid-template-rows: auto 1fr auto;
-  gap: var(--s-4);
-  height: 100vh;
-  padding: var(--s-8) var(--s-10);
-  background: color-mix(in srgb, var(--canvas) 92%, transparent);
+  grid-template-rows: auto auto auto 1fr auto;
+  background: var(--canvas);
+  border: var(--hairline) solid var(--border-2);
+  border-radius: var(--r-frame);
+  overflow: hidden;
   color: var(--fg-1);
-  font-family:
-    -apple-system, BlinkMacSystemFont, "PingFang SC", "Helvetica Neue",
-    sans-serif;
-  font-size: var(--t-16);
+  font-family: var(--font-sans);
+  font-size: var(--t-13);
+  line-height: var(--lh-body);
 }
 
-.mainStack {
+.panorama {
   position: relative;
-  display: grid;
-  grid-template-rows: auto 1fr auto;
-  gap: var(--s-4);
   min-height: 0;
 }
 
-.rowMain {
+.panoramaGrid {
   display: grid;
-  grid-template-columns: 6fr 4fr;
-  gap: var(--s-4);
+  grid-template-columns: 1.4fr 1fr 0.9fr;
+  height: 100%;
   min-height: 0;
 }
 
-.rowFooter {
+.panoramaGrid > * {
+  border-right: var(--hairline) solid var(--border-1);
+  min-width: 0;
+  overflow: hidden;
+}
+
+.panoramaGrid > *:last-child {
+  border-right: 0;
+}
+
+.col3 {
   display: grid;
-  grid-template-columns: 1fr 1fr;
-  gap: var(--s-4);
+  grid-template-rows: 1fr auto;
+  min-height: 0;
 }
 
 .loading,
@@ -47,7 +54,7 @@
   justify-content: center;
   height: 100vh;
   color: var(--fg-1);
-  font-size: var(--t-16);
+  font: var(--w-500) var(--t-16) / var(--lh-tight) var(--font-sans);
 }
 
 .error {

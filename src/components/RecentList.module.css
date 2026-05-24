@@ -1,30 +1,28 @@
-/* RecentList — 5 most recent copies per 03-product-spec §13.3 区域 5. */
-.recentList {
+/* RecentList — recent-copies aux panel.
+   Bundle pattern (border-only default / hover surface-1 / focus task outline).
+   No direct bundle component; styled per Claude Design vocabulary (ADR-012). */
+
+.region {
   display: flex;
   flex-direction: column;
-  gap: var(--s-2);
-  padding: var(--s-4);
-  background: var(--surface-2);
-  border: var(--hairline) solid var(--aux);
-  border-radius: var(--s-2);
+  min-height: 0;
+  background: var(--canvas);
 }
 
 /* B5-5: region-level Tab landing (03-product-spec §13.4). */
-.recentList:focus-visible {
+.region:focus-visible {
   outline: var(--border-thick) solid var(--protocol);
-  outline-offset: var(--s-1);
-}
-
-.heading {
-  font-size: var(--t-13);
-  font-weight: 600;
-  color: var(--fg-1);
+  outline-offset: calc(-1 * var(--border-thick));
 }
 
 .list {
   display: flex;
   flex-direction: column;
-  gap: var(--s-1);
+  min-height: 0;
+  overflow-y: auto;
+  margin: 0;
+  padding: 0;
+  list-style: none;
 }
 
 .item {
@@ -32,43 +30,51 @@
   align-items: center;
   justify-content: space-between;
   gap: var(--s-3);
-  padding: var(--s-2) var(--s-3);
-  background: var(--canvas);
-  border: var(--hairline) solid var(--aux);
-  border-radius: var(--s-2);
+  width: 100%;
+  padding: var(--s-2) var(--s-3_5);
+  background: transparent;
+  border: 0;
+  border-bottom: var(--hairline) solid var(--border-1);
   color: inherit;
   text-align: left;
+  appearance: none;
   font: inherit;
   cursor: pointer;
-  transition: background var(--d-fast) var(--ease);
+  transition: background-color var(--d-fast) var(--ease);
 }
 
-.item:hover {
-  background: var(--surface-2);
+.item:hover:not(:disabled) {
+  background: var(--surface-1);
+}
+
+.item:active:not(:disabled) {
+  background: var(--task-8);
+}
+
+.item:focus-visible {
+  outline: var(--border-thick) solid var(--task);
+  outline-offset: calc(-1 * var(--border-thick));
 }
 
 .item:disabled {
-  opacity: 0.5;
+  opacity: var(--op-dim);
   cursor: not-allowed;
 }
 
 .itemName {
   flex: 1;
+  min-width: 0;
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
-  font-size: var(--t-13);
+  font: var(--w-400) var(--t-13) / 1 var(--font-sans);
   color: var(--fg-1);
 }
 
 .itemTime {
-  font-size: var(--t-12);
+  flex: 0 0 auto;
+  font: var(--w-400) var(--t-11) / 1 var(--font-mono);
   color: var(--aux);
-}
-
-.empty {
-  padding: var(--s-4);
-  text-align: center;
-  font-size: var(--t-12);
-  color: var(--aux);
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
 }

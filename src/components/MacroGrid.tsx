@@ -1,8 +1,11 @@
+import { Flame } from "lucide-react";
+
 import { useCopy } from "../hooks/useCopy";
 import { usePromptStore } from "../stores/promptStore";
 import { useToastStore } from "../stores/toastStore";
 import { relativeTime } from "../utils/time";
 
+import { EmptyState, RegionHeader } from "./primitives";
 import styles from "./MacroGrid.module.css";
 
 const HOT_TOP_N = 4;
@@ -14,25 +17,19 @@ export function MacroGrid() {
 
   return (
     <section
-      className={styles.macroGrid}
+      className={styles.region}
       aria-label="Macro 快捷区"
       data-region="macro-grid"
       tabIndex={0}
     >
-      <header className={styles.heading}>
-        <h2 className={styles.title}>Macro</h2>
-        <span className={styles.count}>{macros.length} 张</span>
-      </header>
+      <RegionHeader title="Macro" count={`${macros.length} 张`} />
       {macros.length === 0 ? (
-        <p className={styles.empty}>暂无 Macro · 把高频组合保存下来吧</p>
+        <EmptyState>暂无 Macro · 把高频组合保存下来吧</EmptyState>
       ) : (
         <div className={styles.grid}>
           {macros.map((m, idx) => {
-            const classes = [
-              styles.card,
-              idx < HOT_TOP_N ? styles.hot : "",
-              flashId === m.id ? styles.flash : "",
-            ]
+            const isHot = idx < HOT_TOP_N;
+            const classes = [styles.card, flashId === m.id ? styles.flash : ""]
               .filter(Boolean)
               .join(" ");
             return (
@@ -40,6 +37,7 @@ export function MacroGrid() {
                 key={m.id}
                 type="button"
                 className={classes}
+                aria-label={m.name}
                 onClick={() =>
                   void copy(
                     m.content,
@@ -55,19 +53,22 @@ export function MacroGrid() {
                     m.id,
                   )
                 }
-                aria-label={m.name}
               >
-                <h3 className={styles.cardTitle}>
-                  {idx < HOT_TOP_N && (
-                    <span className={styles.flame} aria-hidden>
-                      🔥
-                    </span>
+                <h3 className={styles.title}>
+                  {isHot && (
+                    <Flame
+                      size={12}
+                      className={styles.hotIc}
+                      aria-hidden
+                      strokeWidth={2}
+                    />
                   )}
-                  {m.name}
+                  <span>{m.name}</span>
                 </h3>
-                <p className={styles.cardContent}>{m.content}</p>
+                <p className={styles.body}>{m.content}</p>
                 <div className={styles.meta}>
                   <span>{m.usageCount} 次</span>
+                  <span className={styles.sep}>·</span>
                   <span>{relativeTime(m.lastUsedAt)}</span>
                 </div>
               </button>

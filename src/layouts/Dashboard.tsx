@@ -1,3 +1,4 @@
+import { AlignmentPhrases } from "../components/AlignmentPhrases";
 import { MacroGrid } from "../components/MacroGrid";
 import { PhaseBar } from "../components/PhaseBar";
 import { RecentList } from "../components/RecentList";
@@ -34,15 +35,16 @@ export function Dashboard() {
       aria-label="prompt-hub dashboard"
     >
       <SearchBar />
-      <div className={styles.mainStack}>
-        <PhaseBar />
-        <div className={styles.rowMain}>
+      <PhaseBar />
+      <AlignmentPhrases />
+      <div className={styles.panorama}>
+        <div className={styles.panoramaGrid}>
           <MacroGrid />
           <ScenePanel />
-        </div>
-        <div className={styles.rowFooter}>
-          <RecentList />
-          <SopProgress />
+          <div className={styles.col3}>
+            <RecentList />
+            <SopProgress />
+          </div>
         </div>
         <SearchOverlay />
       </div>
