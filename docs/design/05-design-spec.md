@@ -1,13 +1,13 @@
 ---
 type: design-spec
 project: prompt-hub
-version: v0.6
+version: v0.7
 created: 2026-05-18
 last_modified: 2026-05-25
-status: pre-code
+status: ratified
 author: co  # 🤝 人机共创（CLAUDE §5.2）
-related: [[01-spec]], [[03-product-spec]], [[012-lock-visual-quality-anchor]], [[CLAUDE-DESIGN]]
-description: 手动 AI 编程仪表盘的视觉规范——token 命名与 tokens.css 单一真源对齐（--t-/--s-/ontology + neutral scale），WCAG light 实测，dark mode v1.0 已实装
+related: [[01-spec]], [[02-constitution]], [[03-product-spec]], [[012-lock-visual-quality-anchor]], [[CLAUDE-DESIGN]]
+description: 手动 AI 编程仪表盘的视觉规范——token 命名与 tokens.css 单一真源对齐（--t-/--s-/ontology + neutral scale），WCAG light 实测 + dark v1.0 实装；v0.7 加 §8 视觉锚点 / §9 typography presets / §10 组件 pattern / §11 states / §12 icon / §13 视觉权重 6 章 bundle 派生
 ---
 
 # Design Spec: prompt-hub（视觉规范）
@@ -370,6 +370,203 @@ document.documentElement.classList.remove('light')
 
 ---
 
+## 8. 视觉锚点（bundle / ADR-012 派生）
+
+### 8.1 anchor 来源
+
+> Linear-class polish — 锐利的 typography / 紧凑的 rhythm / 自信的 hierarchy — WITHOUT Linear 的 shadow / gradient / glassmorphism。
+>
+> 目标：**"a Bloomberg terminal that read Linear's typography manual"**。信息密度工具，不是营销表面。
+
+视觉锚点来源：
+- [[012-lock-visual-quality-anchor]] ADR-012 视觉决策（Linear typography + Bloomberg density）
+- [[CLAUDE-DESIGN]] sticky context（Claude Design 创建 design system 时 sticky 应用）
+- bundle preview HTML（设计师 / Claude Design output 视觉基线）
+
+任何视觉决策与上述三源冲突时，**优先级**：ADR-012 > CLAUDE-DESIGN > bundle preview。
+
+### 8.2 Hard exclusions（never generate）
+
+| 禁项 | 理由 |
+|------|------|
+| ❌ `box-shadow`（任意轴 / 任意 blur）| Bloomberg 密度的对立面，密度工具不靠 shadow 制造层级 |
+| ❌ `linear-gradient` / `radial-gradient` / `conic-gradient` | 营销表面属性，扫视场景视觉噪音 |
+| ❌ `backdrop-filter` / `blur` / glassmorphism | Apple iOS 调性而非 Linear/Bloomberg；GPU 成本 |
+| ❌ 拟物化（3D button / bevel / inner-glow）| Material 之前的视觉债，与 Linear-class polish 对立 |
+| ❌ 装饰性插画 / mascot / emoji as UI | 信息密度工具不需要装饰 |
+| ❌ functional surface `border-radius > 6px` | Linear/Bloomberg 圆角克制；overlay frame 例外（`--r-frame` 8px）|
+| ❌ animation > 200ms | 与 [[02-constitution#C1]] 双重锁定 |
+
+**违反 hard exclusion = 视觉锚点崩塌**，需走方法论 §7 八步流程开 ADR 推翻 ADR-012。
+
+### 8.3 anchor 同步策略
+
+bundle / Claude Design 视觉锚点变更时（如 Linear 大版本视觉重做 / Claude Design system bundle 更新）：
+
+1. 上游 bundle / CLAUDE-DESIGN 先 bump
+2. 本文件 §8-§13 同步 bump，必要时开新 ADR
+3. tokens.css 跟随 §2 章节落盘
+4. 组件 CSS 跟随 §10/§11/§12 落盘
+
+---
+
+## 9. Typography presets
+
+> 每个 preset 是「字号 + 字重 + 行高 + tracking + 颜色」的固化组合，组件 CSS 直接引用 preset 名而非散值组合。
+>
+> 命名约定：`.ph-{role}`（prompt-hub 前缀，避免与 utility class 冲突）。
+
+| Preset | 用途 | font-size | font-weight | line-height | tracking | color |
+|--------|------|-----------|-------------|-------------|----------|-------|
+| `.ph-region-header` | 区域标题（PhaseBar/Macro/Scene 头）| `--t-14` | `--w-600` | `--lh-tight` | `--tr-tight` | `--fg-1` |
+| `.ph-card-title` | Macro 卡片标题 / Scene row 标题 | `--t-14` | `--w-500` | `--lh-tight` | `--tr-normal` | `--fg-1` |
+| `.ph-card-body` | Macro 卡片摘要 / Phrase preview | `--t-13` | `--w-400` | `--lh-body` | `--tr-normal` | `--fg-2` |
+| `.ph-meta` | 使用次数 / 时间戳 / count badge | `--t-11` | `--w-400` | `--lh-tight` | `--tr-meta` | `--fg-3` |
+| `.ph-hotkey` | ⌘K / ⌥Space 等快捷键 badge | `--t-11` | `--w-500` | `--lh-tight` | `--tr-normal` | `--fg-2`（`--font-mono`）|
+| `.ph-empty` | EmptyState 中央提示文字 | `--t-13` | `--w-400` | `--lh-body` | `--tr-normal` | `--fg-3`（center）|
+| `.ph-code` | 代码片段 / Modifier raw text | `--t-12` | `--w-400` | `--lh-body` | `--tr-normal` | `--fg-2`（`--font-mono`）|
+
+**hard rule**：组件 CSS 写 typography 时优先引 preset，不重复散写字段组合。preset 不够用时**新增 preset**而非裸写——新 preset 视为 design-spec 扩展，需 bump。
+
+---
+
+## 10. 组件 pattern
+
+### 10.1 通用交互 pattern（border-only baseline）
+
+> 哲学：filled component 是少数（filled = ontology meaning carrier），多数是 border-only baseline + 状态叠层。
+
+| 态 | border | bg | text | 备注 |
+|----|--------|-----|------|------|
+| default | `--hairline` `--border-1` | transparent | preset 默认 | 静态基线 |
+| hover | `--hairline` `--border-2`（darken）| transparent | preset 默认 | **NO shadow**（§8.2）|
+| active (pressed) | `--hairline` `--border-3` | `--protocol-8` / `--task-8`（按层）| preset 默认 | 8% semantic fill |
+| selected（持续）| `--hairline` `--protocol` / `--task` | `--protocol-16` / `--task-16` | preset / `-fg` filled 态 | 16% semantic fill + 同色边框 |
+| focused（keyboard）| `--border-thick` `--protocol` outline | inherit prev | inherit prev | 2px outline-offset 1px |
+| disabled | `--hairline` `--border-1` | transparent | `--fg-4` + `--op-dim` | NO semantic color |
+| loading | skeleton bar | `--skeleton` / `--skeleton-hi` 动画 | hidden | neutral gray only，不染色 |
+| empty | n/a | n/a | `.ph-empty` 中央 | 见 §10.3 EmptyState |
+
+### 10.2 共享 primitive 三件套
+
+bundle 派生的 3 个跨组件 primitive，避免重复实现：
+
+| Primitive | 用途 | 视觉契约 |
+|-----------|------|---------|
+| `RegionHeader` | 每个区域顶部 header（图标 + 标题 + 右侧 meta count / action）| `--h-region-header` 40px / 内边距 `--s-3_5` 14px / typography `.ph-region-header` / 右侧 meta `.ph-meta` |
+| `EmptyState` | 区域无数据时的中央提示 | 中央对齐 / typography `.ph-empty` / 与 region edge 距离 `--s-6` 24px |
+| `Kbd` | 快捷键 badge（⌘K / ⌥Space / ⌘1-8）| 矩形 / `--r-1` 2px 圆角 / 内边距 `--s-0_5` 2px × `--s-1_25` 5px / typography `.ph-hotkey` |
+
+**hard rule**：不允许组件自己实现 header / empty / kbd 视觉，必须用 primitive。实现见 `src/components/primitives/primitives.module.css`。
+
+### 10.3 组件清单（v1.0）
+
+| 组件 | 主层 | 高度 / 尺寸 | 典型 pattern |
+|------|------|------|------|
+| `SearchBar` | aux | `--h-quickfind` 36px | border-only + focused outline `--protocol` |
+| `PhaseBar` | protocol | `--h-phasebar` 44px | border-only segmented + active 段 `--protocol-8` + 2px `--protocol` 下边框 |
+| `AlignmentPhrases` | protocol | `--h-phrases` 44px | chip 行（`--h-chip` 24px），每 chip border-only + clicked → flash `--protocol-16` |
+| `MacroGrid` | task | 3-col grid（最小卡 `--s-12` 48px）| 卡 border-only + hover darken + active `--task-8` / Flame icon |
+| `ScenePanel` | task | row `--h-scene-row` 32px | row border-only + active `--task-8` |
+| `RecentList` | aux | 行列表 | row border-only + meta time 右侧 |
+| `SopProgress` | task | 进度条 | `--skeleton` 底 + `--task` 填充 |
+| `StatusBar` | aux | `--h-statusbar` 28px | dot + meta text + 右侧 Kbd 群 |
+
+---
+
+## 11. States（每组件多态契约）
+
+> 每个组件**必须**实现以下态（empty / loading 视组件性质可选），不允许只实现 default + hover。
+
+| # | 态 | 触发 | 视觉契约 | 备注 |
+|---|----|------|---------|------|
+| 1 | default | 无交互 | §10.1 default 行 | 基线 |
+| 2 | hover | pointer over | §10.1 hover 行 | 鼠标场景，键盘用户不依赖 |
+| 3 | active / pressed | 按下中 | §10.1 active 行 | 8% fill 短暂 `--d-fast` |
+| 4 | selected | 持续选中态（PhaseBar 当前 Phase / chip 持续高亮）| §10.1 selected 行 | 16% fill + 同色边框，持续展示 |
+| 5 | focused | keyboard Tab 到 | §10.1 focused 行 | 2px outline，所有可交互 must |
+| 6 | disabled | 不可交互 | §10.1 disabled 行 | NO semantic color，仅 `--op-dim` |
+| 7 | flash | 复制成功 / 保存成功瞬间 | `--d-fast` semantic fill 后回 default | 复制反馈专用 |
+| 8 | loading | 异步数据中 | §10.1 loading 行 | skeleton 动画 `--ease`，neutral gray |
+| 9 | empty | 无数据 | §10.1 empty 行 | EmptyState primitive |
+
+**hard rule**：focused 不可省略（键盘用户 + Accessibility）。focused outline 必须用 `--protocol`（协议层强调色，所有组件统一）— 这是 ontology 的例外：focused 不承载 ontology 含义，统一用 `--protocol` 是无障碍标准。
+
+---
+
+## 12. Icon 系统
+
+### 12.1 库与规格
+
+| 字段 | 值 |
+|------|-----|
+| 库 | `lucide-react@^0.460.0`（bundle 派生）|
+| 默认尺寸 | 14px（与 `--t-14` region header 对齐）|
+| stroke 宽度 | 1.5px（lucide 默认）|
+| 默认透明度 | `--op-icon` 0.7（弱化 chrome 感知）|
+| 颜色 | **跟随父元素 text color**（`color: currentColor`），不承载 ontology |
+
+### 12.2 Icon 不承载 ontology（关键决策）
+
+**Icon 跟文字同色，永远不用 semantic palette（`--protocol` / `--task` / `--aux`）**：
+
+- 理由 1：icon 是装饰 + 语义辅助，不是 ontology 标记。ontology 由背景 / 边框承载，icon 多染色会**视觉过载** + **稀释 ontology 信号**
+- 理由 2：跟随 text color 让 icon 在 dark/light mode 自动 sync
+- 理由 3：bundle 视觉锚点要求 icon 克制（与 Linear 视觉一致）
+
+**唯一例外**：状态指示 dot（`StatusBar` 状态点）可用 ontology 色，但**不是 lucide-react，是自绘 dot**。
+
+### 12.3 v1.0 已用 icon 清单
+
+| Icon | 来源 | 用途 |
+|------|------|------|
+| `Flame` | lucide-react | MacroGrid 热门 Macro 标识 |
+| `Search` | lucide-react | SearchBar 左侧占位图标 |
+
+**hard rule**：新增 icon 需评估是否必要——bundle 视觉密度下 icon 不是默认装饰，能用 typography 表达就不引 icon。
+
+---
+
+## 13. 视觉权重（layer 颜色规约 hard rule）
+
+> 视觉权重不是"哪个组件大"，是"哪一层有 ontology semantic 颜色"。
+
+### 13.1 三层规约
+
+| 视觉层 | 模块 | ontology 色 | 视觉权重 |
+|-------|------|-----------|---------|
+| **协议层（紫）** | PhaseBar / AlignmentPhrases / Modifier | `--protocol` family | 最高（哲学七，余光感知）|
+| **任务层（绿）** | Macro / Scene / Composition / SOP | `--task` family | 高（高频使用，主战场）|
+| **辅助层（米灰）** | SearchBar / RecentList / StatusBar / meta | `--aux` + `--fg-*` | 低（兜底 / 历史 / 状态）|
+
+### 13.2 Cross-contamination = constitutional violation
+
+> 三色绑定层，跨层使用 = 违反 [[02-constitution#B2]]（协议层与任务层物理分离）。
+
+**典型违规**：
+
+- ❌ Macro 卡用紫色边框（紫属协议层，Macro 属任务层）
+- ❌ AlignmentPhrase chip 用绿色 fill（绿属任务层，chip 属协议层）
+- ❌ StatusBar dot 用紫色表示"普通状态"（紫是协议层 ontology，不是装饰）
+
+**code review 自检三问**：
+
+1. 这个组件属于哪一层？（protocol / task / aux）
+2. 我用的 ontology 色是这一层的吗？
+3. 如果跨层了，是不是 §11 focused outline 例外？
+
+任一答案为否 → **不许 merge**。
+
+### 13.3 视觉权重不靠尺寸蛮力
+
+bundle 视觉锚点的核心洞察：**视觉权重通过 typography rhythm + ontology color 表达，不通过 raw size**。
+
+- v0.6 PhaseBar 80px 高 → v0.7 收敛到 `--h-phasebar` 44px，视觉权重靠 ontology + typography 而非高度
+- Macro 卡不需要"比 Scene row 大一档"，差异通过 `--task` 边框 + 网格布局表达
+- StatusBar 28px 高（最矮）不代表"不重要"，承载持续状态的视觉位置足够
+
+---
+
 **关联文件**：
 - [[01-spec]] — 项目定位与哲学
 - [[03-product-spec]] — UI 契约（信息架构 / 模块布局 / 用户旅程 / UI 草案）
@@ -379,6 +576,39 @@ document.documentElement.classList.remove('light')
 ---
 
 ## 修订记录
+
+### v0.7（2026-05-25）— ADR-012 Phase 4 bundle 视觉锚点固化
+
+回应 ADR-012 Claude Design handoff（Linear-class polish + Bloomberg density）的 design-spec 落地，分两阶段 commit：
+
+**Stage 1（commit `1aa8324`）— §1-§7 token 命名 sync 到 `tokens.css` 单一真源**：
+
+| 章节 | 改动 |
+|------|------|
+| §2.1 字号 | `--fs-xs ~ --fs-xl`（6 档）→ `--t-N`（5 主 + 2 sub-grid）|
+| §2.2 间距 | `--space-N` → `--s-N` + sub-grid `--s-N_M`（bundle precision tier）+ §2.2.1 组件 anchor 高度 + §2.2.2 opacity token |
+| §2.3 对比度 | 保留 light WCAG 实测；dark mode 实测延后 v0.7.1 |
+| §2.4 颜色 | `--color-protocol-bg/border` → `--protocol/--task/--aux` ontology + neutral scale；cross-contamination = constitutional violation 明示 |
+| §2.5 暗色模式 | v1.0 占位 → v1.0 已实装（dark default + light @media + `.light` class override + runtime API）|
+| §3 动画 | 4 ease → 单 `--ease`；`--duration-*` → `--d-fast/base/slow` 200ms 硬封顶 |
+| §6 PhaseBar | 高度 80px → `--h-phasebar` 44px（视觉权重靠 typography + ontology，非 raw 尺寸）|
+
+**Stage 2（本 commit）— §8-§13 新增 6 章 bundle 派生**：
+
+| 章节 | 内容 |
+|------|------|
+| §8 视觉锚点 | Linear-class polish / Bloomberg terminal × Linear typography manual + 7 条 hard exclusions（no shadow / no gradient / no glassmorphism / no skeu / 装饰禁 / radius ≤ 6px functional / animation ≤ 200ms）+ anchor 同步策略 |
+| §9 Typography presets | 7 个 `.ph-*` preset（region-header / card-title / card-body / meta / hotkey / empty / code），固化字号+字重+行高+tracking+颜色 |
+| §10 组件 pattern | border-only baseline + 共享 primitive 三件套（RegionHeader / EmptyState / Kbd）+ v1.0 8 组件清单 |
+| §11 States | 9 态契约（default / hover / active / selected / focused / disabled / flash / loading / empty）+ focused outline 统一 `--protocol`（ontology 例外） |
+| §12 Icon 系统 | lucide-react@^0.460.0 / 14px / `--op-icon` 0.7 / icon 不承载 ontology（跟随 text color）+ v1.0 已用 icon 清单（Flame / Search）|
+| §13 视觉权重 | 三层规约 + cross-contamination = constitutional violation + code review 自检三问 + 视觉权重不靠尺寸蛮力 |
+
+**frontmatter**：version v0.6 → v0.7 / status pre-code → ratified / related 加 `[[02-constitution]]` + `[[CLAUDE-DESIGN]]` / description 重写。
+
+**待办**（v0.7 外）：
+- Dark mode 对比度实测 → v0.7.1
+- 辅形态视觉规范完整化 → 第五阶段实施前
 
 ### v0.6（2026-05-18）— 五审稿反哺批次 3
 
