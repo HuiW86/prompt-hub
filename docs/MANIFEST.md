@@ -1,9 +1,10 @@
 ---
 type: manifest
 project: prompt-hub
-version: v1.0
+version: v1.1
 status: active
 created: 2026-05-24
+last_modified: 2026-05-25
 audience: [human, ai]
 description: prompt-hub 项目前期准备文件总清单——按方法论 v1.3 六层架构（L0 宪法 / L1 产品契约 / L2 工程规格 / L3 实施规格 / L4 索引 / L5 协作契约）+ ADR + 实施方案 + 视觉原型 + AI 上下文。AI 进项目读完 CLAUDE.md 后接读本文件能 1 分钟拿全貌；不写行数（参考性强但易过期）
 related:
@@ -28,9 +29,9 @@ related:
 | 🤝 共创 | 6 | 6/6 ratified |
 | 🤖 AI 主笔（人审） | 7 | 7/7 ratified |
 | 🤖 AI 派生人审（L5） | 2 | 2/2 active |
-| ADR 决策记录 | 12 | 11 Accepted + 1 Proposed |
+| ADR 决策记录 | 13 | 12 Accepted + 1 Proposed |
 | 实施方案 | 1 | active |
-| 视觉原型 | 1 | v1 待 ADR-012 涟漪后归档 |
+| 视觉原型 | 1 | v1 已归档至 archive/（2026-05-25）|
 | 项目 AI 上下文 | 2 | active |
 
 ---
@@ -48,9 +49,9 @@ related:
 
 | 路径 | 内容 | 状态 |
 |---|---|---|
-| `docs/design/03-product-spec.md` | UI 契约（双形态 / 布局 / 交互） | ratified |
+| `docs/design/03-product-spec.md` | UI 契约（双形态 / 布局 / 交互） | ratified v0.6（2026-05-25 ADR-013 涟漪：AlignmentPhrases 独立 region）|
 | `docs/design/04-user-flows.md` | 用户流（边缘 / 异常 / 跨形态） | ratified |
-| `docs/design/05-design-spec.md` | 视觉/动效 token 体系 | ratified v0.6（待 bump v0.7 加 6 章） |
+| `docs/design/05-design-spec.md` | 视觉/动效 token 体系 | ratified v0.7（2026-05-25 ADR-012 Phase 4：token sync + §8-§13 bundle 派生 6 章）|
 
 ---
 
@@ -59,7 +60,7 @@ related:
 | 路径 | 内容 | 状态 |
 |---|---|---|
 | `docs/design/06-prd.md` | 数据契约 / API / 状态机 / 错误码 | ratified |
-| `docs/design/07-features.md` | 27 功能矩阵 S1–S5 | ratified |
+| `docs/design/07-features.md` | 28 功能矩阵 S1–S5 | in-progress v0.2（2026-05-25 ADR-012 Phase 1-3 ship 状态回写 + AlignmentPhrases 新条目）|
 | `docs/design/08-sitemap.md` | 资产对象树 + 视图导航图 | ratified |
 
 ---
@@ -119,6 +120,7 @@ related:
 | 010 | doc-directory-restructure | Accepted |
 | 011 | _reserved_（计划：search UsageSource，HANDOFF backlog） | — |
 | 012 | lock-visual-quality-anchor (Linear 整体气质) | Accepted（2026-05-24） |
+| 013 | alignment-phrases-tab-inclusion（AlignmentPhrases 独立 region + Tab cycle 6 tab-reachable，追认 ADR-012 Phase 3） | Accepted（2026-05-25） |
 
 ---
 
@@ -134,7 +136,8 @@ related:
 
 | 路径 | 内容 | 状态 |
 |---|---|---|
-| `docs/mockups/prompt-hub.html` | v1 主形态 mockup | engineer-aesthetic 待 ADR-012 涟漪后归档至 `archive/` |
+| `docs/mockups/archive/v1-engineer-aesthetic.html` | v1 主形态 mockup | 已归档（2026-05-25 ADR-012 Phase 4，保留作为视觉对比基线）|
+| `docs/mockups/v2/prompt-hub-design-system/` | v2 Claude Design 生成产物（pending） | 待 omar 上传 [[CLAUDE-DESIGN]] 创建 design system 跑 Task β 后落盘 |
 
 ---
 

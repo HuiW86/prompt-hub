@@ -1,13 +1,13 @@
 ---
 type: product-spec
 project: prompt-hub
-version: v0.5
+version: v0.6
 created: 2026-05-18
-last_modified: 2026-05-18
-status: pre-code
+last_modified: 2026-05-25
+status: ratified
 author: co  # 🤝 人机共创（CLAUDE §5.2）
-related: [[01-spec]], [[05-design-spec]], [[06-prd]]
-description: 手动 AI 编程仪表盘的 UI 契约——双形态架构/布局/点击路径/交互频率/状态反馈/引导/用户旅程/主形态 UI 草案
+related: [[01-spec]], [[05-design-spec]], [[06-prd]], [[012-lock-visual-quality-anchor]], [[013-alignment-phrases-tab-inclusion]]
+description: 手动 AI 编程仪表盘的 UI 契约——双形态架构/布局/点击路径/交互频率/状态反馈/引导/用户旅程/主形态 UI 草案；v0.6 把 AlignmentPhrases 升级为顶层 region（追认 ADR-013），一屏全景 7 → 8 区域，Tab cycle 5 → 6 tab-reachable
 ---
 
 # Product Spec: prompt-hub（UI 契约）
@@ -71,6 +71,7 @@ description: 手动 AI 编程仪表盘的 UI 契约——双形态架构/布局/
 |------|-----------------|----------------|
 | 搜索框（[[06-prd#5.0-搜索区]]） | 顶部居中，中等大小 | 顶部居中，中等大小 |
 | 相位带（[[06-prd#5.1-相位带（Phase-Bar）]]） | 搜索框下方，8 个横排 | 搜索框下方，8 个横排 |
+| 对齐话术（AlignmentPhrases，[[013-alignment-phrases-tab-inclusion]]） | 相位带下方 chip 行（独立 region，v0.6 起）| 同左 |
 | Macro 区（[[06-prd#5.2-Macro-快捷区]]） | 中部左侧，60% 宽 | 中部左侧，60% 宽 |
 | Scene 区（[[06-prd#5.3-Scene-全景区]]） | 中部右侧，40% 宽 | 中部右侧，40% 宽 |
 | 最近使用（[[06-prd#5.5-最近使用区]]） | 底部左侧 | 底部左侧 |
@@ -114,15 +115,16 @@ description: 手动 AI 编程仪表盘的 UI 契约——双形态架构/布局/
 
 **真实仪表盘对应物**：汽车仪表盘上，时速表、转速表、油量、水温、挡位指示灯**同时可见**，驾驶员不需要切换视图。
 
-**决策**：仪表盘首屏（两种形态都适用）必须同时呈现以下七个区域：
+**决策**：仪表盘首屏（两种形态都适用）必须同时呈现以下八个区域（v0.6 起，原 7 区域；新增对齐话术独立 region — 追认 ADR-013）：
 
 1. **搜索框（顶部居中，中等大小）**——全局兜底入口，⌘K 唤起聚焦
-2. **相位带**——8 个 Phase 横排，承载 AlignmentPhrase 一键调用
-3. **Macro 区**——当前所有 Macro 作为卡片墙置顶
-4. **Scene 区**——按场景横切的话术分类（Tab 切换）
-5. **最近使用区**——最近 5 次复制历史（时间倒序）
-6. **SOP 导航区**——当前激活的 SOP 模板 + 进度指示
-7. **状态栏**——今日复制次数、当前相位、未分类草稿等指标
+2. **相位带**——8 个 Phase 横排，承载 Phase 切换
+3. **对齐话术（AlignmentPhrases）**——相位带下方 chip 行，独立显示当前 Phase 下的对齐话术（点 chip 即复制）
+4. **Macro 区**——当前所有 Macro 作为卡片墙置顶
+5. **Scene 区**——按场景横切的话术分类（Tab 切换）
+6. **最近使用区**——最近 5 次复制历史（时间倒序）
+7. **SOP 导航区**——当前激活的 SOP 模板 + 进度指示
+8. **状态栏**——今日复制次数、当前相位、未分类草稿等指标
 
 **为什么搜索框是"兜底"而非"主路径"**：
 - 哲学二要求扫视为主、搜索为辅——主要查找路径是"扫视卡片墙找到目标"
@@ -565,6 +567,7 @@ graph TD
     subgraph 顶部["顶部 · 入口层"]
         S["搜索区 §5.0<br/>居中 60% 宽 · 浅灰背景<br/>⌘K 聚焦 · 兜底而非主入口"]
         P["相位带 §5.1<br/>8 个 Phase 横排 · 当前高亮<br/>⌘1-8 直切 · 哲学七视觉落地"]
+        AP["对齐话术 chip 行<br/>相位带下方 · 独立 region<br/>当前 Phase 话术 · 点击即复制<br/>v0.6 起 / 追认 ADR-013"]
     end
 
     subgraph 中部["中部 · 主工作区"]
@@ -582,8 +585,9 @@ graph TD
     end
 
     S --> P
-    P --> M
-    P --> SC
+    P --> AP
+    AP --> M
+    AP --> SC
     M --> R
     SC --> R
     M --> SOP
@@ -593,8 +597,9 @@ graph TD
 
     style S fill:#F1EFE8,stroke:#888780,stroke-width:1px
     style P fill:#EEEDFE,stroke:#534AB7,stroke-width:2px
-    style M fill:#E1F5EE,stroke:#1D9E75,stroke-width:1px
-    style SC fill:#E1F5EE,stroke:#1D9E75,stroke-width:1px
+    style AP fill:#EEEDFE,stroke:#534AB7,stroke-width:1px
+    style M fill:#E1F5EE,stroke:#178561,stroke-width:1px
+    style SC fill:#E1F5EE,stroke:#178561,stroke-width:1px
     style R fill:#F1EFE8,stroke:#888780,stroke-width:1px
     style SOP fill:#F1EFE8,stroke:#888780,stroke-width:1px
     style ST fill:#F1EFE8,stroke:#888780,stroke-width:1px
@@ -625,9 +630,24 @@ graph TD
 - **其他态**：灰色背景 + 浅灰边框
 - **每个 Phase 显示**：相位名称（13px）+ 快捷键标签（10px ⌘1-⌘8）
 - **行为**：
-  - 点击 Phase → 复制该 Phase 的默认 AlignmentPhrase → 状态栏切换显示当前相位
-  - 悬停/长按 → 展开该 Phase 下所有 AlignmentPhrase 列表
+  - 点击 Phase → 切换 Phase + 同步刷新「区域 2-bis 对齐话术」chip 行
+  - 悬停/长按 → 展开该 Phase 下所有 AlignmentPhrase 列表（浮层，作为 chip 行的补充候选）
   - 右键 → 进入该 Phase 编辑视图
+
+> v0.6 起：原 v0.5 "点击 Phase → 复制该 Phase 的默认 AlignmentPhrase" 行为已迁至「区域 2-bis 对齐话术」chip 行 — chip 点击即复制，PhaseBar 只负责切 Phase（追认 [[013-alignment-phrases-tab-inclusion]]）。
+
+#### 区域 2-bis：对齐话术（AlignmentPhrases）
+
+> v0.6 新增独立 region — 追认 [[013-alignment-phrases-tab-inclusion]] Phase 3 已 ship 行为。
+
+- **位置**：相位带下方，独立 chip 行
+- **尺寸**：占满整宽，高度 `--h-phrases` 44px
+- **内容**：当前激活 Phase 下的所有 AlignmentPhrase chip 横排（每 chip 高度 `--h-chip` 24px）
+- **颜色**：协议层（紫，`--protocol` border-only baseline）
+- **行为**：
+  - 单击 chip → 复制该 AlignmentPhrase → chip flash `--protocol-16` 一瞬 → 主形态自动隐藏
+  - keyboard Tab → 整行作为 1 个 tab stop（不在 chip 内 Tab）
+  - 切 Phase 时整行 chip 内容同步刷新
 
 #### 区域 3：Macro 区（[[06-prd#5.2-Macro-快捷区]]）
 
@@ -702,7 +722,7 @@ graph TD
 | `⌘N` | 唤起 Composition 工作台子窗口 | 现场组装 |
 | `⌘,` | 唤起配置面板 | 编辑 Scene/Phase/Modifier |
 | `↑` `↓` `←` `→` | 在卡片间移动焦点 | 键盘党的扫视路径 |
-| `Tab` | 在区域间切换焦点（相位带 / Macro / Scene / 最近 / SOP） | 区域级导航 |
+| `Tab` | 在区域间切换焦点（相位带 / 对齐话术 / Macro / Scene / 最近 / SOP） | 区域级导航（6 tab-reachable，v0.6 起追认 [[013-alignment-phrases-tab-inclusion]]）|
 
 ### 13.5 这个 UI 草案没解决的问题（v0.5 明示）
 
@@ -722,4 +742,29 @@ graph TD
 - [[01-spec]] — 项目定位与哲学
 - [[05-design-spec]] — 视觉规范
 - [[06-prd]] — 工程契约（数据模型 / 模块字段 / NFR / Boundaries）
+- [[012-lock-visual-quality-anchor]] — 视觉锚点 ADR（Linear-class polish）
+- [[013-alignment-phrases-tab-inclusion]] — AlignmentPhrases 独立 region 追认 ADR
 - [[prompt-hub-mvp]] — 五阶段实施任务清单
+
+---
+
+## 修订记录
+
+### v0.6（2026-05-25）— ADR-013 涟漪：AlignmentPhrases 独立 region
+
+回应 [[013-alignment-phrases-tab-inclusion]]（追认 ADR-012 Phase 3 commit `acf8229` 已 ship 的代码事实）：
+
+| 章节 | 改动 |
+|------|------|
+| frontmatter | version v0.5 → v0.6 / status pre-code → ratified / related 加 ADR-012 / ADR-013 |
+| §4.0.4 UI 共用规则 | 7 模块 → 8 模块（插入「对齐话术（AlignmentPhrases）」行，紧跟相位带后）|
+| §4.1 一屏全景 | 7 区域 → 8 区域（新增第 3 项「对齐话术（AlignmentPhrases）」，后续 Macro/Scene/最近/SOP/状态栏顺位递补）|
+| §13.2 区域布局 mermaid | 顶部子图加 AP 节点 + 协议层紫色边框；S→P→AP 链路；顺便修 #1D9E75 旧绿 → #178561 新绿（对齐 [[05-design-spec#2.3.3]] 决策）|
+| §13.3 区域文字描述 | 新增「区域 2-bis 对齐话术」（位置 / 尺寸 / 颜色 / 行为）；区域 2「相位带」行为收敛为切 Phase + 长按浮层（原"点击 Phase 复制 AlignmentPhrase"行为迁至 chip 行）|
+| §13.4 Tab cycle | 5 tab-reachable → 6 tab-reachable（顺序：相位带 / 对齐话术 / Macro / Scene / 最近 / SOP）|
+
+**保留**：原区域 1-7 编号不动（仅插入 2-bis），避免下游 anchor 失效。
+
+### v0.5（2026-05-18）— 拆分版
+
+从原 `prompt-hub-prd.md` §4 界面设计原则 + §4.5 用户旅程 + §13 主形态 UI 草案拆出。
