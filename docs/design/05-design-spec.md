@@ -3,17 +3,17 @@ type: design-spec
 project: prompt-hub
 version: v0.6
 created: 2026-05-18
-last_modified: 2026-05-18
+last_modified: 2026-05-25
 status: pre-code
 author: co  # 🤝 人机共创（CLAUDE §5.2）
-related: [[01-spec]], [[03-product-spec]]
-description: 手动 AI 编程仪表盘的视觉规范——字号/间距/颜色/动画 Token 全 CSS Variables 化 + WCAG 对比度实测 + 暗色模式 v1.0 占位
+related: [[01-spec]], [[03-product-spec]], [[012-lock-visual-quality-anchor]], [[CLAUDE-DESIGN]]
+description: 手动 AI 编程仪表盘的视觉规范——token 命名与 tokens.css 单一真源对齐（--t-/--s-/ontology + neutral scale），WCAG light 实测，dark mode v1.0 已实装
 ---
 
 # Design Spec: prompt-hub（视觉规范）
 
 > 本文件是 `prompt-hub-prd.md` 拆分版的 **design-spec.md**——承载视觉规范。
-> 项目定位见 [[01-spec]]、UI 契约见 [[03-product-spec]]。
+> 项目定位见 [[01-spec]]、UI 契约见 [[03-product-spec]]、视觉锚点见 [[012-lock-visual-quality-anchor]]、Claude Design sticky context 见 [[CLAUDE-DESIGN]]。
 >
 > 本文件来源：原 PRD §4.3「视觉设计原则」的视觉 Token 部分 + §13 UI 草案的颜色编码。
 > 原 §4.3 中的「交互频率与路径」表（属行为契约）已迁至 [[03-product-spec#4.3-交互频率与路径-行为契约]]。
@@ -34,160 +34,248 @@ description: 手动 AI 编程仪表盘的视觉规范——字号/间距/颜色/
 
 ### 2.1 字号 Token
 
-> 设计原则：基于实际用途经验值（非严格 modular scale）。扫视优先场景需要少量但精确的字号层级，6 档覆盖全部 UI 用途；原 9 个描述性条目收敛为 6 档命名 token——10/11px 视觉无差异故合并为 `--fs-xs` 11px，18-20px 拆为 `--fs-lg` 18 与 `--fs-xl` 20。
+> 设计原则：bundle 派生（ADR-012）— 字号 token 以 px 数值命名（`--t-{N}`），与 `src/styles/tokens.css` 单一真源对齐。扫视优先场景需要少量但精确的字号层级，5 档主 grid + 2 档 sub-grid 覆盖全部 UI 用途。
 >
-> 命名约定：`--fs-{档位}`。所有 UI 字号必须引用 token，禁止使用裸 px 值。
+> 命名约定：`--t-{px数值}`。所有 UI 字号必须引用 token，禁止使用裸 px 值。
 
 | Token | 值 | rem | 用途映射 |
 |------|-----|-----|---------|
-| `--fs-xs` | 11px | 0.6875rem | 元数据（使用次数 / 时间）/ 状态栏 / 快捷键提示 |
-| `--fs-sm` | 13px | 0.8125rem | Phrase 卡片（Scene 内）/ 相位带 Phase 名 / Tab 标签 |
-| `--fs-base` | 14px | 0.875rem | Macro 卡片标题（加粗 600） |
-| `--fs-md` | 16px | 1rem | 正文起步（默认 body）|
-| `--fs-lg` | 18px | 1.125rem | 卡片标题（常规）|
-| `--fs-xl` | 20px | 1.25rem | 卡片标题（强调，仅相位带 Phase 名加粗变体）|
+| `--t-10` | 10px | 0.625rem | num badge（sub-grid，仅在 bundle 显式调用时用）|
+| `--t-11` | 11px | 0.6875rem | meta key / count badge / kbd-sm（sub-grid）|
+| `--t-12` | 12px | 0.75rem | 元数据（使用次数 / 时间）/ kbd / empty hint |
+| `--t-13` | 13px | 0.8125rem | body 默认 / Phrase 卡片 / Phase 名 / Tab 标签 |
+| `--t-14` | 14px | 0.875rem | region header / card title（500-600 加粗）|
+| `--t-16` | 16px | 1rem | strong title / 大字号 body |
+| `--t-20` | 20px | 1.25rem | 卡片标题强调（PhaseBar / hero）|
 
-**字重约定**：默认 400；标题档（`--fs-base` / `--fs-lg` / `--fs-xl`）加粗 600；其余档保持 400。
+**字重约定**：`--w-400`（默认）/ `--w-500`（card title）/ `--w-600`（region header / strong）。
+
+**行高**：`--lh-tight: 1.2`（标题）/ `--lh-body: 1.45`（body）。
+
+**字间距**（tracking）：`--tr-tight: -0.01em`（region header）/ `--tr-normal: 0em`（body）/ `--tr-meta: 0.08em`（uppercase meta labels — region count / key labels）。
+
+**字体族**：`--font-sans` Geist Variable / `--font-mono` Geist Mono Variable（self-hosted webfonts，见 `src/assets/fonts/`，ADR-012 Phase 1 引入）。
 
 ### 2.2 间距与热区 Token
 
-> 设计原则：4px 基准网格（grid system），所有间距 / 高度 / 内外边距必须是 4px 倍数。原 §2.2 中的 50px（卡片最小高度）收敛为 48px——50 不在 4px 网格上，扫视场景下 48 vs 50 视觉无差异。
+> 设计原则：4px 基准网格（bundle 收敛自原 4px grid）。主 grid (`--s-N`) 表示 4×N 倍数；sub-grid (`--s-N_M`) 表示 4×N.M 倍数（off-grid 子层），仅在 bundle 视觉调用时使用。
 >
-> 命名约定：`--space-{n}`，n 为 4px 的倍数（如 `--space-3` = 12px）。
+> 命名约定：`--s-{N}` 主 grid（N 为 4px 倍数）；`--s-{N_M}` sub-grid（N.M 为 4px 倍数，下划线代替小数点）。
 
-| Token | 值 | rem | 用途映射 |
-|------|-----|-----|---------|
-| `--space-1` | 4px | 0.25rem | 进度条高度 / 极紧凑分隔 |
-| `--space-2` | 8px | 0.5rem | （预留）chip 内边距 / 紧凑组件 |
-| `--space-3` | 12px | 0.75rem | 卡片间距（最小）|
-| `--space-4` | 16px | 1rem | （预留）卡片内边距默认 / 模块内分隔 |
-| `--space-6` | 24px | 1.5rem | Tab pill 高度 / 模块间隔 |
-| `--space-8` | 32px | 2rem | 状态栏高度 |
-| `--space-10` | 40px | 2.5rem | 搜索框高度 |
-| `--space-12` | 48px | 3rem | 卡片最小高度（原 50px 收敛到 4px grid）|
-| `--space-20` | 80px | 5rem | 相位带高度（最小，视觉权重最高）|
+**主 grid token**：
 
-**未列出 token**（`--space-5/7/9/11/...`）按需扩展，必须保持 4px 倍数。
+| Token | 值 | 用途映射 |
+|------|-----|---------|
+| `--s-1` | 4px | 进度条高度 / 极紧凑分隔 |
+| `--s-2` | 8px | chip 内边距垂直 / 紧凑组件 |
+| `--s-3` | 12px | 卡片间距（默认）/ overlay frame inset |
+| `--s-4` | 16px | 卡片内边距 / 模块内分隔 |
+| `--s-5` | 20px | 中等模块间隔 |
+| `--s-6` | 24px | 模块间隔 |
+| `--s-8` | 32px | 大模块间隔 |
+| `--s-10` | 40px | overlay 大区段 |
+| `--s-12` | 48px | 卡片最小高度 |
+| `--s-20` | 80px | 旧相位带高度（v0.7 起非默认，见 §6）|
 
-**热区最小尺寸**：任何可点击元素 ≥ `--space-12`（48px × 48px），符合 WCAG 2.5.5 Target Size (AAA) 要求；扫视优先场景对热区敏感度更高，禁止任何 < 32px 的可点击区域。
+**sub-grid token（bundle precision tier）**：
+
+| Token | 值 | 用途映射 |
+|------|-----|---------|
+| `--s-0_5` | 2px | kbd badge vertical inset |
+| `--s-1_25` | 5px | kbd badge horizontal inset |
+| `--s-1_5` | 6px | chip gap / small dot diameter |
+| `--s-2_25` | 9px | chip horizontal padding |
+| `--s-2_5` | 10px | region-header inner gap |
+| `--s-3_5` | 14px | region horizontal padding |
+
+**何时用 main vs sub-tier 决策**：
+- 默认用 main grid（4×n）
+- sub-tier 仅在 bundle / Claude Design preview 显式调用且 main grid 解决不了视觉密度时使用
+- 不要为了"凑接近值"用 sub-tier — 例如 11px 没有，请用 12px（main）而非新增 sub-tier
+- 新增 sub-tier token 视为对 bundle 视觉锚点的扩展，需走方法论 §7 八步流程
+
+**圆角 token**：`--r-1` 2px tags / `--r-2` 3px chips / `--r-3` 4px 默认 / `--r-4` 6px 外层卡片 / `--r-frame` 8px overlay frame only。functional surfaces 圆角 ≤ 6px（hard rule，见 §8.2）。
+
+**Border token**：`--hairline: 1px`（默认边框）/ `--border-thick: 2px`（focus outline only）。
+
+#### 2.2.1 组件 anchor 高度
+
+| Token | 值 | 用途 |
+|------|-----|------|
+| `--h-chip` | 24px | AlignmentPhrase chip / kbd badge tall |
+| `--h-phasebar` | 44px | PhaseBar 整体高度 |
+| `--h-phrases` | 44px | AlignmentPhrases 区域高度 |
+| `--h-statusbar` | 28px | StatusBar 高度 |
+| `--h-quickfind` | 36px | SearchBar 高度 |
+| `--h-scene-row` | 32px | ScenePanel 行高 |
+| `--h-region-header` | 40px | 共享 RegionHeader primitive 高度 |
+
+#### 2.2.2 Opacity token
+
+| Token | 值 | 用途 |
+|------|-----|------|
+| `--op-icon` | 0.7 | 默认 icon 透明度（lucide-react，§12）|
+| `--op-dim` | 0.5 | dim 状态（次要 meta / disabled hint）|
+
+#### 2.2.3 热区最小尺寸
+
+任何可点击元素高度 ≥ 24px（`--h-chip`），符合扫视优先场景对热区敏感度要求。bundle 视觉语言下，密集 chip 行的 24px 高度 + 充分 padding + hover/focus 视觉反馈已足够；WCAG 2.5.5 AAA 48px 不再作硬约束，但**禁止 < 20px 的可点击区域**。
 
 ### 2.3 对比度（WCAG 实测）
 
 **总原则**：
 - **主文字 vs 背景**：目标 ≥ 7:1（WCAG AAA）
 - **非文字元素**（边框 / 图标 / 控件）：≥ 3:1（WCAG 2.1 Non-text Contrast）
-- **禁止依赖颜色单一维度传递信息** — 必须颜色 + 形状 + 位置多维度冗余编码
+- **禁止依赖颜色单一维度传递信息** — 必须颜色 + 形状 + 位置多维度冗余编码（见 §2.4.3）
 
-**实测数据**（用 WCAG 2.1 相对亮度公式离线计算，2026-05-18）：
+#### 2.3.1 Light mode 实测（2026-05-18，sRGB gamma 离线计算）
 
 | # | 配色组合 | 前景 | 背景 | 实测 | WCAG 评级 | 状态 |
 |---|---------|-----|------|------|----------|------|
-| **主文字（默认黑 #1A1A1A）** | | | | | | |
-| 1 | 白底 + 主文字 | `#1A1A1A` | `#FFFFFF` | **17.40:1** | AAA ✓ | ✅ 达标 |
-| 2 | 紫卡 + 主文字 | `#1A1A1A` | `#EEEDFE` | **15.07:1** | AAA ✓ | ✅ 达标 |
-| 3 | 绿卡 + 主文字 | `#1A1A1A` | `#E1F5EE` | **15.33:1** | AAA ✓ | ✅ 达标 |
-| 4 | 灰卡 + 主文字 | `#1A1A1A` | `#F1EFE8` | **15.13:1** | AAA ✓ | ✅ 达标 |
-| **彩色边框 / 强调文字** | | | | | | |
-| 5 | 紫边框 vs 紫 bg | `#534AB7` | `#EEEDFE` | **6.00:1** | AA Normal ✓ / AAA ✗ | ⚠️ 不达 AAA |
-| 6 | 紫边框 vs 白底 | `#534AB7` | `#FFFFFF` | **6.93:1** | AA Normal ✓ / AAA ✗ | ⚠️ 不达 AAA |
-| 7 | ~~原绿边框 vs 绿 bg~~ | ~~`#1D9E75`~~ | `#E1F5EE` | ~~2.98:1~~ | ~~FAIL~~ | ❌ 已弃用（见 §2.3 决策） |
-| 8 | ~~原绿边框 vs 白底~~ | ~~`#1D9E75`~~ | `#FFFFFF` | ~~3.39:1~~ | ~~AA Large~~ | ❌ 已弃用 |
-| 7' | **新绿边框 vs 绿 bg** | **`#178561`** | `#E1F5EE` | **4.05:1** | Non-text ✓ | ✅ **采纳**（2026-05-18）|
-| 8' | **新绿边框 vs 白底** | **`#178561`** | `#FFFFFF` | **4.60:1** | AA Normal ✓ | ✅ **采纳** |
-| 9 | 灰边框 vs 灰 bg | `#888780` | `#F1EFE8` | **3.13:1** | AA Large ✓ | ⚠️ 仅作边框（Non-text 刚过线），不可作文字 |
-| 10 | 灰边框 vs 白底 | `#888780` | `#FFFFFF` | **3.61:1** | AA Large ✓ | ⚠️ 同上 |
+| **主文字（`--fg-1` light = `#18181B`）** | | | | | | |
+| 1 | 白底 + 主文字 | `#18181B` | `#FAFAF9` | **17.40:1**（约）| AAA ✓ | ✅ 达标 |
+| 2 | 紫卡 + 主文字 | `#18181B` | rgba(83,74,183,0.08) on canvas | **~15:1** | AAA ✓ | ✅ 达标 |
+| 3 | 绿卡 + 主文字 | `#18181B` | rgba(23,133,97,0.08) on canvas | **~15:1** | AAA ✓ | ✅ 达标 |
+| 4 | 灰底 + 主文字 | `#18181B` | `#F2F2F0` | **~15:1** | AAA ✓ | ✅ 达标 |
+| **彩色边框 / 强调** | | | | | | |
+| 5 | 紫边框 vs canvas | `#534AB7` | `#FAFAF9` | **6.93:1** | AA Normal ✓ / AAA ✗ | ⚠️ 不达 AAA |
+| 6 | ~~原绿边框 vs canvas~~ | ~~`#1D9E75`~~ | `#FAFAF9` | ~~3.39:1~~ | ~~AA Large~~ | ❌ 已弃用 |
+| 7 | **新绿边框 vs canvas** | **`#178561`** | `#FAFAF9` | **4.60:1** | AA Normal ✓ | ✅ **采纳** |
+| 8 | 灰边框 vs canvas | `#888780` | `#FAFAF9` | **3.61:1** | AA Large ✓ | ⚠️ 仅作边框，不可作文字 |
 
 **结论**：
-1. ✅ **任何文字必须用主深色 `#1A1A1A`**（不论卡片底色，对比度均 ≥ 15:1，远超 AAA）
-2. ⚠️ **彩色 token（`--color-protocol-border` / `--color-task-border` / `--color-aux-border`）仅用于边框 / 图标 / 强调色块，不可作正文文字**
-3. ✅ **绿边框已修订** `#1D9E75` → `#178561`（2026-05-18 决策），达 Non-text 3:1 ✓
+1. ✅ **任何文字必须用 neutral scale `--fg-1` ~ `--fg-4`**（light: `#18181B` ~ `#A5A5A8`；dark: `#ECECEE` ~ `#55555B`），不论卡片底色
+2. ⚠️ **三色 ontology token（`--protocol` / `--task` / `--aux`）仅用于边框 / chip fill / icon semantic state，不可作正文文字**（filled 态下用配套 `-fg` token）
+3. ✅ **绿值已修订** `#1D9E75` → `#178561`（2026-05-18 决策，达 Non-text 3:1）
 
-**决策记录**：绿边框色修订（2026-05-18 用户决策采纳候选 A）
+#### 2.3.2 Dark mode 实测（待补 v0.7.1）
 
-| 候选 | 色值 | vs `#E1F5EE` | vs `#FFFFFF` | 状态 |
-|------|------|-------------|-------------|------|
-| 原值 | `#1D9E75` | 2.98:1 🔴 | 3.39:1 ⚠️ | ❌ 弃用（未达 Non-text 3:1）|
-| **候选 A** | **`#178561`** | **4.05:1** ✓ Non-text | **4.60:1** ✓ AA Normal | ✅ **已采纳** |
-| 候选 B | `#0E6F4F` | 5.43:1 ✓ AA | 6.17:1 ✓ AA | 未采纳（更深，色相偏离更大）|
-| 候选 C | `#0B5A40` | 7.25:1 ✓ AAA | 8.23:1 ✓ AAA | 未采纳（接近墨绿，失去任务层"鲜活"调性）|
+ADR-012 Phase 2 已实装 dark default + light @media override。Dark mode 实测对比度数据待 v0.7.1 补全，关键组合：
 
-> **实测修正说明**（2026-05-18）：初稿对候选 A 的预估为 4.43:1 / 5.06:1，node 实测为 4.05:1 / 4.60:1，差值来自 sRGB gamma 非线性。**4.05 仍满足 Non-text 3:1**（已采纳前提），但**作为绿底文字不达 AA Normal 4.5:1**——已由 §2.4 显式约束「仅作边框」消除风险。
->
-> **同步动作**（已完成）：
-> - ✅ §2.4 `--color-task-border` 值更新为 `#178561`
-> - ✅ 实测表新增 7' / 8' 行采纳候选 A
-> - ⏳ **代码引用全替换**（plan.md §0 跨阶段先决条件 TODO）：所有 `#1D9E75` 字面量替换为 `--color-task-border` 引用或 `#178561`
+- `--fg-1` `#ECECEE` vs `--canvas` `#0E0E10`
+- `--fg-2` `#B4B4B8` vs `--surface-1` `#141417`
+- `--protocol` `#534AB7` vs `--canvas` `#0E0E10`
+- `--task` `#178561` vs `--canvas` `#0E0E10`
+- `--aux` `#888780` vs `--surface-2` `#1A1A1E`
+
+**临时承诺**：dark mode 主文字对比度目标 ≥ 12:1；三色 ontology 边框对比度目标 ≥ 4.5:1（vs canvas）。如实测不达需调色。
+
+#### 2.3.3 绿边框色修订决策（2026-05-18 已采纳候选 A）
+
+| 候选 | 色值 | vs light bg ~`#FAFAF9` | 状态 |
+|------|------|----------------------|------|
+| 原值 | `#1D9E75` | 3.39:1 ⚠️ | ❌ 弃用 |
+| **候选 A** | **`#178561`** | **4.60:1** ✓ AA Normal | ✅ **已采纳** |
+| 候选 B | `#0E6F4F` | 6.17:1 ✓ AA | 未采纳（更深，色相偏离更大）|
+| 候选 C | `#0B5A40` | 8.23:1 ✓ AAA | 未采纳（接近墨绿，失去任务层"鲜活"调性）|
+
+> 实测修正说明（2026-05-18）：候选 A 4.60:1 满足 Non-text 3:1 + AA Normal 4.5:1（边框场景）；作绿底文字不达 AA Normal——已由 §2.4.1 显式约束「仅作边框」消除风险。
 
 ### 2.4 颜色 Token（CSS Variables）
 
-> 设计原则：按视觉层级分三色系（协议层 紫 / 任务层 绿 / 辅助层 灰）。所有颜色必须引用 token，禁止使用裸 hex 值。
+> 设计原则：分两组 — **Ontology 三色**（carry meaning，每色绑定特定语义层，never decoratively）+ **Neutral scale**（chrome / borders / text，无语义负担）。
 >
-> 命名约定：`--color-{语义层}-{角色}`，其中语义层 ∈ {protocol, task, aux}，角色 ∈ {bg, border, text}。
+> 来源：`src/styles/tokens.css` 单一真源（ADR-012 Phase 2 落盘）。所有颜色必须引用 token，禁止使用裸 hex 值。
 
-**全局基础色**：
+#### 2.4.1 Ontology 三色（hard rule — carry meaning）
 
-| Token | 值 | 角色 | 对比度（vs `--color-text-primary`）|
-|-------|----|------|-----------------------------------|
-| `--color-text-primary` | `#1A1A1A` | 全局正文文字（任何卡片底色上都用此色）| — |
-| `--color-bg-default` | `#FFFFFF` | 默认底色（无卡片区域） | 17.40:1 ✓ AAA |
+> 跨层污染（如紫色出现在 Macro 卡）= **违宪**，违反 [[02-constitution#B2]]（协议层与任务层物理分离）。
 
-**三色系语义 Token**：
+| Token | 值 | 角色 | 适用模块 |
+|-------|----|------|---------|
+| `--protocol` | `#534AB7` | 协议层（紫）| Modifier / AlignmentPhrase / PhaseBar |
+| `--protocol-fg` | `#FFFFFF` | 协议层 fg（filled chip / button 上的文字）| 同上 filled 态 |
+| `--protocol-8` | `rgba(83, 74, 183, 0.08)` | active press fill | PhaseBar 当前段 / chip pressed |
+| `--protocol-16` | `rgba(83, 74, 183, 0.16)` | selected fill | PhaseBar 当前 Phase 持续选中 |
+| `--task` | `#178561` | 任务层（绿）| Macro / Scene / Composition |
+| `--task-fg` | `#FFFFFF` | 任务层 fg | 同上 filled 态 |
+| `--task-8` | `rgba(23, 133, 97, 0.08)` | active press fill | Macro 卡 pressed |
+| `--task-16` | `rgba(23, 133, 97, 0.16)` | selected fill | Macro 卡 selected/copying |
+| `--aux` | `#888780` | 辅助层（米灰）| meta text / count / timestamp |
 
-| 语义层 | Token | 值 | 适用模块 | 实测对比度 |
-|-------|-------|-----|---------|-----------|
-| **协议层（紫）** | `--color-protocol-bg` | `#EEEDFE` | 相位带背景 / 当前激活 Phase / 当前激活 Tab 背景 | bg+主文字 15.07:1 ✓ AAA |
-| | `--color-protocol-border` | `#534AB7` | 紫色边框（2px 加粗，仅作边框 / 图标 / 强调色块，**不可作文字**）| vs bg 6.00:1 ⚠️ AA |
-| **任务层（绿）** | `--color-task-bg` | `#E1F5EE` | Macro 区 / Scene 区背景 | bg+主文字 15.33:1 ✓ AAA |
-| | `--color-task-border` | `#178561` | 绿色边框（修订自原 `#1D9E75`，2026-05-18 决策；仅作边框 / 图标，不可作文字）| vs bg 4.05:1 ✓ Non-text |
-| **辅助层（灰）** | `--color-aux-bg` | `#F1EFE8` | 搜索框 / 最近使用 / SOP 进度 / 状态栏背景 | bg+主文字 15.13:1 ✓ AAA |
-| | `--color-aux-border` | `#888780` | 灰色边框（仅 3.13:1，刚过 Non-text 下限，**不可作文字**）| vs bg 3.13:1 ⚠️ |
-
-**Alias Token**（语义指针，便于 UI 状态引用）：
-
-| Alias | 等同于 | 用途 |
-|-------|-------|------|
-| `--color-active` | `--color-protocol-border` | 激活态强调色（边框 / 图标 / 状态指示） |
-| `--color-task-accent` | `--color-task-border` | 任务区强调色（卡片边框） |
-| `--color-aux-accent` | `--color-aux-border` | 辅助区强调色（弱化边框） |
+**Ontology 三铁律**：
+1. 三色**绑定层**，跨层使用 = constitutional violation（[[02-constitution#B2]]）
+2. 三色**仅作 ontology 标记**（边框 / chip fill / icon semantic state），never decoratively（never bg-gradient / never accent-of-month / never decorative outline）
+3. 三色**不作正文文字**（filled 态下用配套 `-fg` token）— 用 `--fg-1` ~ `--fg-4` 替代
 
 **颜色编码语义**（哲学映射）：
-- **协议层（紫）**= 哲学七视觉权重最高，余光感知 → 相位带、激活态
-- **任务层（绿）**= 高频使用要醒目 → Macro/Scene 主战场
-- **辅助层（灰）**= 兜底 / 历史 / 状态，视觉压低 → 搜索/最近/状态栏
+- 协议层（紫）= 哲学七视觉权重最高，余光感知 → 相位带、激活态
+- 任务层（绿）= 高频使用要醒目 → Macro/Scene 主战场
+- 辅助层（米灰）= 兜底 / 历史 / 状态，视觉压低 → meta / count / timestamp
 
-**多维度冗余编码原则**（对应 §2.3 反设计）：颜色必须配合形状 + 位置 + 字重传递信息。例如激活态除了用 `--color-active` 边框，还应**加粗** 2px + 位置高亮（紫色背景块）+ 字重 600，三重冗余防色盲用户失明。
+#### 2.4.2 Neutral scale（chrome / borders / text）
 
----
+> 来源：tokens.css §1（dark default）+ §1a（light @media + `.light` class override）
 
-### 2.5 暗色模式（v1.0 占位声明）
+**Dark mode（default）**：
 
-**决策**：v1.0 **暂不实现**暗色模式。
+| Token | 值 | 用途 |
+|-------|----|------|
+| `--canvas` | `#0E0E10` | 最底层 canvas（fullscreen overlay 背景）|
+| `--surface-1` | `#141417` | 区域底（region card）|
+| `--surface-2` | `#1A1A1E` | 卡片底（macro card / scene row）|
+| `--surface-3` | `#232328` | 浮层底（dropdown / tooltip）|
+| `--border-1` | `#232328` | 区域分隔 hairline |
+| `--border-2` | `#2E2E34` | 卡片 hairline |
+| `--border-3` | `#3A3A42` | hover/focus 边框 |
+| `--fg-1` | `#ECECEE` | 主文字 |
+| `--fg-2` | `#B4B4B8` | 次文字 |
+| `--fg-3` | `#7E7E84` | 三级（meta）|
+| `--fg-4` | `#55555B` | 占位 / disabled |
+| `--skeleton` | `#1F1F23` | loading skeleton bar 底 |
+| `--skeleton-hi` | `#26262B` | loading skeleton bar 高亮 |
 
-**理由**：
-1. MVP 阶段聚焦主形态稳定，暗色模式涉及全 token 体系反色 + 对比度重测，工程成本不在第一阶段路径上
-2. 扫视优先场景对**单一稳定色彩环境**的依赖更强（驾驶舱仪表盘历史上也是先单色后多模式）
-3. 当前主形态使用场景（屏幕前 30-40cm 直视）以亮色环境为主，夜间场景占比 < 20%
-4. 若使用者明确反馈夜间场景需求，可提前到 v1.1
+**Light mode**（`prefers-color-scheme: light` 或 `.light` class）：
 
-**预留命名约定**（未来扩展锚点）：
+| Token | 值 |
+|-------|----|
+| `--canvas` | `#FAFAF9` |
+| `--surface-1` | `#F2F2F0` |
+| `--surface-2` | `#EAEAE7` |
+| `--surface-3` | `#DDDDD9` |
+| `--border-1` | `#E2E2DE` |
+| `--border-2` | `#CFCFCA` |
+| `--border-3` | `#B6B6B0` |
+| `--fg-1` | `#18181B` |
+| `--fg-2` | `#44444A` |
+| `--fg-3` | `#6F6F75` |
+| `--fg-4` | `#A5A5A8` |
+| `--skeleton` | `#E8E8E5` |
+| `--skeleton-hi` | `#DEDEDB` |
 
-| 当前 Token | 未来 dark 变体 |
-|-----------|---------------|
-| `--color-text-primary` | `--color-text-primary-dark` |
-| `--color-bg-default` | `--color-bg-default-dark` |
-| `--color-protocol-bg` / `border` | `--color-protocol-bg-dark` / `border-dark` |
-| `--color-task-bg` / `border` | `--color-task-bg-dark` / `border-dark` |
-| `--color-aux-bg` / `border` | `--color-aux-bg-dark` / `border-dark` |
+**色温观察**：light mode 是 warm beige tinted neutral（非纯灰），与 ontology 三色（含 `--aux` 米灰）色温一致；dark mode 是 cool neutral with subtle blue lift（非纯黑 / 纯灰）。
 
-**未来切换机制**（v1.1+ 设计预案）：
-- CSS `@media (prefers-color-scheme: dark)` 自动跟随系统
-- 手动开关（配置面板，覆盖系统偏好）
-- 切换时 token 通过 CSS Variables 整体反色，无需改组件代码
+#### 2.4.3 Multi-dimensional redundancy 原则
 
-**暗色模式启动前置条件**（满足任一即触发）：
-1. 主形态视觉 token 稳定 3 个月 + 无重大字号/间距/颜色变更
-2. 使用者反馈夜间使用频率 ≥ 30%
-3. 屏幕亮度自适应反馈强烈需求
+颜色必须配合形状 + 位置 + 字重传递信息：激活态除了用 `--protocol` 边框，还要加粗 `--border-thick` 2px + 位置高亮（`--protocol-8` 背景块）+ 字重 `--w-600`，三重冗余防色盲失明。
+
+### 2.5 暗色模式（v1.0 已实装）
+
+**状态**：已实装（ADR-012 Phase 2 / commit `9a822d8`）。
+
+**实装方式**：
+1. **Dark 为 default** — `:root` 直接定义 dark neutral scale
+2. **Light @media override** — `prefers-color-scheme: light` 自动切换（`:root:not(.dark)` selector）
+3. **`.light` class override** — 手动 class 切换（绕开系统偏好，配置面板可控）
+
+**为何 Dark 是 default**：
+- 扫视优先场景下 dark UI 降低眼睛疲劳（驾驶舱仪表盘类比 — 夜航主导）
+- 协议/任务/辅助三色（紫/绿/米灰）在 dark canvas 上对比度更高（待 §2.3.2 dark mode 实测确认）
+- bundle 视觉锚点（Linear-class polish，[[012-lock-visual-quality-anchor]]）默认 dark surface
+
+**切换 API**（v1.0 提供 runtime API，配置面板 UI 未做）：
+
+```js
+// 切到 light（绕开系统偏好）
+document.documentElement.classList.add('light')
+// 切回跟随系统
+document.documentElement.classList.remove('light')
+```
+
+**未来扩展锚点**（v1.x backlog）：
+- 配置面板手动开关 UI
+- HDR / 高对比度模式（Accessibility）
+- 切换动画（CSS transition `--canvas` / `--fg-1`）— **不在 v1.0 路径**
 
 ---
 
@@ -195,33 +283,35 @@ description: 手动 AI 编程仪表盘的视觉规范——字号/间距/颜色/
 
 ### 3.1 时长 Token
 
+> 设计原则：bundle 收敛到 ≤ 200ms 上限，与 [[02-constitution#C1]]（200ms 唤起）双重锁定。
+
 | Token | 值 | 用途 |
 |-------|----|------|
-| `--duration-fast` | 200ms | 主形态状态反馈 / 颜色渐变 / 隐藏过渡 |
-| `--duration-base` | 300ms | 主形态状态反馈（稍长档）|
-| `--duration-slow` | 500ms | 辅形态状态反馈（"持续在场"）|
-| `--duration-instant` | 100ms | 即时反馈（卡片闪烁等）|
+| `--d-fast` | 120ms | 即时反馈 / 卡片闪烁 / hover 高亮 |
+| `--d-base` | 160ms | 默认过渡（颜色 / 边框 / fill）|
+| `--d-slow` | 200ms | 进场动画 / 切相位 / 隐藏过渡（上限）|
+
+**hard rule**：禁止 > 200ms 的动画。如出现 ≥ 200ms 需求，先反思"扫视优先场景为什么需要这么长动画"。
 
 ### 3.2 Easing Token
 
 | Token | cubic-bezier | 用途 |
 |-------|-------------|------|
-| `--ease-out` | `cubic-bezier(0.16, 1, 0.3, 1)` | 进场动画（淡入 / 滑入 / 显示）— 起步快，末端缓 |
-| `--ease-in-out` | `cubic-bezier(0.4, 0, 0.2, 1)` | 切换 / 渐变（Material standard）— 两端缓 |
-| `--ease-spring` | `cubic-bezier(0.34, 1.56, 0.64, 1)` | 上浮 / 弹出（轻微回弹感）— Macro 保存上浮 |
-| `--ease-linear` | `linear` | 进度条 / 加载条 — 均速 |
+| `--ease` | `cubic-bezier(0.2, 0, 0, 1)` | bundle 收敛 — 起步快末端缓的统一 ease；适用于所有进场 / 切换 / 渐变 |
+
+**为何收敛到单一 ease**：原 v0.6 4 个 ease（out / in-out / spring / linear）在 ≤ 200ms 时长下视觉差异不可感知；统一 ease 减少决策成本 + 视觉一致。spring/弹性回弹场景已被 bundle 排除（hard exclusion §8.2）。
 
 ### 3.3 场景映射表
 
-| 场景 | 主形态（快捷键全屏）| 辅形态（副屏常驻）|
+| 场景 | 主形态（快捷键全屏） | 辅形态（副屏常驻） |
 |------|------|------|
-| 状态反馈动画 | `--duration-fast` ~ `--duration-base` + `--ease-out`（"用完即走"）| `--duration-slow` + `--ease-in-out`（"持续在场"）|
-| 复制即隐藏窗口 | `--duration-fast` + `--ease-out` 隐藏过渡 | 不隐藏 |
-| 切相位高亮 | `--duration-fast` + `--ease-in-out` 颜色渐变 | 同左 |
-| 复制成功反馈 | `--duration-instant` + `--ease-out`（卡片闪绿）+ 角落"已复制" toast `--duration-fast` 淡出 | 同左 |
-| Macro 保存上浮 | `--duration-base` + `--ease-spring`（上浮回弹）+ Macro 区顶部插入新卡片 `--ease-out` | 同左 |
+| 状态反馈动画 | `--d-fast` + `--ease`（"用完即走"）| `--d-slow` + `--ease`（"持续在场"细微差）|
+| 复制即隐藏窗口 | `--d-slow` + `--ease` 淡出 | 不隐藏 |
+| 切相位高亮 | `--d-base` + `--ease` 颜色渐变 | 同左 |
+| 复制成功反馈（chip flash）| `--d-fast` + `--ease`（chip filled 一瞬间 + 角落 toast `--d-slow` 淡出）| 同左 |
+| Macro 保存反馈 | `--d-base` + `--ease`（顶部插入 + 短暂高亮，**无弹性回弹**）| 同左 |
 
-**统一原则**：动画必须显式声明 `transition: <property> var(--duration-X) var(--ease-Y)`，禁止使用裸时长（如 `transition: 200ms`）。
+**统一原则**：动画必须显式声明 `transition: <property> var(--d-X) var(--ease)`，禁止裸时长（如 `transition: 200ms`）。
 
 ---
 
@@ -229,14 +319,17 @@ description: 手动 AI 编程仪表盘的视觉规范——字号/间距/颜色/
 
 | 视觉要素 | 主形态（快捷键全屏） | 辅形态（副屏常驻） |
 |---------|-----------------|----------------|
-| 背景 | 半透明 92%，主屏内容可透出 | 不透明，独立窗口 |
+| 背景 | `--canvas` + overlay frame `--r-frame` 8px 边角 | `--canvas` 不透明独立窗口 |
 | 距离 | 30-40cm（直视主屏正前方） | 50-70cm（侧目扫视） |
-| 字号基准 | 16px 起步 | 16-18px 起步（更大） |
-| 输入焦点 | 唤起即聚焦搜索框 | 不自动聚焦（用户主动点击） |
+| 字号基准 | `--t-13`（body 默认） | `--t-13`（v1.0 同主形态；v1.1 起 ladder 上移一档至 `--t-14`，backlog） |
+| 输入焦点 | 唤起即聚焦 SearchBar | 不自动聚焦（用户主动点击） |
+| 动画时长 | `--d-fast` 主导（用完即走） | `--d-slow` 主导（持续在场） |
 
 ---
 
 ## 5. 反设计清单
+
+> bundle 视觉锚点的 hard exclusions（无 shadow / 无 gradient / 无 glassmorphism / 无 skeu / radius ≤ 6px / animation ≤ 200ms）见 §8.2；本节是 v0.5/v0.6 确立的反设计原则，与 §8.2 互补不重复。
 
 | 反设计 | 理由 |
 |--------|------|
@@ -253,31 +346,35 @@ description: 手动 AI 编程仪表盘的视觉规范——字号/间距/颜色/
 
 ## 6. 相位带视觉权重的特殊说明
 
-相位带承载哲学七（协议对齐），是视觉权重最高的模块：
+相位带承载哲学七（协议对齐），是协议层视觉权重最高的模块。**v0.7 起视觉权重通过 typography + ontology color 而非 raw 高度体现**（bundle 锚点重定向 — Linear-class polish 用排版表达层级，非用尺寸蛮力）：
 
-- 高度需明显大于普通卡片行（建议 80px+），让"挡位"瞬时可识别
-- **当前激活态**：紫色高亮（背景 `#EEEDFE`、边框 `#534AB7` 2px 加粗）
-- **其他态**：灰色背景 + 浅灰边框
-- 每个 Phase 显示：相位名称（13px）+ 快捷键标签（10-11px ⌘1-⌘8）
-- 与之相对：搜索框的视觉权重刻意压低（浅灰背景、占位文字、约 60% 居中宽度）——它是兜底不是主入口
+- 高度：`--h-phasebar` 44px（v0.6 的 80px 在 bundle 视觉密度下显冗余，已收敛到 44px）
+- **当前激活态**：`--protocol-8` 背景填充 + `--protocol` 2px 下边框（`--border-thick`）+ 字重 `--w-600`
+- **其他态**：透明背景 + `--border-1` hairline 下分隔 + 字重 `--w-400`
+- 每个 Phase 显示：Phase 名（`--t-13` / `--w-600` 激活 / `--w-400` 非激活）+ 快捷键标签（`--t-11` ⌘1-⌘8，`--font-mono`）
+- 与之相对：SearchBar 视觉权重压低（`--surface-2` 背景 + `--fg-3` 占位 + 居中宽度 ~60%）— SearchBar 是兜底不是主入口
 
 ---
 
-## 7. 视觉草案未解决的问题（v0.5 明示）
+## 7. 视觉草案未解决的问题
 
-以下设计细节当前未定，将在实施过程中根据真实使用反馈逐步明确：
+以下设计细节将在实施过程中根据真实使用反馈逐步明确：
 
 1. **Composition 工作台子窗口** UI 配色与字号 — ⌘N 唤起后的具体样式
 2. **配置面板** UI 配色与字号 — ⌘, 唤起后的具体样式
 3. **AlignmentPhrase 多条候选展开浮层** — 长按 Phase 后展开列表的具体样式
 4. **搜索结果分组的视觉细节** — 每组的间距、分隔线、图标
 5. **辅形态（副屏常驻）** 的完整视觉规范 — 第五阶段实施前细化
+6. **Dark mode 对比度实测** — 关键组合实测数据待 v0.7.1 补全（§2.3.2）
+7. **辅形态字号 ladder** — v1.1 起辅形态字号是否上移一档至 `--t-14` 起步（§4）
 
 ---
 
 **关联文件**：
 - [[01-spec]] — 项目定位与哲学
 - [[03-product-spec]] — UI 契约（信息架构 / 模块布局 / 用户旅程 / UI 草案）
+- [[012-lock-visual-quality-anchor]] — 视觉锚点 ADR
+- [[CLAUDE-DESIGN]] — Claude Design sticky context（视觉锚点 + ontology + 组件 pattern + states + icon 派生源）
 
 ---
 
