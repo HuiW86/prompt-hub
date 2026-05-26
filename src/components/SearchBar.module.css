@@ -42,6 +42,12 @@
   color: var(--fg-3);
 }
 
+.input:focus-visible {
+  outline: var(--border-thick) solid var(--protocol);
+  outline-offset: 1px;
+  border-radius: var(--r-1);
+}
+
 .field:focus-within .icon {
   color: var(--protocol);
   opacity: 1;
