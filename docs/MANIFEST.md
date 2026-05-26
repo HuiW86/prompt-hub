@@ -51,7 +51,7 @@ related:
 |---|---|---|
 | `docs/design/03-product-spec.md` | UI 契约（双形态 / 布局 / 交互） | ratified v0.6（2026-05-25 ADR-013 涟漪：AlignmentPhrases 独立 region）|
 | `docs/design/04-user-flows.md` | 用户流（边缘 / 异常 / 跨形态） | ratified |
-| `docs/design/05-design-spec.md` | 视觉/动效 token 体系 | ratified v0.7（2026-05-25 ADR-012 Phase 4：token sync + §8-§13 bundle 派生 6 章）|
+| `docs/design/05-design-spec.md` | 视觉/动效 token 体系 | ratified v0.7.1（2026-05-25 §12.4 chrome vs 用户内容边界澄清；v0.7 ADR-012 Phase 4：token sync + §8-§13 bundle 派生 6 章）|
 
 ---
 

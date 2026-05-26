@@ -1,7 +1,7 @@
 ---
 type: design-spec
 project: prompt-hub
-version: v0.7
+version: v0.7.1
 created: 2026-05-18
 last_modified: 2026-05-25
 status: ratified
@@ -525,6 +525,29 @@ bundle 派生的 3 个跨组件 primitive，避免重复实现：
 
 **hard rule**：新增 icon 需评估是否必要——bundle 视觉密度下 icon 不是默认装饰，能用 typography 表达就不引 icon。
 
+### 12.4 适用范围（chrome vs 用户内容）
+
+§12.1-§12.3 的 hard rule（lucide-react / 14px / `--op-icon` 0.7 / 跟随 text color / 克制）**只覆盖 chrome 系统图标**——即 prompt-hub 应用自身渲染的 UI 装饰（Flame on Macro 热门徽章 / SearchBar 占位 / StatusBar Kbd / 主形态导航图标等）。
+
+**用户内容图标允许任意字符**：
+
+| 场景 | 字段位置 | 允许字符 |
+|------|---------|----------|
+| Scene icon | `scenes.icon`（DB schema）| emoji / 单字 / lucide name string |
+| Macro 自定义图标（未来）| `macros.icon` | 同上 |
+| AlignmentPhrase 自定义图标（未来）| 同上 | 同上 |
+
+**理由**：
+- 用户内容图标承载**用户表达**而非 chrome 视觉规范——强制 lucide 会剥夺用户语义自由（emoji 通常更直观）
+- chrome 图标受 §12.1-§12.3 约束以保证系统视觉一致；用户内容图标受 §11/§13 ontology 约束（不能 cross-contaminate 但形态自由）
+
+**当前 v1.0 实测**（`src-tauri/migrations/0002_seed.sql`）：
+- `scene-plan`: `📐` 方案设计
+- `scene-research`: `🔍` 调研
+- `scene-debug`: `🔧` 排查
+
+合规——属于「用户内容」分类（即使是 seed 数据，本质仍是用户可编辑字段）。
+
 ---
 
 ## 13. 视觉权重（layer 颜色规约 hard rule）
@@ -576,6 +599,19 @@ bundle 视觉锚点的核心洞察：**视觉权重通过 typography rhythm + on
 ---
 
 ## 修订记录
+
+### v0.7.1（2026-05-25）— Phase 5 manual verify § 12 边界澄清
+
+Phase 5 manual verify 截图自检时发现 Scene tab 用 emoji（`📐 🔍 🔧`，来源 `migrations/0002_seed.sql`），与原 §12 lucide-react hard rule 表面冲突。根因是 §12 未区分 chrome vs 用户内容边界。
+
+**新增 §12.4「适用范围（chrome vs 用户内容）」**：
+- §12.1-§12.3 lucide-react hard rule 只覆盖 **chrome 系统图标**（应用自身渲染的 UI 装饰：Flame / Search / Kbd 等）
+- **用户内容图标**（Scene icon / 未来 Macro 自定义 / AlignmentPhrase 自定义）允许 emoji / 单字 / lucide name 等任意字符
+- 当前 v1.0 seed `scene-plan`=📐 / `scene-research`=🔍 / `scene-debug`=🔧 属于用户内容，合规——不需改代码
+
+**frontmatter**：version v0.7 → v0.7.1 / last_modified 保持 2026-05-25（同日小幅 patch）。
+
+---
 
 ### v0.7（2026-05-25）— ADR-012 Phase 4 bundle 视觉锚点固化
 
