@@ -4,6 +4,8 @@ use std::sync::Mutex;
 use tauri::{Manager, PhysicalPosition, PhysicalSize, RunEvent};
 use tauri_plugin_global_shortcut::{Code, GlobalShortcutExt, Modifiers, Shortcut, ShortcutState};
 
+#[cfg(feature = "bench")]
+mod bench;
 mod commands;
 mod db;
 mod error;
@@ -65,6 +67,9 @@ pub fn run() {
                         .build(),
                 )?;
                 app.global_shortcut().register(toggle)?;
+
+                #[cfg(feature = "bench")]
+                bench::spawn_wake_cycle(app.handle().clone());
             }
             Ok(())
         })

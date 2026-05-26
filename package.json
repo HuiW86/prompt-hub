@@ -11,7 +11,9 @@
     "test": "vitest run",
     "test:watch": "vitest",
     "lint": "eslint .",
-    "format": "prettier --write ."
+    "format": "prettier --write .",
+    "bench:cold-start": "node bench/cold-start.bench.mjs",
+    "bench:hotkey-wake": "node bench/hotkey-wake.bench.mjs"
   },
   "dependencies": {
     "@tauri-apps/api": "^2",

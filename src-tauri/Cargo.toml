@@ -36,3 +36,9 @@ tokio = { version = "1", features = ["time"] }
 [dev-dependencies]
 tempfile = "3"
 
+[features]
+# Opt-in wake-latency instrumentation. Enable with `cargo build --features bench`.
+# When set, lib.rs auto-cycles show()+focus()+hide() and emits JSON-line samples
+# to stdout instead of waiting for ⌥Space. See bench/hotkey-wake.bench.mjs.
+bench = []
+
