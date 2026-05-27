@@ -103,7 +103,7 @@ related:
 
 ---
 
-## §8 ADR 决策记录（13 份）
+## §8 ADR 决策记录（14 份）
 
 | 编号 | 标题 | 状态 |
 |---|---|---|
@@ -122,14 +122,16 @@ related:
 | 012 | lock-visual-quality-anchor (Linear 整体气质) | Accepted（2026-05-24） |
 | 013 | alignment-phrases-tab-inclusion（AlignmentPhrases 独立 region + Tab cycle 6 tab-reachable，追认 ADR-012 Phase 3） | Accepted（2026-05-25） |
 | 014 | nspanel-isa-swizzle（macOS NSPanel isa-swizzle 跨版本风险占位，下位于 ADR-008） | Reserved（2026-05-27） |
+| 015 | expose-mcp-write-pipeline（暴露 MCP server 给外部 AI 入库，14 tool + workspace 物理拆 4 crate + drafts staging） | Accepted（2026-05-27） |
 
 ---
 
-## §9 实施方案（1 份 · 🤝 共创）
+## §9 实施方案（2 份 · 🤝 共创）
 
 | 路径 | 内容 | 状态 |
 |---|---|---|
 | `docs/plans/prompt-hub-mvp.md` | 五阶段任务清单 | v0.8（第一阶段 MVP 收尾中） |
+| `docs/plans/mcp-write-pipeline.md` | MCP write pipeline 实施 plan（drafts staging + 14 tool 双层 + workspace 4 crate 物理拆分） | v0.2（2026-05-27 · pre-code） |
 
 ---
 
