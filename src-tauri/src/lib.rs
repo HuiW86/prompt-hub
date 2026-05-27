@@ -91,6 +91,7 @@ pub fn run() {
                                     let window = window.clone();
                                     let _ = app.run_on_main_thread(move || {
                                         macos::order_front(&window);
+                                        macos::focus_view(&window);
                                     });
                                 }
                             }

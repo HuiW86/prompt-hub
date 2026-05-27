@@ -56,17 +56,12 @@ pub fn apply_nonactivating_panel(window: &WebviewWindow) {
     let style_mask = ns_window.styleMask();
     ns_window.setStyleMask(style_mask | NSWindowStyleMask::NonactivatingPanel);
 
-    // Reset first responder after class swap so the WebKit view continues to
-    // receive key events (otherwise React keyboard pipeline goes dark).
-    if let Ok(ns_view_ptr) = window.ns_view() {
-        let ns_view = unsafe { &*(ns_view_ptr as *const NSView) };
-        ns_window.makeFirstResponder(Some(ns_view));
-    }
-
     let behavior = NSWindowCollectionBehavior::CanJoinAllSpaces
         | NSWindowCollectionBehavior::FullScreenAuxiliary;
     ns_window.setCollectionBehavior(behavior);
     ns_window.setLevel(NSStatusWindowLevel);
+
+    focus_view(window);
 }
 
 pub fn order_front(window: &WebviewWindow) {
@@ -75,4 +70,19 @@ pub fn order_front(window: &WebviewWindow) {
     };
     let ns_window = unsafe { &*(ns_window_ptr as *const NSWindow) };
     ns_window.orderFrontRegardless();
+}
+
+// AppKit resets firstResponder across orderOut → orderIn cycles, so every
+// wake must re-target the WebKit view. Without this the React document
+// keydown listeners (⌘1 / ⌘2 / ⌘K) go dark after the first hide.
+pub fn focus_view(window: &WebviewWindow) {
+    let Ok(ns_window_ptr) = window.ns_window() else {
+        return;
+    };
+    let Ok(ns_view_ptr) = window.ns_view() else {
+        return;
+    };
+    let ns_window = unsafe { &*(ns_window_ptr as *const NSWindow) };
+    let ns_view = unsafe { &*(ns_view_ptr as *const NSView) };
+    ns_window.makeFirstResponder(Some(ns_view));
 }
