@@ -40,3 +40,6 @@ pnpm-debug.log*
 
 # OS
 .DS_Store
+
+# AI session cache (codex session ids, etc.)
+.context/

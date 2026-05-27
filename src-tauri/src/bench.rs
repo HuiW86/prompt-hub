@@ -42,10 +42,7 @@ pub fn spawn_wake_cycle(app: AppHandle) {
             let _ = window.show();
             let _ = window.set_focus();
             let elapsed_us = t0.elapsed().as_micros();
-            println!(
-                "{{\"round\":{},\"show_us\":{}}}",
-                round, elapsed_us
-            );
+            println!("{{\"round\":{},\"show_us\":{}}}", round, elapsed_us);
             tokio::time::sleep(Duration::from_millis(CYCLE_GAP_MS)).await;
             let _ = window.hide();
             tokio::time::sleep(Duration::from_millis(CYCLE_GAP_MS)).await;
