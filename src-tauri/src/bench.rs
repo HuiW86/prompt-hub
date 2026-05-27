@@ -1,13 +1,18 @@
 // Wake-latency auto-bench (cfg(feature = "bench") only).
 //
 // Replaces the M0-3 inline instrumentation that was stripped in commit
-// a14d61e. Same shape: spawn an async task that warms up, cycles
-// show()+set_focus()+hide() N times, prints JSON-line samples to stdout,
-// then exits the process so the harness can collect the binary's output.
+// a14d61e. Spawns an async task that warms up, cycles the platform wake
+// path N times, prints JSON-line samples to stdout, then exits the
+// process so the harness can collect the binary's output.
 //
-// Scope caveat: measures show()+set_focus() Rust call latency. Does NOT
-// include the OS global-shortcut event dispatch (~10ms per M0-3 manual
-// vs automated delta). Real ⌥Space P95 = this number + ~10ms.
+// macOS uses show() + orderFrontRegardless (mirroring lib.rs wake path
+// after the NSPanel isa-swizzle fix); other platforms keep show() +
+// set_focus(). Without this split, bench would call activateIgnoringOtherApps
+// via set_focus and stop reflecting real ⌥Space behavior.
+//
+// Scope caveat: measures the Rust call latency only. Does NOT include the
+// OS global-shortcut event dispatch (~10ms per M0-3 manual vs automated
+// delta). Real ⌥Space P95 = this number + ~10ms.
 
 use std::time::{Duration, Instant};
 
@@ -30,8 +35,7 @@ pub fn spawn_wake_cycle(app: AppHandle) {
 
         // Warm-up — discards JIT/cache transients without printing samples.
         for _ in 0..WARMUP_ROUNDS {
-            let _ = window.show();
-            let _ = window.set_focus();
+            wake(&window);
             tokio::time::sleep(Duration::from_millis(CYCLE_GAP_MS)).await;
             let _ = window.hide();
             tokio::time::sleep(Duration::from_millis(CYCLE_GAP_MS)).await;
@@ -39,8 +43,7 @@ pub fn spawn_wake_cycle(app: AppHandle) {
 
         for round in 0..SAMPLE_ROUNDS {
             let t0 = Instant::now();
-            let _ = window.show();
-            let _ = window.set_focus();
+            wake(&window);
             let elapsed_us = t0.elapsed().as_micros();
             println!("{{\"round\":{},\"show_us\":{}}}", round, elapsed_us);
             tokio::time::sleep(Duration::from_millis(CYCLE_GAP_MS)).await;
@@ -51,4 +54,12 @@ pub fn spawn_wake_cycle(app: AppHandle) {
         println!("{{\"done\":true}}");
         app.exit(0);
     });
+}
+
+fn wake(window: &tauri::WebviewWindow) {
+    let _ = window.show();
+    #[cfg(not(target_os = "macos"))]
+    let _ = window.set_focus();
+    #[cfg(target_os = "macos")]
+    crate::macos::order_front(window);
 }

@@ -9,6 +9,8 @@ mod bench;
 mod commands;
 mod db;
 mod error;
+#[cfg(target_os = "macos")]
+pub(crate) mod macos;
 mod models;
 mod repo;
 
@@ -41,6 +43,18 @@ pub fn run() {
                         let _ = window.set_position(PhysicalPosition::new(pos.x, pos.y));
                     }
 
+                    // System fullscreen Spaces are WindowServer/AppKit domains,
+                    // not z-order layers. AppKit only honors NonactivatingPanel
+                    // on NSPanel instances, so we isa-swizzle TaoWindow ->
+                    // NSPanel once at setup. Doing it here (instead of lazily
+                    // on first wake) means any pre-wake show — devtools,
+                    // future emit window-created handler, command-line
+                    // fallback — already sees an NSPanel. See macos.rs and
+                    // ADR-008 for the rationale.
+                    #[cfg(target_os = "macos")]
+                    {
+                        macos::apply_nonactivating_panel(&window);
+                    }
                 }
 
                 let toggle = Shortcut::new(Some(Modifiers::ALT), Code::Space);
@@ -61,101 +75,23 @@ pub fn run() {
                             if window.is_visible().unwrap_or(false) {
                                 let _ = window.hide();
                             } else {
-                                // System fullscreen Spaces are WindowServer/AppKit
-                                // domains, not z-order layers. A plain NSWindow
-                                // (Tauri/tao creates TaoWindow, an NSWindow
-                                // subclass) is bound to its owning desktop Space
-                                // even with CanJoinAllSpaces|FullScreenAuxiliary
-                                // — AppKit only honors the NonactivatingPanel
-                                // styleMask on NSPanel instances. Empirical
-                                // proof: setStyleMask was a silent no-op (mask
-                                // 32780 in, 32780 out).
-                                //
-                                // Fix: isa-swizzle the live NSWindow into NSPanel
-                                // before applying NonactivatingPanel. Standard
-                                // Tauri workaround used by Linear / Raycast /
-                                // Stats.app. Instance size must match (asserted)
-                                // — NSPanel adds no ivars over NSWindow so this
-                                // is safe across system updates. Tao's focusable
-                                // ivar and sendEvent: override are lost; we
-                                // don't use either.
-                                //
-                                // Idempotent across wakes — guard checks the
-                                // current class before re-swizzling.
-                                #[cfg(target_os = "macos")]
-                                {
-                                    use objc2::{
-                                        ffi::object_setClass,
-                                        runtime::{AnyClass, AnyObject},
-                                        ClassType,
-                                    };
-                                    use objc2_app_kit::{
-                                        NSPanel, NSStatusWindowLevel, NSView, NSWindow,
-                                        NSWindowCollectionBehavior, NSWindowStyleMask,
-                                    };
-                                    if let Ok(ns_window_ptr) = window.ns_window() {
-                                        let ns_object = ns_window_ptr.cast::<AnyObject>();
-                                        let old_cls = unsafe { (*ns_object).class() };
-                                        let panel_cls = NSPanel::class();
-                                        if !std::ptr::eq(old_cls, panel_cls) {
-                                            assert_eq!(
-                                                old_cls.instance_size(),
-                                                panel_cls.instance_size(),
-                                                "TaoWindow -> NSPanel isa-swizzle: instance size mismatch"
-                                            );
-                                            unsafe {
-                                                object_setClass(
-                                                    ns_object,
-                                                    panel_cls as *const AnyClass,
-                                                );
-                                            }
-                                        }
-                                        let ns_window =
-                                            unsafe { &*(ns_window_ptr as *const NSWindow) };
-                                        let ns_panel =
-                                            unsafe { &*(ns_window_ptr as *const NSPanel) };
-                                        // Floating + becomes-key-only-if-needed are
-                                        // the panel-class defaults required for a
-                                        // non-stealing overlay (a la NSStatusBar).
-                                        ns_panel.setFloatingPanel(true);
-                                        ns_panel.setBecomesKeyOnlyIfNeeded(true);
-                                        let style_mask = ns_window.styleMask();
-                                        ns_window.setStyleMask(
-                                            style_mask | NSWindowStyleMask::NonactivatingPanel,
-                                        );
-                                        // Reset first responder after class swap so
-                                        // the WebKit view continues to receive key
-                                        // events (otherwise React keyboard pipeline
-                                        // goes dark).
-                                        if let Ok(ns_view_ptr) = window.ns_view() {
-                                            let ns_view =
-                                                unsafe { &*(ns_view_ptr as *const NSView) };
-                                            ns_window.makeFirstResponder(Some(ns_view));
-                                        }
-                                        let behavior =
-                                            NSWindowCollectionBehavior::CanJoinAllSpaces
-                                                | NSWindowCollectionBehavior::FullScreenAuxiliary;
-                                        ns_window.setCollectionBehavior(behavior);
-                                        ns_window.setLevel(NSStatusWindowLevel);
-                                    }
-                                }
                                 let _ = window.show();
                                 // Tao's set_focus() calls activateIgnoringOtherApps:
                                 // which actively yanks the window back into the
                                 // app's own Space, fighting the non-activating
-                                // panel model. Skip it on macOS; orderFrontRegardless
-                                // below already surfaces the window without stealing
-                                // app activation from the foreground fullscreen app.
+                                // panel model. orderFrontRegardless surfaces
+                                // the window without stealing app activation.
                                 #[cfg(not(target_os = "macos"))]
                                 let _ = window.set_focus();
                                 #[cfg(target_os = "macos")]
                                 {
-                                    use objc2_app_kit::NSWindow;
-                                    if let Ok(ns_window_ptr) = window.ns_window() {
-                                        let ns_window =
-                                            unsafe { &*(ns_window_ptr as *const NSWindow) };
-                                        ns_window.orderFrontRegardless();
-                                    }
+                                    // AppKit setters are MainThreadOnly; the
+                                    // global-shortcut handler runs on a worker
+                                    // thread.
+                                    let window = window.clone();
+                                    let _ = app.run_on_main_thread(move || {
+                                        macos::order_front(&window);
+                                    });
                                 }
                             }
                         })

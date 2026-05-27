@@ -117,6 +117,14 @@ pub fn hide_window(state: State<'_, AppState>, window: WebviewWindow) -> AppResu
 pub fn show_window(state: State<'_, AppState>, window: WebviewWindow) -> AppResult<()> {
     state.copy_seq.fetch_add(1, Ordering::SeqCst);
     window.show()?;
+    // Skip set_focus on macOS: tao's implementation calls
+    // activateIgnoringOtherApps: which fights the NSPanel non-activating
+    // model set up in macos::apply_nonactivating_panel at setup. The IPC
+    // command is invoked from the frontend (which runs on the main
+    // thread), so order_front is safe to call directly.
+    #[cfg(not(target_os = "macos"))]
     window.set_focus()?;
+    #[cfg(target_os = "macos")]
+    crate::macos::order_front(&window);
     Ok(())
 }
