@@ -94,7 +94,7 @@ related:
 
 ### Risks
 
-- **isa-swizzle 跨 macOS 版本稳定性**：`instance_size` assert 是 fail-fast guard；macOS 给 NSPanel 加 ivar 时 app 启动即 panic（比 silent 错位安全）。Beta release 时多盯一下
+- **isa-swizzle 跨 macOS 版本稳定性**：`instance_size` assert 是 fail-fast guard；macOS 给 NSPanel 加 ivar 时 app 启动即 panic（比 silent 错位安全）。Beta release 时多盯一下。**ADR-014 Reserved 占位**（[[docs/adr/014-nspanel-isa-swizzle]]），触发条件之一出现再开正文
 - **tao focusable + sendEvent: override 丢失**：当前 prompt-hub 不依赖；若未来需要类似 `set_focusable(false)` 行为会需重写
 - **dark mode 对比度未实测** — design-spec §2.3.2 留 7 条占位（不阻塞第一阶段）
 - **Claude Design pipeline 未跑** — Task β 真实跑通前管线效能未知（外部依赖，omar 主导）

@@ -103,7 +103,7 @@ related:
 
 ---
 
-## §8 ADR 决策记录（12 份）
+## §8 ADR 决策记录（13 份）
 
 | 编号 | 标题 | 状态 |
 |---|---|---|
@@ -121,6 +121,7 @@ related:
 | 011 | _reserved_（计划：search UsageSource，HANDOFF backlog） | — |
 | 012 | lock-visual-quality-anchor (Linear 整体气质) | Accepted（2026-05-24） |
 | 013 | alignment-phrases-tab-inclusion（AlignmentPhrases 独立 region + Tab cycle 6 tab-reachable，追认 ADR-012 Phase 3） | Accepted（2026-05-25） |
+| 014 | nspanel-isa-swizzle（macOS NSPanel isa-swizzle 跨版本风险占位，下位于 ADR-008） | Reserved（2026-05-27） |
 
 ---
 
