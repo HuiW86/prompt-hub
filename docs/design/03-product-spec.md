@@ -83,6 +83,8 @@ description: 手动 AI 编程仪表盘的 UI 契约——双形态架构/布局/
 - **主形态**：背景半透明、有"复制即隐藏"动画、ESC 关闭
 - **辅形态**：背景不透明、不会隐藏、可选展开 Composition 工作台为侧栏
 
+> **图标占位约定**：本文中「📥」（草稿 tab / 待审 badge）均为**阅读占位符**，实际渲染为 lucide `Inbox` 图标——禁 emoji as UI（[[05-design-spec#8.2]]），chrome 图标统一走 lucide（[[05-design-spec#12.3]]）。下游实现以 lucide 为准，不得直接渲染 emoji 字面。
+
 #### 4.0.5 形态之间的边界
 
 **主形态承载 80% 高频动作**：切相位、调用 Macro、查找话术、复制粘贴、查看 SOP 下一步。
@@ -782,7 +784,7 @@ graph TD
 | 章节 | 改动 |
 |------|------|
 | frontmatter | version v0.6 → v0.7 / status ratified → draft / related 加 [[015-expose-mcp-write-pipeline]] / description 补「草稿 tab + 待审 badge」 |
-| §4.0.4 UI 共用规则 | 插入「待审 badge」模块行（搜索框同行右端 / 仅 pending>0 显示 / 两形态同呈现）|
+| §4.0.4 UI 共用规则 | 插入「待审 badge」模块行（搜索框同行右端 / 仅 pending>0 显示 / 两形态同呈现）；补「图标占位约定」note：全文「📥」均为阅读占位符，实渲 lucide `Inbox`（合规 [[05-design-spec#8.2]] 禁 emoji as UI / [[05-design-spec#12.3]] chrome 走 lucide）|
 | §13.2 区域布局 mermaid | 顶部入口层加 `BADGE` 节点（纯文本 "📥 N 条待审"，灰色辅助层）+ `S -.-> BADGE` 链路；Scene 区节点注「含 📥 草稿 tab」|
 | §13.3 区域 4 Scene 区 | Tab 行最左加「📥 草稿」收件箱 tab（图标 + 分隔 + 仅 pending>0 显示三重信号区分，不违反 [[02-constitution#B1]]）；草稿卡片信息架构（target_type 角标 + name + preview + provenance「claude-code · model」+ promote/discard 双动作）；promote 须 omar 显式点击 reaffirm |
 | §13.3 区域 7 状态栏 | 加 v0.7 note：状态栏「草稿待沉淀」（自己高频未固化）vs 区域 8 badge「待审」（外部 AI 写入）语义区分，不可合并 |

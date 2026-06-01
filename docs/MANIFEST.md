@@ -1,10 +1,10 @@
 ---
 type: manifest
 project: prompt-hub
-version: v1.1
+version: v1.2
 status: active
 created: 2026-05-24
-last_modified: 2026-05-25
+last_modified: 2026-06-01
 audience: [human, ai]
 description: prompt-hub 项目前期准备文件总清单——按方法论 v1.3 六层架构（L0 宪法 / L1 产品契约 / L2 工程规格 / L3 实施规格 / L4 索引 / L5 协作契约）+ ADR + 实施方案 + 视觉原型 + AI 上下文。AI 进项目读完 CLAUDE.md 后接读本文件能 1 分钟拿全貌；不写行数（参考性强但易过期）
 related:
@@ -26,8 +26,8 @@ related:
 | 主笔人 | 数量 | 状态 |
 |---|---|---|
 | 🧑 人主笔 | 2 | 2/2 ratified |
-| 🤝 共创 | 6 | 6/6 ratified |
-| 🤖 AI 主笔（人审） | 7 | 7/7 ratified |
+| 🤝 共创 | 6 | 4/6 ratified + 2 draft（product-spec/design-spec 待 omar 审）|
+| 🤖 AI 主笔（人审） | 6 | 4/6 ratified + prd pre-code + features in-progress |
 | 🤖 AI 派生人审（L5） | 2 | 2/2 active |
 | ADR 决策记录 | 13 | 12 Accepted + 1 Proposed |
 | 实施方案 | 1 | active |
@@ -40,8 +40,8 @@ related:
 
 | 路径 | 内容 | 状态 |
 |---|---|---|
-| `docs/design/01-spec.md` | 项目定位与九条哲学 | ratified |
-| `docs/design/02-constitution.md` | 8 条铁律 | ratified |
+| `docs/design/01-spec.md` | 项目定位与九条哲学 | v0.6（2026-06-01 M-X.0 涟漪：§8.8 反向 AI 写入边界，对应 ADR-015）|
+| `docs/design/02-constitution.md` | 8 条铁律 | ratified v1.1（2026-06-01 M-X.0 涟漪：D1 补反向边界 note，对应 ADR-015）|
 
 ---
 
@@ -49,9 +49,9 @@ related:
 
 | 路径 | 内容 | 状态 |
 |---|---|---|
-| `docs/design/03-product-spec.md` | UI 契约（双形态 / 布局 / 交互） | ratified v0.6（2026-05-25 ADR-013 涟漪：AlignmentPhrases 独立 region）|
+| `docs/design/03-product-spec.md` | UI 契约（双形态 / 布局 / 交互） | draft v0.7（2026-06-01 M-X.0 涟漪：草稿 tab + 待审 badge UI 契约，待 omar 审）|
 | `docs/design/04-user-flows.md` | 用户流（边缘 / 异常 / 跨形态） | ratified |
-| `docs/design/05-design-spec.md` | 视觉/动效 token 体系 | ratified v0.7.1（2026-05-25 §12.4 chrome vs 用户内容边界澄清；v0.7 ADR-012 Phase 4：token sync + §8-§13 bundle 派生 6 章）|
+| `docs/design/05-design-spec.md` | 视觉/动效 token 体系 | draft v0.8（2026-06-01 M-X.0 涟漪：PendingBadge/DraftInbox/DraftCard 视觉契约 + lucide Inbox，待 omar 审）|
 
 ---
 
@@ -59,8 +59,8 @@ related:
 
 | 路径 | 内容 | 状态 |
 |---|---|---|
-| `docs/design/06-prd.md` | 数据契约 / API / 状态机 / 错误码 | ratified |
-| `docs/design/07-features.md` | 28 功能矩阵 S1–S5 | in-progress v0.2（2026-05-25 ADR-012 Phase 1-3 ship 状态回写 + AlignmentPhrases 新条目）|
+| `docs/design/06-prd.md` | 数据契约 / API / 状态机 / 错误码 | pre-code v0.7（2026-06-01 M-X.0 涟漪：drafts 表 migration 0003 + 14 tool 双层 API）|
+| `docs/design/07-features.md` | 28 功能矩阵 S1–S5 | in-progress v0.3（2026-06-01 M-X.0 涟漪：MCP write pipeline 功能条目）|
 | `docs/design/08-sitemap.md` | 资产对象树 + 视图导航图 | ratified |
 
 ---
@@ -69,7 +69,7 @@ related:
 
 | 路径 | 内容 | 状态 |
 |---|---|---|
-| `docs/design/09-tech-stack.md` | 全栈技术决议 | ratified v1.1 |
+| `docs/design/09-tech-stack.md` | 全栈技术决议 | ratified v1.2（2026-06-01 M-X.0 涟漪：ADR-015 MCP server + workspace 4 crate 物理拆分）|
 | `docs/design/10-ops-spec.md` | 运维规格 | ratified |
 | `docs/design/11-test-spec.md` | 测试规格 | ratified |
 
