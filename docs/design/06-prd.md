@@ -1,13 +1,13 @@
 ---
 type: prd
 project: prompt-hub
-version: v0.6
+version: v0.7
 created: 2026-05-18
-last_modified: 2026-05-19
+last_modified: 2026-06-01
 status: pre-code
 author: ai  # 🤖 AI 主笔 + 人审（CLAUDE §5.2）
-related: [[01-spec]], [[03-product-spec]], [[prompt-hub-mvp]]
-description: 手动 AI 编程仪表盘的工程契约——数据模型三表式/状态机/升级回滚/NFR/Boundaries 三段式/安全字段（含本地+离线档）
+related: [[01-spec]], [[03-product-spec]], [[prompt-hub-mvp]], [[015-expose-mcp-write-pipeline]], [[mcp-write-pipeline]]
+description: 手动 AI 编程仪表盘的工程契约——数据模型三表式/状态机/升级回滚/NFR/Boundaries 三段式/安全字段（含本地+离线档）/ §10 MCP write pipeline 接口契约（drafts 收件箱 + 5 IPC + 14 MCP tool）
 ---
 
 # PRD: prompt-hub（工程契约）
@@ -379,6 +379,7 @@ graph TD
 | 时间轴-SOP | SOP 步骤引用 Macro 或 Phrase | SOP 步骤不引用 Modifier、Composition、AlignmentPhrase |
 | 孤岛-AlignmentPhrase | 只与 Phase 关联 | 不参与 Modifier 拼接、不进 Scene、不进 SOP、不与 Macro 互转 |
 | 观察者-UsageRecord | 观察所有可复制资产；append-only | 不持有任何资产间的结构关系；不修改不删除（除归档外） |
+| 暂态-drafts（v0.7） | drafts.target_type ∈ {modifier / composition / macro / alignment_phrase}；promote 后写入对应正式表 | drafts 不引用任何正式资产、不被任何正式资产引用；正式资产不持有 draft_id 反向指针；详见 §10.1 |
 
 ### 6.1 Modifier
 
@@ -1048,8 +1049,8 @@ major 升级（v1.x → v2.0）需满足：
 | # | 操作 | Trigger | Why | Override |
 |---|------|---------|-----|----------|
 | N1 | 任何上传到外部 / 云端 / 第三方服务 | 任何含 `http(s)://` 且非 `localhost` 的网络请求 | §7.3 隐私 + 涉及敏感业务场景（政府 / 公安数据方向） | 无 override，必须改代码 + 显式声明 |
-| N2 | 自动调用任何外部 AI 生成内容 | 任何 LLM API 调用（Claude / OpenAI / Gemini 等） | [[01-spec#8.1-不做-AI-生成]]：失去自己思考 = 摧毁手动挡核心价值 | 无 override |
-| N3 | 自动发送话术给任何 AI | 复制后自动 paste / 自动 send to Claude Code | [[01-spec#8.3-不做自动执行]]：手动复制粘贴是思考的缓冲 | 无 override |
+| N2 | 自动调用任何外部 AI 生成内容 | 任何 LLM API 调用（Claude / OpenAI / Gemini 等） | [[01-spec#8.1-不做-AI-生成]]：失去自己思考 = 摧毁手动挡核心价值 | 无 override。**v0.7 reaffirm**：本条禁的是 prompt-hub 主动调 LLM；外部 AI（如 Claude Code）通过 §10 MCP server 调工具写 drafts **不违反**此条——方向相反 |
+| N3 | 自动发送话术给任何 AI | 复制后自动 paste / 自动 send to Claude Code | [[01-spec#8.3-不做自动执行]]：手动复制粘贴是思考的缓冲 | 无 override。**v0.7 reaffirm**：drafts promote 仍需 omar 在 Scene 草稿 tab 显式点击，不存在"自动 promote → 自动复制"路径 |
 | N4 | 跨进程 / 跨窗口写入 | 任何写入非应用本身 sandbox 的位置（修改其他应用配置 / 系统目录） | 应用应严格限制在自身数据范围 | 无 override |
 | N5 | 持久化 AlignmentPhrase 到 Macro 类型 | 任何 INSERT / UPDATE 将 AlignmentPhrase 内容写入 Macro 表 | [[01-spec#8.6-不让对齐层与任务层混淆]]：哲学七要求物理分离 | 无 override |
 
@@ -1077,12 +1078,12 @@ major 升级（v1.x → v2.0）需满足：
 
 | 字段 | 要求 |
 |------|------|
-| InputSchema | 所有用户输入（Modifier content / Macro content / AlignmentPhrase content / Phrase content / role / task）必须长度限制 + 字符集限制 |
-| MaxSize | 单条话术 ≤ 5000 字符；总数据导出 JSON ≤ 10 MB |
+| InputSchema | 所有用户输入（Modifier content / Macro content / AlignmentPhrase content / Phrase content / role / task）必须长度限制 + 字符集限制；**v0.7 扩展**：drafts.payload_json 全字段同等约束 + `#[serde(deny_unknown_fields)]` 拒绝未知键 |
+| MaxSize | 单条话术 ≤ 5000 字符；总数据导出 JSON ≤ 10 MB；**v0.7 扩展**：单 draft payload ≤ 64KB / `import_json` 单 batch ≤ 100 条且 request total ≤ 5MB（详见 §10.4.2） |
 | AllowedTypes | 文本（UTF-8）+ JSON（数据导入）+ 标准 markdown 符号 |
-| SanitizationRule | XSS 过滤（render 时 escape）；JSON 导入时 schema 校验（拒绝 `__proto__` / `constructor` 等键）|
+| SanitizationRule | XSS 过滤（render 时 escape）；JSON 导入时 schema 校验（拒绝 `__proto__` / `constructor` 等键）；**v0.7 扩展**：drafts 写入按 SHA-256(payload_json) 计算 payload_hash 去重，pending 行命中唯一索引 idx_drafts_hash_pending 则 skip |
 
-**Why**：防止恶意 JSON 导入（如包含 `__proto__` 触发原型污染 / 超大字段炸应用）。
+**Why**：防止恶意 JSON 导入（如包含 `__proto__` 触发原型污染 / 超大字段炸应用）；MCP 接口面向外部 AI，输入侧加固防 schema 漂移与批量灌入。
 
 ### 9.2 C 敏感数据销毁（MVP 必填）
 
@@ -1110,15 +1111,261 @@ major 升级（v1.x → v2.0）需满足：
 
 ---
 
+## 10. MCP write pipeline（v0.7 新增 — 反哺自 [[015-expose-mcp-write-pipeline]]）
+
+> 本章是 PRD 首个「接口契约」专章，承载 prompt-hub 向外部 AI（首版 = Claude Code 本地 stdio）暴露的写入面：drafts 暂态层 + 5 Tauri IPC + 14 MCP tool。
+>
+> 决策依据见 [[015-expose-mcp-write-pipeline]] Accepted；实施步骤与风险登记见 [[mcp-write-pipeline]] v0.2。本章只承载**接口契约**——具体 schema 演进与 promote 流程的代码级细节由 plan / repo-write crate 持有。
+
+### 10.0 定位与范围
+
+**一句话定位**：让 Claude Code（本地）通过 MCP stdio 调工具，把对话里产生的提示词资产写入 prompt-hub 的 **drafts 收件箱**；omar 在 Scene 全景区 "📥 草稿" tab 显式 promote → 归入正式资产表（4 类）。
+
+#### ✅ 包含
+
+- drafts 表（暂态层，4 类 target_type，forward-only migration 0003）
+- `prompt-hub-mcp` 独立 binary（rmcp 1.7 + stdio + tracing→stderr）
+- 14 MCP tool（5 CRUD + 3 helpers + 6 read）+ AI 友好错误响应
+- 5 Tauri IPC（prompt-hub 主 bin 独占，**不暴露给 MCP**）
+- promote 跨表事务（DraftRepo + AssetRepo + 4 variant match）
+
+#### ❌ 不包含（明确排除）
+
+- HTTP / SSE / Streamable HTTP transport（仅 stdio）
+- 远程 MCP / claude.ai cloud 接入（需另开 ADR-016）
+- 主动调用 LLM 生成 draft 内容（违反 §8.2 N2）
+- 自动 promote 路径（违反 §8.2 N3）
+- macOS 之外平台
+- draft expire / GC 任务（首版不做，仅加阈值告警 + 写入熔断，见 plan §10 R9）
+
+### 10.1 drafts 数据模型
+
+#### 10.1.1 drafts 表 schema
+
+| Name | Type | Nullable | Default | Constraint | Description |
+|------|------|----------|---------|------------|-------------|
+| id | string | N | - | PK | 唯一标识 |
+| target_type | string | N | - | CHECK ∈ {modifier / composition / macro / alignment_phrase} | 暂态资产类型，promote 时路由到对应正式表 |
+| schema_version | integer | N | - | ≥ 1 | drafts 表层版本号（与 payload 内 schema_version 双层防漂移） |
+| payload_json | string | N | - | UTF-8 JSON，≤ 64KB | 资产负载，匹配 §10.1.2 DraftPayload enum |
+| payload_hash | string | N | - | SHA-256(payload_json) hex（64 字符）| 去重指纹，配合 idx_drafts_hash_pending 唯一索引 |
+| provenance | string | N | - | UTF-8 JSON，匹配 §10.1.3 | 来源元数据（source_app / tool_name / model_hint / confidence）|
+| status | enum | N | 'pending' | CHECK ∈ {pending / discarded} | promote 后 row 删除（事务内），不引入 'promoted' 终态 |
+| created_at | timestamp | N | - | ISO 8601 | 写入时间 |
+| updated_at | timestamp | N | - | ISO 8601 | 末次 update_draft 时间 |
+
+**索引**：
+- `idx_drafts_status_created (status, created_at DESC)` — Scene 草稿 tab 倒序列表
+- `idx_drafts_target_type (target_type)` — target_type 过滤
+- `idx_drafts_hash_pending (payload_hash) WHERE status='pending'` — **仅 pending 行去重**，discarded 历史保留以备审计
+
+**Migration**：`0003_drafts.sql`，forward-only，由 prompt-hub 主 bin 独占 ownership（详见 §10.4.4 R1 缓解）。废弃 drafts 表须新开 0004 + ADR-015 supersede 链。
+
+#### 10.1.2 DraftPayload enum（4 variant，serde tagged union）
+
+| Variant | 必填字段 | 可选字段 | 约束 |
+|---------|---------|---------|------|
+| Modifier | schema_version, name, content, phase_id | scene_id | content ≤ 5000 字符 |
+| Composition | schema_version, name, modifier_ids, phase_id | scene_id | modifier_ids ≥ 1 |
+| Macro | schema_version, name, content, phase_id | scene_id | content ≤ 5000 字符 |
+| AlignmentPhrase | schema_version, name, content, phase_id, is_default | — | phase_id 强制必填（[[02-constitution#B2]]）；同 phase 内 is_default=true 只允许一条（promote 时校验） |
+
+**反序列化约束**：`#[serde(tag = "target_type", deny_unknown_fields)]` —— 未知键直接拒绝，防 schema 漂移残留到 promote 阶段。
+
+#### 10.1.3 Provenance struct
+
+| Field | Type | Nullable | Description |
+|-------|------|----------|-------------|
+| source_app | string | N | 来源应用，首版固定 "Claude Code" |
+| conversation_ref | string | N | 来源会话 hash / id，便于事后审计串联 |
+| tool_name | string | N | 调用的 MCP tool 名（"create_draft" / "save_conversation_as_macro" / "import_json" 等）|
+| model_hint | string | Y | 来源模型名（"claude-opus-4-7" 等），仅作展示 |
+| confidence | float | Y | AI 自评置信度（0.0-1.0），UI 可作可视化提示，不影响逻辑 |
+
+**用途**：
+- Scene 草稿 tab 卡片展示 "claude-code · claude-opus-4-7"
+- `import_json` 必标 tool_name='bulk_import'，便于事后异常审计
+- promote 后**不**写入正式资产表（正式资产无 provenance 字段，避免 schema 污染）
+
+#### 10.1.4 状态机
+
+```
+[空] ──create_draft──▶ pending
+pending ──update_draft──▶ pending   (in-place，updated_at 刷新)
+pending ──promote_draft──▶ [row 删除]   (Tauri IPC，跨表事务)
+pending ──delete_draft / discard_draft──▶ discarded   (软删，保留行)
+discarded ──[终态]
+```
+
+**为什么 promote 后删除行而非置 'promoted'**：
+- 正式资产已在对应表（macros / modifiers / compositions / alignment_phrases）持有真理副本
+- drafts 表是收件箱，promoted 行无任何下游用途，保留只增 GC 负担
+- discarded 保留是为了未来 import_json 异常审计（"为什么这条被丢弃"），promoted 不需要
+
+### 10.2 promote 路径契约
+
+promote 由 Tauri IPC `promote_draft` 触发（**不**暴露给 MCP），在 `repo-write` crate 内执行：
+
+```
+1. SELECT * FROM drafts WHERE id=? AND status='pending'
+2. serde_json::from_str::<DraftPayload>(payload_json)?
+   ↑ 再次 validate（deny_unknown_fields），防 schema 漂移残留
+3. BEGIN TRANSACTION
+4. match DraftPayload variant:
+     Modifier         → AssetRepo::insert_modifier(...)
+     Composition      → AssetRepo::insert_composition(...)
+     Macro            → AssetRepo::insert_macro(...)
+     AlignmentPhrase  → AssetRepo::insert_alignment_phrase(...)
+5. DELETE FROM drafts WHERE id=?
+6. COMMIT
+```
+
+**Atomicity**：步骤 4-5 同事务；若 4 抛错（如 phase_id 已不存在），整体回滚，draft 仍 pending。
+**Idempotency**：promote 成功后 row 已删，重复调用得 "draft not found"。
+**override_payload 参数**：UI edit 后直接 promote 的快捷路径——以传入 payload 覆盖落库前的 row payload，省一次 update_draft + promote 两阶段调用。
+
+### 10.3 Tauri IPC（5 个，prompt-hub bin 独占）
+
+| IPC | 入参 | 出参 | 用途 |
+|-----|------|------|------|
+| `list_drafts` | status?, target_type?, limit? | `[{ id, target_type, name, preview, provenance, created_at }]` | Scene 草稿 tab 渲染列表 |
+| `count_pending_drafts` | — | `{ count: u32 }` | 主形态顶部 badge（仅 N>0 显示）|
+| `promote_draft` | id, override_payload? | `{ inserted_asset_id, inserted_asset_type }` | 跨表事务，详见 §10.2 |
+| `update_draft` | id, payload | `{ ok: true, updated_at }` | UI 编辑保存 |
+| `discard_draft` | id | `{ ok: true }` | UI 显式丢弃（status='discarded'）|
+
+**边界**：以上 IPC **不**通过 MCP server 暴露——promote / edit / discard 是 omar 主导动作，外部 AI 不应触达。
+
+**性能预算**：`count_pending_drafts` 必须 ≤ 1ms（prepared statement + 索引），守 [[02-constitution#C1]] 200ms 唤起；若破预算降级为 lazy load（Scene tab 打开时再查）。
+
+### 10.4 MCP tool 集（14 个，双层）
+
+> 接口面向外部 AI，错误响应规范见 §10.4.4。完整调研依据见 plan §5 + ADR-015 §4。
+
+#### 10.4.1 Write — Draft CRUD（5 个）
+
+| Tool | 入参 | 出参 | 说明 |
+|------|------|------|------|
+| `create_draft` | target_type, payload, provenance | `{ draft_id }` | 唯一原子写入入口；payload 必须 match DraftPayload enum |
+| `list_drafts` | status?, target_type?, limit? | `[{ id, target_type, name, preview, provenance.tool_name, created_at }]` | **仅返 metadata + preview**（≤ 100 字），避免百条 draft 撑爆 LLM context |
+| `get_draft` | id | `{ full payload + provenance + status + timestamps }` | AI 在 list 后看完整 payload；隔天 update 前必读 |
+| `update_draft` | id, payload | `{ ok, updated_at }` | AI 修订未 promote 的 draft；payload 全替换非 partial |
+| `delete_draft` | id | `{ ok }` | AI 撤回 draft（→ status='discarded'，非物理删除）|
+
+#### 10.4.2 Write — Helpers（3 个，业务级语义 + 6 条加固）
+
+| Tool | 入参 | 出参 | 说明 |
+|------|------|------|------|
+| `bootstrap_from_markdown` | markdown_content | `[draft_id]` | 解析 markdown → 拆多 draft，按 heading 推断 target_type |
+| `save_conversation_as_macro` | transcript, phase_id, name? | `{ draft_id }` | 对话片段 → Macro draft（最高频路径）|
+| `import_json` | json_array | `{ created: N, skipped_duplicates: M, errors: [...] }` | 批量导入；6 条加固见下 |
+
+**`import_json` 6 条加固契约**（v0.7 收录）：
+
+| # | 约束 | 触发动作 |
+|---|------|---------|
+| 1 | 单 batch ≤ 100 条 | 超出 → 整批拒绝，error 提示拆分 |
+| 2 | 单 payload ≤ 64KB | 超出 → 该条跳过 + errors 列出 |
+| 3 | 整批 request total ≤ 5MB | 超出 → 反序列化前即拒绝（防 OOM） |
+| 4 | 事务化全失败回滚 | 任一条 schema 校验失败 → 整批回滚 |
+| 5 | SHA-256(payload_json) 去重 | 命中 idx_drafts_hash_pending → skipped_duplicates +1，返回现有 draft_id |
+| 6 | 每小时 ≤ 5 次 quota | 进程内存计数（重启重置）；超出 → error 提示稍后重试 |
+
+**额外硬熔断**：调用前 `PRAGMA page_count * page_size` 查 DB 大小，> 250MB 拒绝写入，error 提示 "DB approaching size limit, please promote or discard pending drafts first"（同时作用于 `create_draft`，见 plan §10 R9）。
+
+#### 10.4.3 Read — 给 AI 参考避免重复（6 个）
+
+| Tool | 入参 | 出参 | 说明 |
+|------|------|------|------|
+| `list_phases` | — | `[{ id, name, order }]` | AI 选 phase_id 必读（4 类 payload 都强制 phase_id）|
+| `list_alignment_phrases` | phase_id? | `[{ id, name, content, phase_id }]` | 协议层只读，AI 避免重复入库 AlignmentPhrase |
+| `list_modifiers` | phase_id?, scene_id? | `[{ id, name, content_preview, phase_id, scene_id }]` | 同上，针对 Modifier |
+| `list_compositions` | phase_id?, scene_id? | `[{ id, name, modifier_ids, phase_id, scene_id }]` | 同上，针对 Composition |
+| `list_macros` | phase_id?, scene_id? | `[{ id, name, content_preview, phase_id, scene_id }]` | 同上，针对 Macro |
+| `list_scenes` | — | `[{ id, name }]` | AI 选 scene_id（4 类 payload 中 scene_id 可选）|
+
+**为什么 4 类资产 read 必须全开**：写 4 类但只读 3 类，AI 写 Modifier / Composition 时看不到现有同类，会被迫重复入库（A 路 challenge v0.2 发现）。
+
+#### 10.4.4 错误响应规范
+
+错误响应**不走** JSON-RPC error 通道（client 会吞掉，LLM 读不到），改走 tool result 内 `isError: true`：
+
+```json
+{
+  "isError": true,
+  "content": [{
+    "type": "text",
+    "text": "phase_id 'phase-bogus' not found. Use list_phases() to see available phases, then retry with a valid id."
+  }]
+}
+```
+
+**必含三段**：
+- **what**：什么字段 / 操作失败
+- **why**：为什么失败（约束 / 不存在 / 超限）
+- **suggested next tool**：明确建议的下一个工具调用
+
+参考 [cyanheads/obsidian-mcp-server](https://github.com/cyanheads/obsidian-mcp-server) 的 `file_exists` 错误模式。
+
+### 10.5 边界 reaffirm
+
+本章接口与 §8.2 行为边界完全兼容，**不**新增任何铁律：
+
+| 项 | 关系 |
+|----|------|
+| §8.2 N2（自动调用外部 AI） | 反向兼容——本章是「外部 AI 调本工具」，prompt-hub 仍不主动调 LLM |
+| §8.2 N3（自动发送话术给 AI） | 兼容——promote 仍需 omar 显式点击，无自动 promote → 自动复制路径 |
+| §8.2 N5（持久化 AlignmentPhrase 到 Macro 表）| 加强——DraftPayload enum 4 variant 在编译期物理分离，无法把 alignment_phrase payload 写入 macros 表 |
+| §7.3 隐私（不上传数据）| 兼容——stdio transport 限定本地进程通讯，无 HTTP transport（详见 §10.0 ❌ 不包含）|
+| §6.6 AlignmentPhrase 关系约束 | 加强——AlignmentPhrase variant 强制 phase_id 必填 + promote 时 phase_id 存在校验 |
+
+[[02-constitution]] D1（不内嵌 LLM SDK 用于话术生成）在 ADR-015 §4 已 reaffirm，本 PRD 不复述。
+
+### 10.6 风险登记
+
+完整 10 条风险（R1 migration race / R2 stdout 污染 / R3 rmcp major bump / R4 schema 漂移 / R5 badge 破预算 / R6 import_json DoS / R7 AlignmentPhrase 协议层污染 / R8 4 类 promote type-safe / R9 drafts 无 GC / R10 MCP 进程死亡）见 [[mcp-write-pipeline#§10]]。
+
+PRD 不复刻风险表，避免双源真理漂移；实施侧风险/缓解以 plan 为准，本章只承载接口契约面。
+
+---
+
 **关联文件**：
 - [[01-spec]] — 项目定位与哲学
 - [[03-product-spec]] — UI 契约（信息架构 / 模块布局 / 用户旅程 / UI 草案）
 - [[05-design-spec]] — 视觉规范
 - [[prompt-hub-mvp]] — 五阶段实施任务清单
+- [[015-expose-mcp-write-pipeline]] — §10 决策依据 ADR（Accepted）
+- [[mcp-write-pipeline]] — §10 实施 plan v0.2（含 12 步代码提纲与 R1-R10 风险登记）
 
 ---
 
 ## 修订记录
+
+### v0.7（2026-06-01）— 新增 §10 MCP write pipeline 接口契约
+
+**触发**：[[015-expose-mcp-write-pipeline]] Accepted + [[mcp-write-pipeline]] v0.2 落盘 → 涟漪进 PRD（M-X.0 第 3 项）。
+
+**改动总览**：
+
+| 区域 | 改动 |
+|------|------|
+| frontmatter | version v0.6 → v0.7 / last_modified → 2026-06-01 / related 加 ADR-015 + plan / description 补 §10 |
+| §6.0 关系约束表 | 加「暂态-drafts」行，明确 drafts 与 4 类正式资产无反向指针 |
+| §8.2 N2 / N3 | 行末加 v0.7 reaffirm note：MCP 反向 AI 写入兼容此边界 |
+| §9.1 InputSchema | 字段扩展 drafts.payload_json 约束 + 64KB / 100 batch / 5MB cap / SHA-256 去重 |
+| **§10 新增**（全章）| 接口契约专章：10.0 范围 / 10.1 drafts 数据模型 / 10.2 promote 路径 / 10.3 5 Tauri IPC / 10.4 14 MCP tool / 10.5 边界 reaffirm / 10.6 风险（引 plan §10）|
+
+**设计取舍**：
+
+- **单开 §10 而非拆碎到 §5/§6/§7**：drafts + IPC + MCP tool 是同一接口面的多个切面，分散后失去叙事整体性
+- **§10.6 风险只 1 行引用 plan**：避免 PRD / plan 双源真理漂移；plan 持有完整 R1-R10 + 缓解动作
+- **正式资产表不持有 draft_id 反向指针**：drafts 是暂态层，正式资产 schema 不应被收件箱机制污染（§10.1.4 状态机说明）
+- **promote 后 drafts row 删除而非置 'promoted'**：正式表已有真理副本，保留只增 GC 负担
+
+**反哺方向（待批次落地）**：
+
+- L3 反哺：MCP 接口契约「双层 read / write」对称性 → 反哺到 [[../../Vault/知识库/技术积累/AI-PRD-Boundaries三段式|L3-1]] 加「外部接口必须读写对称」条目
+- L3 反哺：drafts 暂态层 + payload_hash 去重 → 反哺到 [[../../Vault/知识库/技术积累/AI编程项目安全合规字段清单|L3-2]] 「批量入口加固模式」
 
 ### v0.6（2026-05-19）— B 段修缮：数据模型三表式 + 状态机 + 升级回滚
 

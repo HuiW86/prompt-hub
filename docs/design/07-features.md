@@ -1,19 +1,21 @@
 ---
 type: features
 project: prompt-hub
-version: v0.2
+version: v0.3
 created: 2026-05-19
-last_modified: 2026-05-25
-status: in-progress  # S1 主形态 MVP 5 模块 + 跨模块 P0 多项 done（ADR-012 Phase 1-3 已 ship）
+last_modified: 2026-06-01
+status: in-progress  # S1 主形态 MVP 5 模块 + 跨模块 P0 多项 done（ADR-012 Phase 1-3 已 ship）；M-X MCP write pipeline planned
 author: ai  # 🤖 AI 主笔 + 人审（CLAUDE §5.2）
 audience: [human, ai]
-description: prompt-hub 功能清单运营视图——功能 × 状态 × 测试覆盖 × 版本，单一事实源；v0.2 同步 ADR-012 Phase 1-3 ship 状态 + 新增 AlignmentPhrases 独立 region 条目
+description: prompt-hub 功能清单运营视图——功能 × 状态 × 测试覆盖 × 版本，单一事实源；v0.3 新增 §3.7 MCP write pipeline 区（drafts 收件箱 + 14 MCP tool + Scene 草稿 tab，全 planned）
 related:
   - 06-prd
   - prompt-hub-mvp
   - test-spec  # 待 W4 补
   - 012-lock-visual-quality-anchor
   - 013-alignment-phrases-tab-inclusion
+  - 015-expose-mcp-write-pipeline
+  - mcp-write-pipeline
 ---
 
 # Features: prompt-hub
@@ -107,6 +109,42 @@ related:
 | 本地数据存储（无服务端） | P0 | `done` | v1.0 | M0-3 SQLite 落盘 / cargo 12 测试 ✓ | omar | [[02-constitution#A2]] |
 | 设计 Token 系统（无裸值） | P0 | `done` | v1.0 | Phase 1-3 全量 token 化 ✓ | omar | [[prompt-hub-mvp#§0-T1]] |
 
+### 3.7 MCP write pipeline（M-X / 反向 AI 写入）
+
+> 第二阶段能力：让 Claude Code 通过 MCP stdio 把对话产出的提示词资产写入 drafts 收件箱，omar 在 Scene 草稿 tab 显式 promote 入正式表。决策见 [[015-expose-mcp-write-pipeline]] Accepted，实施步骤见 [[mcp-write-pipeline]] v0.2，接口契约见 [[06-prd#10]]。
+>
+> 边界 reaffirm：本区不违反 [[06-prd#8.2]] N2/N3——外部 AI 调本工具（方向相反）+ promote 仍需 omar 显式点击。
+
+#### 支撑能力
+
+| 功能 | 优先级 | 状态 | 目标版本 | 测试覆盖 | 责任人 | 引用 |
+|---|---|---|---|---|---|---|
+| drafts 收件箱数据层（migration 0003 + payload_hash 去重）| P1 | `planned` | v1.1 | 0% | omar | [[06-prd#10.1]] |
+| `prompt-hub-mcp` binary（rmcp 1.7 stdio + tracing→stderr）| P1 | `planned` | v1.1 | 0% | omar | [[06-prd#10.0]] |
+| Cargo workspace 4 crate 物理拆分（编译期写入隔离）| P1 | `planned` | v1.1 | 0% | omar | [[09-tech-stack#4.3.1]] |
+| Scene 全景区「📥 草稿」tab | P1 | `planned` | v1.1 | 0% | omar | [[06-prd#10.3]] |
+| 主形态顶部待审 badge（仅 N>0 显示）| P1 | `planned` | v1.1 | 0% | omar | [[06-prd#10.3]] |
+| promote 跨表事务 + 5 Tauri IPC（promote/list/count/update/discard）| P1 | `planned` | v1.1 | 0% | omar | [[06-prd#10.2]] |
+
+#### 14 MCP tool（5 CRUD + 3 helpers + 6 read）
+
+| 类别 | tool | 优先级 | 状态 | 目标版本 | 责任人 | 引用 |
+|---|---|---|---|---|---|---|
+| CRUD | `create_draft` | P1 | `planned` | v1.1 | omar | [[06-prd#10.4.1]] |
+| CRUD | `list_drafts` | P1 | `planned` | v1.1 | omar | [[06-prd#10.4.1]] |
+| CRUD | `get_draft` | P1 | `planned` | v1.1 | omar | [[06-prd#10.4.1]] |
+| CRUD | `update_draft` | P1 | `planned` | v1.1 | omar | [[06-prd#10.4.1]] |
+| CRUD | `delete_draft` | P1 | `planned` | v1.1 | omar | [[06-prd#10.4.1]] |
+| Helper | `bootstrap_from_markdown` | P1 | `planned` | v1.1 | omar | [[06-prd#10.4.2]] |
+| Helper | `save_conversation_as_macro` | P1 | `planned` | v1.1 | omar | [[06-prd#10.4.2]] |
+| Helper | `import_json`（6 条加固）| P1 | `planned` | v1.1 | omar | [[06-prd#10.4.2]] |
+| Read | `list_phases` | P1 | `planned` | v1.1 | omar | [[06-prd#10.4.3]] |
+| Read | `list_alignment_phrases` | P1 | `planned` | v1.1 | omar | [[06-prd#10.4.3]] |
+| Read | `list_modifiers` | P1 | `planned` | v1.1 | omar | [[06-prd#10.4.3]] |
+| Read | `list_compositions` | P1 | `planned` | v1.1 | omar | [[06-prd#10.4.3]] |
+| Read | `list_macros` | P1 | `planned` | v1.1 | omar | [[06-prd#10.4.3]] |
+| Read | `list_scenes` | P1 | `planned` | v1.1 | omar | [[06-prd#10.4.3]] |
+
 ---
 
 ## §4 阶段交付节奏
@@ -115,10 +153,11 @@ related:
 |---|---|---|---|
 | S1 主形态 MVP | v1.0 | 5 模块 + 8 跨模块能力 | `planned` |
 | S2 闭环沉淀 | v1.1 | 4 功能 | `planned` |
+| M-X MCP write pipeline | v1.1 | 6 支撑能力 + 14 MCP tool | `planned` |
 | S3 SOP 导航 | v1.2 | 3 功能 | `planned` |
 | S4 配置个性化 | v1.3 | 4 功能 | `planned` |
 | S5 辅形态副屏 | v2.0 | 3 功能 | `planned` |
-| **合计** | — | **27 项** | — |
+| **合计** | — | **47 项** | — |
 
 **注**：版本号语义为 prompt-hub 自身版本，与 prd / spec / methodology 各自独立。v1.0 = 第一阶段 MVP 可发布；v2.0 = 辅形态加入（双形态完整）。
 
@@ -144,6 +183,7 @@ related:
 |---|---|---|
 | 2026-05-19 | features.md v0.1 初版，27 项功能全部 `planned` | W2 实战验证落盘 |
 | 2026-05-25 | v0.2 bump：S1 主形态 MVP 5 模块 + 跨模块 6 项 P0 → `done`（ADR-012 Phase 1-3 ship / commit `acf8229`）；新增「对齐话术 chip 行」条目 P0 done（追认 [[013-alignment-phrases-tab-inclusion]]）；status pre-code → in-progress | ADR-012 Phase 4 涟漪 |
+| 2026-06-01 | v0.3 bump：新增 §3.7 MCP write pipeline 区（6 支撑能力 + 14 MCP tool，全 `planned`）；§4 节奏表加 M-X 行，合计 27→47 项 | ADR-015 Accepted M-X.0 涟漪 |
 
 ---
 

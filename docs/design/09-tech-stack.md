@@ -1,13 +1,13 @@
 ---
 type: tech-stack
 project: prompt-hub
-version: v1.1
+version: v1.2
 created: 2026-05-19
-updated: 2026-05-20
-status: ratified  # ADR-001~004/006~009 全部 Accepted；ADR-005（prompt-combiner 复用）仍 Proposed
+updated: 2026-06-01
+status: ratified  # ADR-001~004/006~009/015 全部 Accepted；ADR-005（prompt-combiner 复用）仍 Proposed
 author: ai  # 🤖 AI 主笔 + 人审（CLAUDE §5.2）
 audience: [ai]
-description: prompt-hub 技术栈快照——全栈拍板：Tauri 2.x + React 19.2 + rusqlite 0.32 + pnpm 10.x + Zustand 5 + Vitest 4 + CSS Modules，macos-private-api 启用
+description: prompt-hub 技术栈快照——全栈拍板：Tauri 2.x + React 19.2 + rusqlite 0.32 + pnpm 10.x + Zustand 5 + Vitest 4 + CSS Modules，macos-private-api 启用；v1.2 加 rmcp 1.7（prompt-hub-mcp binary）+ Cargo workspace 4 crate
 related:
   - 02-constitution
   - prompt-hub-mvp
@@ -20,11 +20,13 @@ related:
   - 007-choose-test-stack
   - 008-enable-macos-private-api
   - 009-choose-styling
+  - 015-expose-mcp-write-pipeline
+  - mcp-write-pipeline
 ---
 
 # Tech Stack: prompt-hub
 
-> 全栈技术选型已通过 ADR-001~009 拍板（除 ADR-005 prompt-combiner 复用仍 Proposed）。AI 在生成代码前可直接按本文件 §4~§7 操作；遇 dependency major bump 必须先开 ADR（[[#§8-升级流程]]）。
+> 全栈技术选型已通过 ADR-001~009 + ADR-015 拍板（除 ADR-005 prompt-combiner 复用仍 Proposed）。AI 在生成代码前可直接按本文件 §4~§7 操作；遇 dependency major bump 必须先开 ADR（[[#§8-升级流程]]）。
 >
 > 跨阶段先决条件见 [[prompt-hub-mvp#§0]]；第一阶段 MVP 建仓基线见 [[prompt-hub-mvp#第一阶段]]。
 
@@ -77,8 +79,9 @@ related:
 | **D9** | macOS 私有 API | 启用 macos-private-api（永久弃 App Store）| [[008-enable-macos-private-api]] | ✅ Accepted 2026-05-19 |
 | **D10** | 样式方案 | CSS Modules + CSS variables（不引 Tailwind）| [[009-choose-styling]] | ✅ Accepted 2026-05-19 |
 | **D11** | 测试栈 | Vitest 4 + Testing Library + jsdom 29 + cargo test + tempfile | [[007-choose-test-stack]] | ✅ Accepted 2026-05-19 |
+| **D12** | MCP server 运行时 | `rmcp` 1.7（stdio transport）+ Cargo workspace 4 crate（repo-core / repo-write / prompt-hub / prompt-hub-mcp）| [[015-expose-mcp-write-pipeline]] | ✅ Accepted 2026-05-27（第二阶段 M-X）|
 
-**仅剩 D8 阻塞**：第一阶段 MVP 建仓不依赖 D8（可走「重写」路径），D8 调研结果只影响迁移节奏。
+**仅剩 D8 阻塞**：第一阶段 MVP 建仓不依赖 D8（可走「重写」路径），D8 调研结果只影响迁移节奏。D12 属第二阶段 MCP write pipeline，不阻塞第一阶段。
 
 ---
 
@@ -114,6 +117,29 @@ related:
 | `canBecomeMain` / `canBecomeKey` | 唤起后立即接收键盘事件而不切换 active app | [[02-constitution#C1]] 200ms 唤起 |
 
 **不可逆约束**：App Store 上架永久排除（[[008-enable-macos-private-api#6]]）。
+
+### 4.3 MCP server 运行时（第二阶段 M-X / [[015-expose-mcp-write-pipeline]]）
+
+| 维度 | 选定 | 版本 | 来源 |
+|---|---|---|---|
+| **MCP SDK** | `rmcp`（official Rust MCP SDK）| `=1.7` 精确锁 | [[015-expose-mcp-write-pipeline]] |
+| **transport** | stdio（JSON-RPC over stdin/stdout）| — | 仅本地进程，无 HTTP/SSE（守 [[02-constitution#A2]]）|
+| **日志** | `tracing` + `tracing_subscriber` → **stderr** | 0.1.x | stdout 被 JSON-RPC 独占，日志必须走 stderr（[[mcp-write-pipeline#§10]] R2）|
+
+#### 4.3.1 Cargo workspace 4 crate 物理拆分
+
+为让「MCP crate 编译期无法触达写入 API」成为编译器红线（而非 trait 约定），workspace 物理拆 4 crate：
+
+| crate | 类型 | 职责 | 依赖 `repo-write`？ |
+|---|---|---|---|
+| `repo-core` | rlib | DraftRepo + ReadOnlyAssetRepo + migrations | — |
+| `repo-write` | rlib | AssetRepo + promote_draft 跨表事务 | — |
+| `prompt-hub` | bin | Tauri 主 app（5 IPC 独占）| ✅ 依赖 |
+| `prompt-hub-mcp` | bin | MCP stdio server（14 tool）| ❌ **Cargo.toml 不含**，编译器红线 |
+
+**为什么物理拆而非同 crate trait**：pub(crate) 跨 crate 不可见 / feature unification 会让 MCP crate 也看见 AssetRepo / sealed trait 只防 impl 不防 import——真正的编译期隔离 = Cargo 依赖图就是边界。详见 [[015-expose-mcp-write-pipeline#§5]]。
+
+**版本号锁**：`prompt-hub-mcp` 与主 app 同版本号发布，避免 dmg 升级后 MCP binary 滞留旧版（[[015-expose-mcp-write-pipeline#§6]]）。
 
 ---
 
@@ -207,6 +233,8 @@ cargo clippy --manifest-path src-tauri/Cargo.toml -- -D warnings
 | `eslint` | `^9.0` | flat config 强制 | major bump → ADR |
 | `prettier` | `^3.0` | 与 ESLint 9 协作 | 自由 |
 | `clsx` | `^2.0` | 微依赖，CSS Modules 变体组合 | 自由 |
+| `rmcp` (Rust) | `=1.7` **精确锁** | MCP SDK 1.x API 仍在演进，新 minor/major 可能破协议；精确锁防意外 bump（[[mcp-write-pipeline#§10]] R3）| 任意 bump → ADR |
+| `tracing` / `tracing-subscriber` (Rust) | `^0.1` | MCP server 日志走 stderr（stdout 被 JSON-RPC 独占）| 自由 |
 
 ### 7.1 VaultX 借鉴的依赖组合（待建仓 `cargo build` 实测）
 
