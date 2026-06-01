@@ -1,13 +1,13 @@
 ---
 type: design-spec
 project: prompt-hub
-version: v0.7.1
+version: v0.8
 created: 2026-05-18
-last_modified: 2026-05-25
-status: ratified
+last_modified: 2026-06-01
+status: draft  # 🤝 共创草稿，待 omar 审（M-X.0 涟漪）
 author: co  # 🤝 人机共创（CLAUDE §5.2）
-related: [[01-spec]], [[02-constitution]], [[03-product-spec]], [[012-lock-visual-quality-anchor]], [[CLAUDE-DESIGN]]
-description: 手动 AI 编程仪表盘的视觉规范——token 命名与 tokens.css 单一真源对齐（--t-/--s-/ontology + neutral scale），WCAG light 实测 + dark v1.0 实装；v0.7 加 §8 视觉锚点 / §9 typography presets / §10 组件 pattern / §11 states / §12 icon / §13 视觉权重 6 章 bundle 派生
+related: [[01-spec]], [[02-constitution]], [[03-product-spec]], [[012-lock-visual-quality-anchor]], [[CLAUDE-DESIGN]], [[015-expose-mcp-write-pipeline]]
+description: 手动 AI 编程仪表盘的视觉规范——token 命名与 tokens.css 单一真源对齐（--t-/--s-/ontology + neutral scale），WCAG light 实测 + dark v1.0 实装；v0.7 加 §8-§13 bundle 派生 6 章；v0.8 涟漪 ADR-015 加 §10.4 MCP write pipeline 组件视觉（PendingBadge / DraftInbox / DraftCard，aux 中性层，lucide Inbox 非 emoji）
 ---
 
 # Design Spec: prompt-hub（视觉规范）
@@ -471,6 +471,64 @@ bundle 派生的 3 个跨组件 primitive，避免重复实现：
 | `RecentList` | aux | 行列表 | row border-only + meta time 右侧 |
 | `SopProgress` | task | 进度条 | `--skeleton` 底 + `--task` 填充 |
 | `StatusBar` | aux | `--h-statusbar` 28px | dot + meta text + 右侧 Kbd 群 |
+| `PendingBadge`（v0.8）| aux | inline，高度 `--h-chip` 24px | lucide `Inbox` + count text，仅 N>0 渲染，详见 §10.4 |
+| `DraftInbox`（v0.8）| aux | Scene tab 行最左入口 + 列表面板 | tab 入口 lucide `Inbox` + 分隔，列表挂 `DraftCard`，详见 §10.4 |
+| `DraftCard`（v0.8）| aux（中性，promote 前不染 ontology）| 卡片 | border-only neutral + target_type 文字角标 + provenance + promote/discard，详见 §10.4 |
+
+---
+
+### 10.4 MCP write pipeline 组件视觉契约（v0.8 — 涟漪 [[015-expose-mcp-write-pipeline]]）
+
+> 承接 [[06-prd#10]] 接口契约 + [[03-product-spec#区域-8待审-badge]] / [[03-product-spec]] §13.3 区域 4 草稿 tab 信息架构，落地三个新组件的视觉。
+>
+> **层归属铁律**：drafts 是 promote 前的**暂态收件箱条目**，未归属任何 ontology 层——三组件一律 **aux 中性层**（neutral scale + `--fg-*`），**禁止**用 `--protocol` / `--task` 色。资产 promote 后才在各自 home region 取层色（Modifier/AlignmentPhrase→紫，Composition/Macro→绿）。promote 前染 ontology = §13.2 跨层污染。
+
+#### 10.4.1 PendingBadge（顶部待审 badge）
+
+| 字段 | 视觉契约 |
+|------|---------|
+| 层 | aux（中性 chrome，非 ontology）|
+| 位置 | SearchBar 同行右端（[[03-product-spec]] §13.3 区域 8）|
+| 显示条件 | 仅 `count_pending_drafts` > 0 渲染；N=0 完全不挂载（无空态、不占位）|
+| 图标 | lucide `Inbox` 14px / `--op-icon` 0.7 / `currentColor`——**非 emoji 📥**（§8.2 禁 emoji as UI / §12 chrome 用 lucide）|
+| 文案 | `Inbox` icon + count text「{N} 条待审」，typography `.ph-meta`（`--t-11` / `--fg-3` / `--tr-meta`）|
+| 禁止 | ❌ 红点 / ❌ 角标 dot / ❌ 动画脉冲 / ❌ 染 ontology 色——手动挡阶段 promote 是从容动作，badge 克制不制造焦虑 |
+| states | default / hover（`--fg-2` 提亮）/ focused（`--protocol` 2px outline，§11 例外）/ active（点击跳草稿 tab）|
+
+#### 10.4.2 DraftInbox（Scene 行草稿入口 + 列表）
+
+**tab 入口**（Scene Tab 行最左）：
+
+- lucide `Inbox` 14px + 一道 `--border-2` 竖 hairline 与右侧 Scene tab 隔开
+- 仅 pending>0 出现（与 PendingBadge 同生同灭）
+- 非激活态：`--fg-3` icon；激活态：`--protocol-8` 背景 +（**注意**：此处 `--protocol-8` 是 PhaseBar 既有的「active press fill」中性用法吗？否——草稿 tab 属 aux，激活态改用 **`--surface-2` 背景 + `--border-3` 边框**，不借协议紫，守层归属铁律）
+
+**列表面板**（草稿 tab 激活时）：
+
+- 复用 `RegionHeader` primitive（§10.2）：lucide `Inbox` + 标题「草稿收件箱」+ 右侧 `.ph-meta` count
+- 列表：`DraftCard` 纵向堆叠，间距 `--s-3` 12px
+- 空态：理论上不出现（pending=0 时整个 tab 不挂载）；防御性 fallback 用 `EmptyState` primitive
+
+#### 10.4.3 DraftCard（草稿卡片）
+
+| 区域 | 内容 | typography / token |
+|------|------|-------------------|
+| 左上角标 | target_type 文字标（`MODIFIER` / `COMPOSITION` / `MACRO` / `ALIGNMENT`）| `.ph-meta`（`--t-11` / `--fg-3` / `--tr-meta` uppercase）——**中性文字，非 ontology fill** |
+| 标题 | draft name | `.ph-card-title`（`--t-14` / `--w-500` / `--fg-1`）|
+| 正文 | preview（≤ 100 字截断）| `.ph-card-body`（`--t-13` / `--w-400` / `--fg-2`）|
+| 底部 meta | provenance「claude-code · {model_hint}」（[[06-prd#10.1.3]]，model 缺省仅显来源 app）| `.ph-meta`（`--t-11` / `--fg-3`）|
+| 右下双动作 | **promote** / **discard** | 见下 |
+
+**卡片容器**：border-only baseline（§10.1）——`--border-2` hairline / `--surface-1` 底 / `--r-4` 6px 圆角；hover → `--border-3`；**无 ontology 色**（promote 前中性）。
+
+**双动作按钮**（border-only，§10.1 baseline）：
+
+| 动作 | IPC | 视觉 | 备注 |
+|------|-----|------|------|
+| promote | [[06-prd#10.3]] `promote_draft` | border-only + lucide `Check` 14px + 「采纳」label；hover `--border-3`；**无 task 绿 fill**（按钮是动作非层成员）| 须 omar 显式点击，无自动路径（守 [[06-prd#8.2]] N3）|
+| discard | `discard_draft` | border-only + lucide `Trash2` 14px + 「丢弃」label；hover `--border-3` + icon `--fg-2` | 软删（status='discarded'）|
+
+**为何 promote 不上 task 绿**：promote 按钮是「把草稿送进任务层」的动作，但按钮自身不是任务层成员；若染绿会让人误读「这张草稿卡是绿层」，违背层归属铁律。强调靠 `--w-500` 字重 + `Check` 图标位置，不靠色。
 
 ---
 
@@ -522,6 +580,9 @@ bundle 派生的 3 个跨组件 primitive，避免重复实现：
 |------|------|------|
 | `Flame` | lucide-react | MacroGrid 热门 Macro 标识 |
 | `Search` | lucide-react | SearchBar 左侧占位图标 |
+| `Inbox`（v0.8）| lucide-react | PendingBadge / DraftInbox tab 入口 + 列表 RegionHeader（**替代 emoji 📥**，§10.4）|
+| `Check`（v0.8）| lucide-react | DraftCard promote 动作（§10.4.3）|
+| `Trash2`（v0.8）| lucide-react | DraftCard discard 动作（§10.4.3）|
 
 **hard rule**：新增 icon 需评估是否必要——bundle 视觉密度下 icon 不是默认装饰，能用 typography 表达就不引 icon。
 
@@ -571,6 +632,7 @@ bundle 派生的 3 个跨组件 primitive，避免重复实现：
 - ❌ Macro 卡用紫色边框（紫属协议层，Macro 属任务层）
 - ❌ AlignmentPhrase chip 用绿色 fill（绿属任务层，chip 属协议层）
 - ❌ StatusBar dot 用紫色表示"普通状态"（紫是协议层 ontology，不是装饰）
+- ❌ DraftCard 按 target_type 染 ontology 色（v0.8）——drafts 是 promote 前暂态，未归属任何层，染色 = 跨层污染；target_type 只用中性 `.ph-meta` 文字角标（§10.4.3）
 
 **code review 自检三问**：
 
@@ -599,6 +661,29 @@ bundle 视觉锚点的核心洞察：**视觉权重通过 typography rhythm + on
 ---
 
 ## 修订记录
+
+### v0.8（2026-06-01）— ADR-015 涟漪：MCP write pipeline 组件视觉
+
+回应 [[015-expose-mcp-write-pipeline]]（M-X.0 涟漪），承接 [[03-product-spec]] v0.7 留下的「视觉细节下沉 design-spec」缺口，落地 drafts 收件箱三组件视觉。本批为 🤝 共创草稿，status `ratified` → `draft` 待 omar 审。
+
+| 章节 | 改动 |
+|------|------|
+| frontmatter | version v0.7.1 → v0.8 / status ratified → draft / related 加 [[015-expose-mcp-write-pipeline]] / description 补 §10.4 |
+| §10.3 组件清单 | 加 3 行：`PendingBadge` / `DraftInbox` / `DraftCard`（全 aux 层）|
+| §10.4 新增（全节）| MCP write pipeline 组件视觉契约：10.4.1 PendingBadge（顶部 badge）/ 10.4.2 DraftInbox（Scene 草稿入口 + 列表）/ 10.4.3 DraftCard（草稿卡片 + promote/discard 双动作）|
+| §12.3 icon 清单 | 加 `Inbox`（替代 emoji 📥）/ `Check`（promote）/ `Trash2`（discard）3 个 lucide icon |
+| §13.2 cross-contamination | 加 DraftCard 违规示例（target_type 不得染 ontology 色）|
+
+**关键决策**：
+
+1. **层归属铁律**——drafts 是 promote 前暂态收件箱条目，未归属 ontology 层；三组件一律 **aux 中性层**（neutral scale + `--fg-*`），禁染 `--protocol` / `--task`。资产 promote 后才在 home region 取层色。
+2. **lucide `Inbox` 替代 emoji 📥**——badge / 草稿 tab 是 **chrome**（应用自渲染），受 §8.2「禁 emoji as UI」+ §12「chrome 用 lucide」约束。区别于 Scene tab 的 📐🔍🔧（`scenes.icon` 用户内容，§12.4 豁免）。
+3. **promote 按钮不染 task 绿**——按钮是「送草稿进任务层」的动作，自身非层成员，染绿会误读卡片为绿层；强调靠 `--w-500` 字重 + `Check` 图标，不靠色。
+4. **复用既有 preset 零新增**——name→`.ph-card-title` / preview→`.ph-card-body` / provenance + target_type→`.ph-meta`，无需新 typography preset。
+
+**上游一致性发现（待 omar 裁决回补）**：[[03-product-spec]] v0.7 §4.0.4 / §13.2 / §13.3 用「📥」字面 emoji 描述 badge 与草稿 tab，与本文 §8.2/§12 chrome lucide 铁律冲突。本文已定 chrome 实渲为 lucide `Inbox`；product-spec 的「📥」应回补 1 行注「📥 为 inbox 图标占位，实渲 lucide Inbox，见 design-spec §12.3」，或直接替换措辞。**未就地改 product-spec**（避免跨文件就地补丁，留 omar 走方法论 §7）。
+
+**待办**（v0.8 外）：dark mode 对比度实测（§2.3.2，沿 v0.7.1 欠账）/ 辅形态完整视觉规范。
 
 ### v0.7.1（2026-05-25）— Phase 5 manual verify § 12 边界澄清
 

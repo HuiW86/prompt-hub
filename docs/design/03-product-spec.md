@@ -1,13 +1,13 @@
 ---
 type: product-spec
 project: prompt-hub
-version: v0.6
+version: v0.7
 created: 2026-05-18
-last_modified: 2026-05-25
-status: ratified
+last_modified: 2026-06-01
+status: draft  # 🤝 共创草稿，待 omar 审（M-X.0 涟漪）
 author: co  # 🤝 人机共创（CLAUDE §5.2）
-related: [[01-spec]], [[05-design-spec]], [[06-prd]], [[012-lock-visual-quality-anchor]], [[013-alignment-phrases-tab-inclusion]]
-description: 手动 AI 编程仪表盘的 UI 契约——双形态架构/布局/点击路径/交互频率/状态反馈/引导/用户旅程/主形态 UI 草案；v0.6 把 AlignmentPhrases 升级为顶层 region（追认 ADR-013），一屏全景 7 → 8 区域，Tab cycle 5 → 6 tab-reachable
+related: [[01-spec]], [[05-design-spec]], [[06-prd]], [[012-lock-visual-quality-anchor]], [[013-alignment-phrases-tab-inclusion]], [[015-expose-mcp-write-pipeline]]
+description: 手动 AI 编程仪表盘的 UI 契约——双形态架构/布局/点击路径/交互频率/状态反馈/引导/用户旅程/主形态 UI 草案；v0.7 涟漪 ADR-015 MCP write pipeline：新增「📥 草稿」收件箱 tab（Scene 行最左）+ 顶部「待审 badge」（搜索区右侧，仅 N>0 显示）
 ---
 
 # Product Spec: prompt-hub（UI 契约）
@@ -70,6 +70,7 @@ description: 手动 AI 编程仪表盘的 UI 契约——双形态架构/布局/
 | 模块 | 主形态（快捷键全屏） | 辅形态（副屏常驻） |
 |------|-----------------|----------------|
 | 搜索框（[[06-prd#5.0-搜索区]]） | 顶部居中，中等大小 | 顶部居中，中等大小 |
+| 待审 badge（[[06-prd#10.3]]，v0.7 起） | 搜索框同行右端，仅 pending>0 显示 | 同左 |
 | 相位带（[[06-prd#5.1-相位带（Phase-Bar）]]） | 搜索框下方，8 个横排 | 搜索框下方，8 个横排 |
 | 对齐话术（AlignmentPhrases，[[013-alignment-phrases-tab-inclusion]]） | 相位带下方 chip 行（独立 region，v0.6 起）| 同左 |
 | Macro 区（[[06-prd#5.2-Macro-快捷区]]） | 中部左侧，60% 宽 | 中部左侧，60% 宽 |
@@ -566,13 +567,14 @@ sequenceDiagram
 graph TD
     subgraph 顶部["顶部 · 入口层"]
         S["搜索区 §5.0<br/>居中 60% 宽 · 浅灰背景<br/>⌘K 聚焦 · 兜底而非主入口"]
+        BADGE["待审 badge §10.3<br/>搜索区同行右端 · 仅 N>0 显示<br/>纯文本 '📥 N 条待审' · 无红点<br/>点击跳 Scene 📥 草稿 tab · v0.7 起"]
         P["相位带 §5.1<br/>8 个 Phase 横排 · 当前高亮<br/>⌘1-8 直切 · 哲学七视觉落地"]
         AP["对齐话术 chip 行<br/>相位带下方 · 独立 region<br/>当前 Phase 话术 · 点击即复制<br/>v0.6 起 / 追认 ADR-013"]
     end
 
     subgraph 中部["中部 · 主工作区"]
         M["Macro 区 §5.2<br/>左侧 60% 宽 · 卡片墙<br/>按热度排序 · 视觉主战场"]
-        SC["Scene 区 §5.3<br/>右侧 40% 宽 · Tab 切换<br/>当前 Scene 展开 SubStage + Phrase"]
+        SC["Scene 区 §5.3<br/>右侧 40% 宽 · Tab 切换<br/>当前 Scene 展开 SubStage + Phrase<br/>含 📥 草稿 tab（Tab 行最左 · v0.7 起）"]
     end
 
     subgraph 底部["底部 · 辅助信息层"]
@@ -584,6 +586,7 @@ graph TD
         ST["状态栏 §5.7<br/>今日复制次数 · 当前相位 · 草稿待沉淀<br/>右侧持续提示快捷键"]
     end
 
+    S -.-> BADGE
     S --> P
     P --> AP
     AP --> M
@@ -596,6 +599,7 @@ graph TD
     SOP --> ST
 
     style S fill:#F1EFE8,stroke:#888780,stroke-width:1px
+    style BADGE fill:#F1EFE8,stroke:#888780,stroke-width:1px
     style P fill:#EEEDFE,stroke:#534AB7,stroke-width:2px
     style AP fill:#EEEDFE,stroke:#534AB7,stroke-width:1px
     style M fill:#E1F5EE,stroke:#178561,stroke-width:1px
@@ -671,13 +675,21 @@ graph TD
 - **顶部 Tab**：7-10 个 Scene 横排小标签（pill 样式，约 24px 高）
   - 当前激活 Tab：紫色背景 + 紫色文字
   - 未激活 Tab：浅灰背景 + 灰色文字
+  - **📥 草稿 tab（v0.7 起）**：Tab 行**最左**，📥 图标 + 一道竖分隔线与 Scene tab 隔开；**仅 pending>0 时出现**（与顶部待审 badge 同生同灭）。它是 MCP 写入的「收件箱入口」，不是一个 Scene，靠图标 + 分隔 + 条件显示三重信号区分（语义边界见 [[06-prd#6.0-资产关系总览]] 暂态-drafts 行——drafts 是收件箱，非第 4 层资产，不违反 [[02-constitution#B1]]）
 - **下方内容**：当前 Scene 展开
   - 如果 Scene 有 SubStage：按 SubStage 分组显示，每组前显示"▸ 子阶段名"
   - 每组下挂 Phrase 卡片（13px，比 Macro 卡片更紧凑）
+  - **📥 草稿 tab 激活时**：渲染 pending drafts 列表（数据源 [[06-prd#10.3]] `list_drafts`，按 created_at 倒序）。每张草稿卡片信息架构：
+    - 左上：target_type 角标（modifier / composition / macro / alignment_phrase 四类之一）
+    - 标题行：draft name
+    - 正文：preview（≤ 100 字截断）
+    - 底部：provenance「claude-code · {model_hint}」（[[06-prd#10.1.3]]，model 缺失时仅显示来源 app）
+    - 右下双动作：**promote**（→ 归入正式资产表，跨表事务 [[06-prd#10.2]]，IPC `promote_draft`）/ **discard**（软删，IPC `discard_draft`）
 - **行为**：
-  - 点击 Tab → 切换 Scene
+  - 点击 Tab → 切换 Scene；点击 📥 草稿 tab → 进入收件箱视图
   - 点击 Phrase → 复制 → 自动隐藏窗口
   - 长按 Phrase → 升级为 Macro / 添加到 Composition 队列
+  - **草稿卡片 promote 须 omar 显式点击**——无自动 promote 路径（守 [[06-prd#8.2]] N3 / [[02-constitution#D1]]）。promote / discard 是 omar 主导动作，外部 AI 不可触达（IPC 不经 MCP 暴露，[[06-prd#10.3]] 边界）
 
 #### 区域 5：最近使用区（[[06-prd#5.5-最近使用区]]）
 
@@ -709,6 +721,19 @@ graph TD
 - **背景**：浅灰
 - **左侧**：今日复制 N 次 · 当前相位 · 草稿待沉淀 N 条（11px）
 - **右侧**：快捷键提示串 "⌘K 搜索 · ⏎ 复制 · ⌘N 新建 · ⌘, 设置"（11px）
+
+> **与区域 8 待审 badge 的语义区分（v0.7）**：状态栏左侧的「草稿待沉淀 N 条」指**自己**高频使用但未固化为 Macro 的 Composition（[[06-prd#5.7-状态仪表区]]，最近一周被复制 3 次以上）；区域 8 待审 badge 指**外部 AI** 经 MCP 写入待 promote 的 drafts（[[06-prd#10.3]] `count_pending_drafts`）。两者数据源与语义完全不同，刻意用「待沉淀」vs「待审」区分措辞，不可合并。
+
+#### 区域 8：待审 badge（[[06-prd#10.3]]，v0.7 新增）
+
+> v0.7 新增——涟漪 [[015-expose-mcp-write-pipeline]] MCP write pipeline，承接 [[06-prd#10]] 接口契约专章。视觉细节（token / 字号 / 间距）留 [[05-design-spec]] v0.8 定。
+
+- **位置**：搜索区（区域 1）同行**右端**——主形态唤起即「一屏全景」(§4.1)，badge 落在视线第一落点（顶部），而非最底状态栏
+- **显示条件**：**仅 pending>0 时出现**；N=0 时完全不渲染（不占位、无空态）
+- **内容**：纯文本 `📥 N 条待审`——**无红点 / 无角标 / 无动画**，刻意低调，不制造焦虑（手动挡阶段 promote 是从容动作，非待办催促）
+- **数据源**：[[06-prd#10.3]] `count_pending_drafts`（性能预算 ≤ 1ms，守 [[02-constitution#C1]] 200ms 唤起；破预算则降级 lazy load）
+- **行为**：单击 → 跳转 Scene 区（区域 4）的「📥 草稿」tab → 进入收件箱视图审阅
+- **形态差异**：主形态与辅形态都呈现；辅形态副屏常驻时 badge 持续可见，余光感知「有多少外部写入待处理」
 
 ### 13.4 关键交互快捷键总览
 
@@ -749,6 +774,23 @@ graph TD
 ---
 
 ## 修订记录
+
+### v0.7（2026-06-01）— ADR-015 涟漪：MCP write pipeline 草稿收件箱 UI 契约
+
+回应 [[015-expose-mcp-write-pipeline]]（M-X.0 涟漪），把「外部 AI 经 MCP 写入 drafts → omar 显式 promote」决策落进 UI 契约。本批为 🤝 共创草稿，status `ratified` → `draft` 待 omar 审。
+
+| 章节 | 改动 |
+|------|------|
+| frontmatter | version v0.6 → v0.7 / status ratified → draft / related 加 [[015-expose-mcp-write-pipeline]] / description 补「草稿 tab + 待审 badge」 |
+| §4.0.4 UI 共用规则 | 插入「待审 badge」模块行（搜索框同行右端 / 仅 pending>0 显示 / 两形态同呈现）|
+| §13.2 区域布局 mermaid | 顶部入口层加 `BADGE` 节点（纯文本 "📥 N 条待审"，灰色辅助层）+ `S -.-> BADGE` 链路；Scene 区节点注「含 📥 草稿 tab」|
+| §13.3 区域 4 Scene 区 | Tab 行最左加「📥 草稿」收件箱 tab（图标 + 分隔 + 仅 pending>0 显示三重信号区分，不违反 [[02-constitution#B1]]）；草稿卡片信息架构（target_type 角标 + name + preview + provenance「claude-code · model」+ promote/discard 双动作）；promote 须 omar 显式点击 reaffirm |
+| §13.3 区域 7 状态栏 | 加 v0.7 note：状态栏「草稿待沉淀」（自己高频未固化）vs 区域 8 badge「待审」（外部 AI 写入）语义区分，不可合并 |
+| §13.3 新增区域 8 | 「待审 badge」专节（位置 / 仅 N>0 显示 / 纯文本无红点 / 数据源 `count_pending_drafts` / 点击跳草稿 tab / 形态差异）|
+
+**引用上游**：5 IPC [[06-prd#10.3]]（`count_pending_drafts` badge / `list_drafts` 列表 / `promote_draft` / `update_draft` / `discard_draft`）；Provenance [[06-prd#10.1.3]]；promote 路径 [[06-prd#10.2]]；暂态-drafts 合规边界 [[06-prd#6.0-资产关系总览]]。
+
+**保留**：原区域 1-7 编号不动（badge 新增为区域 8，drafts tab 内嵌区域 4），下游 anchor 不失效。视觉细节（badge/草稿卡片 token）下沉 [[05-design-spec]] v0.8。
 
 ### v0.6（2026-05-25）— ADR-013 涟漪：AlignmentPhrases 独立 region
 
