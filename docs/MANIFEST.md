@@ -1,7 +1,7 @@
 ---
 type: manifest
 project: prompt-hub
-version: v1.2
+version: v1.3
 status: active
 created: 2026-05-24
 last_modified: 2026-06-01
@@ -26,7 +26,7 @@ related:
 | 主笔人 | 数量 | 状态 |
 |---|---|---|
 | 🧑 人主笔 | 2 | 2/2 ratified |
-| 🤝 共创 | 6 | 4/6 ratified + 2 draft（product-spec/design-spec 待 omar 审）|
+| 🤝 共创 | 6 | 6/6 ratified（2026-06-01 product-spec v0.7 / design-spec v0.8 omar 审定升 ratified）|
 | 🤖 AI 主笔（人审） | 6 | 4/6 ratified + prd pre-code + features in-progress |
 | 🤖 AI 派生人审（L5） | 2 | 2/2 active |
 | ADR 决策记录 | 13 | 12 Accepted + 1 Proposed |
@@ -49,9 +49,9 @@ related:
 
 | 路径 | 内容 | 状态 |
 |---|---|---|
-| `docs/design/03-product-spec.md` | UI 契约（双形态 / 布局 / 交互） | draft v0.7（2026-06-01 M-X.0 涟漪：草稿 tab + 待审 badge UI 契约，待 omar 审）|
+| `docs/design/03-product-spec.md` | UI 契约（双形态 / 布局 / 交互） | ratified v0.7（2026-06-01 M-X.0 涟漪：草稿 tab + 待审 badge UI 契约；omar 审定轮纠 Scene 激活 tab 紫→绿 + badge 不进 Tab cycle）|
 | `docs/design/04-user-flows.md` | 用户流（边缘 / 异常 / 跨形态） | ratified |
-| `docs/design/05-design-spec.md` | 视觉/动效 token 体系 | draft v0.8（2026-06-01 M-X.0 涟漪：PendingBadge/DraftInbox/DraftCard 视觉契约 + lucide Inbox，待 omar 审）|
+| `docs/design/05-design-spec.md` | 视觉/动效 token 体系 | ratified v0.8（2026-06-01 M-X.0 涟漪：PendingBadge/DraftInbox/DraftCard 视觉契约 + lucide Inbox；omar 审定轮清理草稿 tab 激活态 + 删 badge focused 态）|
 
 ---
 

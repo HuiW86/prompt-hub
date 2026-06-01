@@ -4,7 +4,7 @@ project: prompt-hub
 version: v0.8
 created: 2026-05-18
 last_modified: 2026-06-01
-status: draft  # 🤝 共创草稿，待 omar 审（M-X.0 涟漪）
+status: ratified  # 🤝 共创，omar 审定升 ratified（2026-06-01 M-X.0 涟漪）
 author: co  # 🤝 人机共创（CLAUDE §5.2）
 related: [[01-spec]], [[02-constitution]], [[03-product-spec]], [[012-lock-visual-quality-anchor]], [[CLAUDE-DESIGN]], [[015-expose-mcp-write-pipeline]]
 description: 手动 AI 编程仪表盘的视觉规范——token 命名与 tokens.css 单一真源对齐（--t-/--s-/ontology + neutral scale），WCAG light 实测 + dark v1.0 实装；v0.7 加 §8-§13 bundle 派生 6 章；v0.8 涟漪 ADR-015 加 §10.4 MCP write pipeline 组件视觉（PendingBadge / DraftInbox / DraftCard，aux 中性层，lucide Inbox 非 emoji）
@@ -493,7 +493,7 @@ bundle 派生的 3 个跨组件 primitive，避免重复实现：
 | 图标 | lucide `Inbox` 14px / `--op-icon` 0.7 / `currentColor`——**非 emoji 📥**（§8.2 禁 emoji as UI / §12 chrome 用 lucide）|
 | 文案 | `Inbox` icon + count text「{N} 条待审」，typography `.ph-meta`（`--t-11` / `--fg-3` / `--tr-meta`）|
 | 禁止 | ❌ 红点 / ❌ 角标 dot / ❌ 动画脉冲 / ❌ 染 ontology 色——手动挡阶段 promote 是从容动作，badge 克制不制造焦虑 |
-| states | default / hover（`--fg-2` 提亮）/ focused（`--protocol` 2px outline，§11 例外）/ active（点击跳草稿 tab）|
+| states | default / hover（`--fg-2` 提亮）/ active（点击跳草稿 tab）——**纯状态指示器，不进 Tab cycle、无 focused 态**（与 StatusBar 同性质；键盘入口走 Scene region，见 [[03-product-spec]] §13.4）|
 
 #### 10.4.2 DraftInbox（Scene 行草稿入口 + 列表）
 
@@ -501,7 +501,7 @@ bundle 派生的 3 个跨组件 primitive，避免重复实现：
 
 - lucide `Inbox` 14px + 一道 `--border-2` 竖 hairline 与右侧 Scene tab 隔开
 - 仅 pending>0 出现（与 PendingBadge 同生同灭）
-- 非激活态：`--fg-3` icon；激活态：`--protocol-8` 背景 +（**注意**：此处 `--protocol-8` 是 PhaseBar 既有的「active press fill」中性用法吗？否——草稿 tab 属 aux，激活态改用 **`--surface-2` 背景 + `--border-3` 边框**，不借协议紫，守层归属铁律）
+- 非激活态：`--fg-3` icon；激活态：**`--surface-2` 背景 + `--border-3` 边框**（aux 中性层，**不借协议紫**——草稿 tab 不属任何 ontology 层，守层归属铁律）
 
 **列表面板**（草稿 tab 激活时）：
 
@@ -664,7 +664,13 @@ bundle 视觉锚点的核心洞察：**视觉权重通过 typography rhythm + on
 
 ### v0.8（2026-06-01）— ADR-015 涟漪：MCP write pipeline 组件视觉
 
-回应 [[015-expose-mcp-write-pipeline]]（M-X.0 涟漪），承接 [[03-product-spec]] v0.7 留下的「视觉细节下沉 design-spec」缺口，落地 drafts 收件箱三组件视觉。本批为 🤝 共创草稿，status `ratified` → `draft` 待 omar 审。
+回应 [[015-expose-mcp-write-pipeline]]（M-X.0 涟漪），承接 [[03-product-spec]] v0.7 留下的「视觉细节下沉 design-spec」缺口，落地 drafts 收件箱三组件视觉。本批 🤝 共创，2026-06-01 omar 审定升 `ratified`。
+
+**审定轮清理（2026-06-01）**：
+
+- §10.4.2 草稿 tab 激活态去掉自问自答的 `--protocol-8` 措辞，直接落定 `--surface-2` 背景 + `--border-3` 边框（aux 中性，杜绝实现者误染协议紫）。
+- §10.4.1 PendingBadge 删 `focused` 态——定性为纯状态指示器（与 StatusBar 同性质），**不进 Tab cycle**，键盘入口走 Scene region（决策见 [[03-product-spec#13.4]]）。
+- 本节「上游一致性发现」由「待裁决」更新为「已解决」（product-spec §4.0.4 已回补 📥 占位全局注）。
 
 | 章节 | 改动 |
 |------|------|
@@ -681,7 +687,7 @@ bundle 视觉锚点的核心洞察：**视觉权重通过 typography rhythm + on
 3. **promote 按钮不染 task 绿**——按钮是「送草稿进任务层」的动作，自身非层成员，染绿会误读卡片为绿层；强调靠 `--w-500` 字重 + `Check` 图标，不靠色。
 4. **复用既有 preset 零新增**——name→`.ph-card-title` / preview→`.ph-card-body` / provenance + target_type→`.ph-meta`，无需新 typography preset。
 
-**上游一致性发现（待 omar 裁决回补）**：[[03-product-spec]] v0.7 §4.0.4 / §13.2 / §13.3 用「📥」字面 emoji 描述 badge 与草稿 tab，与本文 §8.2/§12 chrome lucide 铁律冲突。本文已定 chrome 实渲为 lucide `Inbox`；product-spec 的「📥」应回补 1 行注「📥 为 inbox 图标占位，实渲 lucide Inbox，见 design-spec §12.3」，或直接替换措辞。**未就地改 product-spec**（避免跨文件就地补丁，留 omar 走方法论 §7）。
+**上游一致性发现（已解决）**：[[03-product-spec]] §4.0.4 / §13.2 / §13.3 用「📥」字面 emoji 描述 badge 与草稿 tab，与本文 §8.2/§12 chrome lucide 铁律曾冲突。**已回补**：product-spec §4.0.4 末尾加全局占位注「全文『📥』为阅读占位符，实渲 lucide `Inbox`，下游以 lucide 为准」（2026-06-01 M-X.0 涟漪待决策 4 解决，采单条全局注而非逐处替换，零 churn）。两文 chrome 实渲口径已一致：badge / 草稿 tab 入口为 lucide `Inbox`，非 emoji。
 
 **待办**（v0.8 外）：dark mode 对比度实测（§2.3.2，沿 v0.7.1 欠账）/ 辅形态完整视觉规范。
 

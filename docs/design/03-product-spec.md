@@ -4,7 +4,7 @@ project: prompt-hub
 version: v0.7
 created: 2026-05-18
 last_modified: 2026-06-01
-status: draft  # 🤝 共创草稿，待 omar 审（M-X.0 涟漪）
+status: ratified  # 🤝 共创，omar 审定升 ratified（2026-06-01 M-X.0 涟漪）
 author: co  # 🤝 人机共创（CLAUDE §5.2）
 related: [[01-spec]], [[05-design-spec]], [[06-prd]], [[012-lock-visual-quality-anchor]], [[013-alignment-phrases-tab-inclusion]], [[015-expose-mcp-write-pipeline]]
 description: 手动 AI 编程仪表盘的 UI 契约——双形态架构/布局/点击路径/交互频率/状态反馈/引导/用户旅程/主形态 UI 草案；v0.7 涟漪 ADR-015 MCP write pipeline：新增「📥 草稿」收件箱 tab（Scene 行最左）+ 顶部「待审 badge」（搜索区右侧，仅 N>0 显示）
@@ -675,7 +675,7 @@ graph TD
 - **位置**：中部右侧
 - **尺寸**：占整宽 40%
 - **顶部 Tab**：7-10 个 Scene 横排小标签（pill 样式，约 24px 高）
-  - 当前激活 Tab：紫色背景 + 紫色文字
+  - 当前激活 Tab：**绿色**（Scene 属任务层，selected 态按层取色 `--task-16` fill + `--task` border，见 [[05-design-spec#10.1]] / [[05-design-spec#13.1]]）——v0.7 修订：原「紫色」措辞早于 design-spec v0.7 ontology 系统，紫属协议层、用于 Scene = 跨层污染（[[05-design-spec#13.2]] / [[02-constitution#B2]]），故纠正为绿
   - 未激活 Tab：浅灰背景 + 灰色文字
   - **📥 草稿 tab（v0.7 起）**：Tab 行**最左**，📥 图标 + 一道竖分隔线与 Scene tab 隔开；**仅 pending>0 时出现**（与顶部待审 badge 同生同灭）。它是 MCP 写入的「收件箱入口」，不是一个 Scene，靠图标 + 分隔 + 条件显示三重信号区分（语义边界见 [[06-prd#6.0-资产关系总览]] 暂态-drafts 行——drafts 是收件箱，非第 4 层资产，不违反 [[02-constitution#B1]]）
 - **下方内容**：当前 Scene 展开
@@ -751,6 +751,8 @@ graph TD
 | `↑` `↓` `←` `→` | 在卡片间移动焦点 | 键盘党的扫视路径 |
 | `Tab` | 在区域间切换焦点（相位带 / 对齐话术 / Macro / Scene / 最近 / SOP） | 区域级导航（6 tab-reachable，v0.6 起追认 [[013-alignment-phrases-tab-inclusion]]）|
 
+> **v0.7 草稿收件箱键盘入口**：待审 badge（区域 8）是**纯状态指示器，不进 Tab cycle**（保持 6 tab-reachable，避免 badge 条件渲染导致 tab 数 6/7 跳变）。草稿收件箱的键盘路径 = Tab 到 **Scene region** → `←`/`→` 到最左「📥 草稿」tab → 方向键选草稿卡 + 动作键 promote/discard。badge 的点击跳转是鼠标快捷增强，非唯一动作路径。**promote 不绑定单 `⏎` 误触**——须显式动作键确认，守 [[06-prd#8.2]] N3 / [[02-constitution#D1]] 从容闸门。
+
 ### 13.5 这个 UI 草案没解决的问题（v0.5 明示）
 
 为了诚实，列出本 UI 草案**尚未给出明确答案**的问题：
@@ -779,7 +781,12 @@ graph TD
 
 ### v0.7（2026-06-01）— ADR-015 涟漪：MCP write pipeline 草稿收件箱 UI 契约
 
-回应 [[015-expose-mcp-write-pipeline]]（M-X.0 涟漪），把「外部 AI 经 MCP 写入 drafts → omar 显式 promote」决策落进 UI 契约。本批为 🤝 共创草稿，status `ratified` → `draft` 待 omar 审。
+回应 [[015-expose-mcp-write-pipeline]]（M-X.0 涟漪），把「外部 AI 经 MCP 写入 drafts → omar 显式 promote」决策落进 UI 契约。本批 🤝 共创，2026-06-01 omar 审定升 `ratified`。
+
+**审定轮修订（2026-06-01）**：
+
+- §13.4 新增「草稿收件箱键盘入口」note——待审 badge 定为纯状态指示器**不进 Tab cycle**（保持 6 tab-reachable），键盘路径走 Scene region → 最左草稿 tab；promote 不绑定单 `⏎` 误触（决策 3）。
+- §13.3 区域4 Scene 当前激活 Tab「紫色」纠正为**绿色**（`--task-16` + `--task` border）——原措辞早于 [[05-design-spec]] v0.7 ontology 系统，Scene 属任务层、用紫=跨层污染（[[02-constitution#B2]]）（决策 4）。
 
 | 章节 | 改动 |
 |------|------|
