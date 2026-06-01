@@ -7,12 +7,9 @@ use tauri_plugin_global_shortcut::{Code, GlobalShortcutExt, Modifiers, Shortcut,
 #[cfg(feature = "bench")]
 mod bench;
 mod commands;
-mod db;
 mod error;
 #[cfg(target_os = "macos")]
 pub(crate) mod macos;
-mod models;
-mod repo;
 
 use commands::AppState;
 
@@ -22,7 +19,7 @@ pub fn run() {
         .setup(|app| {
             let data_dir = app.path().app_data_dir().expect("resolve app_data_dir");
             let db_path = data_dir.join("prompt-hub.db");
-            let conn = db::open_at(&db_path).expect("open prompt-hub db");
+            let conn = repo_core::db::open_and_migrate(&db_path).expect("open prompt-hub db");
             app.manage(AppState {
                 conn: Mutex::new(conn),
                 copy_seq: AtomicU64::new(0),

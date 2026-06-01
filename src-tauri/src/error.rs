@@ -1,23 +1,16 @@
 use serde::{Serialize, Serializer};
 
+// Tauri-facing error. Wraps the Tauri-free repo-core RepoError and adds the
+// variants that only make sense inside the app shell (window/IPC, state lock).
+// Serialize-to-string so the React client receives a plain message string.
 #[derive(Debug, thiserror::Error)]
 pub enum AppError {
-    #[error("sqlite: {0}")]
-    Sqlite(#[from] rusqlite::Error),
-    #[error("serde: {0}")]
-    Serde(#[from] serde_json::Error),
-    #[error("io: {0}")]
-    Io(#[from] std::io::Error),
+    #[error(transparent)]
+    Repo(#[from] repo_core::RepoError),
     #[error("tauri: {0}")]
     Tauri(#[from] tauri::Error),
     #[error("state lock poisoned")]
     LockPoisoned,
-    #[error("target_id `{target_id}` not found in `{table}`")]
-    TargetNotFound { table: String, target_id: String },
-    #[error("target_id required for target_type `{0}`")]
-    TargetIdRequired(String),
-    #[error("{0}")]
-    Other(String),
 }
 
 impl Serialize for AppError {

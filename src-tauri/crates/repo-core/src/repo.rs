@@ -2,19 +2,19 @@ use chrono::{DateTime, Utc};
 use rusqlite::{params, Connection, OptionalExtension, Row};
 use uuid::Uuid;
 
-use crate::error::{AppError, AppResult};
+use crate::error::{RepoError, RepoResult};
 use crate::models::{
     AlignmentPhrase, Macro, Phase, Phrase, RecentUsageEntry, RecordUsageInput, Scene,
     SceneWithChildren, SubStage, UsageRecord, UsageSource, UsageTargetType,
 };
 
-fn parse_ts(s: String) -> AppResult<DateTime<Utc>> {
+fn parse_ts(s: String) -> RepoResult<DateTime<Utc>> {
     DateTime::parse_from_rfc3339(&s)
         .map(|d| d.with_timezone(&Utc))
-        .map_err(|e| AppError::Other(format!("invalid timestamp `{s}`: {e}")))
+        .map_err(|e| RepoError::Other(format!("invalid timestamp `{s}`: {e}")))
 }
 
-fn parse_ts_opt(s: Option<String>) -> AppResult<Option<DateTime<Utc>>> {
+fn parse_ts_opt(s: Option<String>) -> RepoResult<Option<DateTime<Utc>>> {
     s.map(parse_ts).transpose()
 }
 
@@ -30,7 +30,7 @@ fn phase_from_row(row: &Row<'_>) -> rusqlite::Result<Phase> {
     })
 }
 
-pub fn list_phases(conn: &Connection) -> AppResult<Vec<Phase>> {
+pub fn list_phases(conn: &Connection) -> RepoResult<Vec<Phase>> {
     let mut stmt = conn.prepare(
         "SELECT id, name, order_index, color, description, visible, default_alignment_phrase_id
          FROM phases
@@ -41,7 +41,7 @@ pub fn list_phases(conn: &Connection) -> AppResult<Vec<Phase>> {
     Ok(rows.collect::<rusqlite::Result<Vec<_>>>()?)
 }
 
-pub fn list_alignment_phrases(conn: &Connection) -> AppResult<Vec<AlignmentPhrase>> {
+pub fn list_alignment_phrases(conn: &Connection) -> RepoResult<Vec<AlignmentPhrase>> {
     let mut stmt = conn.prepare(
         "SELECT id, phase_id, name, content, is_default, usage_count, last_used_at,
                 created_at, notes, deprecated
@@ -77,7 +77,7 @@ pub fn list_alignment_phrases(conn: &Connection) -> AppResult<Vec<AlignmentPhras
     Ok(out)
 }
 
-pub fn list_macros(conn: &Connection) -> AppResult<Vec<Macro>> {
+pub fn list_macros(conn: &Connection) -> RepoResult<Vec<Macro>> {
     let mut stmt = conn.prepare(
         "SELECT id, name, content, expand_from, native, role, task, usage_count,
                 last_used_at, created_at, notes, scene_id, deprecated
@@ -143,7 +143,7 @@ pub fn list_macros(conn: &Connection) -> AppResult<Vec<Macro>> {
     Ok(out)
 }
 
-pub fn list_scenes_with_children(conn: &Connection) -> AppResult<Vec<SceneWithChildren>> {
+pub fn list_scenes_with_children(conn: &Connection) -> RepoResult<Vec<SceneWithChildren>> {
     let mut stmt = conn.prepare(
         "SELECT id, name, icon, order_index, visible, role_presets, color
          FROM scenes
@@ -182,7 +182,7 @@ pub fn list_scenes_with_children(conn: &Connection) -> AppResult<Vec<SceneWithCh
     Ok(out)
 }
 
-fn list_sub_stages_by_scene(conn: &Connection, scene_id: &str) -> AppResult<Vec<SubStage>> {
+fn list_sub_stages_by_scene(conn: &Connection, scene_id: &str) -> RepoResult<Vec<SubStage>> {
     let mut stmt = conn.prepare(
         "SELECT id, scene_id, name, order_index
          FROM sub_stages
@@ -200,7 +200,7 @@ fn list_sub_stages_by_scene(conn: &Connection, scene_id: &str) -> AppResult<Vec<
     Ok(rows.collect::<rusqlite::Result<Vec<_>>>()?)
 }
 
-fn list_phrases_by_scene(conn: &Connection, scene_id: &str) -> AppResult<Vec<Phrase>> {
+fn list_phrases_by_scene(conn: &Connection, scene_id: &str) -> RepoResult<Vec<Phrase>> {
     let mut stmt = conn.prepare(
         "SELECT id, scene_id, name, content, usage_count, last_used_at, created_at,
                 notes, deprecated, sub_stage_id
@@ -252,7 +252,7 @@ fn list_phrases_by_scene(conn: &Connection, scene_id: &str) -> AppResult<Vec<Phr
     Ok(out)
 }
 
-pub fn record_usage(conn: &Connection, input: RecordUsageInput) -> AppResult<UsageRecord> {
+pub fn record_usage(conn: &Connection, input: RecordUsageInput) -> RepoResult<UsageRecord> {
     let id = Uuid::new_v4().to_string();
     let now = Utc::now();
     let modifier_ids_json = input
@@ -283,7 +283,7 @@ pub fn record_usage(conn: &Connection, input: RecordUsageInput) -> AppResult<Usa
         let target_id = input
             .target_id
             .as_deref()
-            .ok_or_else(|| AppError::TargetIdRequired(input.target_type.as_str().to_string()))?;
+            .ok_or_else(|| RepoError::TargetIdRequired(input.target_type.as_str().to_string()))?;
         let exists: i64 = tx
             .query_row(
                 &format!("SELECT 1 FROM {table} WHERE id = ?1"),
@@ -293,7 +293,7 @@ pub fn record_usage(conn: &Connection, input: RecordUsageInput) -> AppResult<Usa
             .optional()?
             .unwrap_or(0);
         if exists == 0 {
-            return Err(AppError::TargetNotFound {
+            return Err(RepoError::TargetNotFound {
                 table: table.to_string(),
                 target_id: target_id.to_string(),
             });
@@ -333,7 +333,7 @@ pub fn record_usage(conn: &Connection, input: RecordUsageInput) -> AppResult<Usa
         // exists in this transaction. If the UPDATE somehow misses, abort
         // before commit rather than silently producing a stale record.
         if affected != 1 {
-            return Err(AppError::TargetNotFound {
+            return Err(RepoError::TargetNotFound {
                 table: table.to_string(),
                 target_id: target_id.to_string(),
             });
@@ -354,7 +354,7 @@ pub fn record_usage(conn: &Connection, input: RecordUsageInput) -> AppResult<Usa
     })
 }
 
-pub fn list_recent_usage(conn: &Connection, limit: i64) -> AppResult<Vec<RecentUsageEntry>> {
+pub fn list_recent_usage(conn: &Connection, limit: i64) -> RepoResult<Vec<RecentUsageEntry>> {
     // LEFT JOIN each possible target table so a single query returns name/content
     // alongside the usage row. SQLite COALESCE picks the right column per row.
     let mut stmt = conn.prepare(
@@ -407,7 +407,7 @@ pub fn list_recent_usage(conn: &Connection, limit: i64) -> AppResult<Vec<RecentU
             target_content,
         ) = r?;
         let target_type = UsageTargetType::from_str(&target_type_s)
-            .ok_or_else(|| AppError::Other(format!("unknown target_type: {target_type_s}")))?;
+            .ok_or_else(|| RepoError::Other(format!("unknown target_type: {target_type_s}")))?;
         let source = match source_s.as_str() {
             "macro_area" => UsageSource::MacroArea,
             "scene" => UsageSource::Scene,
@@ -415,7 +415,7 @@ pub fn list_recent_usage(conn: &Connection, limit: i64) -> AppResult<Vec<RecentU
             "sop" => UsageSource::Sop,
             "composition" => UsageSource::Composition,
             "phase_bar" => UsageSource::PhaseBar,
-            other => return Err(AppError::Other(format!("unknown source: {other}"))),
+            other => return Err(RepoError::Other(format!("unknown source: {other}"))),
         };
         let modifier_ids = match modifier_ids_json {
             Some(j) => Some(serde_json::from_str::<Vec<String>>(&j)?),
@@ -457,7 +457,7 @@ pub fn list_recent_usage(conn: &Connection, limit: i64) -> AppResult<Vec<RecentU
 // sargable so idx_usage_records_timestamp gets a full COVERING-INDEX SCAN
 // instead of SEARCH. Fine while usage_records < 10k; revisit when StatusBar
 // refresh shows up in a profile.
-pub fn count_today_usage(conn: &Connection) -> AppResult<i64> {
+pub fn count_today_usage(conn: &Connection) -> RepoResult<i64> {
     let count: i64 = conn.query_row(
         "SELECT COUNT(*) FROM usage_records
          WHERE date(timestamp, 'localtime') = date('now', 'localtime')",
@@ -570,7 +570,7 @@ mod tests {
             },
         );
         assert!(
-            matches!(result, Err(AppError::TargetNotFound { .. })),
+            matches!(result, Err(RepoError::TargetNotFound { .. })),
             "expected TargetNotFound, got {result:?}"
         );
         // The usage_records row must NOT have been inserted (transaction rolled back).
@@ -596,7 +596,7 @@ mod tests {
             },
         );
         assert!(
-            matches!(result, Err(AppError::TargetIdRequired(_))),
+            matches!(result, Err(RepoError::TargetIdRequired(_))),
             "expected TargetIdRequired, got {result:?}"
         );
     }

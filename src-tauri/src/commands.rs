@@ -16,11 +16,11 @@ const COPY_HIDE_DELAY_MS: u64 = 200;
 const RECENT_USAGE_LIMIT_MAX: i64 = 100;
 
 use crate::error::{AppError, AppResult};
-use crate::models::{
+use repo_core::models::{
     AlignmentPhrase, Macro, Phase, RecentUsageEntry, RecordUsageInput, SceneWithChildren,
     UsageRecord,
 };
-use crate::repo;
+use repo_core::repo;
 
 pub struct AppState {
     pub conn: Mutex<Connection>,
@@ -34,10 +34,10 @@ pub struct AppState {
 
 fn with_conn<F, T>(state: &State<'_, AppState>, f: F) -> AppResult<T>
 where
-    F: FnOnce(&Connection) -> AppResult<T>,
+    F: FnOnce(&Connection) -> repo_core::RepoResult<T>,
 {
     let guard = state.conn.lock().map_err(|_| AppError::LockPoisoned)?;
-    f(&guard)
+    Ok(f(&guard)?)
 }
 
 #[tauri::command]

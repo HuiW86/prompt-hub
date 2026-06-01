@@ -1,3 +1,6 @@
+[workspace]
+members = ["crates/repo-core"]
+
 [package]
 name = "prompt-hub"
 version = "0.1.0"
@@ -18,15 +21,14 @@ crate-type = ["staticlib", "cdylib", "rlib"]
 tauri-build = { version = "2", features = [] }
 
 [dependencies]
+# Shared Tauri-free data layer (read + draft). See crates/repo-core.
+repo-core = { path = "crates/repo-core" }
 # macos-private-api: required for transparent always-on-top window (ADR-008)
 tauri = { version = "2", features = ["macos-private-api"] }
 tauri-plugin-global-shortcut = "2"
 serde = { version = "1", features = ["derive"] }
-serde_json = "1"
-# Data layer (ADR-003) — M0 dependency compatibility validation
+# Data layer (ADR-003) — Connection type held in AppState
 rusqlite = { version = "0.32", features = ["bundled"] }
-chrono = { version = "0.4", features = ["serde"] }
-uuid = { version = "1", features = ["v4", "serde"] }
 thiserror = "2"
 # Already pulled in transitively by Tauri 2; declared explicitly so we can
 # use tokio::time::sleep inside tauri::async_runtime::spawn (P1-1 cancelable

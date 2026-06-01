@@ -1,0 +1,24 @@
+[package]
+name = "repo-core"
+version = "0.1.0"
+edition = "2021"
+
+# Zero Tauri dependency: this crate is the shared read/draft data layer that the
+# MCP server (prompt-hub-mcp) is allowed to depend on. Keeping Tauri out means
+# the MCP binary can never pull in the windowing stack. See plan §3.3.
+
+[lib]
+name = "repo_core"
+
+[dependencies]
+rusqlite = { version = "0.32", features = ["bundled"] }
+serde = { version = "1", features = ["derive"] }
+serde_json = "1"
+chrono = { version = "0.4", features = ["serde"] }
+uuid = { version = "1", features = ["v4", "serde"] }
+thiserror = "2"
+# payload_hash dedup for draft staging (plan §4.1)
+sha2 = "0.10"
+
+[dev-dependencies]
+tempfile = "3"
