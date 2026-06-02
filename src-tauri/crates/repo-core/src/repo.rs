@@ -4,17 +4,18 @@ use uuid::Uuid;
 
 use crate::error::{RepoError, RepoResult};
 use crate::models::{
-    AlignmentPhrase, Macro, Phase, Phrase, RecentUsageEntry, RecordUsageInput, Scene,
-    SceneWithChildren, SubStage, UsageRecord, UsageSource, UsageTargetType,
+    AlignmentPhrase, Composition, Macro, Modifier, Phase, Phrase, RecentUsageEntry,
+    RecordUsageInput, Scene, SceneWithChildren, SubStage, UsageRecord, UsageSource,
+    UsageTargetType,
 };
 
-fn parse_ts(s: String) -> RepoResult<DateTime<Utc>> {
+pub(crate) fn parse_ts(s: String) -> RepoResult<DateTime<Utc>> {
     DateTime::parse_from_rfc3339(&s)
         .map(|d| d.with_timezone(&Utc))
         .map_err(|e| RepoError::Other(format!("invalid timestamp `{s}`: {e}")))
 }
 
-fn parse_ts_opt(s: Option<String>) -> RepoResult<Option<DateTime<Utc>>> {
+pub(crate) fn parse_ts_opt(s: Option<String>) -> RepoResult<Option<DateTime<Utc>>> {
     s.map(parse_ts).transpose()
 }
 
@@ -138,6 +139,83 @@ pub fn list_macros(conn: &Connection) -> RepoResult<Vec<Macro>> {
             notes,
             scene_id,
             deprecated,
+        });
+    }
+    Ok(out)
+}
+
+pub fn list_modifiers(conn: &Connection) -> RepoResult<Vec<Modifier>> {
+    let mut stmt = conn.prepare(
+        "SELECT id, name, content, group_kind, usage_count, last_used_at,
+                created_at, notes, deprecated
+         FROM modifiers
+         WHERE deprecated = 0
+         ORDER BY group_kind ASC, usage_count DESC, created_at ASC",
+    )?;
+    let raw = stmt.query_map([], |row| {
+        Ok((
+            Modifier {
+                id: row.get("id")?,
+                name: row.get("name")?,
+                content: row.get("content")?,
+                group_kind: row.get("group_kind")?,
+                usage_count: row.get("usage_count")?,
+                last_used_at: None,
+                created_at: Utc::now(),
+                notes: row.get("notes")?,
+                deprecated: row.get::<_, i64>("deprecated")? != 0,
+            },
+            row.get::<_, Option<String>>("last_used_at")?,
+            row.get::<_, String>("created_at")?,
+        ))
+    })?;
+    let mut out = Vec::new();
+    for r in raw {
+        let (mut m, last, created) = r?;
+        m.last_used_at = parse_ts_opt(last)?;
+        m.created_at = parse_ts(created)?;
+        out.push(m);
+    }
+    Ok(out)
+}
+
+pub fn list_compositions(conn: &Connection) -> RepoResult<Vec<Composition>> {
+    let mut stmt = conn.prepare(
+        "SELECT id, name, modifier_ids, phase_id, scene_id, usage_count,
+                last_used_at, created_at, notes, deprecated
+         FROM compositions
+         WHERE deprecated = 0
+         ORDER BY phase_id ASC, usage_count DESC, created_at ASC",
+    )?;
+    let raw = stmt.query_map([], |row| {
+        Ok((
+            row.get::<_, String>("id")?,
+            row.get::<_, String>("name")?,
+            row.get::<_, String>("modifier_ids")?,
+            row.get::<_, String>("phase_id")?,
+            row.get::<_, Option<String>>("scene_id")?,
+            row.get::<_, i64>("usage_count")?,
+            row.get::<_, Option<String>>("last_used_at")?,
+            row.get::<_, String>("created_at")?,
+            row.get::<_, Option<String>>("notes")?,
+            row.get::<_, i64>("deprecated")? != 0,
+        ))
+    })?;
+    let mut out = Vec::new();
+    for r in raw {
+        let (id, name, modifier_ids_json, phase_id, scene_id, usage, last, created, notes, dep) =
+            r?;
+        out.push(Composition {
+            id,
+            name,
+            modifier_ids: serde_json::from_str(&modifier_ids_json)?,
+            phase_id,
+            scene_id,
+            usage_count: usage,
+            last_used_at: parse_ts_opt(last)?,
+            created_at: parse_ts(created)?,
+            notes,
+            deprecated: dep,
         });
     }
     Ok(out)

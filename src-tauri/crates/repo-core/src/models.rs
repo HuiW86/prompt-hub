@@ -52,6 +52,41 @@ pub struct Macro {
 
 #[derive(Debug, Serialize, Deserialize, Clone)]
 #[serde(rename_all = "camelCase")]
+pub struct Modifier {
+    pub id: String,
+    pub name: String,
+    pub content: String,
+    // CHECK-constrained to cognition/action/delivery/constraint at the SQL layer;
+    // kept as String here (no Rust enum) so a future seed value can't fail to
+    // deserialize a read — validation lives in the schema.
+    pub group_kind: String,
+    pub usage_count: i64,
+    pub last_used_at: Option<DateTime<Utc>>,
+    pub created_at: DateTime<Utc>,
+    pub notes: Option<String>,
+    pub deprecated: bool,
+}
+
+// A persisted Composition (migration 0004). Distinct from the transient
+// workbench Composition (PRD §6.2): this row exists only once Claude proposed it
+// and omar promoted the draft (PRD §10.2).
+#[derive(Debug, Serialize, Deserialize, Clone)]
+#[serde(rename_all = "camelCase")]
+pub struct Composition {
+    pub id: String,
+    pub name: String,
+    pub modifier_ids: Vec<String>,
+    pub phase_id: String,
+    pub scene_id: Option<String>,
+    pub usage_count: i64,
+    pub last_used_at: Option<DateTime<Utc>>,
+    pub created_at: DateTime<Utc>,
+    pub notes: Option<String>,
+    pub deprecated: bool,
+}
+
+#[derive(Debug, Serialize, Deserialize, Clone)]
+#[serde(rename_all = "camelCase")]
 pub struct Scene {
     pub id: String,
     pub name: String,
@@ -329,6 +364,27 @@ impl DraftPayload {
             | DraftPayload::Composition { name, .. }
             | DraftPayload::Macro { name, .. }
             | DraftPayload::AlignmentPhrase { name, .. } => name,
+        }
+    }
+
+    // A short, list-safe preview so `list_drafts` never ships full payloads.
+    // Composition has no free-text body, so we summarize its modifier count.
+    pub fn preview(&self) -> String {
+        const MAX: usize = 80;
+        let body = match self {
+            DraftPayload::Modifier { content, .. }
+            | DraftPayload::Macro { content, .. }
+            | DraftPayload::AlignmentPhrase { content, .. } => content.clone(),
+            DraftPayload::Composition { modifier_ids, .. } => {
+                format!("{} modifiers", modifier_ids.len())
+            }
+        };
+        // Truncate on a char boundary so multi-byte (CJK) content never panics.
+        if body.chars().count() > MAX {
+            let truncated: String = body.chars().take(MAX).collect();
+            format!("{truncated}…")
+        } else {
+            body
         }
     }
 }

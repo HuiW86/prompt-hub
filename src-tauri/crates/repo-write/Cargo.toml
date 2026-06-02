@@ -1,0 +1,23 @@
+[package]
+name = "repo-write"
+version = "0.1.0"
+edition = "2021"
+
+# Write half of the data layer: inserts into the real asset tables + the
+# promote transaction. Depends on repo-core but NOT vice-versa. The MCP binary
+# (prompt-hub-mcp) deliberately omits this crate from its dependency graph, so
+# `AssetRepo` / `promote_draft` are unresolved symbols there — that's the
+# compile-time write-isolation guarantee (plan §3.3).
+
+[lib]
+name = "repo_write"
+
+[dependencies]
+repo-core = { path = "../repo-core" }
+rusqlite = { version = "0.32", features = ["bundled"] }
+chrono = { version = "0.4", features = ["serde"] }
+uuid = { version = "1", features = ["v4"] }
+serde_json = "1"
+
+[dev-dependencies]
+tempfile = "3"

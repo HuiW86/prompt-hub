@@ -2556,6 +2556,18 @@ dependencies = [
 ]
 
 [[package]]
+name = "repo-write"
+version = "0.1.0"
+dependencies = [
+ "chrono",
+ "repo-core",
+ "rusqlite",
+ "serde_json",
+ "tempfile",
+ "uuid",
+]
+
+[[package]]
 name = "reqwest"
 version = "0.13.3"
 source = "registry+https://github.com/rust-lang/crates.io-index"
