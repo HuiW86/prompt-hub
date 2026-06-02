@@ -48,9 +48,9 @@ pnpm test:watch                                           # Vitest watch mode
 pnpm lint                                                 # ESLint 10 flat config
 pnpm format                                               # Prettier 3.x
 pnpm exec prettier --check .                              # Prettier 检查（不写盘）
-cargo test --manifest-path src-tauri/Cargo.toml           # Rust 测试（含 tempfile SQLite fixture）
-cargo fmt --manifest-path src-tauri/Cargo.toml            # Rust 格式化
-cargo clippy --manifest-path src-tauri/Cargo.toml -- -D warnings  # Rust lint
+cargo test --workspace --manifest-path src-tauri/Cargo.toml           # Rust 测试（含 tempfile SQLite fixture）—— --workspace 必须，否则只测 bin pkg（0 测试），真实用例在 repo-core/repo-write/prompt-hub-mcp
+cargo fmt --manifest-path src-tauri/Cargo.toml                        # Rust 格式化（fmt 默认覆盖整个 workspace）
+cargo clippy --workspace --all-targets --manifest-path src-tauri/Cargo.toml -- -D warnings  # Rust lint（--all-targets 覆盖 trybuild 等 test target）
 
 # 性能 benchmark（[[02-constitution#C1]] 200ms 唤起自检）
 pnpm bench:cold-start                                     # spawn → 首次 CGWindow entry P95（debug build baseline ~193ms；C1 不约束此项）
@@ -162,8 +162,8 @@ AI 不得擅自起草人主笔文档（spec / constitution），可起草共创 
 
 ## §7 当前状态指针
 
-- 项目阶段：**M-X.0 涟漪闭环（ADR-015 MCP write pipeline）**（2026-06-01）——MCP write 决策已涟漪进 7 份设计文档全闭环；前置 ADR-012 Phase 1-3 已 ship（fonts/tokens commit `b932ab4` / dark+ontology `9a822d8` / 9 组件视觉重写 `acf8229`），Vitest 55/55 + cargo 12/12 + lint + build 全过，M0-3 唤起 P95=10.49ms 远低于 [[02-constitution#C1]] 200ms 死线；**仍待**：ADR-012 Phase 5 `pnpm tauri dev` 6 步 manual verify / M0-4 Developer ID 签名 spike
+- 项目阶段：**M-X.1 数据层 + workspace 重构（进行中，已基本收口）**（2026-06-01）——Cargo workspace 拆 4 crate（repo-core / repo-write / prompt-hub / prompt-hub-mcp）落地：drafts staging 数据层 + DraftRepo/ReadOnlyAssetRepo（repo-core）+ AssetRepo/promote_draft（repo-write）+ prompt-hub-mcp skeleton（只依赖 repo-core，trybuild compile_fail 守编译期写隔离）；`cargo test --workspace` 28/28（21 repo-core + 6 repo-write + 1 trybuild）+ clippy 0 + fmt clean；**仅缺** Modifier/Macro promote arm（故意 stub 为 `PromoteUnsupported`，等 omar 字段映射决策）。前置 ADR-012 Phase 1-3 已 ship（fonts/tokens `b932ab4` / dark+ontology `9a822d8` / 9 组件视觉重写 `acf8229`），M0-3 唤起 P95=10.49ms 远低于 [[02-constitution#C1]] 200ms 死线；**仍待**：ADR-012 Phase 5 `pnpm tauri dev` 6 步 manual verify / M0-4 Developer ID 签名 spike
 - 文档体系：**13 核心 + L5 协作契约 2 + MANIFEST 全部 ratified**（2026-06-01 M-X.0 涟漪：spec v0.6 / constitution v1.1 / product-spec v0.7 / design-spec v0.8 / prd pre-code v0.7 / features in-progress v0.3 / tech-stack v1.2；🤝 共创 6/6 ratified）——核心设计文档 `docs/design/01-11-*.md` + L5 派生 [[CLAUDE-DESIGN]] + [[claude-design-prompts]]；全文件清单见 [[MANIFEST]] v1.3
 - ADR 进度：**13 Accepted + 1 Proposed + 2 Reserved**——001/002/003/004/006/007/008/009/010 + 012（lock-visual-quality-anchor，Linear 气质锚定）+ 013（alignment-phrases-tab-inclusion，追认独立 region + Tab cycle 6 tab-reachable）+ 015（expose-mcp-write-pipeline，2026-05-27 Accepted，14 tool + workspace 拆 4 crate + drafts staging）；005（prompt-combiner 复用）仍 Proposed；011 Reserved（search UsageSource）+ 014 Reserved（nspanel-isa-swizzle）
 - tech-stack 状态：**v1.2 ratified**（[[09-tech-stack]]）—— 全栈拍板：Tauri 2.x + React 19.2 + Zustand 5 + rusqlite 0.32 + pnpm 10.x + Vite 7.x + Vitest 4 + CSS Modules + macos-private-api；v1.2 加 ADR-015 MCP server + workspace 4 crate 物理拆分
-- 下一动作：**M-X.1 数据层 + workspace 重构（L 级，3-4 天）**——待 omar 验收后启动，提纲见 [[mcp-write-pipeline#§8]]（drafts 表 migration 0003 + 14 tool 双层 + Cargo workspace 拆 repo-core/repo-write）；并行待办：ADR-012 Phase 5 `pnpm tauri dev` 6 步视觉 diff（overlay frame / ⌥Space 唤起 / PhaseBar 8 段 / AlignmentPhrases chip flash / MacroGrid Flame / StatusBar ⌘K）+ bench 脚本 + M0-4 签名；Claude Design pipeline 待 omar 上传 [[CLAUDE-DESIGN]] 跑 Task β；详见 [[HANDOFF#Next-Actions]]
+- 下一动作：**等 omar 拍板 Modifier/Macro promote 字段映射** → 补 `crates/repo-write/src/promote.rs` 两 arm（删 `PromoteUnsupported` 分支）即可关闭 M-X.1，随后走方法论 §7（PRD §6.2 promoted composition 例外注 / 选项 ii 时 §10.1.2 bump）；之后进 **M-X.2 MCP server 骨架**（rmcp stdio + 14 tool，提纲见 [[mcp-write-pipeline#§8]]）；并行待办：ADR-012 Phase 5 `pnpm tauri dev` 6 步视觉 diff（overlay frame / ⌥Space 唤起 / PhaseBar 8 段 / AlignmentPhrases chip flash / MacroGrid Flame / StatusBar ⌘K）+ bench 脚本 + M0-4 签名；Claude Design pipeline 待 omar 上传 [[CLAUDE-DESIGN]] 跑 Task β；详见 [[HANDOFF#Next-Actions]]

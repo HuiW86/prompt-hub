@@ -1,5 +1,5 @@
 [workspace]
-members = ["crates/repo-core", "crates/repo-write"]
+members = ["crates/repo-core", "crates/repo-write", "crates/prompt-hub-mcp"]
 
 [package]
 name = "prompt-hub"

@@ -1,0 +1,22 @@
+[package]
+name = "prompt-hub-mcp"
+version = "0.1.0"
+edition = "2021"
+
+# stdio MCP server consumed by Claude Code (plan §3.1). It depends ONLY on
+# repo-core: the read + draft-staging surface. It deliberately omits repo-write,
+# so AssetRepo / promote_draft are unresolvable here — the compile-time
+# write-isolation guarantee (plan §3.3). The trybuild negative test in
+# tests/ enforces that the boundary stays broken.
+#
+# This milestone (M-X.1) ships the skeleton only; the 14 tools land in M-X.2.
+
+[[bin]]
+name = "prompt-hub-mcp"
+path = "src/main.rs"
+
+[dependencies]
+repo-core = { path = "../repo-core" }
+
+[dev-dependencies]
+trybuild = "1"
