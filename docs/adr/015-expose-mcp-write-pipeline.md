@@ -201,3 +201,38 @@ omar 明确诉求：**希望工具暴露标准接口给外部 AI（比如 Claude
 - [ ] ❌ Decision 含糊 → "选 Option A：MCP + rmcp 1.7 + workspace" 一句话能说清
 - [ ] ❌ Consequences 没写未来反悔成本 → §6 已含"中等"评级 + 3 种废弃路径
 - [ ] ❌ Status 频繁回改 → 本 ADR `Proposed`，待 omar 审后改 `Accepted`，未来若废弃开新 ADR superseded
+
+---
+
+## 补遗
+
+> 本节记录 ADR 主决策落地过程中产生的细化决策。它们不改变 §5 主决策，仅补齐当时 deferred 的字段级映射，故不另开 ADR（对齐本 ADR §6「衍生约束」第 2 条）。
+
+### 补遗-1（2026-06-03）— Modifier/Macro promote field-mapping（决策 iii）
+
+**背景**：M-X.1 落 promote arm 时发现，`DraftPayload::Modifier` 携带 `phase_id`/`scene_id`，且 `modifiers.group_kind`（NOT NULL，枚举 cognition/action/delivery/constraint）不在 payload 里——`modifiers` 表无 phase 列，group_kind 又必填，需 omar 拍板字段映射。
+
+**决策**：
+
+| 子项 | 决策 |
+|------|------|
+| Modifier.phase_id / scene_id | promote 时**丢弃**——Modifier 是 phase 无关积木（[[06-prd#4.2]] 三层资产模型） |
+| Modifier.group_kind 来源 | **promote UI 手选**（决策 iii），经 `PromoteOptions.group_kind` 传入；不在 payload 里让 AI 代填 |
+| Macro.phase_id | promote 时丢弃（`macros` 表无此列），按 scene_id 归档 |
+| Macro 其余字段 | promoted macro 恒 native=0 / expand_from=NULL / role=task=NULL（满足表 CHECK） |
+
+**为什么选 (iii) 而非 (i) 默认 cognition / (ii) 加 payload 让 AI 填**：
+
+- group_kind 是认知/动作/交付/约束的四象限**认知判断**，属 omar 的「沉淀」动作（[[01-spec#2.4]] 哲学四「使用即沉淀」），不该外包给 AI
+- 回溯 [[01-spec#2.6]] 哲学六「减少离手但不消除」+ [[01-spec#2.7]] 哲学七「协议对齐」——promote 本就是人工关卡，手选 group_kind 是关卡的自然一部分，非额外负担
+- (i) 默认 cognition 污染分类；(ii) 加 payload 触发 [[06-prd#10.1.2]] schema bump + 让 AI 做不可靠判断，成本与收益倒挂
+- (iii) 不碰 schema、不碰 payload，最简
+
+**关联落地**：repo-write `promote.rs` `PromoteOptions { override_payload?, group_kind? }`；缺 group_kind 的 Modifier promote 返回 `RepoError::PromoteMissingField`。涟漪见 [[06-prd]] v0.8 修订记录。
+
+### 补遗-2（2026-06-03）— 两处实现/文档对齐（promote 后软删 + serde 约束）
+
+落地时发现 v0.7 PRD §10 两处与实现背离，按方法论 §7 修正 PRD 对齐代码事实（详见 [[06-prd]] v0.8）：
+
+1. **promote 后 discarded 而非 DELETE**：实现用 `mark_discarded`（status='discarded' 软删保留行），统一 discard 路径并保留 provenance 供审计；幂等性由 status 检查（重复 promote 得 `DraftNotPending`）保证。
+2. **`deny_unknown_fields` 不可用**：serde 对 internally-tagged enum 不支持该属性（编译错误），schema 漂移防线改由 promote 时重反序列化兜底。

@@ -1,13 +1,13 @@
 ---
 type: features
 project: prompt-hub
-version: v0.3
+version: v0.4
 created: 2026-05-19
-last_modified: 2026-06-01
-status: in-progress  # S1 主形态 MVP 5 模块 + 跨模块 P0 多项 done（ADR-012 Phase 1-3 已 ship）；M-X MCP write pipeline planned
+last_modified: 2026-06-03
+status: in-progress  # S1 主形态 MVP 5 模块 + 跨模块 P0 多项 done（ADR-012 Phase 1-3 已 ship）；M-X.1 数据层 + workspace + promote arm done，M-X.2 MCP server planned
 author: ai  # 🤖 AI 主笔 + 人审（CLAUDE §5.2）
 audience: [human, ai]
-description: prompt-hub 功能清单运营视图——功能 × 状态 × 测试覆盖 × 版本，单一事实源；v0.3 新增 §3.7 MCP write pipeline 区（drafts 收件箱 + 14 MCP tool + Scene 草稿 tab，全 planned）
+description: prompt-hub 功能清单运营视图——功能 × 状态 × 测试覆盖 × 版本，单一事实源；v0.4 把 §3.7 drafts 数据层 / workspace 4 crate / promote arm 转 done/in-progress（M-X.1 落地）
 related:
   - 06-prd
   - prompt-hub-mvp
@@ -119,12 +119,12 @@ related:
 
 | 功能 | 优先级 | 状态 | 目标版本 | 测试覆盖 | 责任人 | 引用 |
 |---|---|---|---|---|---|---|
-| drafts 收件箱数据层（migration 0003 + payload_hash 去重）| P1 | `planned` | v1.1 | 0% | omar | [[06-prd#10.1]] |
-| `prompt-hub-mcp` binary（rmcp 1.7 stdio + tracing→stderr）| P1 | `planned` | v1.1 | 0% | omar | [[06-prd#10.0]] |
-| Cargo workspace 4 crate 物理拆分（编译期写入隔离）| P1 | `planned` | v1.1 | 0% | omar | [[09-tech-stack#4.3.1]] |
+| drafts 收件箱数据层（migration 0003 + payload_hash 去重）| P1 | `done` | v1.1 | repo-core 21 test | omar | [[06-prd#10.1]] |
+| `prompt-hub-mcp` binary（rmcp 1.7 stdio + tracing→stderr）| P1 | `in-progress` | v1.1 | skeleton（open_read_only + trybuild 写隔离守卫；rmcp/14 tool 属 M-X.2）| omar | [[06-prd#10.0]] |
+| Cargo workspace 4 crate 物理拆分（编译期写入隔离）| P1 | `done` | v1.1 | trybuild compile_fail | omar | [[09-tech-stack#4.3.1]] |
 | Scene 全景区「📥 草稿」tab | P1 | `planned` | v1.1 | 0% | omar | [[06-prd#10.3]] |
 | 主形态顶部待审 badge（仅 N>0 显示）| P1 | `planned` | v1.1 | 0% | omar | [[06-prd#10.3]] |
-| promote 跨表事务 + 5 Tauri IPC（promote/list/count/update/discard）| P1 | `planned` | v1.1 | 0% | omar | [[06-prd#10.2]] |
+| promote 跨表事务（4 类 arm）+ 5 Tauri IPC（promote/list/count/update/discard）| P1 | `in-progress` | v1.1 | repo-write 9 test（4 promote arm done；IPC 层未接，属 M-X.2）| omar | [[06-prd#10.2]] |
 
 #### 14 MCP tool（5 CRUD + 3 helpers + 6 read）
 
@@ -184,6 +184,7 @@ related:
 | 2026-05-19 | features.md v0.1 初版，27 项功能全部 `planned` | W2 实战验证落盘 |
 | 2026-05-25 | v0.2 bump：S1 主形态 MVP 5 模块 + 跨模块 6 项 P0 → `done`（ADR-012 Phase 1-3 ship / commit `acf8229`）；新增「对齐话术 chip 行」条目 P0 done（追认 [[013-alignment-phrases-tab-inclusion]]）；status pre-code → in-progress | ADR-012 Phase 4 涟漪 |
 | 2026-06-01 | v0.3 bump：新增 §3.7 MCP write pipeline 区（6 支撑能力 + 14 MCP tool，全 `planned`）；§4 节奏表加 M-X 行，合计 27→47 项 | ADR-015 Accepted M-X.0 涟漪 |
+| 2026-06-03 | v0.4 bump：§3.7 drafts 数据层 + workspace 4 crate → `done`（repo-core 21 / trybuild 守）；`prompt-hub-mcp` binary + promote 跨表事务 → `in-progress`（skeleton + 4 promote arm done，rmcp/14 tool/IPC 属 M-X.2）| M-X.1 落地 + ADR-015 补遗涟漪 |
 
 ---
 

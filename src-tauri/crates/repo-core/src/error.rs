@@ -29,12 +29,11 @@ pub enum RepoError {
     // promote transaction refuses to run.
     #[error("draft `{id}` is not pending (status: {status})")]
     DraftNotPending { id: String, status: String },
-    // Modifier/Macro promote is not wired up yet: PRD §10.1.2 payloads carry a
-    // phase_id, but the modifiers/macros tables have no such column and
-    // modifiers.group_kind is required but absent from the payload. Blocked on
-    // omar's field-mapping decision; Composition/AlignmentPhrase already work.
-    #[error("promote not yet supported for target_type `{0}` (pending field-mapping decision)")]
-    PromoteUnsupported(String),
+    // A Modifier promote needs a group_kind the draft payload doesn't carry: the
+    // four-quadrant classification (cognition/action/delivery/constraint) is
+    // omar's call at promote time, supplied via PromoteOptions (decision iii).
+    #[error("promote of `{target_type}` requires `{field}` to be supplied")]
+    PromoteMissingField { target_type: String, field: String },
     #[error("{0}")]
     Other(String),
 }

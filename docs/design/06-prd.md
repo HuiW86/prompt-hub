@@ -1,9 +1,9 @@
 ---
 type: prd
 project: prompt-hub
-version: v0.7
+version: v0.8
 created: 2026-05-18
-last_modified: 2026-06-01
+last_modified: 2026-06-03
 status: pre-code
 author: ai  # 🤖 AI 主笔 + 人审（CLAUDE §5.2）
 related: [[01-spec]], [[03-product-spec]], [[prompt-hub-mvp]], [[015-expose-mcp-write-pipeline]], [[mcp-write-pipeline]]
@@ -423,6 +423,8 @@ graph TD
 ### 6.2 Composition（通常不持久化，临时态）
 
 > **临时态说明**：Composition 默认存在于内存或 session storage，不持久化到 IndexedDB。值得沉淀的 Composition 升级为 Macro（[[#6.3-macro]]）后才创建持久化记录。因此本节 Fields 描述运行时结构，**无 id / 无 Indexes / Relations 仅描述引用**。
+>
+> **promoted Composition 例外（v0.8）**：MCP write pipeline（§10）引入了**持久化的 Composition**——Claude 提议、omar 在草稿 tab promote 后写入 `compositions` 表（migration 0004，字段见 [[#10.2-promote-路径契约]] 与 repo-core `models::Composition`）。这条例外不推翻本节"工作台 Composition 临时态"的定位：工作台 Composition 仍用完即弃，只有经 AI 提议 + omar promote 这条路径产生的才落库。两者同名不同生命周期。
 
 #### Fields
 
@@ -1165,12 +1167,12 @@ major 升级（v1.x → v2.0）需满足：
 
 | Variant | 必填字段 | 可选字段 | 约束 |
 |---------|---------|---------|------|
-| Modifier | schema_version, name, content, phase_id | scene_id | content ≤ 5000 字符 |
+| Modifier | schema_version, name, content, phase_id | scene_id | content ≤ 5000 字符；**phase_id / scene_id promote 时丢弃**（`modifiers` 表无此列，Modifier 是 phase 无关积木，[[#4.2-数据模型严守三层]]）；`modifiers.group_kind`（NOT NULL）不在 payload，由 omar 在 promote 时供（决策 iii，见 §10.2）|
 | Composition | schema_version, name, modifier_ids, phase_id | scene_id | modifier_ids ≥ 1 |
-| Macro | schema_version, name, content, phase_id | scene_id | content ≤ 5000 字符 |
+| Macro | schema_version, name, content, phase_id | scene_id | content ≤ 5000 字符；**phase_id promote 时丢弃**（`macros` 表无此列），按 scene_id 归档；promoted macro 恒为 native=0 / expand_from=NULL |
 | AlignmentPhrase | schema_version, name, content, phase_id, is_default | — | phase_id 强制必填（[[02-constitution#B2]]）；同 phase 内 is_default=true 只允许一条（promote 时校验） |
 
-**反序列化约束**：`#[serde(tag = "target_type", deny_unknown_fields)]` —— 未知键直接拒绝，防 schema 漂移残留到 promote 阶段。
+**反序列化约束（v0.8 修正）**：`#[serde(tag = "target_type")]` internally-tagged enum —— serde **不支持** `deny_unknown_fields`（编译错误），故未知键静默忽略，不直接拒绝。schema 漂移防线改由 **promote 时重反序列化**兜底（缺字段 / 类型漂移在落库前再 validate 一次，repo-write `promote_rejects_schema_drifted_payload` 守）。
 
 #### 10.1.3 Provenance struct
 
@@ -1192,15 +1194,16 @@ major 升级（v1.x → v2.0）需满足：
 ```
 [空] ──create_draft──▶ pending
 pending ──update_draft──▶ pending   (in-place，updated_at 刷新)
-pending ──promote_draft──▶ [row 删除]   (Tauri IPC，跨表事务)
+pending ──promote_draft──▶ discarded   (Tauri IPC，跨表事务，同事务内 mark_discarded)
 pending ──delete_draft / discard_draft──▶ discarded   (软删，保留行)
 discarded ──[终态]
 ```
 
-**为什么 promote 后删除行而非置 'promoted'**：
-- 正式资产已在对应表（macros / modifiers / compositions / alignment_phrases）持有真理副本
-- drafts 表是收件箱，promoted 行无任何下游用途，保留只增 GC 负担
-- discarded 保留是为了未来 import_json 异常审计（"为什么这条被丢弃"），promoted 不需要
+**为什么 promote 后置 discarded 而非 DELETE 行（v0.8 修正）**：
+- 原 v0.7 设计为 promote 后 DELETE 行；实现时改为**软删（status='discarded'）保留行**，与 discard 路径统一，且保留 provenance 供未来审计（"这条 draft 被 promote 成了哪个资产、何时、来自哪次对话"）
+- 正式资产已在对应表（macros / modifiers / compositions / alignment_phrases）持有真理副本，drafts 行不再是真理源
+- **幂等性**：promote 成功后 draft 已 discarded，重复 promote 撞 status 检查得 `DraftNotPending`（非 "draft not found"）——同样杜绝二次落库（repo-write `promote_is_rejected_for_non_pending_draft` 守）
+- 代价：drafts 表无 GC 时 discarded 行累积（R9 已登记，首版不做 GC）
 
 ### 10.2 promote 路径契约
 
@@ -1209,20 +1212,25 @@ promote 由 Tauri IPC `promote_draft` 触发（**不**暴露给 MCP），在 `re
 ```
 1. SELECT * FROM drafts WHERE id=? AND status='pending'
 2. serde_json::from_str::<DraftPayload>(payload_json)?
-   ↑ 再次 validate（deny_unknown_fields），防 schema 漂移残留
+   ↑ 再次 validate（重反序列化），防 schema 漂移残留
 3. BEGIN TRANSACTION
 4. match DraftPayload variant:
-     Modifier         → AssetRepo::insert_modifier(...)
+     Modifier         → AssetRepo::insert_modifier(name, content, group_kind)
+                        ↑ group_kind 来自 PromoteOptions（omar 手选）；缺失 → PromoteMissingField，回滚
+                        ↑ payload.phase_id / scene_id 丢弃
      Composition      → AssetRepo::insert_composition(...)
-     Macro            → AssetRepo::insert_macro(...)
+     Macro            → AssetRepo::insert_macro(name, content, scene_id)
+                        ↑ payload.phase_id 丢弃；native=0 / expand_from=NULL
      AlignmentPhrase  → AssetRepo::insert_alignment_phrase(...)
-5. DELETE FROM drafts WHERE id=?
+5. mark_discarded(id)   (UPDATE drafts SET status='discarded' WHERE id=? AND status='pending')
 6. COMMIT
 ```
 
-**Atomicity**：步骤 4-5 同事务；若 4 抛错（如 phase_id 已不存在），整体回滚，draft 仍 pending。
-**Idempotency**：promote 成功后 row 已删，重复调用得 "draft not found"。
-**override_payload 参数**：UI edit 后直接 promote 的快捷路径——以传入 payload 覆盖落库前的 row payload，省一次 update_draft + promote 两阶段调用。
+**Atomicity**：步骤 4-5 同事务；若 4 抛错（如 phase_id 已不存在、或 Modifier 缺 group_kind），整体回滚，draft 仍 pending。
+**Idempotency**：promote 成功后 draft 已 discarded，重复调用撞 status 检查得 `DraftNotPending`（见 §10.1.4），不会二次落库。
+**PromoteOptions 参数（v0.8）**：promote 时由 UI 供、不在 draft payload 里的输入聚合为一个 struct：
+- `override_payload?` — UI edit 后直接 promote 的快捷路径，以传入 payload 覆盖落库前的 row payload，省一次 update_draft + promote 两阶段调用
+- `group_kind?` — **仅 Modifier promote 需要**（决策 iii）。`modifiers.group_kind`（cognition/action/delivery/constraint，NOT NULL）是 omar 的四象限认知判断，不让 AI 在 payload 里代填——这是哲学六/七「方向盘在人手里」在数据层的落点。其余三类忽略此字段。
 
 ### 10.3 Tauri IPC（5 个，prompt-hub bin 独占）
 
@@ -1230,7 +1238,7 @@ promote 由 Tauri IPC `promote_draft` 触发（**不**暴露给 MCP），在 `re
 |-----|------|------|------|
 | `list_drafts` | status?, target_type?, limit? | `[{ id, target_type, name, preview, provenance, created_at }]` | Scene 草稿 tab 渲染列表 |
 | `count_pending_drafts` | — | `{ count: u32 }` | 主形态顶部 badge（仅 N>0 显示）|
-| `promote_draft` | id, override_payload? | `{ inserted_asset_id, inserted_asset_type }` | 跨表事务，详见 §10.2 |
+| `promote_draft` | id, override_payload?, group_kind? | `{ inserted_asset_id, inserted_asset_type }` | 跨表事务，详见 §10.2；group_kind 仅 Modifier 需要（决策 iii）|
 | `update_draft` | id, payload | `{ ok: true, updated_at }` | UI 编辑保存 |
 | `discard_draft` | id | `{ ok: true }` | UI 显式丢弃（status='discarded'）|
 
@@ -1340,6 +1348,24 @@ PRD 不复刻风险表，避免双源真理漂移；实施侧风险/缓解以 pl
 ---
 
 ## 修订记录
+
+### v0.8（2026-06-03）— M-X.1 promote 收口：Modifier/Macro field-mapping + 两处文档/代码对齐
+
+**触发**：M-X.1 repo-write 落 Modifier/Macro promote arm（omar 拍板 field-mapping 决策 iii）→ 涟漪进 PRD（方法论 §7）。
+
+**改动总览**：
+
+| 区域 | 改动 |
+|------|------|
+| frontmatter | version v0.7 → v0.8 / last_modified → 2026-06-03 |
+| §6.2 Composition | 加「promoted Composition 例外」注：MCP pipeline 引入持久化 Composition（migration 0004），与工作台临时态同名不同生命周期 |
+| §10.1.2 DraftPayload | Modifier 约束补 phase_id/scene_id promote 时丢弃 + group_kind 由 omar 供（决策 iii）；Macro 补 phase_id 丢弃 + native=0 |
+| §10.1.2 反序列化约束 | **对齐代码**：`deny_unknown_fields` 在 internally-tagged enum 不可用（编译错误），改为未知键静默忽略 + promote 时重反序列化兜底 |
+| §10.1.4 状态机 | **对齐代码**：promote 后置 `discarded`（mark_discarded 软删）而非 DELETE 行；幂等性改述为重复 promote 得 `DraftNotPending` |
+| §10.2 promote 路径 | step 4 补 group_kind 入参 + phase_id/scene_id 丢弃；step 5 改 mark_discarded；`override_payload` 参数升级为 `PromoteOptions { override_payload?, group_kind? }` |
+| §10.3 IPC | `promote_draft` 入参加 `group_kind?` |
+
+**field-mapping 决策（iii）依据**：`modifiers.group_kind`（四象限分类）是 omar 的认知判断，由 promote UI 手选而非 AI 在 payload 代填——回溯哲学六/七「方向盘永远在人手里」。备选 (i) 默认 cognition 污染分类、(ii) 加 payload 触发 schema bump 且让 AI 代判，均劣于 (iii)。决策留痕见 [[015-expose-mcp-write-pipeline#补遗]]。
 
 ### v0.7（2026-06-01）— 新增 §10 MCP write pipeline 接口契约
 

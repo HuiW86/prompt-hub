@@ -14,24 +14,33 @@ pub struct PromoteOutcome {
     pub target_type: DraftTargetType,
 }
 
+/// Promote-time inputs the UI supplies that aren't carried in the draft payload.
+#[derive(Debug, Default)]
+pub struct PromoteOptions {
+    /// An omar-edited payload to promote instead of the stored draft body.
+    pub override_payload: Option<DraftPayload>,
+    /// The four-quadrant group (cognition/action/delivery/constraint) for a
+    /// Modifier promote. Required for Modifier (modifiers.group_kind is NOT NULL
+    /// and the payload can't carry it — decision iii); ignored otherwise.
+    pub group_kind: Option<String>,
+}
+
 /// Promote a pending draft into a real asset, atomically (PRD §10.2).
 ///
 /// The draft's stored JSON is re-deserialized here as a second validation pass,
 /// so a schema drift that slipped past `create_draft` still can't reach a real
-/// table. `override_payload` lets the UI promote an omar-edited version without
-/// first persisting the edit back to the draft row.
+/// table. `opts.override_payload` lets the UI promote an omar-edited version
+/// without first persisting the edit back to the draft row.
 ///
 /// Insert + draft discard happen in one transaction: a crash mid-promote leaves
 /// neither a half-written asset nor a consumed draft.
 ///
-/// NOTE: Modifier/Macro promotion is intentionally unimplemented — their
-/// payloads carry a `phase_id` the target tables lack, and `modifiers.group_kind`
-/// is required but absent from the payload. Pending omar's field-mapping
-/// decision; until then they return `RepoError::PromoteUnsupported`.
+/// Modifier requires `opts.group_kind` (omar classifies at promote time); a
+/// Modifier draft without it returns `RepoError::PromoteMissingField`.
 pub fn promote_draft(
     conn: &Connection,
     draft_id: &str,
-    override_payload: Option<DraftPayload>,
+    opts: PromoteOptions,
 ) -> RepoResult<PromoteOutcome> {
     let draft = conn
         .get_draft(draft_id)?
@@ -43,7 +52,7 @@ pub fn promote_draft(
         });
     }
 
-    let payload = override_payload.unwrap_or(draft.payload);
+    let payload = opts.override_payload.unwrap_or(draft.payload);
 
     let tx = conn.unchecked_transaction()?;
     let outcome = match &payload {
@@ -74,15 +83,31 @@ pub fn promote_draft(
                 target_type: DraftTargetType::AlignmentPhrase,
             }
         }
-        DraftPayload::Modifier { .. } => {
-            return Err(RepoError::PromoteUnsupported(
-                DraftTargetType::Modifier.as_str().to_string(),
-            ))
+        DraftPayload::Modifier { name, content, .. } => {
+            let group_kind =
+                opts.group_kind
+                    .as_deref()
+                    .ok_or_else(|| RepoError::PromoteMissingField {
+                        target_type: DraftTargetType::Modifier.as_str().to_string(),
+                        field: "group_kind".to_string(),
+                    })?;
+            let asset_id = tx.insert_modifier(name, content, group_kind)?;
+            PromoteOutcome {
+                asset_id,
+                target_type: DraftTargetType::Modifier,
+            }
         }
-        DraftPayload::Macro { .. } => {
-            return Err(RepoError::PromoteUnsupported(
-                DraftTargetType::Macro.as_str().to_string(),
-            ))
+        DraftPayload::Macro {
+            name,
+            content,
+            scene_id,
+            ..
+        } => {
+            let asset_id = tx.insert_macro(name, content, scene_id.as_deref())?;
+            PromoteOutcome {
+                asset_id,
+                target_type: DraftTargetType::Macro,
+            }
         }
     };
 
@@ -137,7 +162,7 @@ mod tests {
         };
         let draft_id = conn.create_draft(&payload, &prov()).expect("create");
 
-        let outcome = promote_draft(&conn, &draft_id, None).expect("promote");
+        let outcome = promote_draft(&conn, &draft_id, PromoteOptions::default()).expect("promote");
         assert_eq!(outcome.target_type, DraftTargetType::Composition);
 
         let comps = conn.list_compositions().expect("list comps");
@@ -164,7 +189,7 @@ mod tests {
         };
         let draft_id = conn.create_draft(&payload, &prov()).expect("create");
 
-        let outcome = promote_draft(&conn, &draft_id, None).expect("promote");
+        let outcome = promote_draft(&conn, &draft_id, PromoteOptions::default()).expect("promote");
         assert_eq!(outcome.target_type, DraftTargetType::AlignmentPhrase);
 
         let found = conn
@@ -187,10 +212,11 @@ mod tests {
             scene_id: None,
         };
         let draft_id = conn.create_draft(&payload, &prov()).expect("create");
-        promote_draft(&conn, &draft_id, None).expect("first promote");
+        promote_draft(&conn, &draft_id, PromoteOptions::default()).expect("first promote");
 
         // Second promote sees a discarded draft and refuses.
-        let err = promote_draft(&conn, &draft_id, None).expect_err("second promote");
+        let err =
+            promote_draft(&conn, &draft_id, PromoteOptions::default()).expect_err("second promote");
         assert!(
             matches!(err, RepoError::DraftNotPending { .. }),
             "got {err:?}"
@@ -200,24 +226,74 @@ mod tests {
     }
 
     #[test]
-    fn promote_modifier_and_macro_are_unsupported_pending_decision() {
+    fn promote_modifier_requires_group_kind() {
         let (_dir, conn) = migrated_conn();
         let phase_id = first_phase_id(&conn);
-
         let modifier = DraftPayload::Modifier {
             schema_version: 1,
             name: "Concise".to_string(),
             content: "be terse".to_string(),
-            phase_id: phase_id.clone(),
+            phase_id,
             scene_id: None,
         };
         let mid = conn.create_draft(&modifier, &prov()).expect("create mod");
-        let err = promote_draft(&conn, &mid, None).expect_err("modifier unsupported");
+
+        // No group_kind supplied → refused before any row is written.
+        let err = promote_draft(&conn, &mid, PromoteOptions::default())
+            .expect_err("modifier without group_kind");
         assert!(
-            matches!(err, RepoError::PromoteUnsupported(_)),
+            matches!(
+                err,
+                RepoError::PromoteMissingField { ref field, .. } if field == "group_kind"
+            ),
             "got {err:?}"
         );
+        // Draft stays pending; nothing consumed.
+        assert_eq!(
+            conn.get_draft(&mid).expect("get").expect("present").status,
+            DraftStatus::Pending
+        );
+        assert_eq!(conn.list_modifiers().expect("list").len(), 0);
+    }
 
+    #[test]
+    fn promote_modifier_inserts_row_with_group_kind() {
+        let (_dir, conn) = migrated_conn();
+        let phase_id = first_phase_id(&conn);
+        let modifier = DraftPayload::Modifier {
+            schema_version: 1,
+            name: "Concise".to_string(),
+            content: "be terse".to_string(),
+            phase_id,
+            scene_id: None,
+        };
+        let mid = conn.create_draft(&modifier, &prov()).expect("create mod");
+
+        let outcome = promote_draft(
+            &conn,
+            &mid,
+            PromoteOptions {
+                group_kind: Some("delivery".to_string()),
+                ..Default::default()
+            },
+        )
+        .expect("promote modifier");
+        assert_eq!(outcome.target_type, DraftTargetType::Modifier);
+
+        let mods = conn.list_modifiers().expect("list mods");
+        assert_eq!(mods.len(), 1);
+        assert_eq!(mods[0].id, outcome.asset_id);
+        assert_eq!(mods[0].group_kind, "delivery");
+        assert_eq!(
+            conn.get_draft(&mid).expect("get").expect("present").status,
+            DraftStatus::Discarded
+        );
+    }
+
+    #[test]
+    fn promote_macro_inserts_non_native_row() {
+        let (_dir, conn) = migrated_conn();
+        let phase_id = first_phase_id(&conn);
         let macro_payload = DraftPayload::Macro {
             schema_version: 1,
             name: "Expand".to_string(),
@@ -228,20 +304,22 @@ mod tests {
         let kid = conn
             .create_draft(&macro_payload, &prov())
             .expect("create macro");
-        let err = promote_draft(&conn, &kid, None).expect_err("macro unsupported");
-        assert!(
-            matches!(err, RepoError::PromoteUnsupported(_)),
-            "got {err:?}"
-        );
 
-        // Both drafts remain pending (rolled back) — nothing was consumed.
-        assert_eq!(
-            conn.get_draft(&mid).expect("get").expect("present").status,
-            DraftStatus::Pending
-        );
+        let outcome = promote_draft(&conn, &kid, PromoteOptions::default()).expect("promote macro");
+        assert_eq!(outcome.target_type, DraftTargetType::Macro);
+
+        let found = conn
+            .list_macros()
+            .expect("list macros")
+            .into_iter()
+            .find(|m| m.id == outcome.asset_id)
+            .expect("promoted macro listed");
+        assert_eq!(found.name, "Expand");
+        assert!(!found.native);
+        assert!(found.expand_from.is_none());
         assert_eq!(
             conn.get_draft(&kid).expect("get").expect("present").status,
-            DraftStatus::Pending
+            DraftStatus::Discarded
         );
     }
 
@@ -262,7 +340,8 @@ mod tests {
         )
         .expect("raw insert");
 
-        let err = promote_draft(&conn, "drift", None).expect_err("drift must be rejected");
+        let err = promote_draft(&conn, "drift", PromoteOptions::default())
+            .expect_err("drift must be rejected");
         assert!(matches!(err, RepoError::Serde(_)), "got {err:?}");
         // No composition leaked from the failed promote.
         assert_eq!(conn.list_compositions().expect("list").len(), 0);
@@ -271,7 +350,7 @@ mod tests {
     #[test]
     fn promote_missing_draft_returns_not_found() {
         let (_dir, conn) = migrated_conn();
-        let err = promote_draft(&conn, "ghost", None).expect_err("missing");
+        let err = promote_draft(&conn, "ghost", PromoteOptions::default()).expect_err("missing");
         assert!(matches!(err, RepoError::DraftNotFound(_)), "got {err:?}");
     }
 }
