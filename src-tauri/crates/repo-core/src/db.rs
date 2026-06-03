@@ -87,6 +87,33 @@ pub fn open_read_only(path: &Path) -> RepoResult<Connection> {
     Ok(conn)
 }
 
+/// Open the database read+write for a non-owner consumer that writes only the
+/// drafts staging table (the MCP server). Like `open_read_only` it does NOT run
+/// migrations — the Tauri app owns those (R1) — and refuses to open unless the
+/// on-disk schema version exactly matches `latest_version()`. The read+write
+/// handle is needed because the MCP server writes drafts; compile-time write
+/// isolation (no `repo-write` dependency) keeps it off the 7 asset tables.
+pub fn open_write_checked(path: &Path) -> RepoResult<Connection> {
+    let conn = Connection::open_with_flags(
+        path,
+        OpenFlags::SQLITE_OPEN_READ_WRITE
+            | OpenFlags::SQLITE_OPEN_URI
+            | OpenFlags::SQLITE_OPEN_NO_MUTEX,
+    )?;
+    // No CREATE flag: the file must already exist and be migrated by the owner.
+    // journal_mode / synchronous are DB-level settings the owner already set in
+    // WAL; a non-owner only applies the legal per-connection settings.
+    conn.busy_timeout(BUSY_TIMEOUT)?;
+    conn.pragma_update(None, "foreign_keys", "ON")?;
+
+    let found: u32 = conn.pragma_query_value(None, "user_version", |row| row.get(0))?;
+    let expected = latest_version();
+    if found != expected {
+        return Err(RepoError::SchemaVersionMismatch { found, expected });
+    }
+    Ok(conn)
+}
+
 #[cfg(test)]
 pub fn open_in_memory() -> RepoResult<Connection> {
     let conn = Connection::open_in_memory()?;
@@ -173,6 +200,36 @@ mod tests {
         // Writes must be rejected by SQLite on a read-only handle.
         let write = ro.execute("DELETE FROM phases", []);
         assert!(write.is_err(), "read-only handle must reject writes");
+    }
+
+    #[test]
+    fn open_write_checked_allows_writes_at_matching_version() {
+        let dir = tempfile::tempdir().expect("tempdir");
+        let path = dir.path().join("prompt-hub.db");
+        let _owner = open_and_migrate(&path).expect("owner migrates");
+
+        let rw = open_write_checked(&path).expect("write open at matching version");
+        // A write that a read-only handle would reject must succeed here (0 rows
+        // touched keeps seed data intact).
+        rw.execute("DELETE FROM phases WHERE 0", [])
+            .expect("read+write handle must accept writes");
+    }
+
+    #[test]
+    fn open_write_checked_refuses_on_version_mismatch() {
+        let dir = tempfile::tempdir().expect("tempdir");
+        let path = dir.path().join("prompt-hub.db");
+        {
+            let conn = Connection::open(&path).expect("create");
+            configure(&conn).expect("configure");
+            conn.pragma_update(None, "user_version", 1u32)
+                .expect("set stale version");
+        }
+        let err = open_write_checked(&path).expect_err("must refuse stale schema");
+        assert!(
+            matches!(err, RepoError::SchemaVersionMismatch { found: 1, .. }),
+            "expected SchemaVersionMismatch, got {err:?}"
+        );
     }
 
     #[test]

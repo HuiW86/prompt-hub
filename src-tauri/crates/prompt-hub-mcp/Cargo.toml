@@ -8,8 +8,6 @@ edition = "2021"
 # so AssetRepo / promote_draft are unresolvable here — the compile-time
 # write-isolation guarantee (plan §3.3). The trybuild negative test in
 # tests/ enforces that the boundary stays broken.
-#
-# This milestone (M-X.1) ships the skeleton only; the 14 tools land in M-X.2.
 
 [[bin]]
 name = "prompt-hub-mcp"
@@ -17,6 +15,25 @@ path = "src/main.rs"
 
 [dependencies]
 repo-core = { path = "../repo-core" }
+# Read+write handle to the drafts staging table (open_write_checked). Same pin
+# as the rest of the workspace so the bundled SQLite stays a single copy.
+rusqlite = { version = "0.32", features = ["bundled"] }
+# Official MCP Rust SDK (ADR-015). server+macros are default; transport-io
+# gives transport::stdio(). Pinned per plan §2.
+rmcp = { version = "=1.7", features = ["server", "macros", "transport-io"] }
+tokio = { version = "1", features = ["rt-multi-thread", "macros", "io-std", "sync"] }
+serde = { version = "1", features = ["derive"] }
+serde_json = "1"
+# schemars is NOT a direct dep: tool input schemas derive from rmcp's own
+# re-exported schemars (`rmcp::schemars`) so the JsonSchema trait matches the
+# one rmcp's macros expect. A separate schemars pin would be a second, mismatched
+# trait. See the `#[schemars(crate = "rmcp::schemars")]` attribute on param structs.
+tracing = "0.1"
+tracing-subscriber = { version = "0.3", features = ["env-filter"] }
 
 [dev-dependencies]
 trybuild = "1"
+# e2e harness: drive the spawned binary as a real MCP client over stdio.
+rmcp = { version = "=1.7", features = ["client", "transport-child-process"] }
+tokio = { version = "1", features = ["rt-multi-thread", "macros", "process"] }
+tempfile = "3"
