@@ -1,10 +1,10 @@
 ---
 type: manifest
 project: prompt-hub
-version: v1.3
+version: v1.4
 status: active
 created: 2026-05-24
-last_modified: 2026-06-01
+last_modified: 2026-06-04
 audience: [human, ai]
 description: prompt-hub 项目前期准备文件总清单——按方法论 v1.3 六层架构（L0 宪法 / L1 产品契约 / L2 工程规格 / L3 实施规格 / L4 索引 / L5 协作契约）+ ADR + 实施方案 + 视觉原型 + AI 上下文。AI 进项目读完 CLAUDE.md 后接读本文件能 1 分钟拿全貌；不写行数（参考性强但易过期）
 related:
@@ -33,6 +33,7 @@ related:
 | 实施方案 | 1 | active |
 | 视觉原型 | 1 | v1 已归档至 archive/（2026-05-25）|
 | 项目 AI 上下文 | 2 | active |
+| 反思沉淀 | 1 | active（2026-06-04 新增 learnings v0.1）|
 
 ---
 
@@ -153,6 +154,16 @@ related:
 
 ---
 
+## §11.5 反思沉淀（1 份 · 🤝 共创）
+
+> 方法论 v1.3 七层中的「反思层」产物——跨 ADR / 踩坑 / 决策抽出的共性判断，非 13 份核心设计文档之一。不走方法论 §7 八步；若某条信条与 constitution 抵触，须先走 ADR 修订 constitution。
+
+| 路径 | 内容 | 状态 |
+|---|---|---|
+| `docs/learnings.md` | 7 条可迁移信条 + 技术栈速查（M0 阶段经验提炼） | active v0.1（2026-06-04）|
+
+---
+
 ## §12 维护规则
 
 1. **新增文件必须先归层** —— 不知道放哪 → 不创建，先讨论分层
@@ -173,3 +184,4 @@ related:
 - 决策追溯：`docs/adr/`
 - 实施任务清单：[[prompt-hub-mvp]]
 - 项目 AI 上下文：[[CLAUDE]]
+- 反思沉淀：[[learnings]]
