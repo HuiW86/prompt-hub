@@ -38,6 +38,7 @@ const fakeAp: AlignmentPhrase = {
   createdAt: "2026-05-23T00:00:00Z",
   notes: null,
   deprecated: false,
+  orderIndex: 0,
 };
 
 const fakeMacro: Macro = {

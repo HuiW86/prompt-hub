@@ -125,6 +125,10 @@ pub fn run() {
             commands::update_modifier,
             commands::delete_modifier,
             commands::reorder_modifiers,
+            commands::create_alignment_phrase,
+            commands::update_alignment_phrase,
+            commands::delete_alignment_phrase,
+            commands::reorder_alignment_phrases,
         ])
         .build(tauri::generate_context!())
         .expect("error while building tauri application");

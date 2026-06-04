@@ -38,6 +38,8 @@ export interface AlignmentPhrase {
   createdAt: string;
   notes: string | null;
   deprecated: boolean;
+  // Sort position WITHIN the phase (migration 0007, decision D-c).
+  orderIndex: number;
 }
 
 export interface Macro {

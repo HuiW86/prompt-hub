@@ -50,6 +50,12 @@ pub fn repo_error(err: RepoError) -> CallToolResult {
              by retrying with different input; report it to the user."
         ),
         RepoError::Io(e) => format!("Unexpected I/O error: {e}."),
+        // Tauri-only delete guard (D-c); the MCP server has no delete path, so
+        // this is unreachable here but kept exhaustive for the shared error enum.
+        RepoError::DefaultAlignmentPhraseProtected(id) => format!(
+            "Alignment phrase '{id}' is its phase's protocol default and can't be \
+             deleted. This only happens in the desktop app."
+        ),
         RepoError::Other(msg) => msg,
     };
     CallToolResult::error(vec![Content::text(text)])

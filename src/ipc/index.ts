@@ -99,6 +99,34 @@ export const ipc = {
   deleteModifier: (id: string) => invoke<OkAck>("delete_modifier", { id }),
   reorderModifiers: (groupKind: GroupKind, orderedIds: string[]) =>
     invoke<OkAck>("reorder_modifiers", { groupKind, orderedIds }),
+
+  // ── AlignmentPhrase direct editing (plan asset-editing §0 Q2/Q6, decision
+  // D-c) — Tauri-only. reorder is scoped to one phase; delete refuses the
+  // phase default at the backend.
+  createAlignmentPhrase: (args: {
+    phaseId: string;
+    name: string;
+    content: string;
+  }) =>
+    invoke<AlignmentPhrase>("create_alignment_phrase", {
+      phaseId: args.phaseId,
+      name: args.name,
+      content: args.content,
+    }),
+  updateAlignmentPhrase: (args: {
+    id: string;
+    name: string;
+    content: string;
+  }) =>
+    invoke<OkAck>("update_alignment_phrase", {
+      id: args.id,
+      name: args.name,
+      content: args.content,
+    }),
+  deleteAlignmentPhrase: (id: string) =>
+    invoke<OkAck>("delete_alignment_phrase", { id }),
+  reorderAlignmentPhrases: (phaseId: string, orderedIds: string[]) =>
+    invoke<OkAck>("reorder_alignment_phrases", { phaseId, orderedIds }),
 };
 
 export type Ipc = typeof ipc;

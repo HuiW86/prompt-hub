@@ -351,6 +351,56 @@ pub fn reorder_modifiers(
     Ok(OkAck { ok: true })
 }
 
+// ── AlignmentPhrase direct editing (plan asset-editing-and-adaptive-layout §0
+// Q2/Q6, decision D-c) ──────────────────────────────────────────────────────
+// omar-driven create / update / delete / reorder of alignment-phrase assets.
+// Tauri-only: the MCP server has no repo-write dependency and can only stage
+// drafts. Reorder is scoped to a single phase; delete refuses the phase default
+// (B2: alignment phrases are the protocol layer, every phase keeps one default).
+
+#[tauri::command]
+pub fn create_alignment_phrase(
+    state: State<'_, AppState>,
+    phase_id: String,
+    name: String,
+    content: String,
+) -> AppResult<AlignmentPhrase> {
+    with_write_conn(&state, |c| {
+        repo_write::create_alignment_phrase(c, &phase_id, &name, &content)
+    })
+}
+
+#[tauri::command]
+pub fn update_alignment_phrase(
+    state: State<'_, AppState>,
+    id: String,
+    name: String,
+    content: String,
+) -> AppResult<OkAck> {
+    with_write_conn(&state, |c| {
+        repo_write::update_alignment_phrase(c, &id, &name, &content)
+    })?;
+    Ok(OkAck { ok: true })
+}
+
+#[tauri::command]
+pub fn delete_alignment_phrase(state: State<'_, AppState>, id: String) -> AppResult<OkAck> {
+    with_write_conn(&state, |c| repo_write::delete_alignment_phrase(c, &id))?;
+    Ok(OkAck { ok: true })
+}
+
+#[tauri::command]
+pub fn reorder_alignment_phrases(
+    state: State<'_, AppState>,
+    phase_id: String,
+    ordered_ids: Vec<String>,
+) -> AppResult<OkAck> {
+    with_write_conn(&state, |c| {
+        repo_write::reorder_alignment_phrases(c, &phase_id, &ordered_ids)
+    })?;
+    Ok(OkAck { ok: true })
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;

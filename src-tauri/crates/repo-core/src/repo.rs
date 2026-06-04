@@ -45,10 +45,10 @@ pub fn list_phases(conn: &Connection) -> RepoResult<Vec<Phase>> {
 pub fn list_alignment_phrases(conn: &Connection) -> RepoResult<Vec<AlignmentPhrase>> {
     let mut stmt = conn.prepare(
         "SELECT id, phase_id, name, content, is_default, usage_count, last_used_at,
-                created_at, notes, deprecated
+                created_at, notes, deprecated, order_index
          FROM alignment_phrases
          WHERE deprecated = 0
-         ORDER BY phase_id ASC, is_default DESC, usage_count DESC, created_at ASC",
+         ORDER BY phase_id ASC, order_index ASC, created_at ASC",
     )?;
     let raw = stmt.query_map([], |row| {
         Ok((
@@ -63,6 +63,7 @@ pub fn list_alignment_phrases(conn: &Connection) -> RepoResult<Vec<AlignmentPhra
                 created_at: Utc::now(),
                 notes: row.get("notes")?,
                 deprecated: row.get::<_, i64>("deprecated")? != 0,
+                order_index: row.get("order_index")?,
             },
             row.get::<_, Option<String>>("last_used_at")?,
             row.get::<_, String>("created_at")?,

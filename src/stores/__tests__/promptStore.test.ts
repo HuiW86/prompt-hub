@@ -46,6 +46,7 @@ const fakeAlignments: AlignmentPhrase[] = [
     createdAt: "2026-05-23T00:00:00Z",
     notes: null,
     deprecated: false,
+    orderIndex: 0,
   },
 ];
 
@@ -549,5 +550,129 @@ describe("promptStore", () => {
       usePromptStore.getState().reorderModifiers("action", ["mod-a", "mod-b"]),
     ).rejects.toThrow("reorder rejected");
     expect(usePromptStore.getState().modifiers).toEqual(before);
+  });
+
+  it("createAlignmentPhrase appends to its phase bucket", async () => {
+    mockListAll();
+    await usePromptStore.getState().refreshAll();
+
+    const created: AlignmentPhrase = {
+      id: "ap-diverge-extra",
+      phaseId: "phase-diverge",
+      name: "补充 · 发散",
+      content: "再放开一点",
+      isDefault: false,
+      usageCount: 0,
+      lastUsedAt: null,
+      createdAt: "2026-06-04T00:00:00Z",
+      notes: null,
+      deprecated: false,
+      orderIndex: 1,
+    };
+    invokeMock.mockImplementation((cmd: string) => {
+      if (cmd === "create_alignment_phrase") return Promise.resolve(created);
+      return Promise.reject(new Error(`unexpected ${cmd}`));
+    });
+
+    await usePromptStore.getState().createAlignmentPhrase({
+      phaseId: "phase-diverge",
+      name: "补充 · 发散",
+      content: "再放开一点",
+    });
+    const bucket =
+      usePromptStore.getState().alignmentPhrasesByPhase["phase-diverge"];
+    expect(bucket).toHaveLength(2);
+    expect(bucket[1]).toEqual(created);
+  });
+
+  it("updateAlignmentPhrase applies optimistically and rolls back on failure", async () => {
+    mockListAll();
+    await usePromptStore.getState().refreshAll();
+    const before = usePromptStore.getState().alignmentPhrasesByPhase;
+
+    invokeMock.mockRejectedValue(new Error("write rejected"));
+    await expect(
+      usePromptStore.getState().updateAlignmentPhrase({
+        id: "ap-diverge-default",
+        name: "改名",
+        content: "x",
+      }),
+    ).rejects.toThrow("write rejected");
+    expect(usePromptStore.getState().alignmentPhrasesByPhase).toEqual(before);
+  });
+
+  it("deleteAlignmentPhrase rolls back when the backend rejects the default", async () => {
+    mockListAll();
+    await usePromptStore.getState().refreshAll();
+    const before = usePromptStore.getState().alignmentPhrasesByPhase;
+
+    invokeMock.mockRejectedValue(
+      new Error("alignment phrase is its phase default and cannot be deleted"),
+    );
+    await expect(
+      usePromptStore.getState().deleteAlignmentPhrase("ap-diverge-default"),
+    ).rejects.toThrow("phase default");
+    // The optimistic removal is reverted, so the default survives in the bucket.
+    expect(usePromptStore.getState().alignmentPhrasesByPhase).toEqual(before);
+  });
+
+  it("reorderAlignmentPhrases resequences one phase optimistically and rolls back", async () => {
+    // Two phrases in phase-diverge + one in phase-understand, so we can assert the
+    // reorder touches only the targeted phase.
+    const twoPhase: AlignmentPhrase[] = [
+      { ...fakeAlignments[0], id: "ap-a", isDefault: false, orderIndex: 0 },
+      { ...fakeAlignments[0], id: "ap-b", isDefault: false, orderIndex: 1 },
+      {
+        ...fakeAlignments[0],
+        id: "ap-keep",
+        phaseId: "phase-understand",
+        isDefault: false,
+        orderIndex: 0,
+      },
+    ];
+    invokeMock.mockImplementation((cmd: string) => {
+      switch (cmd) {
+        case "list_alignment_phrases":
+          return Promise.resolve(twoPhase);
+        case "list_macros":
+          return Promise.resolve(fakeMacros);
+        case "list_modifiers":
+          return Promise.resolve(fakeModifiers);
+        case "list_phases":
+          return Promise.resolve(fakePhases);
+        case "list_scenes_with_children":
+          return Promise.resolve(fakeScenes);
+        case "list_recent_usage":
+          return Promise.resolve(fakeRecent);
+        case "count_today_usage":
+          return Promise.resolve(0);
+        case "list_drafts":
+          return Promise.resolve(fakeDrafts);
+        case "count_pending_drafts":
+          return Promise.resolve(fakeDrafts.length);
+        default:
+          return Promise.reject(new Error(`unexpected ${cmd}`));
+      }
+    });
+    await usePromptStore.getState().refreshAll();
+
+    // Success: the diverge phase follows the supplied order; understand is kept.
+    invokeMock.mockResolvedValue({ ok: true });
+    await usePromptStore
+      .getState()
+      .reorderAlignmentPhrases("phase-diverge", ["ap-b", "ap-a"]);
+    const byPhase = usePromptStore.getState().alignmentPhrasesByPhase;
+    expect(byPhase["phase-diverge"].map((a) => a.id)).toEqual(["ap-b", "ap-a"]);
+    expect(byPhase["phase-understand"].map((a) => a.id)).toEqual(["ap-keep"]);
+
+    // Failure: snapshot restored.
+    const before = usePromptStore.getState().alignmentPhrasesByPhase;
+    invokeMock.mockRejectedValue(new Error("reorder rejected"));
+    await expect(
+      usePromptStore
+        .getState()
+        .reorderAlignmentPhrases("phase-diverge", ["ap-a", "ap-b"]),
+    ).rejects.toThrow("reorder rejected");
+    expect(usePromptStore.getState().alignmentPhrasesByPhase).toEqual(before);
   });
 });

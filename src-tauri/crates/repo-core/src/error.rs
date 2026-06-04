@@ -34,6 +34,10 @@ pub enum RepoError {
     // omar's call at promote time, supplied via PromoteOptions (decision iii).
     #[error("promote of `{target_type}` requires `{field}` to be supplied")]
     PromoteMissingField { target_type: String, field: String },
+    // D-c: an alignment phrase marked is_default=1 is the phase's protocol
+    // default and may not be hard-deleted (every phase must keep exactly one).
+    #[error("alignment phrase `{0}` is its phase default and cannot be deleted")]
+    DefaultAlignmentPhraseProtected(String),
     #[error("{0}")]
     Other(String),
 }

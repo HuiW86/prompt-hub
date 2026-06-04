@@ -48,6 +48,7 @@ const fakeAlignments: AlignmentPhrase[] = fakePhases.map((p, idx) => ({
   createdAt: "2026-05-23T00:00:00Z",
   notes: null,
   deprecated: false,
+  orderIndex: 0,
 }));
 
 const fakeMacros: Macro[] = [

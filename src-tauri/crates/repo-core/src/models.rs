@@ -30,6 +30,8 @@ pub struct AlignmentPhrase {
     pub created_at: DateTime<Utc>,
     pub notes: Option<String>,
     pub deprecated: bool,
+    // Sort position WITHIN the phase (migration 0007, decision D-c).
+    pub order_index: i64,
 }
 
 #[derive(Debug, Serialize, Deserialize, Clone)]
