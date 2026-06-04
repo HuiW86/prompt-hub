@@ -118,4 +118,4 @@ related:
 
 - **触发本决策的文档**：[[01-spec#2.3]] / [[09-tech-stack#§3]] / [[10-ops-spec#§1.1]]
 - **被本决策影响的文档**：[[09-tech-stack]] features 字段 / [[10-ops-spec#§1.1]] App Store 行的标注 / Tauri 配置文件
-- **相关 ADR**：前置 ADR-001（Tauri 2.x）；下游 [[014-nspanel-isa-swizzle]]（Reserved，跨 macOS 版本风险触发后补正文，2026-05-27 commit `3c736c5` 落地 isa-swizzle 后占位）
+- **相关 ADR**：前置 ADR-001（Tauri 2.x）；下游 [[014-nspanel-isa-swizzle]]（Accepted 2026-06-03，NSPanel 子类 override canBecomeKeyWindow + isa-swizzle 取得 borderless key-window 资格）
