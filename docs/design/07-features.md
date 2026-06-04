@@ -1,13 +1,13 @@
 ---
 type: features
 project: prompt-hub
-version: v0.4
+version: v0.5
 created: 2026-05-19
 last_modified: 2026-06-03
-status: in-progress  # S1 主形态 MVP 5 模块 + 跨模块 P0 多项 done（ADR-012 Phase 1-3 已 ship）；M-X.1 数据层 + workspace + promote arm done，M-X.2 MCP server planned
+status: in-progress  # S1 主形态 MVP 5 模块 + 跨模块 P0 多项 done（ADR-012 Phase 1-3 已 ship）；M-X.1 数据层 + workspace + promote arm done，M-X.2 MCP server（binary + 14 tool）done
 author: ai  # 🤖 AI 主笔 + 人审（CLAUDE §5.2）
 audience: [human, ai]
-description: prompt-hub 功能清单运营视图——功能 × 状态 × 测试覆盖 × 版本，单一事实源；v0.4 把 §3.7 drafts 数据层 / workspace 4 crate / promote arm 转 done/in-progress（M-X.1 落地）
+description: prompt-hub 功能清单运营视图——功能 × 状态 × 测试覆盖 × 版本，单一事实源；v0.5 把 §3.7 prompt-hub-mcp binary + 14 MCP tool 转 done（M-X.2 落地 + /review 后信任边界/Mutex 加固）
 related:
   - 06-prd
   - prompt-hub-mvp
@@ -120,7 +120,7 @@ related:
 | 功能 | 优先级 | 状态 | 目标版本 | 测试覆盖 | 责任人 | 引用 |
 |---|---|---|---|---|---|---|
 | drafts 收件箱数据层（migration 0003 + payload_hash 去重）| P1 | `done` | v1.1 | repo-core 21 test | omar | [[06-prd#10.1]] |
-| `prompt-hub-mcp` binary（rmcp 1.7 stdio + tracing→stderr）| P1 | `in-progress` | v1.1 | skeleton（open_read_only + trybuild 写隔离守卫；rmcp/14 tool 属 M-X.2）| omar | [[06-prd#10.0]] |
+| `prompt-hub-mcp` binary（rmcp 1.7 stdio + tracing→stderr）| P1 | `done` | v1.1 | mcp crate 14 test（8 unit + 5 e2e spawn JSON-RPC + 1 trybuild）；/review 后补 confidence/schema_version 信任边界 + Mutex 恢复 | omar | [[06-prd#10.0]] |
 | Cargo workspace 4 crate 物理拆分（编译期写入隔离）| P1 | `done` | v1.1 | trybuild compile_fail | omar | [[09-tech-stack#4.3.1]] |
 | Scene 全景区「📥 草稿」tab | P1 | `planned` | v1.1 | 0% | omar | [[06-prd#10.3]] |
 | 主形态顶部待审 badge（仅 N>0 显示）| P1 | `planned` | v1.1 | 0% | omar | [[06-prd#10.3]] |
@@ -130,20 +130,20 @@ related:
 
 | 类别 | tool | 优先级 | 状态 | 目标版本 | 责任人 | 引用 |
 |---|---|---|---|---|---|---|
-| CRUD | `create_draft` | P1 | `planned` | v1.1 | omar | [[06-prd#10.4.1]] |
-| CRUD | `list_drafts` | P1 | `planned` | v1.1 | omar | [[06-prd#10.4.1]] |
-| CRUD | `get_draft` | P1 | `planned` | v1.1 | omar | [[06-prd#10.4.1]] |
-| CRUD | `update_draft` | P1 | `planned` | v1.1 | omar | [[06-prd#10.4.1]] |
-| CRUD | `delete_draft` | P1 | `planned` | v1.1 | omar | [[06-prd#10.4.1]] |
-| Helper | `bootstrap_from_markdown` | P1 | `planned` | v1.1 | omar | [[06-prd#10.4.2]] |
-| Helper | `save_conversation_as_macro` | P1 | `planned` | v1.1 | omar | [[06-prd#10.4.2]] |
-| Helper | `import_json`（6 条加固）| P1 | `planned` | v1.1 | omar | [[06-prd#10.4.2]] |
-| Read | `list_phases` | P1 | `planned` | v1.1 | omar | [[06-prd#10.4.3]] |
-| Read | `list_alignment_phrases` | P1 | `planned` | v1.1 | omar | [[06-prd#10.4.3]] |
-| Read | `list_modifiers` | P1 | `planned` | v1.1 | omar | [[06-prd#10.4.3]] |
-| Read | `list_compositions` | P1 | `planned` | v1.1 | omar | [[06-prd#10.4.3]] |
-| Read | `list_macros` | P1 | `planned` | v1.1 | omar | [[06-prd#10.4.3]] |
-| Read | `list_scenes` | P1 | `planned` | v1.1 | omar | [[06-prd#10.4.3]] |
+| CRUD | `create_draft` | P1 | `done` | v1.1 | omar | [[06-prd#10.4.1]] |
+| CRUD | `list_drafts` | P1 | `done` | v1.1 | omar | [[06-prd#10.4.1]] |
+| CRUD | `get_draft` | P1 | `done` | v1.1 | omar | [[06-prd#10.4.1]] |
+| CRUD | `update_draft` | P1 | `done` | v1.1 | omar | [[06-prd#10.4.1]] |
+| CRUD | `delete_draft` | P1 | `done` | v1.1 | omar | [[06-prd#10.4.1]] |
+| Helper | `bootstrap_from_markdown` | P1 | `done` | v1.1 | omar | [[06-prd#10.4.2]] |
+| Helper | `save_conversation_as_macro` | P1 | `done` | v1.1 | omar | [[06-prd#10.4.2]] |
+| Helper | `import_json`（6 条加固）| P1 | `done` | v1.1 | omar | [[06-prd#10.4.2]] |
+| Read | `list_phases` | P1 | `done` | v1.1 | omar | [[06-prd#10.4.3]] |
+| Read | `list_alignment_phrases` | P1 | `done` | v1.1 | omar | [[06-prd#10.4.3]] |
+| Read | `list_modifiers` | P1 | `done` | v1.1 | omar | [[06-prd#10.4.3]] |
+| Read | `list_compositions` | P1 | `done` | v1.1 | omar | [[06-prd#10.4.3]] |
+| Read | `list_macros` | P1 | `done` | v1.1 | omar | [[06-prd#10.4.3]] |
+| Read | `list_scenes` | P1 | `done` | v1.1 | omar | [[06-prd#10.4.3]] |
 
 ---
 
@@ -185,6 +185,7 @@ related:
 | 2026-05-25 | v0.2 bump：S1 主形态 MVP 5 模块 + 跨模块 6 项 P0 → `done`（ADR-012 Phase 1-3 ship / commit `acf8229`）；新增「对齐话术 chip 行」条目 P0 done（追认 [[013-alignment-phrases-tab-inclusion]]）；status pre-code → in-progress | ADR-012 Phase 4 涟漪 |
 | 2026-06-01 | v0.3 bump：新增 §3.7 MCP write pipeline 区（6 支撑能力 + 14 MCP tool，全 `planned`）；§4 节奏表加 M-X 行，合计 27→47 项 | ADR-015 Accepted M-X.0 涟漪 |
 | 2026-06-03 | v0.4 bump：§3.7 drafts 数据层 + workspace 4 crate → `done`（repo-core 21 / trybuild 守）；`prompt-hub-mcp` binary + promote 跨表事务 → `in-progress`（skeleton + 4 promote arm done，rmcp/14 tool/IPC 属 M-X.2）| M-X.1 落地 + ADR-015 补遗涟漪 |
+| 2026-06-03 | v0.5 bump：§3.7 `prompt-hub-mcp` binary + 14 MCP tool → `done`（rmcp stdio + e2e spawn 测试 / commit `da8b682`+`e58d71a`）；/review 通过（scope clean，无 P0/P1），后补 confidence 有限性+clamp / schema_version 拒绝 / Mutex 中毒恢复 3 项加固 | M-X.2 落地 + /review 收口涟漪 |
 
 ---
 

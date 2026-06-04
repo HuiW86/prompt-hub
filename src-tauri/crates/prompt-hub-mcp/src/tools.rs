@@ -11,8 +11,14 @@ use repo_core::models::{DraftPayload, Provenance};
 use rmcp::schemars::JsonSchema;
 use serde::{Deserialize, Serialize};
 
+/// The only payload schema version this server understands today. Drafts that
+/// arrive tagged with any other version are rejected at the tool boundary rather
+/// than silently coerced, so a future client can't smuggle in a shape we'd
+/// misread.
+pub const LATEST_SCHEMA_VERSION: u32 = 1;
+
 fn schema_v1() -> u32 {
-    1
+    LATEST_SCHEMA_VERSION
 }
 
 fn default_source_app() -> String {
@@ -67,6 +73,32 @@ pub enum PayloadArg {
         #[serde(default)]
         is_default: bool,
     },
+}
+
+impl PayloadArg {
+    fn schema_version(&self) -> u32 {
+        match self {
+            PayloadArg::Modifier { schema_version, .. }
+            | PayloadArg::Composition { schema_version, .. }
+            | PayloadArg::Macro { schema_version, .. }
+            | PayloadArg::AlignmentPhrase { schema_version, .. } => *schema_version,
+        }
+    }
+
+    /// Reject a payload whose `schema_version` this server doesn't understand.
+    /// Run at the tool boundary before the infallible `Into<DraftPayload>` so a
+    /// model gets a fixable message instead of having an unexpected version
+    /// silently persisted.
+    pub fn validate(&self) -> Result<(), String> {
+        let v = self.schema_version();
+        if v != LATEST_SCHEMA_VERSION {
+            return Err(format!(
+                "schema_version {v} is not supported; this server only accepts \
+                 schema_version {LATEST_SCHEMA_VERSION}. Omit the field to use the default."
+            ));
+        }
+        Ok(())
+    }
 }
 
 impl From<PayloadArg> for DraftPayload {
@@ -150,9 +182,21 @@ pub struct ProvenanceArg {
 
 impl ProvenanceArg {
     /// Stamp the server-controlled `tool_name` and fill defaults to produce the
-    /// domain `Provenance`.
-    pub fn into_provenance(self, tool_name: &str) -> Provenance {
-        Provenance {
+    /// domain `Provenance`. Rejects a non-finite `confidence` (NaN/Inf would
+    /// serialize to `null` and poison the audit trail) and clamps a finite one
+    /// into `0.0..=1.0`.
+    pub fn into_provenance(self, tool_name: &str) -> Result<Provenance, String> {
+        let confidence = match self.confidence {
+            Some(c) if !c.is_finite() => {
+                return Err(
+                    "confidence must be a finite number in 0.0..=1.0 (got NaN or infinity)."
+                        .to_string(),
+                )
+            }
+            Some(c) => Some(c.clamp(0.0, 1.0)),
+            None => None,
+        };
+        Ok(Provenance {
             source_app: if self.source_app.is_empty() {
                 default_source_app()
             } else {
@@ -163,8 +207,8 @@ impl ProvenanceArg {
                 .unwrap_or_else(|| "unknown".to_string()),
             tool_name: tool_name.to_string(),
             model_hint: self.model_hint,
-            confidence: self.confidence,
-        }
+            confidence,
+        })
     }
 }
 
@@ -215,10 +259,57 @@ mod tests {
             conversation_ref: Some("conv-9".to_string()),
             ..Default::default()
         };
-        let prov = arg.into_provenance("create_draft");
+        let prov = arg
+            .into_provenance("create_draft")
+            .expect("valid provenance");
         assert_eq!(prov.tool_name, "create_draft");
         assert_eq!(prov.source_app, "Claude Code");
         assert_eq!(prov.conversation_ref, "conv-9");
+    }
+
+    #[test]
+    fn into_provenance_clamps_finite_confidence() {
+        let over = ProvenanceArg {
+            confidence: Some(1.5),
+            ..Default::default()
+        };
+        assert_eq!(
+            over.into_provenance("create_draft").unwrap().confidence,
+            Some(1.0)
+        );
+        let under = ProvenanceArg {
+            confidence: Some(-0.2),
+            ..Default::default()
+        };
+        assert_eq!(
+            under.into_provenance("create_draft").unwrap().confidence,
+            Some(0.0)
+        );
+    }
+
+    #[test]
+    fn into_provenance_rejects_non_finite_confidence() {
+        for bad in [f32::NAN, f32::INFINITY, f32::NEG_INFINITY] {
+            let arg = ProvenanceArg {
+                confidence: Some(bad),
+                ..Default::default()
+            };
+            assert!(arg.into_provenance("create_draft").is_err());
+        }
+    }
+
+    #[test]
+    fn validate_rejects_unsupported_schema_version() {
+        let json = r#"{"target_type":"macro","schema_version":2,"name":"X","content":"c","phase_id":"p1"}"#;
+        let arg: PayloadArg = serde_json::from_str(json).expect("parse");
+        assert!(arg.validate().is_err());
+    }
+
+    #[test]
+    fn validate_accepts_default_schema_version() {
+        let json = r#"{"target_type":"macro","name":"X","content":"c","phase_id":"p1"}"#;
+        let arg: PayloadArg = serde_json::from_str(json).expect("parse");
+        assert!(arg.validate().is_ok());
     }
 
     #[test]
