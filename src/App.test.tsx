@@ -116,6 +116,8 @@ describe("Dashboard end-to-end render", () => {
           return Promise.resolve(fakeAlignments);
         case "list_macros":
           return Promise.resolve(fakeMacros);
+        case "list_modifiers":
+          return Promise.resolve([]);
         case "list_scenes_with_children":
           return Promise.resolve(fakeScenes);
         case "list_recent_usage":
@@ -256,6 +258,8 @@ describe("Dashboard end-to-end render", () => {
           return Promise.resolve(fakeAlignments);
         case "list_macros":
           return Promise.resolve(fakeMacros);
+        case "list_modifiers":
+          return Promise.resolve([]);
         case "list_scenes_with_children":
           return Promise.resolve(fakeScenes);
         case "list_recent_usage":
@@ -302,6 +306,8 @@ describe("Dashboard click → IPC flow", () => {
           return Promise.resolve(fakeAlignments);
         case "list_macros":
           return Promise.resolve(fakeMacros);
+        case "list_modifiers":
+          return Promise.resolve([]);
         case "list_scenes_with_children":
           return Promise.resolve(fakeScenes);
         case "list_recent_usage":

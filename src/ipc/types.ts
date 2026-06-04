@@ -57,6 +57,22 @@ export interface Macro {
   orderIndex: number;
 }
 
+export interface Modifier {
+  id: string;
+  name: string;
+  content: string;
+  // CHECK-constrained to the four quadrants at the SQL layer; typed as GroupKind
+  // here (see GROUP_KINDS below) since the wire value is always one of the four.
+  groupKind: GroupKind;
+  usageCount: number;
+  lastUsedAt: string | null;
+  createdAt: string;
+  notes: string | null;
+  deprecated: boolean;
+  // Sort position WITHIN the groupKind quadrant (migration 0006, decision D-a).
+  orderIndex: number;
+}
+
 export interface Scene {
   id: string;
   name: string;

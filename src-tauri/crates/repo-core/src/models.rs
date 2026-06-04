@@ -66,6 +66,8 @@ pub struct Modifier {
     pub created_at: DateTime<Utc>,
     pub notes: Option<String>,
     pub deprecated: bool,
+    // Sort position WITHIN the group_kind quadrant (migration 0006, decision D-a).
+    pub order_index: i64,
 }
 
 // A persisted Composition (migration 0004). Distinct from the transient

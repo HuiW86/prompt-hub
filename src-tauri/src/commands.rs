@@ -18,8 +18,8 @@ const RECENT_USAGE_LIMIT_MAX: i64 = 100;
 
 use crate::error::{AppError, AppResult};
 use repo_core::models::{
-    AlignmentPhrase, DraftPayload, DraftStatus, DraftSummary, DraftTargetType, Macro, Phase,
-    RecentUsageEntry, RecordUsageInput, SceneWithChildren, UsageRecord,
+    AlignmentPhrase, DraftPayload, DraftStatus, DraftSummary, DraftTargetType, Macro, Modifier,
+    Phase, RecentUsageEntry, RecordUsageInput, SceneWithChildren, UsageRecord,
 };
 use repo_core::{repo, DraftRepo, RepoError};
 use repo_write::promote::PromoteOptions;
@@ -87,6 +87,11 @@ pub fn list_alignment_phrases(state: State<'_, AppState>) -> AppResult<Vec<Align
 #[tauri::command]
 pub fn list_macros(state: State<'_, AppState>) -> AppResult<Vec<Macro>> {
     with_conn(&state, repo::list_macros)
+}
+
+#[tauri::command]
+pub fn list_modifiers(state: State<'_, AppState>) -> AppResult<Vec<Modifier>> {
+    with_conn(&state, repo::list_modifiers)
 }
 
 #[tauri::command]
@@ -294,6 +299,55 @@ pub fn delete_macro(state: State<'_, AppState>, id: String) -> AppResult<OkAck> 
 #[tauri::command]
 pub fn reorder_macros(state: State<'_, AppState>, ordered_ids: Vec<String>) -> AppResult<OkAck> {
     with_write_conn(&state, |c| repo_write::reorder_macros(c, &ordered_ids))?;
+    Ok(OkAck { ok: true })
+}
+
+// ── Modifier direct editing (plan asset-editing-and-adaptive-layout §0 Q2/Q6,
+// decision D-a) ───────────────────────────────────────────────────────────────
+// omar-driven create / update / delete / reorder of modifier assets. Tauri-only:
+// the MCP server has no repo-write dependency and can only stage drafts. Reorder
+// is scoped to a single group_kind quadrant.
+
+#[tauri::command]
+pub fn create_modifier(
+    state: State<'_, AppState>,
+    name: String,
+    content: String,
+    group_kind: String,
+) -> AppResult<Modifier> {
+    with_write_conn(&state, |c| {
+        repo_write::create_modifier(c, &name, &content, &group_kind)
+    })
+}
+
+#[tauri::command]
+pub fn update_modifier(
+    state: State<'_, AppState>,
+    id: String,
+    name: String,
+    content: String,
+) -> AppResult<OkAck> {
+    with_write_conn(&state, |c| {
+        repo_write::update_modifier(c, &id, &name, &content)
+    })?;
+    Ok(OkAck { ok: true })
+}
+
+#[tauri::command]
+pub fn delete_modifier(state: State<'_, AppState>, id: String) -> AppResult<OkAck> {
+    with_write_conn(&state, |c| repo_write::delete_modifier(c, &id))?;
+    Ok(OkAck { ok: true })
+}
+
+#[tauri::command]
+pub fn reorder_modifiers(
+    state: State<'_, AppState>,
+    group_kind: String,
+    ordered_ids: Vec<String>,
+) -> AppResult<OkAck> {
+    with_write_conn(&state, |c| {
+        repo_write::reorder_modifiers(c, &group_kind, &ordered_ids)
+    })?;
     Ok(OkAck { ok: true })
 }
 

@@ -4,7 +4,9 @@ import { ipc } from "../ipc";
 import type {
   AlignmentPhrase,
   DraftSummary,
+  GroupKind,
   Macro,
+  Modifier,
   Phase,
   RecentUsageEntry,
   RecordUsageInput,
@@ -18,6 +20,7 @@ interface PromptState {
   phases: Phase[];
   alignmentPhrasesByPhase: Record<string, AlignmentPhrase[]>;
   macros: Macro[];
+  modifiers: Modifier[];
   scenes: SceneWithChildren[];
   recentUsage: RecentUsageEntry[];
   // Real day-bounded count. Independent of recentUsage (which is capped at
@@ -53,6 +56,25 @@ interface PromptState {
   }) => Promise<void>;
   deleteMacro: (id: string) => Promise<void>;
   reorderMacros: (orderedIds: string[]) => Promise<void>;
+
+  // Direct modifier editing (plan asset-editing §0 Q2/Q6, decision D-a). Mirrors
+  // the macro methods; reorder is scoped to one groupKind quadrant since
+  // order_index restarts per quadrant.
+  createModifier: (args: {
+    name: string;
+    content: string;
+    groupKind: GroupKind;
+  }) => Promise<void>;
+  updateModifier: (args: {
+    id: string;
+    name: string;
+    content: string;
+  }) => Promise<void>;
+  deleteModifier: (id: string) => Promise<void>;
+  reorderModifiers: (
+    groupKind: GroupKind,
+    orderedIds: string[],
+  ) => Promise<void>;
 }
 
 const RECENT_LIMIT = 5;
@@ -118,6 +140,7 @@ export const usePromptStore = create<PromptState>()((set, get) => ({
   phases: [],
   alignmentPhrasesByPhase: {},
   macros: [],
+  modifiers: [],
   scenes: [],
   recentUsage: [],
   todayCount: 0,
@@ -133,6 +156,7 @@ export const usePromptStore = create<PromptState>()((set, get) => ({
         phases,
         alignments,
         macros,
+        modifiers,
         scenes,
         recent,
         todayCount,
@@ -142,6 +166,7 @@ export const usePromptStore = create<PromptState>()((set, get) => ({
         ipc.listPhases(),
         ipc.listAlignmentPhrases(),
         ipc.listMacros(),
+        ipc.listModifiers(),
         ipc.listScenesWithChildren(),
         ipc.listRecentUsage(RECENT_LIMIT),
         ipc.countTodayUsage(),
@@ -152,6 +177,7 @@ export const usePromptStore = create<PromptState>()((set, get) => ({
         phases,
         alignmentPhrasesByPhase: indexByPhase(alignments),
         macros,
+        modifiers,
         scenes,
         recentUsage: recent,
         todayCount,
@@ -195,13 +221,15 @@ export const usePromptStore = create<PromptState>()((set, get) => ({
     // The draft left the inbox and a new asset landed in one of the four real
     // tables. Refresh the inbox (list + badge) and silently re-pull the asset
     // slices so the promoted item shows on this summon without a loadState flash.
-    const [macros, scenes, alignments] = await Promise.all([
+    const [macros, modifiers, scenes, alignments] = await Promise.all([
       ipc.listMacros(),
+      ipc.listModifiers(),
       ipc.listScenesWithChildren(),
       ipc.listAlignmentPhrases(),
     ]);
     set({
       macros,
+      modifiers,
       scenes,
       alignmentPhrasesByPhase: indexByPhase(alignments),
     });
@@ -253,6 +281,55 @@ export const usePromptStore = create<PromptState>()((set, get) => ({
       await ipc.reorderMacros(orderedIds);
     } catch (err) {
       set({ macros: snapshot });
+      throw err;
+    }
+  },
+
+  createModifier: async ({ name, content, groupKind }) => {
+    const created = await ipc.createModifier({ name, content, groupKind });
+    set((state) => ({ modifiers: [...state.modifiers, created] }));
+  },
+
+  updateModifier: async ({ id, name, content }) => {
+    const snapshot = get().modifiers;
+    set({
+      modifiers: snapshot.map((m) =>
+        m.id === id ? { ...m, name, content } : m,
+      ),
+    });
+    try {
+      await ipc.updateModifier({ id, name, content });
+    } catch (err) {
+      set({ modifiers: snapshot });
+      throw err;
+    }
+  },
+
+  deleteModifier: async (id) => {
+    const snapshot = get().modifiers;
+    set({ modifiers: snapshot.filter((m) => m.id !== id) });
+    try {
+      await ipc.deleteModifier(id);
+    } catch (err) {
+      set({ modifiers: snapshot });
+      throw err;
+    }
+  },
+
+  // Reorder is scoped to one quadrant: only the targeted groupKind's members are
+  // resequenced (per orderedIds); modifiers in other quadrants keep their place.
+  reorderModifiers: async (groupKind, orderedIds) => {
+    const snapshot = get().modifiers;
+    const byId = new Map(snapshot.map((m) => [m.id, m]));
+    const reorderedGroup = orderedIds
+      .map((id) => byId.get(id))
+      .filter((m): m is Modifier => m !== undefined);
+    const others = snapshot.filter((m) => m.groupKind !== groupKind);
+    set({ modifiers: [...others, ...reorderedGroup] });
+    try {
+      await ipc.reorderModifiers(groupKind, orderedIds);
+    } catch (err) {
+      set({ modifiers: snapshot });
       throw err;
     }
   },

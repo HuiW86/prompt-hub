@@ -4,6 +4,7 @@ import type {
   AlignmentPhrase,
   DraftSummary,
   Macro,
+  Modifier,
   Phase,
   RecentUsageEntry,
   SceneWithChildren,
@@ -67,6 +68,21 @@ const fakeMacros: Macro[] = [
   },
 ];
 
+const fakeModifiers: Modifier[] = [
+  {
+    id: "mod-structured",
+    name: "结构化输出",
+    content: "请用要点列表回答",
+    groupKind: "delivery",
+    usageCount: 2,
+    lastUsedAt: null,
+    createdAt: "2026-05-23T00:00:00Z",
+    notes: null,
+    deprecated: false,
+    orderIndex: 0,
+  },
+];
+
 const fakeScenes: SceneWithChildren[] = [
   {
     scene: {
@@ -119,6 +135,8 @@ function mockListAll() {
         return Promise.resolve(fakeAlignments);
       case "list_macros":
         return Promise.resolve(fakeMacros);
+      case "list_modifiers":
+        return Promise.resolve(fakeModifiers);
       case "list_scenes_with_children":
         return Promise.resolve(fakeScenes);
       case "list_recent_usage":
@@ -151,6 +169,7 @@ describe("promptStore", () => {
       "phase-diverge": fakeAlignments,
     });
     expect(state.macros).toEqual(fakeMacros);
+    expect(state.modifiers).toEqual(fakeModifiers);
     expect(state.scenes).toEqual(fakeScenes);
     expect(state.drafts).toEqual(fakeDrafts);
     expect(state.pendingDraftCount).toBe(1);
@@ -259,6 +278,8 @@ describe("promptStore", () => {
           });
         case "list_macros":
           return Promise.resolve(fakeMacros);
+        case "list_modifiers":
+          return Promise.resolve(fakeModifiers);
         case "list_scenes_with_children":
           return Promise.resolve(fakeScenes);
         case "list_alignment_phrases":
@@ -377,6 +398,7 @@ describe("promptStore", () => {
     ];
     invokeMock.mockImplementation((cmd: string) => {
       if (cmd === "list_macros") return Promise.resolve(twoMacros);
+      if (cmd === "list_modifiers") return Promise.resolve(fakeModifiers);
       if (cmd === "list_phases") return Promise.resolve(fakePhases);
       if (cmd === "list_alignment_phrases")
         return Promise.resolve(fakeAlignments);
@@ -412,5 +434,120 @@ describe("promptStore", () => {
       "macro-2",
       "macro-best-practice",
     ]);
+  });
+
+  it("createModifier appends the backend-returned modifier", async () => {
+    mockListAll();
+    await usePromptStore.getState().refreshAll();
+
+    const created: Modifier = {
+      id: "mod-new",
+      name: "新约束",
+      content: "body",
+      groupKind: "constraint",
+      usageCount: 0,
+      lastUsedAt: null,
+      createdAt: "2026-06-04T00:00:00Z",
+      notes: null,
+      deprecated: false,
+      orderIndex: 0,
+    };
+    invokeMock.mockImplementation((cmd: string) => {
+      if (cmd === "create_modifier") return Promise.resolve(created);
+      return Promise.reject(new Error(`unexpected ${cmd}`));
+    });
+
+    await usePromptStore.getState().createModifier({
+      name: "新约束",
+      content: "body",
+      groupKind: "constraint",
+    });
+    const modifiers = usePromptStore.getState().modifiers;
+    expect(modifiers).toHaveLength(2);
+    expect(modifiers[1]).toEqual(created);
+  });
+
+  it("updateModifier applies optimistically and rolls back on failure", async () => {
+    mockListAll();
+    await usePromptStore.getState().refreshAll();
+
+    invokeMock.mockRejectedValue(new Error("write rejected"));
+    await expect(
+      usePromptStore
+        .getState()
+        .updateModifier({ id: "mod-structured", name: "改名", content: "x" }),
+    ).rejects.toThrow("write rejected");
+    expect(usePromptStore.getState().modifiers).toEqual(fakeModifiers);
+  });
+
+  it("deleteModifier removes optimistically and rolls back on failure", async () => {
+    mockListAll();
+    await usePromptStore.getState().refreshAll();
+
+    invokeMock.mockRejectedValue(new Error("delete rejected"));
+    await expect(
+      usePromptStore.getState().deleteModifier("mod-structured"),
+    ).rejects.toThrow("delete rejected");
+    expect(usePromptStore.getState().modifiers).toEqual(fakeModifiers);
+  });
+
+  it("reorderModifiers resequences one quadrant optimistically and rolls back", async () => {
+    // Two modifiers in the same quadrant + one in another, so we can assert the
+    // reorder touches only the targeted quadrant.
+    const threeMods: Modifier[] = [
+      { ...fakeModifiers[0], id: "mod-a", groupKind: "action", orderIndex: 0 },
+      { ...fakeModifiers[0], id: "mod-b", groupKind: "action", orderIndex: 1 },
+      {
+        ...fakeModifiers[0],
+        id: "mod-keep",
+        groupKind: "delivery",
+        orderIndex: 0,
+      },
+    ];
+    invokeMock.mockImplementation((cmd: string) => {
+      switch (cmd) {
+        case "list_modifiers":
+          return Promise.resolve(threeMods);
+        case "list_macros":
+          return Promise.resolve(fakeMacros);
+        case "list_phases":
+          return Promise.resolve(fakePhases);
+        case "list_alignment_phrases":
+          return Promise.resolve(fakeAlignments);
+        case "list_scenes_with_children":
+          return Promise.resolve(fakeScenes);
+        case "list_recent_usage":
+          return Promise.resolve(fakeRecent);
+        case "count_today_usage":
+          return Promise.resolve(0);
+        case "list_drafts":
+          return Promise.resolve(fakeDrafts);
+        case "count_pending_drafts":
+          return Promise.resolve(fakeDrafts.length);
+        default:
+          return Promise.reject(new Error(`unexpected ${cmd}`));
+      }
+    });
+    await usePromptStore.getState().refreshAll();
+
+    // Success: the action quadrant follows the supplied order; delivery is kept.
+    invokeMock.mockResolvedValue({ ok: true });
+    await usePromptStore
+      .getState()
+      .reorderModifiers("action", ["mod-b", "mod-a"]);
+    const ids = usePromptStore.getState().modifiers.map((m) => m.id);
+    expect(ids).toContain("mod-keep");
+    expect(ids.filter((id) => id === "mod-a" || id === "mod-b")).toEqual([
+      "mod-b",
+      "mod-a",
+    ]);
+
+    // Failure: snapshot restored.
+    const before = usePromptStore.getState().modifiers;
+    invokeMock.mockRejectedValue(new Error("reorder rejected"));
+    await expect(
+      usePromptStore.getState().reorderModifiers("action", ["mod-a", "mod-b"]),
+    ).rejects.toThrow("reorder rejected");
+    expect(usePromptStore.getState().modifiers).toEqual(before);
   });
 });

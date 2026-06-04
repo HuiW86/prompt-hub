@@ -80,8 +80,9 @@ impl AssetRepo for Connection {
         self.execute(
             "INSERT INTO modifiers
                 (id, name, content, group_kind, usage_count,
-                 last_used_at, created_at, notes, deprecated)
-             VALUES (?1, ?2, ?3, ?4, 0, NULL, ?5, NULL, 0)",
+                 last_used_at, created_at, notes, deprecated, order_index)
+             VALUES (?1, ?2, ?3, ?4, 0, NULL, ?5, NULL, 0,
+                 (SELECT COALESCE(MAX(order_index) + 1, 0) FROM modifiers WHERE group_kind = ?4))",
             params![id, name, content, group_kind, now],
         )?;
         Ok(id)

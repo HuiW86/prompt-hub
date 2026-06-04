@@ -105,6 +105,7 @@ pub fn run() {
             commands::list_phases,
             commands::list_alignment_phrases,
             commands::list_macros,
+            commands::list_modifiers,
             commands::list_scenes_with_children,
             commands::list_recent_usage,
             commands::count_today_usage,
@@ -120,6 +121,10 @@ pub fn run() {
             commands::update_macro,
             commands::delete_macro,
             commands::reorder_macros,
+            commands::create_modifier,
+            commands::update_modifier,
+            commands::delete_modifier,
+            commands::reorder_modifiers,
         ])
         .build(tauri::generate_context!())
         .expect("error while building tauri application");

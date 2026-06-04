@@ -150,10 +150,10 @@ pub fn list_macros(conn: &Connection) -> RepoResult<Vec<Macro>> {
 pub fn list_modifiers(conn: &Connection) -> RepoResult<Vec<Modifier>> {
     let mut stmt = conn.prepare(
         "SELECT id, name, content, group_kind, usage_count, last_used_at,
-                created_at, notes, deprecated
+                created_at, notes, deprecated, order_index
          FROM modifiers
          WHERE deprecated = 0
-         ORDER BY group_kind ASC, usage_count DESC, created_at ASC",
+         ORDER BY group_kind ASC, order_index ASC, created_at ASC",
     )?;
     let raw = stmt.query_map([], |row| {
         Ok((
@@ -167,6 +167,7 @@ pub fn list_modifiers(conn: &Connection) -> RepoResult<Vec<Modifier>> {
                 created_at: Utc::now(),
                 notes: row.get("notes")?,
                 deprecated: row.get::<_, i64>("deprecated")? != 0,
+                order_index: row.get("order_index")?,
             },
             row.get::<_, Option<String>>("last_used_at")?,
             row.get::<_, String>("created_at")?,

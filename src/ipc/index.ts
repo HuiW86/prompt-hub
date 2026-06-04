@@ -6,7 +6,9 @@ import type {
   DraftStatus,
   DraftSummary,
   DraftTargetType,
+  GroupKind,
   Macro,
+  Modifier,
   OkAck,
   Phase,
   PromoteResult,
@@ -22,6 +24,7 @@ export const ipc = {
   listAlignmentPhrases: () =>
     invoke<AlignmentPhrase[]>("list_alignment_phrases"),
   listMacros: () => invoke<Macro[]>("list_macros"),
+  listModifiers: () => invoke<Modifier[]>("list_modifiers"),
   listScenesWithChildren: () =>
     invoke<SceneWithChildren[]>("list_scenes_with_children"),
   listRecentUsage: (limit: number) =>
@@ -74,6 +77,28 @@ export const ipc = {
   deleteMacro: (id: string) => invoke<OkAck>("delete_macro", { id }),
   reorderMacros: (orderedIds: string[]) =>
     invoke<OkAck>("reorder_macros", { orderedIds }),
+
+  // ── Modifier direct editing (plan asset-editing §0 Q2/Q6, decision D-a) ──
+  // reorder is scoped to one groupKind quadrant.
+  createModifier: (args: {
+    name: string;
+    content: string;
+    groupKind: GroupKind;
+  }) =>
+    invoke<Modifier>("create_modifier", {
+      name: args.name,
+      content: args.content,
+      groupKind: args.groupKind,
+    }),
+  updateModifier: (args: { id: string; name: string; content: string }) =>
+    invoke<OkAck>("update_modifier", {
+      id: args.id,
+      name: args.name,
+      content: args.content,
+    }),
+  deleteModifier: (id: string) => invoke<OkAck>("delete_modifier", { id }),
+  reorderModifiers: (groupKind: GroupKind, orderedIds: string[]) =>
+    invoke<OkAck>("reorder_modifiers", { groupKind, orderedIds }),
 };
 
 export type Ipc = typeof ipc;

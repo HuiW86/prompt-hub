@@ -38,6 +38,11 @@ const MIGRATIONS: &[Migration] = &[
         name: "0005_macros_order_index",
         sql: include_str!("../migrations/0005_macros_order_index.sql"),
     },
+    Migration {
+        target_version: 6,
+        name: "0006_modifiers_order_index",
+        sql: include_str!("../migrations/0006_modifiers_order_index.sql"),
+    },
 ];
 
 struct Migration {
