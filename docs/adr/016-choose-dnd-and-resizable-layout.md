@@ -2,7 +2,7 @@
 type: adr
 project: prompt-hub
 id: ADR-016
-status: Proposed
+status: Accepted
 date: 2026-06-04
 description: 选择 @dnd-kit/react 0.4.x（新版体系）做区域内拖动排序 + react-resizable-panels ^4 做可拖分隔条布局；锁定三依赖引入，校正「v4 仅百分比无 px」假设。支撑 asset-editing-and-adaptive-layout plan P1–P4
 related:
@@ -25,14 +25,14 @@ related:
 
 - **标题**：选择 `@dnd-kit/react@0.4.0` + `@dnd-kit/helpers@0.4.0`（新版体系）实现区域内卡片拖动排序，`react-resizable-panels@^4` 实现可拖分隔条 + 布局比例持久化；引入此三依赖
 - **日期**：2026-06-04
-- **决策者**：omar（待人审确认）
+- **决策者**：omar
 - **影响范围**：[[09-tech-stack#§3]] 依赖表 +3 / [[asset-editing-and-adaptive-layout]] P1.4（dnd 排序）+ P4（分隔条）/ [[05-design-spec]] token px↔% 关系 / [[014-nspanel-isa-swizzle]] key-window 是键盘 sensor + resize-handle focus 前置 / [[012-lock-visual-quality-anchor]] 拖动交互不得破坏 Linear 气质
 
 ## 2. Status
 
-`Proposed`（2026-06-04，AI 起草待人审）
+`Accepted`（2026-06-04，omar 人审通过；三版本 `npm view` 核验真实存在：`@dnd-kit/react@0.4.0` / `@dnd-kit/helpers@0.4.0` / `react-resizable-panels@4.11.2`）
 
-> Proposed → Accepted 后方可 `pnpm add` 三依赖并同步 [[09-tech-stack]]。Accepted 前禁止写入依赖（[[CLAUDE#§6]] 第 7 项）。
+> Accepted 后方可 `pnpm add` 三依赖并同步 [[09-tech-stack]]。
 
 ## 3. Context
 
@@ -157,6 +157,8 @@ related:
 > **一句话拍板**：
 > - **D-A** 选 **`@dnd-kit/react@0.4.0` + `@dnd-kit/helpers@0.4.0`**，理由是 2026 React 拖拽事实标准、原生 React 19、新版 API 简洁且有真实仓库可照搬、键盘 sensor + 回滚 + 轴约束内建契合 Linear 气质与 B2 区域内约束。
 > - **D-B** 选 **`react-resizable-panels@^4`（锁 `^4.11`）**，理由是 React 可调布局事实标准、持久化内建、v4 多单位支持可直接吃 token px 值省去换算层。
+
+**版本锁定策略（有意不一致）**：dnd-kit 两包用**精确锁**（`0.4.0`，无 caret）——0.x 阶段 minor 升级可能 break API，须显式审阅 changelog 后才升；resizable-panels 用 **caret 锁**（`^4.11`）——已进入稳定 major，minor/patch 向后兼容可自动吃。两种锁法刻意不同，非笔误。
 
 **为什么不选其他**：
 - D-A 不选 legacy core/sortable 因为：React 19 官方已转向 `/react` 新范式，选旧范式即选返工
