@@ -1,10 +1,13 @@
-import { useState } from "react";
+import { Inbox } from "lucide-react";
+import { useEffect, useState } from "react";
 
 import { useCopy } from "../hooks/useCopy";
 import type { Phrase, SubStage } from "../ipc/types";
+import { useAppStore } from "../stores/appStore";
 import { usePromptStore } from "../stores/promptStore";
 import { useToastStore } from "../stores/toastStore";
 
+import { DraftInbox } from "./DraftInbox";
 import { EmptyState, RegionHeader } from "./primitives";
 import styles from "./ScenePanel.module.css";
 
@@ -29,9 +32,27 @@ function groupBySubStage(phrases: Phrase[], subStages: SubStage[]): Grouped {
 
 export function ScenePanel() {
   const scenes = usePromptStore((s) => s.scenes);
+  const pendingDraftCount = usePromptStore((s) => s.pendingDraftCount);
+  const draftsViewRequestId = useAppStore((s) => s.draftsViewRequestId);
   const copy = useCopy();
   const flashId = useToastStore((s) => s.flashTargetId);
   const [activeIdx, setActiveIdx] = useState(0);
+  const [showDrafts, setShowDrafts] = useState(false);
+
+  // The 待审 badge jumps here by bumping draftsViewRequestId.
+  useEffect(() => {
+    if (draftsViewRequestId > 0 && pendingDraftCount > 0) setShowDrafts(true);
+  }, [draftsViewRequestId, pendingDraftCount]);
+
+  // The drafts tab is conditional (shown only while drafts are pending). Once the
+  // inbox empties — promote/discard drains it — fall back to the scene view so we
+  // never strand the user on a vanished tab.
+  const draftsAvailable = pendingDraftCount > 0;
+  const draftsActive = showDrafts && draftsAvailable;
+  useEffect(() => {
+    if (!draftsAvailable && showDrafts) setShowDrafts(false);
+  }, [draftsAvailable, showDrafts]);
+
   const current = scenes[Math.min(activeIdx, scenes.length - 1)];
 
   if (!current) {
@@ -62,14 +83,38 @@ export function ScenePanel() {
     >
       <RegionHeader title="Scene" count={scenes.length} />
       <nav className={styles.tabs} aria-label="Scene tabs">
+        {draftsAvailable && (
+          <>
+            <button
+              type="button"
+              className={`${styles.tab} ${styles.draftTab} ${draftsActive ? styles.active : ""}`}
+              onClick={() => setShowDrafts(true)}
+              aria-current={draftsActive ? "page" : undefined}
+              aria-label={`草稿收件箱，${pendingDraftCount} 条待审`}
+            >
+              <Inbox
+                size={13}
+                className={styles.draftIcon}
+                aria-hidden
+                strokeWidth={2}
+              />
+              草稿
+              <span className={styles.draftCount}>{pendingDraftCount}</span>
+            </button>
+            <span className={styles.sep} aria-hidden />
+          </>
+        )}
         {scenes.map((sc, idx) => {
-          const isActive = idx === activeIdx;
+          const isActive = !draftsActive && idx === activeIdx;
           return (
             <button
               key={sc.scene.id}
               type="button"
               className={`${styles.tab} ${isActive ? styles.active : ""}`}
-              onClick={() => setActiveIdx(idx)}
+              onClick={() => {
+                setShowDrafts(false);
+                setActiveIdx(idx);
+              }}
               aria-current={isActive ? "page" : undefined}
             >
               {sc.scene.icon && (
@@ -82,51 +127,57 @@ export function ScenePanel() {
           );
         })}
       </nav>
-      <div className={styles.phrases}>
-        {groups.length === 0 ? (
-          <EmptyState>该 Scene 暂无话术</EmptyState>
-        ) : (
-          groups.map((g) => (
-            <div
-              key={g.subStage?.id ?? "__ungrouped__"}
-              className={styles.group}
-            >
-              {g.subStage && (
-                <div className={styles.subStage}>{g.subStage.name}</div>
-              )}
-              {g.phrases.map((p) => {
-                const cls = `${styles.phrase} ${flashId === p.id ? styles.phraseFlash : ""}`;
-                return (
-                  <button
-                    key={p.id}
-                    type="button"
-                    className={cls}
-                    onClick={() =>
-                      void copy(
-                        p.content,
-                        {
-                          targetType: "phrase",
-                          targetId: p.id,
-                          source: "scene",
-                          modifierIds: null,
-                          sopId: null,
-                          sopStepOrder: null,
-                          phaseId: null,
-                        },
-                        p.id,
-                      )
-                    }
-                    aria-label={p.name}
-                  >
-                    <h4 className={styles.phraseTitle}>{p.name}</h4>
-                    <p className={styles.phraseContent}>{p.content}</p>
-                  </button>
-                );
-              })}
-            </div>
-          ))
-        )}
-      </div>
+      {draftsActive ? (
+        <div className={styles.phrases}>
+          <DraftInbox />
+        </div>
+      ) : (
+        <div className={styles.phrases}>
+          {groups.length === 0 ? (
+            <EmptyState>该 Scene 暂无话术</EmptyState>
+          ) : (
+            groups.map((g) => (
+              <div
+                key={g.subStage?.id ?? "__ungrouped__"}
+                className={styles.group}
+              >
+                {g.subStage && (
+                  <div className={styles.subStage}>{g.subStage.name}</div>
+                )}
+                {g.phrases.map((p) => {
+                  const cls = `${styles.phrase} ${flashId === p.id ? styles.phraseFlash : ""}`;
+                  return (
+                    <button
+                      key={p.id}
+                      type="button"
+                      className={cls}
+                      onClick={() =>
+                        void copy(
+                          p.content,
+                          {
+                            targetType: "phrase",
+                            targetId: p.id,
+                            source: "scene",
+                            modifierIds: null,
+                            sopId: null,
+                            sopStepOrder: null,
+                            phaseId: null,
+                          },
+                          p.id,
+                        )
+                      }
+                      aria-label={p.name}
+                    >
+                      <h4 className={styles.phraseTitle}>{p.name}</h4>
+                      <p className={styles.phraseContent}>{p.content}</p>
+                    </button>
+                  );
+                })}
+              </div>
+            ))
+          )}
+        </div>
+      )}
     </section>
   );
 }

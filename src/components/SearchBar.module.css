@@ -60,3 +60,31 @@
   text-transform: uppercase;
   letter-spacing: var(--tr-meta);
 }
+
+/* 待审 badge — a plain-text affordance jumping to the 📥 草稿 inbox, deliberately
+   muted (no red dot): drafts are a calm staging queue, not an alarm (§13.3 区域 1). */
+.badge {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--s-1);
+  flex: 0 0 auto;
+  padding: 0 var(--s-1_5);
+  border: 0;
+  background: transparent;
+  color: var(--fg-3);
+  font: var(--w-500) var(--t-11) / 1 var(--font-sans);
+  cursor: pointer;
+  user-select: none;
+  appearance: none;
+  transition: color var(--d-fast) var(--ease);
+}
+
+.badge:hover {
+  color: var(--fg-2);
+}
+
+.badge:focus-visible {
+  outline: var(--border-thick) solid var(--task);
+  outline-offset: 0;
+  border-radius: var(--r-1);
+}

@@ -70,6 +70,41 @@
   line-height: 1;
 }
 
+/* 📥 草稿 tab — leftmost, aux-toned, set off from Scene tabs by a divider.
+   It is the MCP inbox entry, not a Scene (03-product-spec §13.3 区域 4). */
+.draftTab {
+  color: var(--fg-2);
+}
+
+.draftTab.active {
+  background: var(--surface-2);
+  border-color: var(--border-3);
+}
+
+.draftIcon {
+  color: var(--fg-3);
+}
+
+.draftCount {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: var(--s-4);
+  padding: 0 var(--s-1);
+  border-radius: var(--r-1);
+  background: var(--surface-3);
+  color: var(--fg-2);
+  font: var(--w-500) var(--t-10) / 1.6 var(--font-mono);
+}
+
+.sep {
+  flex: 0 0 auto;
+  align-self: stretch;
+  width: var(--hairline);
+  margin: var(--s-1) 0;
+  background: var(--border-2);
+}
+
 .phrases {
   display: flex;
   flex-direction: column;

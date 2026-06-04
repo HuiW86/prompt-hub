@@ -112,6 +112,11 @@ pub fn run() {
             commands::record_usage,
             commands::hide_window,
             commands::show_window,
+            commands::list_drafts,
+            commands::count_pending_drafts,
+            commands::promote_draft,
+            commands::update_draft,
+            commands::discard_draft,
         ])
         .build(tauri::generate_context!())
         .expect("error while building tauri application");

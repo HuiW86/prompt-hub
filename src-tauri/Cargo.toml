@@ -23,6 +23,10 @@ tauri-build = { version = "2", features = [] }
 [dependencies]
 # Shared Tauri-free data layer (read + draft). See crates/repo-core.
 repo-core = { path = "crates/repo-core" }
+# Write/promote layer (AssetRepo + cross-table promote). Only the prompt-hub bin
+# depends on this — the MCP server is deliberately denied it (write-isolation,
+# plan §3.3). Drives the promote_draft IPC.
+repo-write = { path = "crates/repo-write" }
 # macos-private-api: required for transparent always-on-top window (ADR-008)
 tauri = { version = "2", features = ["macos-private-api"] }
 tauri-plugin-global-shortcut = "2"

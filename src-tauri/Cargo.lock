@@ -2516,6 +2516,7 @@ dependencies = [
  "objc2",
  "objc2-app-kit",
  "repo-core",
+ "repo-write",
  "rusqlite",
  "serde",
  "tauri",

@@ -35,6 +35,18 @@ pub fn sha256_hex(s: &str) -> String {
     out
 }
 
+/// Count of pending drafts — drives the main-form 待审 badge (PRD §10.3,
+/// budget ≤ 1ms). A free fn rather than a `DraftRepo` method so the MCP server's
+/// allowed write surface (the trait) doesn't grow a Tauri-only read.
+pub fn count_pending_drafts(conn: &Connection) -> RepoResult<u32> {
+    let count: u32 = conn.query_row(
+        "SELECT COUNT(*) FROM drafts WHERE status = 'pending'",
+        [],
+        |row| row.get(0),
+    )?;
+    Ok(count)
+}
+
 fn is_unique_violation(err: &rusqlite::Error) -> bool {
     matches!(
         err,
@@ -412,6 +424,26 @@ mod tests {
 
         assert_eq!(after.payload, updated);
         assert_ne!(after.payload_hash, before.payload_hash);
+    }
+
+    #[test]
+    fn count_pending_drafts_excludes_discarded() {
+        let conn = db::open_in_memory().expect("open db");
+        assert_eq!(count_pending_drafts(&conn).expect("count empty"), 0);
+
+        let a = conn
+            .create_draft(&macro_payload("A"), &sample_provenance("create_draft"))
+            .expect("a");
+        conn.create_draft(&macro_payload("B"), &sample_provenance("create_draft"))
+            .expect("b");
+        assert_eq!(count_pending_drafts(&conn).expect("count two"), 2);
+
+        conn.mark_discarded(&a).expect("discard a");
+        assert_eq!(
+            count_pending_drafts(&conn).expect("count after discard"),
+            1,
+            "discarded drafts must not count toward the pending badge"
+        );
     }
 
     #[test]

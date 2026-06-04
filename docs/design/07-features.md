@@ -1,13 +1,13 @@
 ---
 type: features
 project: prompt-hub
-version: v0.5
+version: v0.6
 created: 2026-05-19
 last_modified: 2026-06-03
-status: in-progress  # S1 主形态 MVP 5 模块 + 跨模块 P0 多项 done（ADR-012 Phase 1-3 已 ship）；M-X.1 数据层 + workspace + promote arm done，M-X.2 MCP server（binary + 14 tool）done
+status: in-progress  # S1 主形态 MVP 5 模块 + 跨模块 P0 多项 done（ADR-012 Phase 1-3 已 ship）；M-X 全收口——数据层 + workspace + MCP server + UI 收件箱（草稿 tab + 待审 badge + 5 IPC + schema recheck）done
 author: ai  # 🤖 AI 主笔 + 人审（CLAUDE §5.2）
 audience: [human, ai]
-description: prompt-hub 功能清单运营视图——功能 × 状态 × 测试覆盖 × 版本，单一事实源；v0.5 把 §3.7 prompt-hub-mcp binary + 14 MCP tool 转 done（M-X.2 落地 + /review 后信任边界/Mutex 加固）
+description: prompt-hub 功能清单运营视图——功能 × 状态 × 测试覆盖 × 版本，单一事实源；v0.6 把 §3.7 草稿 tab + 待审 badge + promote/5 IPC + schema recheck 全转 done（M-X.3 UI 收件箱落地），M-X 阶段整体 done
 related:
   - 06-prd
   - prompt-hub-mvp
@@ -122,9 +122,9 @@ related:
 | drafts 收件箱数据层（migration 0003 + payload_hash 去重）| P1 | `done` | v1.1 | repo-core 21 test | omar | [[06-prd#10.1]] |
 | `prompt-hub-mcp` binary（rmcp 1.7 stdio + tracing→stderr）| P1 | `done` | v1.1 | mcp crate 14 test（8 unit + 5 e2e spawn JSON-RPC + 1 trybuild）；/review 后补 confidence/schema_version 信任边界 + Mutex 恢复 | omar | [[06-prd#10.0]] |
 | Cargo workspace 4 crate 物理拆分（编译期写入隔离）| P1 | `done` | v1.1 | trybuild compile_fail | omar | [[09-tech-stack#4.3.1]] |
-| Scene 全景区「📥 草稿」tab | P1 | `planned` | v1.1 | 0% | omar | [[06-prd#10.3]] |
-| 主形态顶部待审 badge（仅 N>0 显示）| P1 | `planned` | v1.1 | 0% | omar | [[06-prd#10.3]] |
-| promote 跨表事务（4 类 arm）+ 5 Tauri IPC（promote/list/count/update/discard）| P1 | `in-progress` | v1.1 | repo-write 9 test（4 promote arm done；IPC 层未接，属 M-X.2）| omar | [[06-prd#10.2]] |
+| Scene 全景区「📥 草稿」tab（promote/discard + Modifier 四象限 popover）| P1 | `done` | v1.1 | promptStore 7 test + App e2e（草稿 tab + DraftInbox 卡片）| omar | [[06-prd#10.3]] |
+| 主形态顶部待审 badge（仅 N>0 显示，跳转收件箱，排除 Tab 循环）| P1 | `done` | v1.1 | App e2e render（badge 条件渲染）| omar | [[06-prd#10.3]] |
+| promote 跨表事务（4 类 arm）+ 5 Tauri IPC（promote/list/count/update/discard）+ mid-session schema recheck | P1 | `done` | v1.1 | repo-write 9 test（4 promote arm）+ commands schema-guard 2 test + count_pending 1 test | omar | [[06-prd#10.2]] |
 
 #### 14 MCP tool（5 CRUD + 3 helpers + 6 read）
 
@@ -153,7 +153,7 @@ related:
 |---|---|---|---|
 | S1 主形态 MVP | v1.0 | 5 模块 + 8 跨模块能力 | `planned` |
 | S2 闭环沉淀 | v1.1 | 4 功能 | `planned` |
-| M-X MCP write pipeline | v1.1 | 6 支撑能力 + 14 MCP tool | `planned` |
+| M-X MCP write pipeline | v1.1 | 6 支撑能力 + 14 MCP tool | `done` |
 | S3 SOP 导航 | v1.2 | 3 功能 | `planned` |
 | S4 配置个性化 | v1.3 | 4 功能 | `planned` |
 | S5 辅形态副屏 | v2.0 | 3 功能 | `planned` |
@@ -186,6 +186,7 @@ related:
 | 2026-06-01 | v0.3 bump：新增 §3.7 MCP write pipeline 区（6 支撑能力 + 14 MCP tool，全 `planned`）；§4 节奏表加 M-X 行，合计 27→47 项 | ADR-015 Accepted M-X.0 涟漪 |
 | 2026-06-03 | v0.4 bump：§3.7 drafts 数据层 + workspace 4 crate → `done`（repo-core 21 / trybuild 守）；`prompt-hub-mcp` binary + promote 跨表事务 → `in-progress`（skeleton + 4 promote arm done，rmcp/14 tool/IPC 属 M-X.2）| M-X.1 落地 + ADR-015 补遗涟漪 |
 | 2026-06-03 | v0.5 bump：§3.7 `prompt-hub-mcp` binary + 14 MCP tool → `done`（rmcp stdio + e2e spawn 测试 / commit `da8b682`+`e58d71a`）；/review 通过（scope clean，无 P0/P1），后补 confidence 有限性+clamp / schema_version 拒绝 / Mutex 中毒恢复 3 项加固 | M-X.2 落地 + /review 收口涟漪 |
+| 2026-06-03 | v0.6 bump：§3.7 草稿 tab + 待审 badge + promote 5 Tauri IPC（含 mid-session schema recheck）全 → `done`；§4 M-X 阶段 → `done`（DraftInbox/ScenePanel/SearchBar 前端 + commands.rs schema-guard）| M-X.3 UI 收件箱落地涟漪 |
 
 ---
 

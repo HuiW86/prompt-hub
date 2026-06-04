@@ -119,3 +119,95 @@ export interface RecentUsageEntry {
   targetName: string | null;
   targetContent: string | null;
 }
+
+// ── Draft inbox (PRD §10.3) ──────────────────────────────────────────────────
+
+export type DraftTargetType =
+  | "modifier"
+  | "composition"
+  | "macro"
+  | "alignment_phrase";
+
+export type DraftStatus = "pending" | "discarded";
+
+export const GROUP_KINDS = [
+  "cognition",
+  "action",
+  "delivery",
+  "constraint",
+] as const;
+export type GroupKind = (typeof GROUP_KINDS)[number];
+
+// NOTE: unlike the other models, DraftPayload's inner fields stay snake_case on
+// the wire. Its Rust enum is `#[serde(tag = "target_type", rename_all =
+// "snake_case")]` — rename_all renames the *variants* (→ the target_type tag),
+// not the fields. So `schema_version` / `phase_id` / `scene_id` / `modifier_ids`
+// / `is_default` are sent verbatim. serde deserializes this object directly (it
+// is not a top-level Tauri command arg, so Tauri's camelCase conversion does not
+// touch it).
+export type DraftPayload =
+  | {
+      target_type: "modifier";
+      schema_version: number;
+      name: string;
+      content: string;
+      phase_id: string;
+      scene_id: string | null;
+    }
+  | {
+      target_type: "composition";
+      schema_version: number;
+      name: string;
+      modifier_ids: string[];
+      phase_id: string;
+      scene_id: string | null;
+    }
+  | {
+      target_type: "macro";
+      schema_version: number;
+      name: string;
+      content: string;
+      phase_id: string;
+      scene_id: string | null;
+    }
+  | {
+      target_type: "alignment_phrase";
+      schema_version: number;
+      name: string;
+      content: string;
+      phase_id: string;
+      is_default: boolean;
+    };
+
+export interface Provenance {
+  sourceApp: string;
+  conversationRef: string;
+  toolName: string;
+  modelHint: string | null;
+  confidence: number | null;
+}
+
+// list_drafts projection — metadata + short preview, never the full payload.
+export interface DraftSummary {
+  id: string;
+  targetType: DraftTargetType;
+  name: string;
+  preview: string;
+  toolName: string;
+  status: DraftStatus;
+  createdAt: string;
+}
+
+export interface PromoteResult {
+  insertedAssetId: string;
+  insertedAssetType: DraftTargetType;
+}
+
+export interface UpdateAck {
+  ok: boolean;
+  updatedAt: string;
+}
+
+export interface OkAck {
+  ok: boolean;
+}

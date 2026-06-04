@@ -6,5 +6,5 @@ pub mod models;
 pub mod repo;
 
 pub use asset_read::ReadOnlyAssetRepo;
-pub use draft_repo::{sha256_hex, DraftRepo};
+pub use draft_repo::{count_pending_drafts, sha256_hex, DraftRepo};
 pub use error::{RepoError, RepoResult};

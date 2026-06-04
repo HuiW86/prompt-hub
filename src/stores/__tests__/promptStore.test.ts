@@ -2,6 +2,7 @@ import { beforeEach, describe, expect, it, vi } from "vitest";
 
 import type {
   AlignmentPhrase,
+  DraftSummary,
   Macro,
   Phase,
   RecentUsageEntry,
@@ -96,6 +97,18 @@ const fakeScenes: SceneWithChildren[] = [
 
 const fakeRecent: RecentUsageEntry[] = [];
 
+const fakeDrafts: DraftSummary[] = [
+  {
+    id: "draft-1",
+    targetType: "macro",
+    name: "草稿 · 深挖",
+    preview: "expand this fully",
+    toolName: "save_conversation_as_macro",
+    status: "pending",
+    createdAt: "2026-06-03T00:00:00Z",
+  },
+];
+
 function mockListAll() {
   invokeMock.mockImplementation((cmd: string) => {
     switch (cmd) {
@@ -111,6 +124,10 @@ function mockListAll() {
         return Promise.resolve(fakeRecent);
       case "count_today_usage":
         return Promise.resolve(0);
+      case "list_drafts":
+        return Promise.resolve(fakeDrafts);
+      case "count_pending_drafts":
+        return Promise.resolve(fakeDrafts.length);
       default:
         return Promise.reject(new Error(`unexpected command ${cmd}`));
     }
@@ -134,6 +151,8 @@ describe("promptStore", () => {
     });
     expect(state.macros).toEqual(fakeMacros);
     expect(state.scenes).toEqual(fakeScenes);
+    expect(state.drafts).toEqual(fakeDrafts);
+    expect(state.pendingDraftCount).toBe(1);
   });
 
   it("refreshAll surfaces error message on IPC failure", async () => {
@@ -222,5 +241,72 @@ describe("promptStore", () => {
 
     const phrase = usePromptStore.getState().scenes[0].phrases[0];
     expect(phrase.usageCount).toBe(2); // was 1, +1
+  });
+
+  it("promoteDraft sends groupKind and refreshes the inbox", async () => {
+    mockListAll();
+    await usePromptStore.getState().refreshAll();
+    expect(usePromptStore.getState().pendingDraftCount).toBe(1);
+
+    // After promote the inbox is empty; refreshDrafts re-pulls list + count.
+    invokeMock.mockImplementation((cmd: string) => {
+      switch (cmd) {
+        case "promote_draft":
+          return Promise.resolve({
+            insertedAssetId: "macro-new",
+            insertedAssetType: "macro",
+          });
+        case "list_macros":
+          return Promise.resolve(fakeMacros);
+        case "list_scenes_with_children":
+          return Promise.resolve(fakeScenes);
+        case "list_alignment_phrases":
+          return Promise.resolve(fakeAlignments);
+        case "list_drafts":
+          return Promise.resolve([]);
+        case "count_pending_drafts":
+          return Promise.resolve(0);
+        default:
+          return Promise.reject(new Error(`unexpected ${cmd}`));
+      }
+    });
+
+    await usePromptStore
+      .getState()
+      .promoteDraft({ id: "draft-1", groupKind: "delivery" });
+
+    const promoteCall = invokeMock.mock.calls.find(
+      (c) => c[0] === "promote_draft",
+    );
+    expect(promoteCall?.[1]).toMatchObject({
+      id: "draft-1",
+      groupKind: "delivery",
+    });
+    const state = usePromptStore.getState();
+    expect(state.drafts).toEqual([]);
+    expect(state.pendingDraftCount).toBe(0);
+  });
+
+  it("discardDraft refreshes the inbox", async () => {
+    mockListAll();
+    await usePromptStore.getState().refreshAll();
+
+    invokeMock.mockImplementation((cmd: string) => {
+      switch (cmd) {
+        case "discard_draft":
+          return Promise.resolve({ ok: true });
+        case "list_drafts":
+          return Promise.resolve([]);
+        case "count_pending_drafts":
+          return Promise.resolve(0);
+        default:
+          return Promise.reject(new Error(`unexpected ${cmd}`));
+      }
+    });
+
+    await usePromptStore.getState().discardDraft("draft-1");
+    const state = usePromptStore.getState();
+    expect(state.drafts).toEqual([]);
+    expect(state.pendingDraftCount).toBe(0);
   });
 });

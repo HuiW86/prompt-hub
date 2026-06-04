@@ -121,6 +121,10 @@ describe("Dashboard end-to-end render", () => {
           return Promise.resolve(fakeRecent);
         case "count_today_usage":
           return Promise.resolve(0);
+        case "list_drafts":
+          return Promise.resolve([]);
+        case "count_pending_drafts":
+          return Promise.resolve(0);
         default:
           return Promise.reject(new Error(`unexpected ${cmd}`));
       }
@@ -257,6 +261,10 @@ describe("Dashboard end-to-end render", () => {
           return Promise.resolve(fakeRecent); // empty
         case "count_today_usage":
           return Promise.resolve(17);
+        case "list_drafts":
+          return Promise.resolve([]);
+        case "count_pending_drafts":
+          return Promise.resolve(0);
         default:
           return Promise.reject(new Error(`unexpected ${cmd}`));
       }
@@ -298,6 +306,10 @@ describe("Dashboard click → IPC flow", () => {
         case "list_recent_usage":
           return Promise.resolve(fakeRecent);
         case "count_today_usage":
+          return Promise.resolve(0);
+        case "list_drafts":
+          return Promise.resolve([]);
+        case "count_pending_drafts":
           return Promise.resolve(0);
         case "record_usage":
           return Promise.resolve({

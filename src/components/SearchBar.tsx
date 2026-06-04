@@ -1,6 +1,8 @@
-import { Search } from "lucide-react";
+import { Inbox, Search } from "lucide-react";
 import { useEffect, useRef } from "react";
 
+import { useAppStore } from "../stores/appStore";
+import { usePromptStore } from "../stores/promptStore";
 import {
   SEARCH_LISTBOX_ID,
   searchOptionId,
@@ -21,6 +23,8 @@ export function SearchBar() {
   const setQuery = useSearchStore((s) => s.setQuery);
   const isSearching = useSearchStore(selectIsSearching);
   const selectedIndex = useSearchStore((s) => s.selectedIndex);
+  const pendingDraftCount = usePromptStore((s) => s.pendingDraftCount);
+  const requestDraftsView = useAppStore((s) => s.requestDraftsView);
   const inputRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
@@ -66,6 +70,18 @@ export function SearchBar() {
           }
         />
       </label>
+      {pendingDraftCount > 0 && (
+        <button
+          type="button"
+          className={styles.badge}
+          onClick={requestDraftsView}
+          tabIndex={-1}
+          aria-label={`${pendingDraftCount} 条草稿待审，跳转收件箱`}
+        >
+          <Inbox size={13} aria-hidden strokeWidth={2} />
+          {pendingDraftCount} 条待审
+        </button>
+      )}
       <span className={styles.fallback}>兜底</span>
       <Kbd sm>{primaryModifierLabel()}K</Kbd>
     </div>
