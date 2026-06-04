@@ -160,8 +160,7 @@ pub fn show_window(state: State<'_, AppState>, window: WebviewWindow) -> AppResu
     window.set_focus()?;
     #[cfg(target_os = "macos")]
     {
-        crate::macos::order_front(&window);
-        crate::macos::focus_view(&window);
+        crate::macos::wake(&window);
     }
     Ok(())
 }

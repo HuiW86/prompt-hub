@@ -53,14 +53,6 @@
   opacity: 1;
 }
 
-.fallback {
-  flex: 0 0 auto;
-  font: var(--w-500) var(--t-11) / 1 var(--font-mono);
-  color: var(--fg-3);
-  text-transform: uppercase;
-  letter-spacing: var(--tr-meta);
-}
-
 /* 待审 badge — a plain-text affordance jumping to the 📥 草稿 inbox, deliberately
    muted (no red dot): drafts are a calm staging queue, not an alarm (§13.3 区域 1). */
 .badge {

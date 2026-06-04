@@ -82,7 +82,6 @@ export function SearchBar() {
           {pendingDraftCount} 条待审
         </button>
       )}
-      <span className={styles.fallback}>兜底</span>
       <Kbd sm>{primaryModifierLabel()}K</Kbd>
     </div>
   );
