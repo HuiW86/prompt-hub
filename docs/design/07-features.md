@@ -1,13 +1,13 @@
 ---
 type: features
 project: prompt-hub
-version: v0.7
+version: v0.8
 created: 2026-05-19
 last_modified: 2026-06-03
-status: in-progress  # S1 主形态 MVP 5 模块 + 跨模块 P0 多项 done（ADR-012 Phase 1-5 全 done）；M-X 全收口——数据层 + workspace + MCP server + UI 收件箱（草稿 tab + 待审 badge + 5 IPC + schema recheck）done
+status: in-progress  # S1 主形态 MVP 5 模块 + 跨模块 P0 多项 done（ADR-012 Phase 1-5 全 done）；M-X 全收口——数据层 + workspace + MCP server + UI 收件箱（草稿 tab + 待审 badge + 5 IPC + schema recheck）done；M0-4 签名公证链路 done（M0 四项全绿）
 author: ai  # 🤖 AI 主笔 + 人审（CLAUDE §5.2）
 audience: [human, ai]
-description: prompt-hub 功能清单运营视图——功能 × 状态 × 测试覆盖 × 版本，单一事实源；v0.7 把「复制即隐藏 / ESC 关闭」转 done（ADR-012 Phase 5 视觉+功能验收 11/11 收口），M-X 阶段整体 done
+description: prompt-hub 功能清单运营视图——功能 × 状态 × 测试覆盖 × 版本，单一事实源；v0.8 收口 M0-4 Developer ID 签名公证链路（M0 四项全绿），前序 v0.7 把「复制即隐藏 / ESC 关闭」转 done
 related:
   - 06-prd
   - prompt-hub-mvp
@@ -188,6 +188,7 @@ related:
 | 2026-06-03 | v0.5 bump：§3.7 `prompt-hub-mcp` binary + 14 MCP tool → `done`（rmcp stdio + e2e spawn 测试 / commit `da8b682`+`e58d71a`）；/review 通过（scope clean，无 P0/P1），后补 confidence 有限性+clamp / schema_version 拒绝 / Mutex 中毒恢复 3 项加固 | M-X.2 落地 + /review 收口涟漪 |
 | 2026-06-03 | v0.6 bump：§3.7 草稿 tab + 待审 badge + promote 5 Tauri IPC（含 mid-session schema recheck）全 → `done`；§4 M-X 阶段 → `done`（DraftInbox/ScenePanel/SearchBar 前端 + commands.rs schema-guard）| M-X.3 UI 收件箱落地涟漪 |
 | 2026-06-03 | v0.7 bump：「复制即隐藏 / ESC 关闭」P0 → `done`（ADR-012 Phase 5 视觉+功能验收 11/11 收口：screencapture 自动化 9/11 + 用户手点 promote/discard 补 2/11；DB 核对 modifier 落 group_kind / alignment_phrase 落 phase / macro 丢弃不入库 / inbox 排空回落 Scene）；ADR-012 Phase 1-5 全链路 done | Phase 5 验收收口涟漪 |
+| 2026-06-03 | v0.8 bump：M0-4 Developer ID 签名公证链路收口（M0 四项全绿）——空壳 DMG 走 Developer ID 签名 + hardened runtime + 三项 JIT entitlements → 公证 Accepted → staple → Gatekeeper `accepted/Notarized Developer ID` → release 透明窗口运行时不黑屏；证伪「macos-private-api 与公证冲突」最坏假设；runbook [[m0-4-macos-signing]] | M0-4 收口涟漪 |
 
 ---
 
@@ -196,7 +197,8 @@ related:
 - 通过测试: Vitest 57/57 ✓ / cargo test --workspace 48/48 ✓ / pnpm build ✓ / lint 0 errors
 - 已落盘 commit: M0-1/M0-2/M0-3 + ADR-012 Phase 1（`b932ab4`）/ Phase 2（`9a822d8`）/ Phase 3（`acf8229`）+ M-X.1/.2/.3 + Phase 5 验收收口
 - ADR-012 Phase 5 验收（2026-06-03）: 视觉+功能 11/11 done — screencapture 自动化过 9/11，用户手点 promote/discard 补 2/11，DB 核对落库内容无误
-- 下一动作：M0-4 Developer ID 签名 spike + bench 脚本回归；P2 defer：`create_draft` 单写 size-cap（M-X.4）
+- M0-4 签名公证链路（2026-06-03）: M0 四项全绿 — Developer ID 签名 + 公证 Accepted + Gatekeeper 放行 + release 运行时不黑屏（runbook [[m0-4-macos-signing]]）
+- 下一动作：bench 脚本回归（`bench:cold-start`/`hotkey-wake`）；P2 defer：`create_draft` 单写 size-cap（M-X.4）
 
 **自动同步约定**（v0.3+ 启用）：
 - 每次 commit 主分支后跑 `scripts/update-features.sh` 同步状态（脚本待 [[11-test-spec]] 启动后加）

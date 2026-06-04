@@ -1,0 +1,18 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+	<!-- WKWebView JIT under hardened runtime. Without this the embedded
+	     JavaScriptCore engine cannot allocate executable memory and the
+	     window renders blank after notarization. -->
+	<key>com.apple.security.cs.allow-jit</key>
+	<true/>
+	<!-- JavaScriptCore writes then executes JITed code in the same pages. -->
+	<key>com.apple.security.cs.allow-unsigned-executable-memory</key>
+	<true/>
+	<!-- Tauri loads the WebKit dylibs that ship with the app bundle; without
+	     disabling library validation the hardened runtime refuses them. -->
+	<key>com.apple.security.cs.disable-library-validation</key>
+	<true/>
+</dict>
+</plist>
