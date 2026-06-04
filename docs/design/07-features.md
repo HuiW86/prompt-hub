@@ -1,13 +1,13 @@
 ---
 type: features
 project: prompt-hub
-version: v0.6
+version: v0.7
 created: 2026-05-19
 last_modified: 2026-06-03
-status: in-progress  # S1 主形态 MVP 5 模块 + 跨模块 P0 多项 done（ADR-012 Phase 1-3 已 ship）；M-X 全收口——数据层 + workspace + MCP server + UI 收件箱（草稿 tab + 待审 badge + 5 IPC + schema recheck）done
+status: in-progress  # S1 主形态 MVP 5 模块 + 跨模块 P0 多项 done（ADR-012 Phase 1-5 全 done）；M-X 全收口——数据层 + workspace + MCP server + UI 收件箱（草稿 tab + 待审 badge + 5 IPC + schema recheck）done
 author: ai  # 🤖 AI 主笔 + 人审（CLAUDE §5.2）
 audience: [human, ai]
-description: prompt-hub 功能清单运营视图——功能 × 状态 × 测试覆盖 × 版本，单一事实源；v0.6 把 §3.7 草稿 tab + 待审 badge + promote/5 IPC + schema recheck 全转 done（M-X.3 UI 收件箱落地），M-X 阶段整体 done
+description: prompt-hub 功能清单运营视图——功能 × 状态 × 测试覆盖 × 版本，单一事实源；v0.7 把「复制即隐藏 / ESC 关闭」转 done（ADR-012 Phase 5 视觉+功能验收 11/11 收口），M-X 阶段整体 done
 related:
   - 06-prd
   - prompt-hub-mvp
@@ -24,7 +24,7 @@ related:
 > **不重复 prd**：本文件只承载状态/覆盖率，功能定义见 [[06-prd#5]] 各章节。
 > **不替代 issue tracker**：单条 bug / task 走 git history，本文件追全局功能层面。
 >
-> ✅ **当前 S1 in-progress（ADR-012 Phase 1-3 已 ship）**：5 模块 + 7 跨模块 P0 已 done（commit `acf8229`）；Phase 4 spec 涟漪 + Phase 5 manual verify 进行中。
+> ✅ **当前 S1 in-progress（ADR-012 Phase 1-5 全 done）**：5 模块 + 7 跨模块 P0 已 done（commit `acf8229`）；Phase 4 spec 涟漪已落、Phase 5 视觉+功能验收 11/11 收口（2026-06-03）。
 > 覆盖率列暂以「55 集成测试 / 单元未量化」表达，待 [[11-test-spec]] 启动后量化。
 
 ---
@@ -102,7 +102,7 @@ related:
 |---|---|---|---|---|---|---|
 | 全局快捷键注册（默认 ⌥ Space） | P0 | `done` | v1.0 | M0 手动 verified | omar | [[prompt-hub-mvp#第一阶段]] |
 | 主形态唤起 ≤200ms（P95） | P0 | `done` | v1.0 | M0-3 实测 P95=10.49ms ✓ | omar | [[02-constitution#C1]] |
-| 复制即隐藏 / ESC 关闭 | P0 | `in-progress` | v1.0 | 行为已落 / Phase 5 manual verify | omar | [[prompt-hub-mvp#第一阶段]] |
+| 复制即隐藏 / ESC 关闭 | P0 | `done` | v1.0 | Phase 5 视觉+功能验收 11/11 ✓（2026-06-03） | omar | [[prompt-hub-mvp#第一阶段]] |
 | UsageRecord 持续记录 | P0 | `in-progress` | v1.0 | 数据层 done / 链路待 S2 | omar | [[06-prd#6.8]] |
 | 三层资产模型（Modifier/Composition/Macro） | P0 | `planned` | v1.0 | 0% | omar | [[02-constitution#B1]] |
 | 协议层与任务层物理分离 | P0 | `done` | v1.0 | 视觉层 ADR-012 落地 / 数据层待 S2 | omar | [[02-constitution#B2]] |
@@ -187,14 +187,16 @@ related:
 | 2026-06-03 | v0.4 bump：§3.7 drafts 数据层 + workspace 4 crate → `done`（repo-core 21 / trybuild 守）；`prompt-hub-mcp` binary + promote 跨表事务 → `in-progress`（skeleton + 4 promote arm done，rmcp/14 tool/IPC 属 M-X.2）| M-X.1 落地 + ADR-015 补遗涟漪 |
 | 2026-06-03 | v0.5 bump：§3.7 `prompt-hub-mcp` binary + 14 MCP tool → `done`（rmcp stdio + e2e spawn 测试 / commit `da8b682`+`e58d71a`）；/review 通过（scope clean，无 P0/P1），后补 confidence 有限性+clamp / schema_version 拒绝 / Mutex 中毒恢复 3 项加固 | M-X.2 落地 + /review 收口涟漪 |
 | 2026-06-03 | v0.6 bump：§3.7 草稿 tab + 待审 badge + promote 5 Tauri IPC（含 mid-session schema recheck）全 → `done`；§4 M-X 阶段 → `done`（DraftInbox/ScenePanel/SearchBar 前端 + commands.rs schema-guard）| M-X.3 UI 收件箱落地涟漪 |
+| 2026-06-03 | v0.7 bump：「复制即隐藏 / ESC 关闭」P0 → `done`（ADR-012 Phase 5 视觉+功能验收 11/11 收口：screencapture 自动化 9/11 + 用户手点 promote/discard 补 2/11；DB 核对 modifier 落 group_kind / alignment_phrase 落 phase / macro 丢弃不入库 / inbox 排空回落 Scene）；ADR-012 Phase 1-5 全链路 done | Phase 5 验收收口涟漪 |
 
 ---
 
-## §7 当前阶段说明（in-progress · ADR-012 Phase 1-3 已 ship）
+## §7 当前阶段说明（in-progress · ADR-012 Phase 1-5 全 done）
 
-- 通过测试: Vitest 55/55 集成 ✓ / cargo test 12/12 ✓ / pnpm build 911ms ✓ / lint 0 errors
-- 已落盘 commit: M0-1/M0-2/M0-3 + ADR-012 Phase 1（commit `b932ab4`）+ Phase 2（commit `9a822d8`）+ Phase 3（commit `acf8229`）
-- 下一动作：[[012-lock-visual-quality-anchor]] Phase 4 设计文档涟漪（design-spec v0.7 / product-spec v0.6 / ADR-013，本 commit 序列）+ Phase 5 `pnpm tauri dev` 手动 6 步 verify + M0-4 签名 spike
+- 通过测试: Vitest 57/57 ✓ / cargo test --workspace 48/48 ✓ / pnpm build ✓ / lint 0 errors
+- 已落盘 commit: M0-1/M0-2/M0-3 + ADR-012 Phase 1（`b932ab4`）/ Phase 2（`9a822d8`）/ Phase 3（`acf8229`）+ M-X.1/.2/.3 + Phase 5 验收收口
+- ADR-012 Phase 5 验收（2026-06-03）: 视觉+功能 11/11 done — screencapture 自动化过 9/11，用户手点 promote/discard 补 2/11，DB 核对落库内容无误
+- 下一动作：M0-4 Developer ID 签名 spike + bench 脚本回归；P2 defer：`create_draft` 单写 size-cap（M-X.4）
 
 **自动同步约定**（v0.3+ 启用）：
 - 每次 commit 主分支后跑 `scripts/update-features.sh` 同步状态（脚本待 [[11-test-spec]] 启动后加）
