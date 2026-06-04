@@ -101,8 +101,9 @@ impl AssetRepo for Connection {
         self.execute(
             "INSERT INTO macros
                 (id, name, content, expand_from, native, role, task,
-                 usage_count, last_used_at, created_at, notes, scene_id, deprecated)
-             VALUES (?1, ?2, ?3, NULL, 0, NULL, NULL, 0, NULL, ?4, NULL, ?5, 0)",
+                 usage_count, last_used_at, created_at, notes, scene_id, deprecated, order_index)
+             VALUES (?1, ?2, ?3, NULL, 0, NULL, NULL, 0, NULL, ?4, NULL, ?5, 0,
+                 (SELECT COALESCE(MAX(order_index) + 1, 0) FROM macros))",
             params![id, name, content, now, scene_id],
         )?;
         Ok(id)

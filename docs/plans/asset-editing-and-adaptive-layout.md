@@ -40,7 +40,7 @@ description: 资产编辑 + 自适应布局实施 plan——4 类资产（Modifi
 | Q4 分期节奏 | P1 Macro 全链路 → P2 其余 3 类 → P3 内容自适应 → P4 可拖分隔条 | omar |
 | Q5 拖拽库 | `@dnd-kit/react@0.4.0` + `@dnd-kit/helpers@0.4.0`（新版体系：`DragDropProvider` + `useSortable` + `move` helper + 8px 激活阈值 + `isSortable`/`initialIndex` 判序；**禁 legacy `core`/`sortable`**） | 调研 v0.2 |
 | Q6 排序持久化 | 各资产表补 `order_index` 列，reorder 命令批量写回 | 本 plan |
-| Q7 分隔条库版本 | `react-resizable-panels` **v4**（`Group`/`Panel`/`Separator` + `useDefaultLayout` 持久化；**仅百分比、无 px 约束**，与 token px 思维需换算） | omar（按建议）v0.2 |
+| Q7 分隔条库版本 | `react-resizable-panels` **v4**（`Group`/`Panel`/`Separator` + `useDefaultLayout` 持久化）。**约束值（min/max/default）支持 px / rem / em / vh / vw 字符串（无单位串按百分比）**，故 token px 可直接传入做 min-size，换算 util 大部分可省；**仅持久化 layout 用百分比 0..100**（重启恢复仍按比例）| 调研 v0.3（核验 d.ts L173-181） |
 | Q8 编辑入口 | 集中式编辑（detail/侧栏面板优先，单一编辑入口），**禁多种弹窗模式并存**（Notion 反例） | 调研 v0.2 |
 
 ---

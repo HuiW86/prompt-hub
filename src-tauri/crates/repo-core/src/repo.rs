@@ -81,10 +81,10 @@ pub fn list_alignment_phrases(conn: &Connection) -> RepoResult<Vec<AlignmentPhra
 pub fn list_macros(conn: &Connection) -> RepoResult<Vec<Macro>> {
     let mut stmt = conn.prepare(
         "SELECT id, name, content, expand_from, native, role, task, usage_count,
-                last_used_at, created_at, notes, scene_id, deprecated
+                last_used_at, created_at, notes, scene_id, deprecated, order_index
          FROM macros
          WHERE deprecated = 0
-         ORDER BY usage_count DESC, created_at ASC",
+         ORDER BY order_index ASC, created_at ASC",
     )?;
     let raw = stmt.query_map([], |row| {
         let expand_from_json: Option<String> = row.get("expand_from")?;
@@ -102,6 +102,7 @@ pub fn list_macros(conn: &Connection) -> RepoResult<Vec<Macro>> {
             row.get::<_, Option<String>>("notes")?,
             row.get::<_, Option<String>>("scene_id")?,
             row.get::<_, i64>("deprecated")? != 0,
+            row.get::<_, i64>("order_index")?,
         ))
     })?;
     let mut out = Vec::new();
@@ -120,6 +121,7 @@ pub fn list_macros(conn: &Connection) -> RepoResult<Vec<Macro>> {
             notes,
             scene_id,
             deprecated,
+            order_index,
         ) = r?;
         let expand_from = match expand_json {
             Some(j) => Some(serde_json::from_str::<Vec<String>>(&j)?),
@@ -139,6 +141,7 @@ pub fn list_macros(conn: &Connection) -> RepoResult<Vec<Macro>> {
             notes,
             scene_id,
             deprecated,
+            order_index,
         });
     }
     Ok(out)

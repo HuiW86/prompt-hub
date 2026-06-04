@@ -57,6 +57,23 @@ export const ipc = {
   updateDraft: (id: string, payload: DraftPayload) =>
     invoke<UpdateAck>("update_draft", { id, payload }),
   discardDraft: (id: string) => invoke<OkAck>("discard_draft", { id }),
+
+  // ── Macro direct editing (plan asset-editing §0 Q2/Q6) — Tauri-only ──
+  createMacro: (args: { name: string; content: string; sceneId?: string }) =>
+    invoke<Macro>("create_macro", {
+      name: args.name,
+      content: args.content,
+      sceneId: args.sceneId,
+    }),
+  updateMacro: (args: { id: string; name: string; content: string }) =>
+    invoke<OkAck>("update_macro", {
+      id: args.id,
+      name: args.name,
+      content: args.content,
+    }),
+  deleteMacro: (id: string) => invoke<OkAck>("delete_macro", { id }),
+  reorderMacros: (orderedIds: string[]) =>
+    invoke<OkAck>("reorder_macros", { orderedIds }),
 };
 
 export type Ipc = typeof ipc;

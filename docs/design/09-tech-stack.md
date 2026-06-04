@@ -80,6 +80,7 @@ related:
 | **D10** | 样式方案 | CSS Modules + CSS variables（不引 Tailwind）| [[009-choose-styling]] | ✅ Accepted 2026-05-19 |
 | **D11** | 测试栈 | Vitest 4 + Testing Library + jsdom 29 + cargo test + tempfile | [[007-choose-test-stack]] | ✅ Accepted 2026-05-19 |
 | **D12** | MCP server 运行时 | `rmcp` 1.7（stdio transport）+ Cargo workspace 4 crate（repo-core / repo-write / prompt-hub / prompt-hub-mcp）| [[015-expose-mcp-write-pipeline]] | ✅ Accepted 2026-05-27（第二阶段 M-X）|
+| **D13** | 拖拽排序 + 可拖分隔条 | `@dnd-kit/react@0.4.0` + `@dnd-kit/helpers@0.4.0`（区域内 useSortable + move helper）+ `react-resizable-panels@^4.11`（布局 percent 持久化）| [[016-choose-dnd-and-resizable-layout]] | ✅ Accepted 2026-06-04（资产编辑 + 自适应布局 P1）|
 
 **仅剩 D8 阻塞**：第一阶段 MVP 建仓不依赖 D8（可走「重写」路径），D8 调研结果只影响迁移节奏。D12 属第二阶段 MCP write pipeline，不阻塞第一阶段。
 

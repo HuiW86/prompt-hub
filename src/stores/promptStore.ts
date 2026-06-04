@@ -37,6 +37,22 @@ interface PromptState {
   refreshDrafts: () => Promise<void>;
   promoteDraft: (args: { id: string; groupKind?: string }) => Promise<void>;
   discardDraft: (id: string) => Promise<void>;
+
+  // Direct macro editing (plan asset-editing §0 Q2/Q6). create awaits the
+  // backend (needs the generated id + order_index); update/delete/reorder apply
+  // optimistically and roll back to a pre-mutation snapshot if the IPC rejects.
+  createMacro: (args: {
+    name: string;
+    content: string;
+    sceneId?: string;
+  }) => Promise<void>;
+  updateMacro: (args: {
+    id: string;
+    name: string;
+    content: string;
+  }) => Promise<void>;
+  deleteMacro: (id: string) => Promise<void>;
+  reorderMacros: (orderedIds: string[]) => Promise<void>;
 }
 
 const RECENT_LIMIT = 5;
@@ -195,5 +211,49 @@ export const usePromptStore = create<PromptState>()((set, get) => ({
   discardDraft: async (id) => {
     await ipc.discardDraft(id);
     await get().refreshDrafts();
+  },
+
+  createMacro: async ({ name, content, sceneId }) => {
+    const created = await ipc.createMacro({ name, content, sceneId });
+    set((state) => ({ macros: [...state.macros, created] }));
+  },
+
+  updateMacro: async ({ id, name, content }) => {
+    const snapshot = get().macros;
+    set({
+      macros: snapshot.map((m) => (m.id === id ? { ...m, name, content } : m)),
+    });
+    try {
+      await ipc.updateMacro({ id, name, content });
+    } catch (err) {
+      set({ macros: snapshot });
+      throw err;
+    }
+  },
+
+  deleteMacro: async (id) => {
+    const snapshot = get().macros;
+    set({ macros: snapshot.filter((m) => m.id !== id) });
+    try {
+      await ipc.deleteMacro(id);
+    } catch (err) {
+      set({ macros: snapshot });
+      throw err;
+    }
+  },
+
+  reorderMacros: async (orderedIds) => {
+    const snapshot = get().macros;
+    const byId = new Map(snapshot.map((m) => [m.id, m]));
+    const reordered = orderedIds
+      .map((id) => byId.get(id))
+      .filter((m): m is Macro => m !== undefined);
+    set({ macros: reordered });
+    try {
+      await ipc.reorderMacros(orderedIds);
+    } catch (err) {
+      set({ macros: snapshot });
+      throw err;
+    }
   },
 }));

@@ -63,6 +63,7 @@ const fakeMacros: Macro[] = [
     notes: null,
     sceneId: null,
     deprecated: false,
+    orderIndex: 0,
   },
 ];
 
@@ -308,5 +309,108 @@ describe("promptStore", () => {
     const state = usePromptStore.getState();
     expect(state.drafts).toEqual([]);
     expect(state.pendingDraftCount).toBe(0);
+  });
+
+  it("createMacro appends the backend-returned macro", async () => {
+    mockListAll();
+    await usePromptStore.getState().refreshAll();
+
+    const created: Macro = {
+      id: "macro-new",
+      name: "新建",
+      content: "body",
+      expandFrom: null,
+      native: false,
+      role: null,
+      task: null,
+      usageCount: 0,
+      lastUsedAt: null,
+      createdAt: "2026-06-04T00:00:00Z",
+      notes: null,
+      sceneId: null,
+      deprecated: false,
+      orderIndex: 1,
+    };
+    invokeMock.mockImplementation((cmd: string) => {
+      if (cmd === "create_macro") return Promise.resolve(created);
+      return Promise.reject(new Error(`unexpected ${cmd}`));
+    });
+
+    await usePromptStore
+      .getState()
+      .createMacro({ name: "新建", content: "body" });
+    const macros = usePromptStore.getState().macros;
+    expect(macros).toHaveLength(2);
+    expect(macros[1]).toEqual(created);
+  });
+
+  it("updateMacro applies optimistically and rolls back on failure", async () => {
+    mockListAll();
+    await usePromptStore.getState().refreshAll();
+
+    invokeMock.mockRejectedValue(new Error("write rejected"));
+    await expect(
+      usePromptStore
+        .getState()
+        .updateMacro({ id: "macro-best-practice", name: "改名", content: "x" }),
+    ).rejects.toThrow("write rejected");
+
+    // Rolled back to the pre-edit snapshot.
+    expect(usePromptStore.getState().macros).toEqual(fakeMacros);
+  });
+
+  it("deleteMacro removes optimistically and rolls back on failure", async () => {
+    mockListAll();
+    await usePromptStore.getState().refreshAll();
+
+    invokeMock.mockRejectedValue(new Error("delete rejected"));
+    await expect(
+      usePromptStore.getState().deleteMacro("macro-best-practice"),
+    ).rejects.toThrow("delete rejected");
+    expect(usePromptStore.getState().macros).toEqual(fakeMacros);
+  });
+
+  it("reorderMacros reorders optimistically and rolls back on failure", async () => {
+    const twoMacros: Macro[] = [
+      fakeMacros[0],
+      { ...fakeMacros[0], id: "macro-2", name: "第二", orderIndex: 1 },
+    ];
+    invokeMock.mockImplementation((cmd: string) => {
+      if (cmd === "list_macros") return Promise.resolve(twoMacros);
+      if (cmd === "list_phases") return Promise.resolve(fakePhases);
+      if (cmd === "list_alignment_phrases")
+        return Promise.resolve(fakeAlignments);
+      if (cmd === "list_scenes_with_children")
+        return Promise.resolve(fakeScenes);
+      if (cmd === "list_recent_usage") return Promise.resolve(fakeRecent);
+      if (cmd === "count_today_usage") return Promise.resolve(0);
+      if (cmd === "list_drafts") return Promise.resolve(fakeDrafts);
+      if (cmd === "count_pending_drafts")
+        return Promise.resolve(fakeDrafts.length);
+      return Promise.reject(new Error(`unexpected ${cmd}`));
+    });
+    await usePromptStore.getState().refreshAll();
+
+    // Success path: list order follows the supplied id order.
+    invokeMock.mockResolvedValue({ ok: true });
+    await usePromptStore
+      .getState()
+      .reorderMacros(["macro-2", "macro-best-practice"]);
+    expect(usePromptStore.getState().macros.map((m) => m.id)).toEqual([
+      "macro-2",
+      "macro-best-practice",
+    ]);
+
+    // Failure path: snapshot (current order) is restored.
+    invokeMock.mockRejectedValue(new Error("reorder rejected"));
+    await expect(
+      usePromptStore
+        .getState()
+        .reorderMacros(["macro-best-practice", "macro-2"]),
+    ).rejects.toThrow("reorder rejected");
+    expect(usePromptStore.getState().macros.map((m) => m.id)).toEqual([
+      "macro-2",
+      "macro-best-practice",
+    ]);
   });
 });

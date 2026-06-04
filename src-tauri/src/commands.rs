@@ -256,6 +256,47 @@ pub fn discard_draft(state: State<'_, AppState>, id: String) -> AppResult<OkAck>
     Ok(OkAck { ok: true })
 }
 
+// ── Macro direct editing (plan asset-editing-and-adaptive-layout §0 Q2/Q6) ────
+// omar-driven create / update / delete / reorder of macro assets. Tauri-only:
+// the MCP server has no repo-write dependency and can only stage drafts.
+
+#[tauri::command]
+pub fn create_macro(
+    state: State<'_, AppState>,
+    name: String,
+    content: String,
+    scene_id: Option<String>,
+) -> AppResult<Macro> {
+    with_write_conn(&state, |c| {
+        repo_write::create_macro(c, &name, &content, scene_id.as_deref())
+    })
+}
+
+#[tauri::command]
+pub fn update_macro(
+    state: State<'_, AppState>,
+    id: String,
+    name: String,
+    content: String,
+) -> AppResult<OkAck> {
+    with_write_conn(&state, |c| {
+        repo_write::update_macro(c, &id, &name, &content)
+    })?;
+    Ok(OkAck { ok: true })
+}
+
+#[tauri::command]
+pub fn delete_macro(state: State<'_, AppState>, id: String) -> AppResult<OkAck> {
+    with_write_conn(&state, |c| repo_write::delete_macro(c, &id))?;
+    Ok(OkAck { ok: true })
+}
+
+#[tauri::command]
+pub fn reorder_macros(state: State<'_, AppState>, ordered_ids: Vec<String>) -> AppResult<OkAck> {
+    with_write_conn(&state, |c| repo_write::reorder_macros(c, &ordered_ids))?;
+    Ok(OkAck { ok: true })
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;

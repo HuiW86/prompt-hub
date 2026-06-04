@@ -48,6 +48,7 @@ pub struct Macro {
     pub notes: Option<String>,
     pub scene_id: Option<String>,
     pub deprecated: bool,
+    pub order_index: i64,
 }
 
 #[derive(Debug, Serialize, Deserialize, Clone)]

@@ -116,6 +116,10 @@ pub fn run() {
             commands::promote_draft,
             commands::update_draft,
             commands::discard_draft,
+            commands::create_macro,
+            commands::update_macro,
+            commands::delete_macro,
+            commands::reorder_macros,
         ])
         .build(tauri::generate_context!())
         .expect("error while building tauri application");

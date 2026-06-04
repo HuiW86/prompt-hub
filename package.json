@@ -16,10 +16,13 @@
     "bench:hotkey-wake": "node bench/hotkey-wake.bench.mjs"
   },
   "dependencies": {
+    "@dnd-kit/helpers": "0.4.0",
+    "@dnd-kit/react": "0.4.0",
     "@tauri-apps/api": "^2",
     "lucide-react": "0.460.0",
     "react": "^19.1.0",
     "react-dom": "^19.1.0",
+    "react-resizable-panels": "^4.11.2",
     "zustand": "^5.0.13"
   },
   "devDependencies": {

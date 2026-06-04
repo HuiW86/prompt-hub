@@ -65,6 +65,7 @@ const fakeMacros: Macro[] = [
     notes: null,
     sceneId: null,
     deprecated: false,
+    orderIndex: 0,
   },
 ];
 

@@ -26,3 +26,13 @@ Object.defineProperty(navigator, "platform", {
   configurable: true,
   writable: true,
 });
+
+// jsdom has no ResizeObserver; @dnd-kit/dom instantiates one at import time.
+// A no-op stub lets MacroGrid (and any dnd-kit consumer) render under jsdom.
+if (!("ResizeObserver" in globalThis)) {
+  globalThis.ResizeObserver = class {
+    observe() {}
+    unobserve() {}
+    disconnect() {}
+  };
+}

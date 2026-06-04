@@ -54,6 +54,7 @@ const fakeMacro: Macro = {
   notes: null,
   sceneId: null,
   deprecated: false,
+  orderIndex: 0,
 };
 
 const fakeScene: SceneWithChildren = {

@@ -54,6 +54,7 @@ export interface Macro {
   notes: string | null;
   sceneId: string | null;
   deprecated: boolean;
+  orderIndex: number;
 }
 
 export interface Scene {
