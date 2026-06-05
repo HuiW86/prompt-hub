@@ -41,6 +41,13 @@ related:
 - **#3/#4 暂缓**（omar 主动搁置）：非不可逆、未开 ADR，留痕 plan §7 #1。
 - 无 remote——checkpoint 仅本地提交。
 
+## Verify
+
+- `cargo build --manifest-path src-tauri/Cargo.toml --features bench`（bench 二进制编译）
+- 前台 `! pnpm bench:hotkey-wake`（auto-cycle P95 ≤200ms，上次 14.696ms）
+- `cargo clippy --workspace --all-targets --manifest-path src-tauri/Cargo.toml -- -D warnings` + `cargo fmt --manifest-path src-tauri/Cargo.toml --check`
+- `pnpm exec prettier --check docs HANDOFF.md`（文档格式）
+
 ## Modified Files (this session)
 
 - `src-tauri/src/bench.rs`（主线程 bug 修复：run_on_main_thread 派发 + channel 回传 timing）
