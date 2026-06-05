@@ -582,7 +582,7 @@ Scene 节包含 3 个相关模型：**Scene**（场景容器）、**Phrase**（S
 | color | string | Y | null | 颜色 token 或 hex | 相位带 UI 着色（余光感知关键） |
 | description | string | Y | null | - | 相位说明（给使用者自己看） |
 | visible | boolean | N | true | - | 是否在相位带展示 |
-| default_alignment_phrase_id | string | Y | null | FK → AlignmentPhrase.id（同 phase 内） | 默认对齐话术（点击 Phase 时复制这条） |
+| default_alignment_phrase_id | string | Y | null | FK → AlignmentPhrase.id（同 phase 内） | 默认对齐话术（`⌘1-8` 键盘切相位时复制这条；**鼠标点击 Phase 只切换不复制**，复制走 chip 行——[[013-alignment-phrases-tab-inclusion]] + PhaseBar 解耦 commit `441764b`）|
 
 #### Relations
 

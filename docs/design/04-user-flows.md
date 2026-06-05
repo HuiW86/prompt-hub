@@ -176,7 +176,7 @@ Mac 上：view:config → view:data-io → 导出 JSON → 保存到 iCloud Driv
 
 | Flow | Owner | Due（按 plan 阶段） | 触发条件 |
 |---|---|---|---|
-| **AI 协作分位变化 flow**（[[03-product-spec#4.5.1]] 部分覆盖，待补「连续切相位 3 次」边缘场景） | omar | S1 / 第一阶段 | 主形态 MVP 跑通后 |
+| **AI 协作分位变化 flow**（[[03-product-spec#4.5.1]] 部分覆盖，待补「连续切相位 3 次」边缘场景；细化时须按 [[03-product-spec]] v0.7.1 两路语义——鼠标点击 Phase 仅切换+窗口驻留 / `⌘1-8` 切换+复制+隐藏，§4.5 旧叙事「点击相位带→剪贴板」为简写） | omar | S1 / 第一阶段 | 主形态 MVP 跑通后 |
 | **SOP 录制 flow**：从 UsageRecord 历史录制 SOP（[[06-prd#8.2-Q2]]）的具体粒度选择 UI | omar | S3 / 第三阶段 | SOP 导航模块开工前 |
 | **副屏断开 flow**：辅形态运行中物理副屏被拔出（应优雅降级为窗口模式） | omar | S5 / 第五阶段 | 辅形态实施时 |
 | **存储满 flow**：localStorage 达到配额上限（IndexedDB 兜底策略待定） | omar | S1 / 第一阶段 | 待 ADR-003（数据持久化）决议后 |

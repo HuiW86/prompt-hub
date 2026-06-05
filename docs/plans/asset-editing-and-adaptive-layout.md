@@ -1,10 +1,10 @@
 ---
 type: plan
 project: prompt-hub
-version: v0.2
+version: v0.3
 created: 2026-06-03
-last_modified: 2026-06-04
-status: pre-code
+last_modified: 2026-06-05
+status: in-progress  # P1/P2 后端 + Macro/AlignmentPhrase UI + P3(X方案)/P4 done；Modifier·Composition UI 落点暂缓（#3/#4），见 §7
 author: co  # 🤝 人机共创（CLAUDE §5.2）
 related:
   - 01-spec
@@ -177,7 +177,7 @@ description: 资产编辑 + 自适应布局实施 plan——4 类资产（Modifi
 
 **③ 风险点**：
 - `Group` 重构可能与 P3 的 grid 自适应叠加产生布局冲突 → P4 在 P3 验收通过后再上，二者择一为最终列布局机制（`Group` 接管列宽，grid 退守行/区域内）。
-- v4 仅百分比、token 是 px → 需在 util 内做 px↔% 换算，窗口尺寸变化时换算会 stale，须监听 resize 重算。
+- ~~v4 仅百分比、token 是 px → 需在 util 内做 px↔% 换算，窗口尺寸变化时换算会 stale，须监听 resize 重算。~~ **（实测推翻，见 §7 #3：v4 扩展支持 px/rem/vh，且全 % 自动随窗口缩放，换算 util 与 resize 监听均不需要）**
 
 ---
 
@@ -196,18 +196,35 @@ description: 资产编辑 + 自适应布局实施 plan——4 类资产（Modifi
 - 布局自适应若动视觉比例 → 评估 [[05-design-spec]] 回流（ADR-012 约束下）。
 
 ## §6 任务清单
-- [ ] P1.0 起草 ADR-016 + 同步 09-tech-stack（人审 Accepted 后开工）
-- [ ] P1.1 migration：macros 加 order_index + bump db::latest_version()
-- [ ] P1.2 后端：repo-core 读排序 + repo-write 4 写方法 + commands.rs 4 IPC（guard_schema_then）
-- [ ] P1.3 前端数据：types/ipc/promptStore 加 Macro CRUD+reorder
-- [ ] P1.4 前端 UI：MacroGrid 集中式编辑 + dnd-kit 排序（handle + data-no-dnd 防冲突 + token CSS）
-- [ ] P1.5 NSPanel 实测：键盘 sensor + handle 聚焦在 key-window 下生效（关联 ADR-014）
-- [ ] P2.1 数据层：alignment_phrases 加 order_index + 核查 Composition/Modifier
-- [ ] P2.2 读侧：补 Modifier/Composition 的 list 命令（按需）
-- [ ] P2.3 后端写：3 类 × create/update/delete/reorder（12 IPC）
-- [ ] P2.4 前端：3 类编辑 UI + dnd-kit 排序
-- [ ] P2.5 B2 物理分离自检（3 项清单）
-- [ ] P3.1 Dashboard grid 改内容自适应（minmax/auto）
-- [ ] P3.2 各区域空态/少态样式 + 视觉验收
-- [ ] P4.1 引 react-resizable-panels@^4 + Dashboard 重构 Group/Panel/Separator（v4 API + px↔% 换算）
-- [ ] P4.2 useDefaultLayout 持久化 localStorage（onLayoutChanged）+ 启动恢复 + bench 回归
+- [x] P1.0 起草 ADR-016 + 同步 09-tech-stack（Accepted）
+- [x] P1.1 migration：macros 加 order_index + bump db::latest_version()
+- [x] P1.2 后端：repo-core 读排序 + repo-write 4 写方法 + commands.rs 4 IPC（guard_schema_then）
+- [x] P1.3 前端数据：types/ipc/promptStore 加 Macro CRUD+reorder
+- [x] P1.4 前端 UI：MacroGrid 集中式编辑 + dnd-kit 排序（handle + data-no-dnd 防冲突 + token CSS）
+- [x] P1.5 NSPanel 实测：键盘 sensor 经 #6 手测 ✓；**分隔条 handle 键盘 focus 待补**（指针拖拽已验，见 §7）
+- [x] P2.1 数据层：alignment_phrases 加 order_index + Composition/Modifier 核查（per-phase order_index 全链路）
+- [x] P2.2 读侧：补 Modifier/Composition 的 list 命令（按需）
+- [x] P2.3 后端写：3 类 × create/update/delete/reorder
+- [~] P2.4 前端：AlignmentPhrase 编辑 UI + dnd 排序 done；**Modifier/Composition UI 落点暂缓（#3/#4，见 §7）**
+- [x] P2.5 B2 物理分离自检（3 项清单，clean）
+- [x] P3.1 Dashboard 列机制（**X 方案**——默认比例+可拖+持久化，放弃空列自动收缩，列机制交 P4，见 §7）
+- [x] P3.2 各区域空态/少态样式（既有工作已满足，无新代码）
+- [x] P4.1 引 react-resizable-panels@^4 + Dashboard 重构 Group/Panel/Separator（**v4 直接支持 %，免 px↔% 换算 util**——实测推翻 §0/§4 旧假设，见 §7）
+- [x] P4.2 useDefaultLayout 持久化 localStorage（onLayoutChanged）+ 启动恢复（手测 拖拽+持久化 ✓，键盘 focus 待补）+ bench 回归（前端不碰 Rust 唤起路径）
+
+---
+
+## §7 进度快照 + 决策留痕（2026-06-05 收尾 workflow）
+
+**进度**（commit `a347d17` 收口 P4）：
+- **P1 Macro 全链路**：CRUD + dnd-kit 排序 + `order_index` 持久化 → **done**。
+- **P2 其余 3 类后端**：AlignmentPhrase / Composition per-phase `order_index` 全链路 + Modifier 后端 → **done**（commit `b11ed21`/`f0d8b9c` 等）；AlignmentPhrase 编辑面板（edit-mode + dnd）→ **done**（`f0d8b9c`）。
+- **P2.5 B2 物理分离自检**：3 项全过（clean，无代码）——AlignmentPhrase 仅现身专属区 / 全局搜索 / 草稿箱，未漏进 Composition 工作台 / Macro 区 / SOP。
+- **P3 内容自适应**：走 **X 方案**——放弃「空列自动收缩」（与持久化拖拽本质互斥），改「默认比例 + 可拖 + 持久化」，列机制交 P4；各区空态既有工作已满足，P3 无新代码。
+- **P4 可拖列**：`Group`/`Panel`/`Separator` + `useDefaultLayout` localStorage 持久化 → **done**，手测拖拽+持久化 ✓。
+
+**决策留痕**：
+1. **#3/#4 ModifierGrid / Composition 落点决策暂缓**（omar 主动搁置，2026-06-05）——Modifier/Composition 后端 `order_index` 全链路已 done，但**编辑 UI 在主界面的落点**未拍板（当前 read 命令呈现位置不明确，见 §3 P2.2 风险）。⚠️ **未来落地建 Composition 工作台时，须复检 [[02-constitution#B2]] 自检清单 ①**（AlignmentPhrase 不得漏进 Composition 工作台）——本次自检 ① 因工作台尚未建而 trivially 成立，建后需重做。
+2. **X 方案锁定**：列宽 = 默认比例 + 用户可拖 + 持久化，**放弃空列自动收缩**（与持久化拖拽互斥，omar 已确认选 X）。
+3. **P4 实测推翻 plan 旧假设**：§0 Q7 / §4 / §3 P4 风险点曾预判「v4 仅百分比、token 是 px → 需 px↔% 换算 util + 监听 resize 重算」。06-04 research 一手核验 + P4 实装证实 **v4 扩展支持 px/rem/vh 单位、且全用 % 时自动随窗口缩放**，故换算 util 与 resize 监听**均不需要**——比 plan 预估更干净（回流 [[learnings#信条六]]）。
+4. **P4 运行时报错复盘**：a347d17 曾在真实 webview 抛错（HMR 中间态挂载顺序），全量重启不复现，非真实 bug，未 revert（回流 [[learnings#信条三]] 附加教训）。

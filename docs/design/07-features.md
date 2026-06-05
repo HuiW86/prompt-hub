@@ -1,13 +1,13 @@
 ---
 type: features
 project: prompt-hub
-version: v0.8
+version: v0.9
 created: 2026-05-19
-last_modified: 2026-06-03
+last_modified: 2026-06-05
 status: in-progress  # S1 主形态 MVP 5 模块 + 跨模块 P0 多项 done（ADR-012 Phase 1-5 全 done）；M-X 全收口——数据层 + workspace + MCP server + UI 收件箱（草稿 tab + 待审 badge + 5 IPC + schema recheck）done；M0-4 签名公证链路 done（M0 四项全绿）
 author: ai  # 🤖 AI 主笔 + 人审（CLAUDE §5.2）
 audience: [human, ai]
-description: prompt-hub 功能清单运营视图——功能 × 状态 × 测试覆盖 × 版本，单一事实源；v0.8 收口 M0-4 Developer ID 签名公证链路（M0 四项全绿），前序 v0.7 把「复制即隐藏 / ESC 关闭」转 done
+description: prompt-hub 功能清单运营视图——功能 × 状态 × 测试覆盖 × 版本，单一事实源；v0.9 新增 §3.8 资产编辑 + 自适应布局区（4 类资产编辑/排序 + Dashboard 可拖列布局），前序 v0.8 收口 M0-4 签名公证链路
 related:
   - 06-prd
   - prompt-hub-mvp
@@ -16,6 +16,8 @@ related:
   - 013-alignment-phrases-tab-inclusion
   - 015-expose-mcp-write-pipeline
   - mcp-write-pipeline
+  - asset-editing-and-adaptive-layout
+  - 016-choose-dnd-and-resizable-layout
 ---
 
 # Features: prompt-hub
@@ -145,6 +147,19 @@ related:
 | Read | `list_macros` | P1 | `done` | v1.1 | omar | [[06-prd#10.4.3]] |
 | Read | `list_scenes` | P1 | `done` | v1.1 | omar | [[06-prd#10.4.3]] |
 
+### 3.8 资产编辑 + 自适应布局（AE / asset-editing plan）
+
+> 来源 [[asset-editing-and-adaptive-layout]] plan（P1–P4）+ [[016-choose-dnd-and-resizable-layout]]。摆脱「只读 + 仅草稿流水线」，4 类资产可直接编辑 + 区域内拖动排序；Dashboard 列宽从固定 grid 改为可拖 + 持久化。
+>
+> 边界 reaffirm：只做「区域内排序 + 区域尺寸可调」，不做跨区域自由拖放 / 跨类型拖动（守 [[02-constitution#B2]]，plan §1 非目标）。
+
+| 功能 | 优先级 | 状态 | 目标版本 | 测试覆盖 | 责任人 | 引用 |
+|---|---|---|---|---|---|---|
+| Macro 编辑（增删改名/改内容）+ dnd-kit 拖动排序（`order_index` 持久化）| P1 | `done` | v1.1 | 73 前端 / repo-write reorder | omar | [[asset-editing-and-adaptive-layout#P1]] |
+| AlignmentPhrase 编辑面板（edit-mode toggle + dnd 排序，per-phase `order_index`）| P1 | `done` | v1.1 | 73 前端 | omar | [[asset-editing-and-adaptive-layout#P2]] |
+| Modifier / Composition 编辑（增删改名/改内容/排序）| P1 | `in-progress` | v1.1 | 后端 `order_index` 全链路 done；UI 落点暂缓（#3/#4，omar 主动搁置）| omar | [[asset-editing-and-adaptive-layout#P2]] |
+| Dashboard 可拖列布局（react-resizable-panels v4 `Group`/`Panel`/`Separator` + localStorage 持久化）| P1 | `done` | v1.1 | 73 前端 / 手测 拖拽+持久化 ✓（键盘 focus 待补）| omar | [[asset-editing-and-adaptive-layout#P4]] |
+
 ---
 
 ## §4 阶段交付节奏
@@ -154,10 +169,11 @@ related:
 | S1 主形态 MVP | v1.0 | 5 模块 + 8 跨模块能力 | `planned` |
 | S2 闭环沉淀 | v1.1 | 4 功能 | `planned` |
 | M-X MCP write pipeline | v1.1 | 6 支撑能力 + 14 MCP tool | `done` |
+| AE 资产编辑 + 自适应布局 | v1.1 | 4 功能 | `in-progress`（3 done / Modifier·Composition UI 落点暂缓）|
 | S3 SOP 导航 | v1.2 | 3 功能 | `planned` |
 | S4 配置个性化 | v1.3 | 4 功能 | `planned` |
 | S5 辅形态副屏 | v2.0 | 3 功能 | `planned` |
-| **合计** | — | **47 项** | — |
+| **合计** | — | **51 项** | — |
 
 **注**：版本号语义为 prompt-hub 自身版本，与 prd / spec / methodology 各自独立。v1.0 = 第一阶段 MVP 可发布；v2.0 = 辅形态加入（双形态完整）。
 
@@ -189,6 +205,7 @@ related:
 | 2026-06-03 | v0.6 bump：§3.7 草稿 tab + 待审 badge + promote 5 Tauri IPC（含 mid-session schema recheck）全 → `done`；§4 M-X 阶段 → `done`（DraftInbox/ScenePanel/SearchBar 前端 + commands.rs schema-guard）| M-X.3 UI 收件箱落地涟漪 |
 | 2026-06-03 | v0.7 bump：「复制即隐藏 / ESC 关闭」P0 → `done`（ADR-012 Phase 5 视觉+功能验收 11/11 收口：screencapture 自动化 9/11 + 用户手点 promote/discard 补 2/11；DB 核对 modifier 落 group_kind / alignment_phrase 落 phase / macro 丢弃不入库 / inbox 排空回落 Scene）；ADR-012 Phase 1-5 全链路 done | Phase 5 验收收口涟漪 |
 | 2026-06-03 | v0.8 bump：M0-4 Developer ID 签名公证链路收口（M0 四项全绿）——空壳 DMG 走 Developer ID 签名 + hardened runtime + 三项 JIT entitlements → 公证 Accepted → staple → Gatekeeper `accepted/Notarized Developer ID` → release 透明窗口运行时不黑屏；证伪「macos-private-api 与公证冲突」最坏假设；runbook [[m0-4-macos-signing]] | M0-4 收口涟漪 |
+| 2026-06-05 | v0.9 bump：新增 §3.8 资产编辑 + 自适应布局区（4 功能：Macro/AlignmentPhrase 编辑+排序 done / Modifier·Composition 后端 done·UI 落点暂缓 / Dashboard 可拖列布局 done）；§4 节奏表加 AE 行，合计 47→51 项 | [[asset-editing-and-adaptive-layout]] P1–P4 收口涟漪 |
 
 ---
 

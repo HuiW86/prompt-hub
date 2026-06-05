@@ -1,9 +1,9 @@
 ---
 type: product-spec
 project: prompt-hub
-version: v0.7
+version: v0.7.1
 created: 2026-05-18
-last_modified: 2026-06-01
+last_modified: 2026-06-05
 status: ratified  # 🤝 共创，omar 审定升 ratified（2026-06-01 M-X.0 涟漪）
 author: co  # 🤝 人机共创（CLAUDE §5.2）
 related: [[01-spec]], [[05-design-spec]], [[06-prd]], [[012-lock-visual-quality-anchor]], [[013-alignment-phrases-tab-inclusion]], [[015-expose-mcp-write-pipeline]]
@@ -641,6 +641,8 @@ graph TD
   - 右键 → 进入该 Phase 编辑视图
 
 > v0.6 起：原 v0.5 "点击 Phase → 复制该 Phase 的默认 AlignmentPhrase" 行为已迁至「区域 2-bis 对齐话术」chip 行 — chip 点击即复制，PhaseBar 只负责切 Phase（追认 [[013-alignment-phrases-tab-inclusion]]）。
+>
+> **鼠标点击 vs 键盘两路语义**（commit `441764b` 解耦）：鼠标点击 Phase = **仅切换、窗口驻留**（不复制、不 record_usage，供 AlignmentPhrase 管理面板编辑）；`⌘1-8` 键盘 = **切换 + 复制默认话术 + 复制即隐藏**（launcher 主流程）。§4.5 用户旅程叙事里「点击相位带 → 剪贴板有话术」是 v0.5 旧叙事的简写，实际复制走 chip 行或 `⌘1-8`。
 
 #### 区域 2-bis：对齐话术（AlignmentPhrases）
 
@@ -778,6 +780,17 @@ graph TD
 ---
 
 ## 修订记录
+
+### v0.7.1（2026-06-05）— 切相位语义两路澄清（commit 441764b 涟漪）
+
+回应 PhaseBar 点击解耦（`441764b`：鼠标点击 Phase 不再 copy-then-hide）的文档对齐。**评估结论**：spec 层 §13.3 区域 2「点击 Phase = 仅切换」+ §13.4 `⌘1-8 = 切换+复制` 已与代码一致，本次仅补两路语义的显式澄清，无结构变更。
+
+| 章节 | 改动 |
+|------|------|
+| §13.3 区域 2 PhaseBar | note 补「鼠标点击 vs 键盘两路语义」：鼠标点击 = 仅切换 + 窗口驻留（供管理面板编辑）；`⌘1-8` = 切换 + 复制默认话术 + 复制即隐藏。§4.5 旧叙事「点击相位带→剪贴板」标注为简写 |
+| 上游对齐 | [[06-prd]] Phase.`default_alignment_phrase_id` 字段注释同步修正（复制语义归键盘路径，鼠标点击不复制）|
+
+**frontmatter**：version v0.7 → v0.7.1 / last_modified 2026-06-01 → 2026-06-05（同语义澄清小幅 patch）。
 
 ### v0.7（2026-06-01）— ADR-015 涟漪：MCP write pipeline 草稿收件箱 UI 契约
 

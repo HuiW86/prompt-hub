@@ -1,13 +1,13 @@
 ---
 type: design-spec
 project: prompt-hub
-version: v0.8
+version: v0.9
 created: 2026-05-18
-last_modified: 2026-06-01
+last_modified: 2026-06-05
 status: ratified  # 🤝 共创，omar 审定升 ratified（2026-06-01 M-X.0 涟漪）
 author: co  # 🤝 人机共创（CLAUDE §5.2）
-related: [[01-spec]], [[02-constitution]], [[03-product-spec]], [[012-lock-visual-quality-anchor]], [[CLAUDE-DESIGN]], [[015-expose-mcp-write-pipeline]]
-description: 手动 AI 编程仪表盘的视觉规范——token 命名与 tokens.css 单一真源对齐（--t-/--s-/ontology + neutral scale），WCAG light 实测 + dark v1.0 实装；v0.7 加 §8-§13 bundle 派生 6 章；v0.8 涟漪 ADR-015 加 §10.4 MCP write pipeline 组件视觉（PendingBadge / DraftInbox / DraftCard，aux 中性层，lucide Inbox 非 emoji）
+related: [[01-spec]], [[02-constitution]], [[03-product-spec]], [[012-lock-visual-quality-anchor]], [[CLAUDE-DESIGN]], [[015-expose-mcp-write-pipeline]], [[016-choose-dnd-and-resizable-layout]], [[asset-editing-and-adaptive-layout]]
+description: 手动 AI 编程仪表盘的视觉规范——token 命名与 tokens.css 单一真源对齐（--t-/--s-/ontology + neutral scale），WCAG light 实测 + dark v1.0 实装；v0.7 加 §8-§13 bundle 派生 6 章；v0.8 涟漪 ADR-015 加 §10.4 MCP write pipeline 组件视觉；v0.9 涟漪 ADR-016 加 §10.5 全景区可拖列布局 + PanoramaSeparator（ADR-012 合规评估：列宽可调不违反反设计/一屏全景/色块即本体）
 ---
 
 # Design Spec: prompt-hub（视觉规范）
@@ -474,6 +474,7 @@ bundle 派生的 3 个跨组件 primitive，避免重复实现：
 | `PendingBadge`（v0.8）| aux | inline，高度 `--h-chip` 24px | lucide `Inbox` + count text，仅 N>0 渲染，详见 §10.4 |
 | `DraftInbox`（v0.8）| aux | Scene tab 行最左入口 + 列表面板 | tab 入口 lucide `Inbox` + 分隔，列表挂 `DraftCard`，详见 §10.4 |
 | `DraftCard`（v0.8）| aux（中性，promote 前不染 ontology）| 卡片 | border-only neutral + target_type 文字角标 + provenance + promote/discard，详见 §10.4 |
+| `PanoramaSeparator`（v0.9）| chrome（aux 中性）| 全景区列间分隔条（hairline 宽）| `--border-1` hairline baseline + hover 加深 `--border-3` + focus outline `--protocol`；**无阴影/渐变/玻璃感**（守 §8 反设计清单），详见 §10.5 |
 
 ---
 
@@ -529,6 +530,19 @@ bundle 派生的 3 个跨组件 primitive，避免重复实现：
 | discard | `discard_draft` | border-only + lucide `Trash2` 14px + 「丢弃」label；hover `--border-3` + icon `--fg-2` | 软删（status='discarded'）|
 
 **为何 promote 不上 task 绿**：promote 按钮是「把草稿送进任务层」的动作，但按钮自身不是任务层成员；若染绿会让人误读「这张草稿卡是绿层」，违背层归属铁律。强调靠 `--w-500` 字重 + `Check` 图标位置，不靠色。
+
+---
+
+### 10.5 全景区可拖列布局（v0.9 — 涟漪 [[asset-editing-and-adaptive-layout]] P4 / [[016-choose-dnd-and-resizable-layout]]）
+
+> Dashboard 全景区从固定 grid（`1.4fr / 1fr / 0.9fr`）改为 `react-resizable-panels` v4 `Group` / `Panel` / `PanoramaSeparator`：列宽用户可拖 + localStorage 持久化（默认 `42 / 30 / 28`%，min `22 / 18 / 18`%，全百分比免 px↔% 换算）。`Separator` 视觉契约见 §10.3。
+
+**ADR-012 合规评估**（[[012-lock-visual-quality-anchor]] 约束下，本次涟漪结论：**不违反**）：
+
+- **反设计清单**（§8）：分隔条仅 hairline border + hover 加深，**无阴影 / 渐变 / 玻璃感 / skeuomorphism** —— 守底线。
+- **一屏全景**（[[03-product-spec#§4.1]]）：三列始终全部可见，拖动只改比例**不隐藏任何区域** —— 守哲学二。
+- **色块即本体**（[[02-constitution#B2]]）：列宽调整不动三色族，分隔条属 chrome 中性色、不染 ontology。
+- **结论**：列宽可调属「区域尺寸可调」，**非**「面板自由布局」（后者违反 B2，plan §1 非目标已排除）；布局偏好存 localStorage，不入 SQLite、不上传（守 [[02-constitution#A2]]）。故无需修订 §8 锚点，仅补本节 + §10.3 `PanoramaSeparator` 行。
 
 ---
 
@@ -661,6 +675,19 @@ bundle 视觉锚点的核心洞察：**视觉权重通过 typography rhythm + on
 ---
 
 ## 修订记录
+
+### v0.9（2026-06-05）— ADR-016 涟漪：全景区可拖列布局视觉契约
+
+回应 [[asset-editing-and-adaptive-layout]] P4 落地（Dashboard 固定 grid → `react-resizable-panels` v4 可拖列 + localStorage 持久化）：
+
+| 章节 | 改动 |
+|------|------|
+| §10.3 组件清单 | 新增 `PanoramaSeparator`（v0.9）行——hairline baseline + hover 加深 + focus outline，无 polish |
+| §10.5（新增）| 全景区可拖列布局机制 + **ADR-012 合规评估**（结论不违反：反设计清单 / 一屏全景 / 色块即本体三底线均守，列宽可调 ≠ 面板自由布局；布局存 localStorage 守 A2）|
+
+**评估结论**：P3/P4 列机制变更未触动 [[012-lock-visual-quality-anchor]] 锚点，**无需修订 §8**，仅补 §10.5 + §10.3 一行。🤝 共创，待 omar 审。
+
+**frontmatter**：version v0.8 → v0.9 / last_modified 2026-06-01 → 2026-06-05 / related 加 `[[016-choose-dnd-and-resizable-layout]]` + `[[asset-editing-and-adaptive-layout]]`。
 
 ### v0.8（2026-06-01）— ADR-015 涟漪：MCP write pipeline 组件视觉
 
