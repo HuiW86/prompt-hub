@@ -377,7 +377,7 @@ describe("Dashboard click → IPC flow", () => {
     expect(last?.input.source).toBe("scene");
   });
 
-  it("clicking a Phase pill copies its default AlignmentPhrase with phase_bar source", async () => {
+  it("clicking a Phase pill only activates it — no copy, no record_usage (manage-in-window path)", async () => {
     render(<App />);
     const phaseBtn = await waitFor(() => {
       const buttons = screen
@@ -387,17 +387,14 @@ describe("Dashboard click → IPC flow", () => {
       return buttons[0];
     });
     fireEvent.click(phaseBtn);
+    // Activation is immediate (highlight via aria-current); the copy-then-hide
+    // path is reserved for the ⌘1-8 launcher so the window stays open for
+    // entering the AlignmentPhrase manage panel.
     await waitFor(() =>
-      expect(findRecordUsageInputs().length).toBeGreaterThan(0),
+      expect(phaseBtn.getAttribute("aria-current")).toBe("true"),
     );
-    const input = findRecordUsageInputs()[0].input as {
-      targetType: string;
-      source: string;
-      phaseId: string | null;
-    };
-    expect(input.targetType).toBe("alignment");
-    expect(input.source).toBe("phase_bar");
-    expect(input.phaseId).toBe("phase-0");
+    await new Promise((r) => setTimeout(r, 0));
+    expect(findRecordUsageInputs().length).toBe(0);
   });
 
   it("ESC at document level invokes hide_window", async () => {

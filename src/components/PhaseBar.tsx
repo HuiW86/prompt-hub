@@ -1,4 +1,3 @@
-import { usePhaseSelect } from "../hooks/usePhaseSelect";
 import { useAppStore } from "../stores/appStore";
 import { usePromptStore } from "../stores/promptStore";
 import { useSettingsStore } from "../stores/settingsStore";
@@ -10,9 +9,9 @@ import styles from "./PhaseBar.module.css";
 export function PhaseBar() {
   const phases = usePromptStore((s) => s.phases);
   const activePhaseId = useAppStore((s) => s.activePhaseId);
+  const setActivePhase = useAppStore((s) => s.setActivePhase);
   const hiddenIds = useSettingsStore((s) => s.hiddenPhaseIds);
   const flashId = useToastStore((s) => s.flashTargetId);
-  const selectPhase = usePhaseSelect();
   const visible = phases.filter((p) => !hiddenIds.includes(p.id));
 
   return (
@@ -38,7 +37,7 @@ export function PhaseBar() {
             aria-current={isActive ? "true" : undefined}
             className={cls}
             data-phase-id={phase.id}
-            onClick={() => selectPhase(phase.id)}
+            onClick={() => setActivePhase(phase.id)}
           >
             <span className={styles.num} aria-hidden>
               {idx + 1}
