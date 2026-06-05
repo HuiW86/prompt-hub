@@ -1,7 +1,7 @@
 ---
 type: plan
 project: prompt-hub
-version: v0.3
+version: v0.4
 created: 2026-06-03
 last_modified: 2026-06-05
 status: in-progress  # P1/P2 后端 + Macro/AlignmentPhrase UI + P3(X方案)/P4 done；Modifier·Composition UI 落点暂缓（#3/#4），见 §7
@@ -201,7 +201,7 @@ description: 资产编辑 + 自适应布局实施 plan——4 类资产（Modifi
 - [x] P1.2 后端：repo-core 读排序 + repo-write 4 写方法 + commands.rs 4 IPC（guard_schema_then）
 - [x] P1.3 前端数据：types/ipc/promptStore 加 Macro CRUD+reorder
 - [x] P1.4 前端 UI：MacroGrid 集中式编辑 + dnd-kit 排序（handle + data-no-dnd 防冲突 + token CSS）
-- [x] P1.5 NSPanel 实测：键盘 sensor 经 #6 手测 ✓；**分隔条 handle 键盘 focus 待补**（指针拖拽已验，见 §7）
+- [x] P1.5 NSPanel 实测：键盘 sensor 经 #6 手测 ✓；分隔条 handle 键盘 focus 经全量重启实机 ✓（指针拖拽 + 键盘 focus 全验，见 §7）
 - [x] P2.1 数据层：alignment_phrases 加 order_index + Composition/Modifier 核查（per-phase order_index 全链路）
 - [x] P2.2 读侧：补 Modifier/Composition 的 list 命令（按需）
 - [x] P2.3 后端写：3 类 × create/update/delete/reorder
@@ -210,7 +210,7 @@ description: 资产编辑 + 自适应布局实施 plan——4 类资产（Modifi
 - [x] P3.1 Dashboard 列机制（**X 方案**——默认比例+可拖+持久化，放弃空列自动收缩，列机制交 P4，见 §7）
 - [x] P3.2 各区域空态/少态样式（既有工作已满足，无新代码）
 - [x] P4.1 引 react-resizable-panels@^4 + Dashboard 重构 Group/Panel/Separator（**v4 直接支持 %，免 px↔% 换算 util**——实测推翻 §0/§4 旧假设，见 §7）
-- [x] P4.2 useDefaultLayout 持久化 localStorage（onLayoutChanged）+ 启动恢复（手测 拖拽+持久化 ✓，键盘 focus 待补）+ bench 回归（前端不碰 Rust 唤起路径）
+- [x] P4.2 useDefaultLayout 持久化 localStorage（onLayoutChanged）+ 启动恢复（手测 拖拽 + 持久化 + 键盘 focus 全 ✓）+ bench 回归（hotkey-wake auto-cycle 修复后 P95=14.696ms，见 §7）
 
 ---
 
@@ -221,10 +221,11 @@ description: 资产编辑 + 自适应布局实施 plan——4 类资产（Modifi
 - **P2 其余 3 类后端**：AlignmentPhrase / Composition per-phase `order_index` 全链路 + Modifier 后端 → **done**（commit `b11ed21`/`f0d8b9c` 等）；AlignmentPhrase 编辑面板（edit-mode + dnd）→ **done**（`f0d8b9c`）。
 - **P2.5 B2 物理分离自检**：3 项全过（clean，无代码）——AlignmentPhrase 仅现身专属区 / 全局搜索 / 草稿箱，未漏进 Composition 工作台 / Macro 区 / SOP。
 - **P3 内容自适应**：走 **X 方案**——放弃「空列自动收缩」（与持久化拖拽本质互斥），改「默认比例 + 可拖 + 持久化」，列机制交 P4；各区空态既有工作已满足，P3 无新代码。
-- **P4 可拖列**：`Group`/`Panel`/`Separator` + `useDefaultLayout` localStorage 持久化 → **done**，手测拖拽+持久化 ✓。
+- **P4 可拖列**：`Group`/`Panel`/`Separator` + `useDefaultLayout` localStorage 持久化 → **done**，手测 拖拽 + 持久化 + 键盘 focus（Tab 聚焦 + ←→ 调宽，经全量重启杜绝 HMR）全 ✓。
 
 **决策留痕**：
 1. **#3/#4 ModifierGrid / Composition 落点决策暂缓**（omar 主动搁置，2026-06-05）——Modifier/Composition 后端 `order_index` 全链路已 done，但**编辑 UI 在主界面的落点**未拍板（当前 read 命令呈现位置不明确，见 §3 P2.2 风险）。⚠️ **未来落地建 Composition 工作台时，须复检 [[02-constitution#B2]] 自检清单 ①**（AlignmentPhrase 不得漏进 Composition 工作台）——本次自检 ① 因工作台尚未建而 trivially 成立，建后需重做。
 2. **X 方案锁定**：列宽 = 默认比例 + 用户可拖 + 持久化，**放弃空列自动收缩**（与持久化拖拽互斥，omar 已确认选 X）。
 3. **P4 实测推翻 plan 旧假设**：§0 Q7 / §4 / §3 P4 风险点曾预判「v4 仅百分比、token 是 px → 需 px↔% 换算 util + 监听 resize 重算」。06-04 research 一手核验 + P4 实装证实 **v4 扩展支持 px/rem/vh 单位、且全用 % 时自动随窗口缩放**，故换算 util 与 resize 监听**均不需要**——比 plan 预估更干净（回流 [[learnings#信条六]]）。
 4. **P4 运行时报错复盘**：a347d17 曾在真实 webview 抛错（HMR 中间态挂载顺序），全量重启不复现，非真实 bug，未 revert（回流 [[learnings#信条三]] 附加教训）。
+5. **bench 验收 + auto-cycle 主线程 bug 修复**（2026-06-05 收尾 workflow）：跑 `bench:hotkey-wake` 留痕时发现 auto-cycle 版（`bench.rs`）把 wake/hide 放进 tokio worker 线程直调 AppKit `show()`/`order_front`，违反 macOS 主线程约束 → `Must only be used from the main thread` SIGTRAP，**重构后从未在 macOS 跑通过**（HANDOFF baseline 10.49ms 实为 M0-3 旧 inline 版数字）。修复：每次 wake/hide 经 `run_on_main_thread` 派发、timing 放进主线程闭包内测。修复后首次跑通 **P95=14.696ms**（+OS dispatch ~10ms ≈ 25ms，远低于 [[02-constitution#C1]] 200ms）。回流 [[learnings#信条四]]。
