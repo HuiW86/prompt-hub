@@ -14,6 +14,7 @@
 // OS global-shortcut event dispatch (~10ms per M0-3 manual vs automated
 // delta). Real ⌥Space P95 = this number + ~10ms.
 
+use std::sync::mpsc;
 use std::time::{Duration, Instant};
 
 use tauri::{AppHandle, Manager};
@@ -27,27 +28,33 @@ pub fn spawn_wake_cycle(app: AppHandle) {
     tauri::async_runtime::spawn(async move {
         tokio::time::sleep(Duration::from_millis(STARTUP_DELAY_MS)).await;
 
-        let Some(window) = app.get_webview_window("main") else {
+        if app.get_webview_window("main").is_none() {
             eprintln!("{{\"error\":\"main window missing\"}}");
             app.exit(1);
             return;
-        };
+        }
 
         // Warm-up — discards JIT/cache transients without printing samples.
         for _ in 0..WARMUP_ROUNDS {
-            wake(&window);
+            wake_sample(&app);
             tokio::time::sleep(Duration::from_millis(CYCLE_GAP_MS)).await;
-            let _ = window.hide();
+            hide_main(&app);
             tokio::time::sleep(Duration::from_millis(CYCLE_GAP_MS)).await;
         }
 
         for round in 0..SAMPLE_ROUNDS {
-            let t0 = Instant::now();
-            wake(&window);
-            let elapsed_us = t0.elapsed().as_micros();
-            println!("{{\"round\":{},\"show_us\":{}}}", round, elapsed_us);
+            match wake_sample(&app) {
+                Some(elapsed_us) => {
+                    println!("{{\"round\":{},\"show_us\":{}}}", round, elapsed_us)
+                }
+                None => {
+                    eprintln!("{{\"error\":\"wake sample failed\"}}");
+                    app.exit(1);
+                    return;
+                }
+            }
             tokio::time::sleep(Duration::from_millis(CYCLE_GAP_MS)).await;
-            let _ = window.hide();
+            hide_main(&app);
             tokio::time::sleep(Duration::from_millis(CYCLE_GAP_MS)).await;
         }
 
@@ -56,10 +63,35 @@ pub fn spawn_wake_cycle(app: AppHandle) {
     });
 }
 
-fn wake(window: &tauri::WebviewWindow) {
-    let _ = window.show();
-    #[cfg(not(target_os = "macos"))]
-    let _ = window.set_focus();
-    #[cfg(target_os = "macos")]
-    crate::macos::order_front(window);
+// AppKit window APIs are MainThreadOnly (see macos.rs), so the wake call must
+// be dispatched onto the main thread. Timing is captured inside the closure to
+// keep measuring only the Rust call latency, then handed back over a channel.
+fn wake_sample(app: &AppHandle) -> Option<u128> {
+    let (tx, rx) = mpsc::channel();
+    let app = app.clone();
+    app.clone()
+        .run_on_main_thread(move || {
+            let Some(window) = app.get_webview_window("main") else {
+                let _ = tx.send(None);
+                return;
+            };
+            let t0 = Instant::now();
+            let _ = window.show();
+            #[cfg(not(target_os = "macos"))]
+            let _ = window.set_focus();
+            #[cfg(target_os = "macos")]
+            crate::macos::order_front(&window);
+            let _ = tx.send(Some(t0.elapsed().as_micros()));
+        })
+        .ok()?;
+    rx.recv().ok().flatten()
+}
+
+fn hide_main(app: &AppHandle) {
+    let app = app.clone();
+    let _ = app.clone().run_on_main_thread(move || {
+        if let Some(window) = app.get_webview_window("main") {
+            let _ = window.hide();
+        }
+    });
 }
