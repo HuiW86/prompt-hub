@@ -24,21 +24,31 @@
   min-height: 0;
 }
 
-.panoramaGrid {
-  display: grid;
-  grid-template-columns: 1.4fr 1fr 0.9fr;
+/* Resizable 3-column workbench (ADR-016 / react-resizable-panels v4).
+ * Group owns column widths (user-draggable %, persisted); the grid retreats to
+ * intra-region / row layout. Default proportions carry the prior 1.4/1/0.9. */
+.panoramaGroup {
   height: 100%;
   min-height: 0;
 }
 
-.panoramaGrid > * {
-  border-right: var(--hairline) solid var(--border-1);
+.panel {
+  height: 100%;
   min-width: 0;
   overflow: hidden;
 }
 
-.panoramaGrid > *:last-child {
-  border-right: 0;
+/* Separator: a hairline divider replacing the old per-column border. The
+ * library expands the drag hit-target beyond this visual width. */
+.separator {
+  width: var(--hairline);
+  background: var(--border-1);
+  transition: background var(--d-fast) var(--ease);
+}
+
+.separator:hover,
+.separator:active {
+  background: var(--border-3);
 }
 
 .col3 {

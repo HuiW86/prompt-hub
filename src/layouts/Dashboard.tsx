@@ -1,3 +1,10 @@
+import {
+  Group,
+  Panel,
+  Separator,
+  useDefaultLayout,
+} from "react-resizable-panels";
+
 import { AlignmentPhrases } from "../components/AlignmentPhrases";
 import { MacroGrid } from "../components/MacroGrid";
 import { PhaseBar } from "../components/PhaseBar";
@@ -15,6 +22,14 @@ import styles from "./Dashboard.module.css";
 export function Dashboard() {
   const loadState = usePromptStore((s) => s.loadState);
   const loadError = usePromptStore((s) => s.loadError);
+
+  // Column widths are a local UI preference: persisted to localStorage (never
+  // SQLite, never uploaded — constitution A2). useDefaultLayout restores the
+  // saved layout on mount and onLayoutChanged writes back after a drag settles.
+  const { defaultLayout, onLayoutChanged } = useDefaultLayout({
+    id: "panorama-cols",
+    storage: localStorage,
+  });
 
   if (loadState === "idle" || loadState === "loading") {
     return <div className={styles.loading}>加载中…</div>;
@@ -38,14 +53,42 @@ export function Dashboard() {
       <PhaseBar />
       <AlignmentPhrases />
       <div className={styles.panorama}>
-        <div className={styles.panoramaGrid}>
-          <MacroGrid />
-          <ScenePanel />
-          <div className={styles.col3}>
-            <RecentList />
-            <SopProgress />
-          </div>
-        </div>
+        <Group
+          id="panorama-cols"
+          className={styles.panoramaGroup}
+          defaultLayout={defaultLayout}
+          onLayoutChanged={onLayoutChanged}
+        >
+          <Panel
+            id="macro"
+            className={styles.panel}
+            defaultSize="42%"
+            minSize="22%"
+          >
+            <MacroGrid />
+          </Panel>
+          <Separator className={styles.separator} />
+          <Panel
+            id="scene"
+            className={styles.panel}
+            defaultSize="30%"
+            minSize="18%"
+          >
+            <ScenePanel />
+          </Panel>
+          <Separator className={styles.separator} />
+          <Panel
+            id="col3"
+            className={styles.panel}
+            defaultSize="28%"
+            minSize="18%"
+          >
+            <div className={styles.col3}>
+              <RecentList />
+              <SopProgress />
+            </div>
+          </Panel>
+        </Group>
         <SearchOverlay />
       </div>
       <StatusBar />
