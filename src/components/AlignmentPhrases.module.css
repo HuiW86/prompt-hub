@@ -87,3 +87,322 @@
   background: var(--protocol-16);
   border-color: var(--protocol);
 }
+
+/* ── Edit affordance + edit mode (protocol layer; never --task) ──────────────
+   The default chip row stays a compact 44px read-only strip; a small manage
+   button toggles into an expanded vertical management list so the narrow
+   24px chips never have to carry inline handle/edit/delete controls. */
+
+.manageBtn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: var(--h-chip);
+  height: var(--h-chip);
+  margin-left: auto;
+  flex-shrink: 0;
+  padding: 0;
+  appearance: none;
+  background: var(--surface-1);
+  border: var(--hairline) solid var(--border-1);
+  border-radius: var(--r-2);
+  color: var(--fg-3);
+  cursor: pointer;
+  transition:
+    color var(--d-fast) var(--ease),
+    border-color var(--d-fast) var(--ease);
+}
+
+.manageBtn:hover {
+  color: var(--protocol);
+  border-color: var(--protocol);
+}
+
+.manageBtn:focus-visible {
+  outline: var(--border-thick) solid var(--protocol);
+  outline-offset: 0;
+}
+
+.editRegion {
+  display: flex;
+  flex-direction: column;
+  gap: var(--s-2);
+  padding: var(--s-2) var(--s-3_5) var(--s-3);
+  border-bottom: var(--hairline) solid var(--border-1);
+  background: var(--canvas);
+}
+
+.editHeader {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--s-2);
+}
+
+.editHeaderActions {
+  display: flex;
+  align-items: center;
+  gap: var(--s-2);
+}
+
+.addBtn {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--s-1);
+  height: var(--h-chip);
+  padding: 0 var(--s-2_25);
+  appearance: none;
+  background: var(--protocol-8);
+  border: var(--hairline) solid var(--border-1);
+  border-radius: var(--r-2);
+  color: var(--protocol);
+  cursor: pointer;
+  font: var(--w-500) var(--t-11) / 1 var(--font-sans);
+  transition:
+    background-color var(--d-fast) var(--ease),
+    border-color var(--d-fast) var(--ease);
+}
+
+.addBtn:hover {
+  background: var(--protocol-16);
+  border-color: var(--protocol);
+}
+
+.doneBtn {
+  height: var(--h-chip);
+  padding: 0 var(--s-2_25);
+  appearance: none;
+  background: none;
+  border: var(--hairline) solid var(--border-2);
+  border-radius: var(--r-2);
+  color: var(--fg-2);
+  cursor: pointer;
+  font: var(--w-500) var(--t-11) / 1 var(--font-sans);
+  transition:
+    color var(--d-fast) var(--ease),
+    border-color var(--d-fast) var(--ease);
+}
+
+.doneBtn:hover {
+  color: var(--fg-1);
+  border-color: var(--border-3);
+}
+
+.addBtn:focus-visible,
+.doneBtn:focus-visible {
+  outline: var(--border-thick) solid var(--protocol);
+  outline-offset: 0;
+}
+
+.list {
+  display: flex;
+  flex-direction: column;
+  gap: var(--s-1_5);
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.row {
+  display: flex;
+  align-items: center;
+  gap: var(--s-2);
+  padding: var(--s-1_5) var(--s-2);
+  background: var(--surface-1);
+  border: var(--hairline) solid var(--border-1);
+  border-radius: var(--r-2);
+  min-width: 0;
+}
+
+.row.dragging {
+  opacity: var(--op-dim);
+  border-color: var(--protocol);
+}
+
+.rowHandle {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: var(--s-5);
+  height: var(--s-5);
+  flex-shrink: 0;
+  padding: 0;
+  appearance: none;
+  background: none;
+  border: none;
+  color: var(--fg-3);
+  cursor: grab;
+  transition: color var(--d-fast) var(--ease);
+}
+
+.rowHandle:hover {
+  color: var(--fg-1);
+}
+
+.rowDot {
+  width: var(--s-1_5);
+  height: var(--s-1_5);
+  flex-shrink: 0;
+  border-radius: 50%;
+  background: var(--protocol);
+}
+
+.rowName {
+  flex: 1;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  font: var(--w-500) var(--t-12) / 1 var(--font-sans);
+  color: var(--fg-1);
+}
+
+.rowBadge {
+  flex-shrink: 0;
+  padding: 0 var(--s-1_5);
+  border-radius: var(--r-1);
+  background: var(--protocol-8);
+  color: var(--protocol);
+  font: var(--w-500) var(--t-11) / calc(var(--h-chip) - var(--s-1))
+    var(--font-mono);
+}
+
+.rowActions,
+.confirm {
+  display: flex;
+  align-items: center;
+  gap: var(--s-1);
+  flex-shrink: 0;
+}
+
+.actBtn,
+.confirmYes,
+.confirmNo {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: var(--s-5);
+  height: var(--s-5);
+  padding: 0;
+  appearance: none;
+  background: var(--surface-2);
+  border: var(--hairline) solid var(--border-1);
+  border-radius: var(--r-2);
+  color: var(--fg-3);
+  cursor: pointer;
+  transition:
+    color var(--d-fast) var(--ease),
+    border-color var(--d-fast) var(--ease);
+}
+
+.actBtn:hover {
+  color: var(--fg-1);
+  border-color: var(--border-2);
+}
+
+.rowHandle:focus-visible,
+.actBtn:focus-visible,
+.confirmYes:focus-visible,
+.confirmNo:focus-visible {
+  outline: var(--border-thick) solid var(--protocol);
+  outline-offset: 0;
+}
+
+.confirmText {
+  font: var(--w-500) var(--t-11) / 1 var(--font-sans);
+  color: var(--fg-1);
+}
+
+.confirmYes {
+  color: var(--protocol);
+}
+
+.confirmNo {
+  color: var(--fg-3);
+}
+
+/* Central edit panel (Q8: a single edit entry, not scattered popovers). */
+.editor {
+  display: flex;
+  flex-direction: column;
+  gap: var(--s-2);
+  padding: var(--s-3);
+  background: var(--surface-1);
+  border: var(--hairline) solid var(--border-2);
+  border-radius: var(--r-3);
+}
+
+.editorName,
+.editorBody {
+  width: 100%;
+  appearance: none;
+  background: var(--surface-2);
+  border: var(--hairline) solid var(--border-1);
+  border-radius: var(--r-2);
+  padding: var(--s-2);
+  color: var(--fg-1);
+  font: var(--w-400) var(--t-13) / var(--lh-body) var(--font-sans);
+}
+
+.editorName {
+  font-weight: var(--w-500);
+}
+
+.editorBody {
+  resize: vertical;
+  min-height: var(--s-12);
+}
+
+.editorName:focus-visible,
+.editorBody:focus-visible {
+  outline: var(--border-thick) solid var(--protocol);
+  outline-offset: 0;
+  border-color: var(--protocol);
+}
+
+.editorActions {
+  display: flex;
+  justify-content: flex-end;
+  gap: var(--s-2);
+}
+
+.editorCancel,
+.editorSave {
+  height: var(--h-chip);
+  padding: 0 var(--s-3);
+  appearance: none;
+  border-radius: var(--r-2);
+  cursor: pointer;
+  font: var(--w-500) var(--t-12) / 1 var(--font-sans);
+  transition:
+    background-color var(--d-fast) var(--ease),
+    border-color var(--d-fast) var(--ease);
+}
+
+.editorCancel {
+  background: none;
+  border: var(--hairline) solid var(--border-2);
+  color: var(--fg-2);
+}
+
+.editorCancel:hover {
+  border-color: var(--border-3);
+  color: var(--fg-1);
+}
+
+.editorSave {
+  background: var(--protocol);
+  border: var(--hairline) solid var(--protocol);
+  color: var(--protocol-fg);
+}
+
+.editorSave:disabled {
+  opacity: var(--op-dim);
+  cursor: not-allowed;
+}
+
+.editorCancel:focus-visible,
+.editorSave:focus-visible {
+  outline: var(--border-thick) solid var(--protocol);
+  outline-offset: var(--s-0_5);
+}
