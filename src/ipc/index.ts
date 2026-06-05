@@ -2,6 +2,7 @@ import { invoke } from "@tauri-apps/api/core";
 
 import type {
   AlignmentPhrase,
+  Composition,
   DraftPayload,
   DraftStatus,
   DraftSummary,
@@ -25,6 +26,7 @@ export const ipc = {
     invoke<AlignmentPhrase[]>("list_alignment_phrases"),
   listMacros: () => invoke<Macro[]>("list_macros"),
   listModifiers: () => invoke<Modifier[]>("list_modifiers"),
+  listCompositions: () => invoke<Composition[]>("list_compositions"),
   listScenesWithChildren: () =>
     invoke<SceneWithChildren[]>("list_scenes_with_children"),
   listRecentUsage: (limit: number) =>
@@ -127,6 +129,36 @@ export const ipc = {
     invoke<OkAck>("delete_alignment_phrase", { id }),
   reorderAlignmentPhrases: (phaseId: string, orderedIds: string[]) =>
     invoke<OkAck>("reorder_alignment_phrases", { phaseId, orderedIds }),
+
+  // ── Composition direct editing (plan asset-editing §0 Q2/Q6, decision A +
+  // per-phase) — Tauri-only. The body is a modifierIds array (decision D-b);
+  // reorder is scoped to one phase.
+  createComposition: (args: {
+    phaseId: string;
+    name: string;
+    modifierIds: string[];
+    sceneId?: string;
+  }) =>
+    invoke<Composition>("create_composition", {
+      phaseId: args.phaseId,
+      name: args.name,
+      modifierIds: args.modifierIds,
+      sceneId: args.sceneId,
+    }),
+  updateComposition: (args: {
+    id: string;
+    name: string;
+    modifierIds: string[];
+  }) =>
+    invoke<OkAck>("update_composition", {
+      id: args.id,
+      name: args.name,
+      modifierIds: args.modifierIds,
+    }),
+  deleteComposition: (id: string) =>
+    invoke<OkAck>("delete_composition", { id }),
+  reorderCompositions: (phaseId: string, orderedIds: string[]) =>
+    invoke<OkAck>("reorder_compositions", { phaseId, orderedIds }),
 };
 
 export type Ipc = typeof ipc;

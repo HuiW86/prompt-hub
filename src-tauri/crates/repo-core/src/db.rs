@@ -48,6 +48,11 @@ const MIGRATIONS: &[Migration] = &[
         name: "0007_alignment_phrases_order_index",
         sql: include_str!("../migrations/0007_alignment_phrases_order_index.sql"),
     },
+    Migration {
+        target_version: 8,
+        name: "0008_compositions_order_index",
+        sql: include_str!("../migrations/0008_compositions_order_index.sql"),
+    },
 ];
 
 struct Migration {

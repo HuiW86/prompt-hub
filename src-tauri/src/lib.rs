@@ -106,6 +106,7 @@ pub fn run() {
             commands::list_alignment_phrases,
             commands::list_macros,
             commands::list_modifiers,
+            commands::list_compositions,
             commands::list_scenes_with_children,
             commands::list_recent_usage,
             commands::count_today_usage,
@@ -129,6 +130,10 @@ pub fn run() {
             commands::update_alignment_phrase,
             commands::delete_alignment_phrase,
             commands::reorder_alignment_phrases,
+            commands::create_composition,
+            commands::update_composition,
+            commands::delete_composition,
+            commands::reorder_compositions,
         ])
         .build(tauri::generate_context!())
         .expect("error while building tauri application");

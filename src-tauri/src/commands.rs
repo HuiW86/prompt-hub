@@ -18,8 +18,8 @@ const RECENT_USAGE_LIMIT_MAX: i64 = 100;
 
 use crate::error::{AppError, AppResult};
 use repo_core::models::{
-    AlignmentPhrase, DraftPayload, DraftStatus, DraftSummary, DraftTargetType, Macro, Modifier,
-    Phase, RecentUsageEntry, RecordUsageInput, SceneWithChildren, UsageRecord,
+    AlignmentPhrase, Composition, DraftPayload, DraftStatus, DraftSummary, DraftTargetType, Macro,
+    Modifier, Phase, RecentUsageEntry, RecordUsageInput, SceneWithChildren, UsageRecord,
 };
 use repo_core::{repo, DraftRepo, RepoError};
 use repo_write::promote::PromoteOptions;
@@ -92,6 +92,11 @@ pub fn list_macros(state: State<'_, AppState>) -> AppResult<Vec<Macro>> {
 #[tauri::command]
 pub fn list_modifiers(state: State<'_, AppState>) -> AppResult<Vec<Modifier>> {
     with_conn(&state, repo::list_modifiers)
+}
+
+#[tauri::command]
+pub fn list_compositions(state: State<'_, AppState>) -> AppResult<Vec<Composition>> {
+    with_conn(&state, repo::list_compositions)
 }
 
 #[tauri::command]
@@ -397,6 +402,57 @@ pub fn reorder_alignment_phrases(
 ) -> AppResult<OkAck> {
     with_write_conn(&state, |c| {
         repo_write::reorder_alignment_phrases(c, &phase_id, &ordered_ids)
+    })?;
+    Ok(OkAck { ok: true })
+}
+
+// ── Composition direct editing (plan asset-editing-and-adaptive-layout §0 Q2/Q6,
+// decision A + per-phase) ───────────────────────────────────────────────────
+// omar-driven create / update / delete / reorder of composition assets. Tauri-only:
+// the MCP server has no repo-write dependency and can only stage drafts. A
+// composition's body is a modifier_ids array (decision D-b); reorder is scoped to a
+// single phase since order_index restarts per phase.
+
+#[tauri::command]
+pub fn create_composition(
+    state: State<'_, AppState>,
+    phase_id: String,
+    name: String,
+    modifier_ids: Vec<String>,
+    scene_id: Option<String>,
+) -> AppResult<Composition> {
+    with_write_conn(&state, |c| {
+        repo_write::create_composition(c, &phase_id, &name, &modifier_ids, scene_id.as_deref())
+    })
+}
+
+#[tauri::command]
+pub fn update_composition(
+    state: State<'_, AppState>,
+    id: String,
+    name: String,
+    modifier_ids: Vec<String>,
+) -> AppResult<OkAck> {
+    with_write_conn(&state, |c| {
+        repo_write::update_composition(c, &id, &name, &modifier_ids)
+    })?;
+    Ok(OkAck { ok: true })
+}
+
+#[tauri::command]
+pub fn delete_composition(state: State<'_, AppState>, id: String) -> AppResult<OkAck> {
+    with_write_conn(&state, |c| repo_write::delete_composition(c, &id))?;
+    Ok(OkAck { ok: true })
+}
+
+#[tauri::command]
+pub fn reorder_compositions(
+    state: State<'_, AppState>,
+    phase_id: String,
+    ordered_ids: Vec<String>,
+) -> AppResult<OkAck> {
+    with_write_conn(&state, |c| {
+        repo_write::reorder_compositions(c, &phase_id, &ordered_ids)
     })?;
     Ok(OkAck { ok: true })
 }

@@ -75,6 +75,23 @@ export interface Modifier {
   orderIndex: number;
 }
 
+export interface Composition {
+  id: string;
+  name: string;
+  // The composition's body: an ordered set of modifier ids (decision D-b),
+  // not free text. Stored as a JSON column at the SQL layer.
+  modifierIds: string[];
+  phaseId: string;
+  sceneId: string | null;
+  usageCount: number;
+  lastUsedAt: string | null;
+  createdAt: string;
+  notes: string | null;
+  deprecated: boolean;
+  // Sort position WITHIN the phase (migration 0008, decision A + per-phase).
+  orderIndex: number;
+}
+
 export interface Scene {
   id: string;
   name: string;

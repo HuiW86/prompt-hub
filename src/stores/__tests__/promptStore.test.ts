@@ -2,6 +2,7 @@ import { beforeEach, describe, expect, it, vi } from "vitest";
 
 import type {
   AlignmentPhrase,
+  Composition,
   DraftSummary,
   Macro,
   Modifier,
@@ -84,6 +85,22 @@ const fakeModifiers: Modifier[] = [
   },
 ];
 
+const fakeCompositions: Composition[] = [
+  {
+    id: "comp-diverge-1",
+    name: "发散组合",
+    modifierIds: ["mod-structured"],
+    phaseId: "phase-diverge",
+    sceneId: null,
+    usageCount: 1,
+    lastUsedAt: null,
+    createdAt: "2026-05-23T00:00:00Z",
+    notes: null,
+    deprecated: false,
+    orderIndex: 0,
+  },
+];
+
 const fakeScenes: SceneWithChildren[] = [
   {
     scene: {
@@ -138,6 +155,8 @@ function mockListAll() {
         return Promise.resolve(fakeMacros);
       case "list_modifiers":
         return Promise.resolve(fakeModifiers);
+      case "list_compositions":
+        return Promise.resolve(fakeCompositions);
       case "list_scenes_with_children":
         return Promise.resolve(fakeScenes);
       case "list_recent_usage":
@@ -168,6 +187,9 @@ describe("promptStore", () => {
     expect(state.phases).toEqual(fakePhases);
     expect(state.alignmentPhrasesByPhase).toEqual({
       "phase-diverge": fakeAlignments,
+    });
+    expect(state.compositionsByPhase).toEqual({
+      "phase-diverge": fakeCompositions,
     });
     expect(state.macros).toEqual(fakeMacros);
     expect(state.modifiers).toEqual(fakeModifiers);
@@ -285,6 +307,8 @@ describe("promptStore", () => {
           return Promise.resolve(fakeScenes);
         case "list_alignment_phrases":
           return Promise.resolve(fakeAlignments);
+        case "list_compositions":
+          return Promise.resolve(fakeCompositions);
         case "list_drafts":
           return Promise.resolve([]);
         case "count_pending_drafts":
@@ -400,6 +424,7 @@ describe("promptStore", () => {
     invokeMock.mockImplementation((cmd: string) => {
       if (cmd === "list_macros") return Promise.resolve(twoMacros);
       if (cmd === "list_modifiers") return Promise.resolve(fakeModifiers);
+      if (cmd === "list_compositions") return Promise.resolve(fakeCompositions);
       if (cmd === "list_phases") return Promise.resolve(fakePhases);
       if (cmd === "list_alignment_phrases")
         return Promise.resolve(fakeAlignments);
@@ -509,6 +534,8 @@ describe("promptStore", () => {
       switch (cmd) {
         case "list_modifiers":
           return Promise.resolve(threeMods);
+        case "list_compositions":
+          return Promise.resolve(fakeCompositions);
         case "list_macros":
           return Promise.resolve(fakeMacros);
         case "list_phases":
@@ -634,6 +661,8 @@ describe("promptStore", () => {
       switch (cmd) {
         case "list_alignment_phrases":
           return Promise.resolve(twoPhase);
+        case "list_compositions":
+          return Promise.resolve(fakeCompositions);
         case "list_macros":
           return Promise.resolve(fakeMacros);
         case "list_modifiers":
@@ -674,5 +703,130 @@ describe("promptStore", () => {
         .reorderAlignmentPhrases("phase-diverge", ["ap-a", "ap-b"]),
     ).rejects.toThrow("reorder rejected");
     expect(usePromptStore.getState().alignmentPhrasesByPhase).toEqual(before);
+  });
+
+  it("createComposition appends to its phase bucket", async () => {
+    mockListAll();
+    await usePromptStore.getState().refreshAll();
+
+    const created: Composition = {
+      id: "comp-diverge-2",
+      name: "新组合",
+      modifierIds: ["mod-structured"],
+      phaseId: "phase-diverge",
+      sceneId: null,
+      usageCount: 0,
+      lastUsedAt: null,
+      createdAt: "2026-06-04T00:00:00Z",
+      notes: null,
+      deprecated: false,
+      orderIndex: 1,
+    };
+    invokeMock.mockImplementation((cmd: string) => {
+      if (cmd === "create_composition") return Promise.resolve(created);
+      return Promise.reject(new Error(`unexpected ${cmd}`));
+    });
+
+    await usePromptStore.getState().createComposition({
+      phaseId: "phase-diverge",
+      name: "新组合",
+      modifierIds: ["mod-structured"],
+    });
+    const bucket =
+      usePromptStore.getState().compositionsByPhase["phase-diverge"];
+    expect(bucket).toHaveLength(2);
+    expect(bucket[1]).toEqual(created);
+  });
+
+  it("updateComposition applies optimistically and rolls back on failure", async () => {
+    mockListAll();
+    await usePromptStore.getState().refreshAll();
+    const before = usePromptStore.getState().compositionsByPhase;
+
+    invokeMock.mockRejectedValue(new Error("write rejected"));
+    await expect(
+      usePromptStore.getState().updateComposition({
+        id: "comp-diverge-1",
+        name: "改名",
+        modifierIds: [],
+      }),
+    ).rejects.toThrow("write rejected");
+    expect(usePromptStore.getState().compositionsByPhase).toEqual(before);
+  });
+
+  it("deleteComposition removes optimistically and rolls back on failure", async () => {
+    mockListAll();
+    await usePromptStore.getState().refreshAll();
+    const before = usePromptStore.getState().compositionsByPhase;
+
+    invokeMock.mockRejectedValue(new Error("delete rejected"));
+    await expect(
+      usePromptStore.getState().deleteComposition("comp-diverge-1"),
+    ).rejects.toThrow("delete rejected");
+    expect(usePromptStore.getState().compositionsByPhase).toEqual(before);
+  });
+
+  it("reorderCompositions resequences one phase optimistically and rolls back", async () => {
+    // Two compositions in phase-diverge + one in phase-understand, so we can
+    // assert the reorder touches only the targeted phase.
+    const twoPhase: Composition[] = [
+      { ...fakeCompositions[0], id: "comp-a", orderIndex: 0 },
+      { ...fakeCompositions[0], id: "comp-b", orderIndex: 1 },
+      {
+        ...fakeCompositions[0],
+        id: "comp-keep",
+        phaseId: "phase-understand",
+        orderIndex: 0,
+      },
+    ];
+    invokeMock.mockImplementation((cmd: string) => {
+      switch (cmd) {
+        case "list_alignment_phrases":
+          return Promise.resolve(fakeAlignments);
+        case "list_compositions":
+          return Promise.resolve(twoPhase);
+        case "list_macros":
+          return Promise.resolve(fakeMacros);
+        case "list_modifiers":
+          return Promise.resolve(fakeModifiers);
+        case "list_phases":
+          return Promise.resolve(fakePhases);
+        case "list_scenes_with_children":
+          return Promise.resolve(fakeScenes);
+        case "list_recent_usage":
+          return Promise.resolve(fakeRecent);
+        case "count_today_usage":
+          return Promise.resolve(0);
+        case "list_drafts":
+          return Promise.resolve(fakeDrafts);
+        case "count_pending_drafts":
+          return Promise.resolve(fakeDrafts.length);
+        default:
+          return Promise.reject(new Error(`unexpected ${cmd}`));
+      }
+    });
+    await usePromptStore.getState().refreshAll();
+
+    // Success: the diverge phase follows the supplied order; understand is kept.
+    invokeMock.mockResolvedValue({ ok: true });
+    await usePromptStore
+      .getState()
+      .reorderCompositions("phase-diverge", ["comp-b", "comp-a"]);
+    const byPhase = usePromptStore.getState().compositionsByPhase;
+    expect(byPhase["phase-diverge"].map((c) => c.id)).toEqual([
+      "comp-b",
+      "comp-a",
+    ]);
+    expect(byPhase["phase-understand"].map((c) => c.id)).toEqual(["comp-keep"]);
+
+    // Failure: snapshot restored.
+    const before = usePromptStore.getState().compositionsByPhase;
+    invokeMock.mockRejectedValue(new Error("reorder rejected"));
+    await expect(
+      usePromptStore
+        .getState()
+        .reorderCompositions("phase-diverge", ["comp-a", "comp-b"]),
+    ).rejects.toThrow("reorder rejected");
+    expect(usePromptStore.getState().compositionsByPhase).toEqual(before);
   });
 });

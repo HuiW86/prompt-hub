@@ -187,10 +187,10 @@ pub fn list_modifiers(conn: &Connection) -> RepoResult<Vec<Modifier>> {
 pub fn list_compositions(conn: &Connection) -> RepoResult<Vec<Composition>> {
     let mut stmt = conn.prepare(
         "SELECT id, name, modifier_ids, phase_id, scene_id, usage_count,
-                last_used_at, created_at, notes, deprecated
+                last_used_at, created_at, notes, deprecated, order_index
          FROM compositions
          WHERE deprecated = 0
-         ORDER BY phase_id ASC, usage_count DESC, created_at ASC",
+         ORDER BY phase_id ASC, order_index ASC, created_at ASC",
     )?;
     let raw = stmt.query_map([], |row| {
         Ok((
@@ -204,12 +204,24 @@ pub fn list_compositions(conn: &Connection) -> RepoResult<Vec<Composition>> {
             row.get::<_, String>("created_at")?,
             row.get::<_, Option<String>>("notes")?,
             row.get::<_, i64>("deprecated")? != 0,
+            row.get::<_, i64>("order_index")?,
         ))
     })?;
     let mut out = Vec::new();
     for r in raw {
-        let (id, name, modifier_ids_json, phase_id, scene_id, usage, last, created, notes, dep) =
-            r?;
+        let (
+            id,
+            name,
+            modifier_ids_json,
+            phase_id,
+            scene_id,
+            usage,
+            last,
+            created,
+            notes,
+            dep,
+            order_index,
+        ) = r?;
         out.push(Composition {
             id,
             name,
@@ -221,6 +233,7 @@ pub fn list_compositions(conn: &Connection) -> RepoResult<Vec<Composition>> {
             created_at: parse_ts(created)?,
             notes,
             deprecated: dep,
+            order_index,
         });
     }
     Ok(out)

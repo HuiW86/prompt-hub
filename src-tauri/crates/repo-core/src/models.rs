@@ -88,6 +88,8 @@ pub struct Composition {
     pub created_at: DateTime<Utc>,
     pub notes: Option<String>,
     pub deprecated: bool,
+    // Sort position WITHIN the phase (migration 0008, decision A + per-phase).
+    pub order_index: i64,
 }
 
 #[derive(Debug, Serialize, Deserialize, Clone)]

@@ -3,6 +3,7 @@ import { create } from "zustand";
 import { ipc } from "../ipc";
 import type {
   AlignmentPhrase,
+  Composition,
   DraftSummary,
   GroupKind,
   Macro,
@@ -19,6 +20,7 @@ export type LoadState = "idle" | "loading" | "ready" | "error";
 interface PromptState {
   phases: Phase[];
   alignmentPhrasesByPhase: Record<string, AlignmentPhrase[]>;
+  compositionsByPhase: Record<string, Composition[]>;
   macros: Macro[];
   modifiers: Modifier[];
   scenes: SceneWithChildren[];
@@ -94,6 +96,23 @@ interface PromptState {
     phaseId: string,
     orderedIds: string[],
   ) => Promise<void>;
+
+  // Direct composition editing (plan asset-editing §0 Q2/Q6, decision A +
+  // per-phase). Operates on the grouped compositionsByPhase structure; the body
+  // is a modifierIds array (decision D-b). reorder is scoped to one phase bucket.
+  createComposition: (args: {
+    phaseId: string;
+    name: string;
+    modifierIds: string[];
+    sceneId?: string;
+  }) => Promise<void>;
+  updateComposition: (args: {
+    id: string;
+    name: string;
+    modifierIds: string[];
+  }) => Promise<void>;
+  deleteComposition: (id: string) => Promise<void>;
+  reorderCompositions: (phaseId: string, orderedIds: string[]) => Promise<void>;
 }
 
 const RECENT_LIMIT = 5;
@@ -103,6 +122,15 @@ function indexByPhase(
 ): Record<string, AlignmentPhrase[]> {
   return phrases.reduce<Record<string, AlignmentPhrase[]>>((acc, p) => {
     (acc[p.phaseId] ??= []).push(p);
+    return acc;
+  }, {});
+}
+
+function indexCompositionsByPhase(
+  compositions: Composition[],
+): Record<string, Composition[]> {
+  return compositions.reduce<Record<string, Composition[]>>((acc, c) => {
+    (acc[c.phaseId] ??= []).push(c);
     return acc;
   }, {});
 }
@@ -158,6 +186,7 @@ function bumpUsageCount(
 export const usePromptStore = create<PromptState>()((set, get) => ({
   phases: [],
   alignmentPhrasesByPhase: {},
+  compositionsByPhase: {},
   macros: [],
   modifiers: [],
   scenes: [],
@@ -174,6 +203,7 @@ export const usePromptStore = create<PromptState>()((set, get) => ({
       const [
         phases,
         alignments,
+        compositions,
         macros,
         modifiers,
         scenes,
@@ -184,6 +214,7 @@ export const usePromptStore = create<PromptState>()((set, get) => ({
       ] = await Promise.all([
         ipc.listPhases(),
         ipc.listAlignmentPhrases(),
+        ipc.listCompositions(),
         ipc.listMacros(),
         ipc.listModifiers(),
         ipc.listScenesWithChildren(),
@@ -195,6 +226,7 @@ export const usePromptStore = create<PromptState>()((set, get) => ({
       set({
         phases,
         alignmentPhrasesByPhase: indexByPhase(alignments),
+        compositionsByPhase: indexCompositionsByPhase(compositions),
         macros,
         modifiers,
         scenes,
@@ -240,17 +272,20 @@ export const usePromptStore = create<PromptState>()((set, get) => ({
     // The draft left the inbox and a new asset landed in one of the four real
     // tables. Refresh the inbox (list + badge) and silently re-pull the asset
     // slices so the promoted item shows on this summon without a loadState flash.
-    const [macros, modifiers, scenes, alignments] = await Promise.all([
-      ipc.listMacros(),
-      ipc.listModifiers(),
-      ipc.listScenesWithChildren(),
-      ipc.listAlignmentPhrases(),
-    ]);
+    const [macros, modifiers, scenes, alignments, compositions] =
+      await Promise.all([
+        ipc.listMacros(),
+        ipc.listModifiers(),
+        ipc.listScenesWithChildren(),
+        ipc.listAlignmentPhrases(),
+        ipc.listCompositions(),
+      ]);
     set({
       macros,
       modifiers,
       scenes,
       alignmentPhrasesByPhase: indexByPhase(alignments),
+      compositionsByPhase: indexCompositionsByPhase(compositions),
     });
     await get().refreshDrafts();
   },
@@ -415,6 +450,77 @@ export const usePromptStore = create<PromptState>()((set, get) => ({
       await ipc.reorderAlignmentPhrases(phaseId, orderedIds);
     } catch (err) {
       set({ alignmentPhrasesByPhase: snapshot });
+      throw err;
+    }
+  },
+
+  createComposition: async ({ phaseId, name, modifierIds, sceneId }) => {
+    const created = await ipc.createComposition({
+      phaseId,
+      name,
+      modifierIds,
+      sceneId,
+    });
+    set((state) => ({
+      compositionsByPhase: {
+        ...state.compositionsByPhase,
+        [created.phaseId]: [
+          ...(state.compositionsByPhase[created.phaseId] ?? []),
+          created,
+        ],
+      },
+    }));
+  },
+
+  updateComposition: async ({ id, name, modifierIds }) => {
+    const snapshot = get().compositionsByPhase;
+    const next: Record<string, Composition[]> = {};
+    for (const [phaseId, list] of Object.entries(snapshot)) {
+      next[phaseId] = list.map((c) =>
+        c.id === id ? { ...c, name, modifierIds } : c,
+      );
+    }
+    set({ compositionsByPhase: next });
+    try {
+      await ipc.updateComposition({ id, name, modifierIds });
+    } catch (err) {
+      set({ compositionsByPhase: snapshot });
+      throw err;
+    }
+  },
+
+  deleteComposition: async (id) => {
+    const snapshot = get().compositionsByPhase;
+    const next: Record<string, Composition[]> = {};
+    for (const [phaseId, list] of Object.entries(snapshot)) {
+      next[phaseId] = list.filter((c) => c.id !== id);
+    }
+    set({ compositionsByPhase: next });
+    try {
+      await ipc.deleteComposition(id);
+    } catch (err) {
+      set({ compositionsByPhase: snapshot });
+      throw err;
+    }
+  },
+
+  // Reorder is scoped to one phase bucket: only the targeted phase's members are
+  // resequenced (per orderedIds); other phases keep their place.
+  reorderCompositions: async (phaseId, orderedIds) => {
+    const snapshot = get().compositionsByPhase;
+    const byId = new Map(
+      (snapshot[phaseId] ?? []).map((c) => [c.id, c] as const),
+    );
+    const reordered = orderedIds
+      .map((id) => byId.get(id))
+      .filter((c): c is Composition => c !== undefined);
+    set({
+      compositionsByPhase: { ...snapshot, [phaseId]: reordered },
+    });
+    try {
+      await ipc.reorderCompositions(phaseId, orderedIds);
+    } catch (err) {
+      set({ compositionsByPhase: snapshot });
       throw err;
     }
   },

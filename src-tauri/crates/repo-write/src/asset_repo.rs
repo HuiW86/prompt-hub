@@ -45,8 +45,9 @@ impl AssetRepo for Connection {
         self.execute(
             "INSERT INTO compositions
                 (id, name, modifier_ids, phase_id, scene_id, usage_count,
-                 last_used_at, created_at, notes, deprecated)
-             VALUES (?1, ?2, ?3, ?4, ?5, 0, NULL, ?6, NULL, 0)",
+                 last_used_at, created_at, notes, deprecated, order_index)
+             VALUES (?1, ?2, ?3, ?4, ?5, 0, NULL, ?6, NULL, 0,
+                 (SELECT COALESCE(MAX(order_index) + 1, 0) FROM compositions WHERE phase_id = ?4))",
             params![id, name, modifier_ids_json, phase_id, scene_id, now],
         )?;
         Ok(id)
