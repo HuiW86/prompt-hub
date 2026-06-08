@@ -1,10 +1,10 @@
 ---
 type: plan
 project: prompt-hub
-version: v0.4
+version: v0.5
 created: 2026-06-03
 last_modified: 2026-06-05
-status: in-progress  # P1/P2 后端 + Macro/AlignmentPhrase UI + P3(X方案)/P4 done；Modifier·Composition UI 落点暂缓（#3/#4），见 §7
+status: in-progress  # P1/P2 后端 + Macro/AlignmentPhrase UI + P3(X方案)/P4 done；Modifier·Composition 编辑 UI 推迟后续版本（#3/#4 deferred-to-vNext，后端已就绪不阻塞），见 §7
 author: co  # 🤝 人机共创（CLAUDE §5.2）
 related:
   - 01-spec
@@ -205,7 +205,7 @@ description: 资产编辑 + 自适应布局实施 plan——4 类资产（Modifi
 - [x] P2.1 数据层：alignment_phrases 加 order_index + Composition/Modifier 核查（per-phase order_index 全链路）
 - [x] P2.2 读侧：补 Modifier/Composition 的 list 命令（按需）
 - [x] P2.3 后端写：3 类 × create/update/delete/reorder
-- [~] P2.4 前端：AlignmentPhrase 编辑 UI + dnd 排序 done；**Modifier/Composition UI 落点暂缓（#3/#4，见 §7）**
+- [~] P2.4 前端：AlignmentPhrase 编辑 UI + dnd 排序 done；**Modifier/Composition 编辑 UI 推迟后续版本（#3/#4 deferred-to-vNext，见 §7）**——后端 CRUD/reorder/list/order_index + 前端 IPC/types/store action 全套已 done，仅缺 UI 组件 + 落点，可随时补
 - [x] P2.5 B2 物理分离自检（3 项清单，clean）
 - [x] P3.1 Dashboard 列机制（**X 方案**——默认比例+可拖+持久化，放弃空列自动收缩，列机制交 P4，见 §7）
 - [x] P3.2 各区域空态/少态样式（既有工作已满足，无新代码）
@@ -224,8 +224,9 @@ description: 资产编辑 + 自适应布局实施 plan——4 类资产（Modifi
 - **P4 可拖列**：`Group`/`Panel`/`Separator` + `useDefaultLayout` localStorage 持久化 → **done**，手测 拖拽 + 持久化 + 键盘 focus（Tab 聚焦 + ←→ 调宽，经全量重启杜绝 HMR）全 ✓。
 
 **决策留痕**：
-1. **#3/#4 ModifierGrid / Composition 落点决策暂缓**（omar 主动搁置，2026-06-05）——Modifier/Composition 后端 `order_index` 全链路已 done，但**编辑 UI 在主界面的落点**未拍板（当前 read 命令呈现位置不明确，见 §3 P2.2 风险）。⚠️ **未来落地建 Composition 工作台时，须复检 [[02-constitution#B2]] 自检清单 ①**（AlignmentPhrase 不得漏进 Composition 工作台）——本次自检 ① 因工作台尚未建而 trivially 成立，建后需重做。
+1. **#3/#4 ModifierGrid / Composition 编辑 UI 推迟后续版本（deferred-to-vNext，2026-06-05 拍板）**——后端 100% 就绪（CRUD/reorder/list/`order_index` 全链路 + 前端 IPC/types/store action 全套已 done，仅缺前端 UI 组件 + Dashboard 落点），不阻塞 M0 收口，故推迟。已收敛的设计意向（落地时直接采用）：**Modifier** 采 MacroGrid 式卡片网格（按四象限 `group_kind` 分组，语义=方法论原子材料库 <30 个）；**Composition** 落入 Scene/Phase 区（按 `phase_id` 分组，语义=多 Modifier 拼接的成品）。布局腾空间方式（嵌现有列 vs 新增第 4 列）留落地时拿真实组件截图再拍。⚠️ **未来建 Composition 工作台时，须复检 [[02-constitution#B2]] 自检清单 ①**（AlignmentPhrase 不得漏进 Composition 工作台）——本次自检 ① 因工作台尚未建而 trivially 成立，建后需重做。
 2. **X 方案锁定**：列宽 = 默认比例 + 用户可拖 + 持久化，**放弃空列自动收缩**（与持久化拖拽互斥，omar 已确认选 X）。
 3. **P4 实测推翻 plan 旧假设**：§0 Q7 / §4 / §3 P4 风险点曾预判「v4 仅百分比、token 是 px → 需 px↔% 换算 util + 监听 resize 重算」。06-04 research 一手核验 + P4 实装证实 **v4 扩展支持 px/rem/vh 单位、且全用 % 时自动随窗口缩放**，故换算 util 与 resize 监听**均不需要**——比 plan 预估更干净（回流 [[learnings#信条六]]）。
 4. **P4 运行时报错复盘**：a347d17 曾在真实 webview 抛错（HMR 中间态挂载顺序），全量重启不复现，非真实 bug，未 revert（回流 [[learnings#信条三]] 附加教训）。
 5. **bench 验收 + auto-cycle 主线程 bug 修复**（2026-06-05 收尾 workflow）：跑 `bench:hotkey-wake` 留痕时发现 auto-cycle 版（`bench.rs`）把 wake/hide 放进 tokio worker 线程直调 AppKit `show()`/`order_front`，违反 macOS 主线程约束 → `Must only be used from the main thread` SIGTRAP，**重构后从未在 macOS 跑通过**（HANDOFF baseline 10.49ms 实为 M0-3 旧 inline 版数字）。修复：每次 wake/hide 经 `run_on_main_thread` 派发、timing 放进主线程闭包内测。修复后首次跑通 **P95=14.696ms**（+OS dispatch ~10ms ≈ 25ms，远低于 [[02-constitution#C1]] 200ms）。回流 [[learnings#信条四]]。
+6. **bench:cold-start 回归留痕**（2026-06-05）：补跑 HANDOFF 唯一未验路径（subprocess + Swift CGWindow probe，20 轮 debug build）→ **P95=199.66ms / mean=187.47ms / p50=184.84ms**，与 CLAUDE.md §2 记录的 ~193ms debug baseline 接近，无回归。注：cold-start 无 C1 预算约束（C1 200ms 仅约束 ⌥Space 唤起），此数仅作回归 baseline 追踪。
