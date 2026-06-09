@@ -1,0 +1,324 @@
+/* ModifierGrid — task-layer modifier cards, grouped by the four quadrants.
+   Visual vocabulary mirrors MacroGrid (ADR-012 token system). Lives in the
+   narrow col3, so quadrant card grids auto-fill and collapse to one column. */
+
+.region {
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
+  background: var(--canvas);
+}
+
+/* B5-5: region-level Tab landing (03-product-spec §13.4). */
+.region:focus-visible {
+  outline: var(--border-thick) solid var(--protocol);
+  outline-offset: calc(-1 * var(--border-thick));
+}
+
+.quadrants {
+  display: flex;
+  flex-direction: column;
+  gap: var(--s-3);
+  padding: var(--s-3);
+  overflow: auto;
+  min-height: 0;
+}
+
+.quadrant {
+  display: flex;
+  flex-direction: column;
+  gap: var(--s-2);
+}
+
+.quadrantHeader {
+  display: flex;
+  align-items: center;
+  gap: var(--s-1_5);
+}
+
+.quadrantTitle {
+  font: var(--w-600) var(--t-11) / 1 var(--font-sans);
+  color: var(--fg-2);
+  letter-spacing: 0.04em;
+}
+
+.quadrantCount {
+  font: var(--w-400) var(--t-11) / 1 var(--font-mono);
+  color: var(--aux);
+  font-variant-numeric: tabular-nums;
+}
+
+.quadrantEmpty {
+  margin: 0;
+  font: var(--w-400) var(--t-11) / 1 var(--font-sans);
+  color: var(--aux);
+}
+
+.addBtn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: var(--s-5);
+  height: var(--s-5);
+  margin-left: auto;
+  padding: 0;
+  appearance: none;
+  background: var(--task-8);
+  border: var(--hairline) solid var(--border-1);
+  border-radius: var(--r-2);
+  color: var(--task);
+  cursor: pointer;
+  transition:
+    background-color var(--d-fast) var(--ease),
+    border-color var(--d-fast) var(--ease);
+}
+
+.addBtn:hover {
+  background: var(--task-16);
+  border-color: var(--task);
+}
+
+.addBtn:focus-visible {
+  outline: var(--border-thick) solid var(--task);
+  outline-offset: 0;
+}
+
+.cards {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(var(--s-20), 1fr));
+  gap: var(--s-2);
+}
+
+.card {
+  background: var(--surface-1);
+  border: var(--hairline) solid var(--border-1);
+  border-radius: var(--r-3);
+  padding: var(--s-2_5);
+  display: flex;
+  flex-direction: column;
+  gap: var(--s-1_5);
+  text-align: left;
+  position: relative;
+  min-width: 0;
+  transition:
+    border-color var(--d-fast) var(--ease),
+    background-color var(--d-fast) var(--ease);
+}
+
+.card:hover {
+  border-color: var(--border-2);
+}
+
+.card.dragging {
+  opacity: var(--op-dim);
+  border-color: var(--task);
+  cursor: grabbing;
+}
+
+.cardBody {
+  display: flex;
+  flex-direction: column;
+  gap: var(--s-1);
+  min-width: 0;
+}
+
+.title {
+  margin: 0;
+  min-width: 0;
+  word-break: break-word;
+  font: var(--w-500) var(--t-13) / var(--lh-tight) var(--font-sans);
+  color: var(--fg-1);
+}
+
+.body {
+  margin: 0;
+  font: var(--w-400) var(--t-12) / var(--lh-body) var(--font-sans);
+  color: var(--fg-2);
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+
+/* Action controls (handle / edit / delete) — revealed on hover or focus. */
+.actions,
+.confirm {
+  position: absolute;
+  top: var(--s-1_5);
+  right: var(--s-1_5);
+  display: flex;
+  align-items: center;
+  gap: var(--s-1);
+  opacity: 0;
+  transition: opacity var(--d-fast) var(--ease);
+}
+
+.card:hover .actions,
+.card:focus-within .actions,
+.confirm {
+  opacity: 1;
+}
+
+.handle,
+.actBtn,
+.confirmYes,
+.confirmNo {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: var(--s-5);
+  height: var(--s-5);
+  padding: 0;
+  appearance: none;
+  background: var(--surface-2);
+  border: var(--hairline) solid var(--border-1);
+  border-radius: var(--r-2);
+  color: var(--fg-3);
+  cursor: pointer;
+  transition:
+    color var(--d-fast) var(--ease),
+    border-color var(--d-fast) var(--ease);
+}
+
+.handle {
+  cursor: grab;
+}
+
+.handle:hover,
+.actBtn:hover {
+  color: var(--fg-1);
+  border-color: var(--border-2);
+}
+
+.handle:focus-visible,
+.actBtn:focus-visible,
+.confirmYes:focus-visible,
+.confirmNo:focus-visible {
+  outline: var(--border-thick) solid var(--task);
+  outline-offset: 0;
+}
+
+.confirm {
+  background: var(--surface-1);
+  border-radius: var(--r-2);
+  padding-left: var(--s-1_5);
+}
+
+.confirmText {
+  font: var(--w-500) var(--t-11) / 1 var(--font-sans);
+  color: var(--fg-1);
+}
+
+.confirmYes {
+  color: var(--task);
+}
+
+.confirmNo {
+  color: var(--fg-3);
+}
+
+.card:focus-visible {
+  outline: var(--border-thick) solid var(--task);
+  outline-offset: 0;
+  border-color: var(--task);
+}
+
+/* Central edit panel (Q8: a single edit entry, not scattered popovers). */
+.editor {
+  display: flex;
+  flex-direction: column;
+  gap: var(--s-2);
+  margin: var(--s-2_5) var(--s-3) 0;
+  padding: var(--s-3);
+  background: var(--surface-1);
+  border: var(--hairline) solid var(--border-2);
+  border-radius: var(--r-3);
+}
+
+.editorQuadrant {
+  align-self: flex-start;
+  padding: 0 var(--s-1_5);
+  height: var(--s-5);
+  display: inline-flex;
+  align-items: center;
+  background: var(--task-8);
+  border-radius: var(--r-2);
+  font: var(--w-500) var(--t-11) / 1 var(--font-sans);
+  color: var(--task);
+}
+
+.editorName,
+.editorBody {
+  width: 100%;
+  appearance: none;
+  background: var(--surface-2);
+  border: var(--hairline) solid var(--border-1);
+  border-radius: var(--r-2);
+  padding: var(--s-2);
+  color: var(--fg-1);
+  font: var(--w-400) var(--t-13) / var(--lh-body) var(--font-sans);
+}
+
+.editorName {
+  font-weight: var(--w-500);
+}
+
+.editorBody {
+  resize: vertical;
+  min-height: var(--s-12);
+}
+
+.editorName:focus-visible,
+.editorBody:focus-visible {
+  outline: var(--border-thick) solid var(--task);
+  outline-offset: 0;
+  border-color: var(--task);
+}
+
+.editorActions {
+  display: flex;
+  justify-content: flex-end;
+  gap: var(--s-2);
+}
+
+.editorCancel,
+.editorSave {
+  height: var(--h-chip);
+  padding: 0 var(--s-3);
+  appearance: none;
+  border-radius: var(--r-2);
+  cursor: pointer;
+  font: var(--w-500) var(--t-12) / 1 var(--font-sans);
+  transition:
+    background-color var(--d-fast) var(--ease),
+    border-color var(--d-fast) var(--ease);
+}
+
+.editorCancel {
+  background: none;
+  border: var(--hairline) solid var(--border-2);
+  color: var(--fg-2);
+}
+
+.editorCancel:hover {
+  border-color: var(--border-3);
+  color: var(--fg-1);
+}
+
+.editorSave {
+  background: var(--task);
+  border: var(--hairline) solid var(--task);
+  color: var(--task-fg);
+}
+
+.editorSave:disabled {
+  opacity: var(--op-dim);
+  cursor: not-allowed;
+}
+
+.editorCancel:focus-visible,
+.editorSave:focus-visible {
+  outline: var(--border-thick) solid var(--task);
+  outline-offset: var(--s-0_5);
+}

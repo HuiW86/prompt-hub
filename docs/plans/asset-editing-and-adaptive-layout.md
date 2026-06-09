@@ -1,10 +1,10 @@
 ---
 type: plan
 project: prompt-hub
-version: v0.5
+version: v0.6
 created: 2026-06-03
-last_modified: 2026-06-05
-status: in-progress  # P1/P2 后端 + Macro/AlignmentPhrase UI + P3(X方案)/P4 done；Modifier·Composition 编辑 UI 推迟后续版本（#3/#4 deferred-to-vNext，后端已就绪不阻塞），见 §7
+last_modified: 2026-06-08
+status: done  # P1–P4 全收口：4 类资产编辑 UI（Macro/AlignmentPhrase/Modifier/Composition）+ X方案列布局 + 可拖分隔条全部 done。Modifier·Composition 编辑 UI 于 2026-06-08 补齐（原 #3/#4 deferred 项落地），见 §7
 author: co  # 🤝 人机共创（CLAUDE §5.2）
 related:
   - 01-spec
@@ -205,8 +205,8 @@ description: 资产编辑 + 自适应布局实施 plan——4 类资产（Modifi
 - [x] P2.1 数据层：alignment_phrases 加 order_index + Composition/Modifier 核查（per-phase order_index 全链路）
 - [x] P2.2 读侧：补 Modifier/Composition 的 list 命令（按需）
 - [x] P2.3 后端写：3 类 × create/update/delete/reorder
-- [~] P2.4 前端：AlignmentPhrase 编辑 UI + dnd 排序 done；**Modifier/Composition 编辑 UI 推迟后续版本（#3/#4 deferred-to-vNext，见 §7）**——后端 CRUD/reorder/list/order_index + 前端 IPC/types/store action 全套已 done，仅缺 UI 组件 + 落点，可随时补
-- [x] P2.5 B2 物理分离自检（3 项清单，clean）
+- [x] P2.4 前端：AlignmentPhrase + Modifier + Composition 编辑 UI 全 done（2026-06-08 补齐 Modifier/Composition）——`ModifierGrid`（四象限卡片网格，每象限独立 DragDropProvider）落 col3 第三行；`CompositionWorkbench`（modifierIds picker + 列表 dnd 重排）落 scene 列 ScenePanel 下方，按 `activePhaseId` 分组，见 §7 #7
+- [x] P2.5 B2 物理分离自检（3 项清单，clean；2026-06-08 Composition 工作台建成后复检 ①，CompositionWorkbench 源码零 alignment 引用，加 `composition-b2-separation.test.ts` 源码级 gate 防回归）
 - [x] P3.1 Dashboard 列机制（**X 方案**——默认比例+可拖+持久化，放弃空列自动收缩，列机制交 P4，见 §7）
 - [x] P3.2 各区域空态/少态样式（既有工作已满足，无新代码）
 - [x] P4.1 引 react-resizable-panels@^4 + Dashboard 重构 Group/Panel/Separator（**v4 直接支持 %，免 px↔% 换算 util**——实测推翻 §0/§4 旧假设，见 §7）
@@ -230,3 +230,9 @@ description: 资产编辑 + 自适应布局实施 plan——4 类资产（Modifi
 4. **P4 运行时报错复盘**：a347d17 曾在真实 webview 抛错（HMR 中间态挂载顺序），全量重启不复现，非真实 bug，未 revert（回流 [[learnings#信条三]] 附加教训）。
 5. **bench 验收 + auto-cycle 主线程 bug 修复**（2026-06-05 收尾 workflow）：跑 `bench:hotkey-wake` 留痕时发现 auto-cycle 版（`bench.rs`）把 wake/hide 放进 tokio worker 线程直调 AppKit `show()`/`order_front`，违反 macOS 主线程约束 → `Must only be used from the main thread` SIGTRAP，**重构后从未在 macOS 跑通过**（HANDOFF baseline 10.49ms 实为 M0-3 旧 inline 版数字）。修复：每次 wake/hide 经 `run_on_main_thread` 派发、timing 放进主线程闭包内测。修复后首次跑通 **P95=14.696ms**（+OS dispatch ~10ms ≈ 25ms，远低于 [[02-constitution#C1]] 200ms）。回流 [[learnings#信条四]]。
 6. **bench:cold-start 回归留痕**（2026-06-05）：补跑 HANDOFF 唯一未验路径（subprocess + Swift CGWindow probe，20 轮 debug build）→ **P95=199.66ms / mean=187.47ms / p50=184.84ms**，与 CLAUDE.md §2 记录的 ~193ms debug baseline 接近，无回归。注：cold-start 无 C1 预算约束（C1 200ms 仅约束 ⌥Space 唤起），此数仅作回归 baseline 追踪。
+7. **#3/#4 Modifier/Composition 编辑 UI 落地（2026-06-08，原 deferred-to-vNext 项收口）**：按 #1 收敛的设计意向实装，落点经 3-agent 评审取得共识——
+   - **ModifierGrid**：四象限（`group_kind` ∈ 认知/行动/交付/约束）分组卡片网格，**每象限各自持有独立 `DragDropProvider` + 本地 items**（隔离跨象限拖拽，杜绝拖动静默改 group_kind）；集中式 `ModifierEditor`（name + content，新增时 groupKind 由触发象限锁定，编辑不可改象限）；删除二次确认。**不支持点击复制**（`UsageSource` 枚举无 modifier 值，避免改后端 enum / 开 ADR）。落 col3 第三行（`RecentList` / `ModifierGrid` / `SopProgress`）。
+   - **CompositionWorkbench**：独立组件（非嵌 ScenePanel——Composition 是 phase 维度，ScenePanel 是 scene 维度，保持 B2 隔离干净），按 `activePhaseId` 取 `compositionsByPhase`；列表 dnd 重排（外层 DragDropProvider）；`CompositionEditor` = name + modifierIds picker，已选 chip 用 **↑↓✕ 按钮调序**（非嵌套 dnd，避开 DragDropProvider 嵌套冲突），`selectedIds: string[]` 即拼接顺序（decision D-b）。落 scene 列 ScenePanel 下方。
+   - **布局**：`Dashboard.module.css` col3 改 3 行 `minmax(0,1fr)/minmax(0,1.2fr)/auto`；新增 `.sceneCol` 2 行 `minmax(0,1.4fr)/minmax(0,1fr)`。⚠️ 行高比例的视觉「是否过挤」需真机 `pnpm tauri dev` 人眼复核（本环境无法截 Tauri 原生窗口）。
+   - **B2 复检 ①**（#1 遗留义务）：Composition 工作台建成 → 复检通过，CompositionWorkbench 源码零 alignment 引用，并加 `composition-b2-separation.test.ts`（fs 读源码断言 `not.toMatch(/alignment/i)`）做**源码级机械 gate** 防未来回归。
+   - **验收**：`pnpm test` 87/87（+12 新：ModifierGrid 6 + CompositionWorkbench 6）+ App.test 区域顺序追加 2 landmark；`cargo test --workspace` 全绿（后端未动）；lint/prettier/build/clippy/fmt 全 clean。**待人验**：真机视觉（行高拥挤度）+ 2 类 × CRUD/排序手测。

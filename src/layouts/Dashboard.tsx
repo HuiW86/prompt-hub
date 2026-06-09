@@ -6,7 +6,9 @@ import {
 } from "react-resizable-panels";
 
 import { AlignmentPhrases } from "../components/AlignmentPhrases";
+import { CompositionWorkbench } from "../components/CompositionWorkbench";
 import { MacroGrid } from "../components/MacroGrid";
+import { ModifierGrid } from "../components/ModifierGrid";
 import { PhaseBar } from "../components/PhaseBar";
 import { RecentList } from "../components/RecentList";
 import { ScenePanel } from "../components/ScenePanel";
@@ -74,7 +76,10 @@ export function Dashboard() {
             defaultSize="30%"
             minSize="18%"
           >
-            <ScenePanel />
+            <div className={styles.sceneCol}>
+              <ScenePanel />
+              <CompositionWorkbench />
+            </div>
           </Panel>
           <Separator className={styles.separator} />
           <Panel
@@ -85,6 +90,7 @@ export function Dashboard() {
           >
             <div className={styles.col3}>
               <RecentList />
+              <ModifierGrid />
               <SopProgress />
             </div>
           </Panel>

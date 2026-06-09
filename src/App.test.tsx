@@ -212,7 +212,9 @@ describe("Dashboard end-to-end render", () => {
       "alignment-phrases",
       "macro-grid",
       "scene-panel",
+      "composition-workbench",
       "recent-list",
+      "modifier-grid",
       "sop-progress",
       "status-bar",
     ]);

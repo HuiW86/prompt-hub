@@ -1,13 +1,13 @@
 ---
 type: features
 project: prompt-hub
-version: v0.9
+version: v1.0
 created: 2026-05-19
-last_modified: 2026-06-05
+last_modified: 2026-06-08
 status: in-progress  # S1 主形态 MVP 5 模块 + 跨模块 P0 多项 done（ADR-012 Phase 1-5 全 done）；M-X 全收口——数据层 + workspace + MCP server + UI 收件箱（草稿 tab + 待审 badge + 5 IPC + schema recheck）done；M0-4 签名公证链路 done（M0 四项全绿）
 author: ai  # 🤖 AI 主笔 + 人审（CLAUDE §5.2）
 audience: [human, ai]
-description: prompt-hub 功能清单运营视图——功能 × 状态 × 测试覆盖 × 版本，单一事实源；v0.9 新增 §3.8 资产编辑 + 自适应布局区（4 类资产编辑/排序 + Dashboard 可拖列布局），前序 v0.8 收口 M0-4 签名公证链路
+description: prompt-hub 功能清单运营视图——功能 × 状态 × 测试覆盖 × 版本，单一事实源；v1.0 收口 §3.8 资产编辑全 4 功能 done（Modifier/Composition 编辑 UI 补齐），前序 v0.9 新增 §3.8 区 / v0.8 收口 M0-4 签名公证链路
 related:
   - 06-prd
   - prompt-hub-mvp
@@ -157,7 +157,7 @@ related:
 |---|---|---|---|---|---|---|
 | Macro 编辑（增删改名/改内容）+ dnd-kit 拖动排序（`order_index` 持久化）| P1 | `done` | v1.1 | 73 前端 / repo-write reorder | omar | [[asset-editing-and-adaptive-layout#P1]] |
 | AlignmentPhrase 编辑面板（edit-mode toggle + dnd 排序，per-phase `order_index`）| P1 | `done` | v1.1 | 73 前端 | omar | [[asset-editing-and-adaptive-layout#P2]] |
-| Modifier / Composition 编辑（增删改名/改内容/排序）| P1 | `in-progress` | v1.1 | 后端 `order_index` 全链路 done；UI 落点暂缓（#3/#4，omar 主动搁置）| omar | [[asset-editing-and-adaptive-layout#P2]] |
+| Modifier / Composition 编辑（增删改名/改内容/排序）| P1 | `done` | v1.1 | ModifierGrid 6 + CompositionWorkbench 6 + composition-b2 源码 gate；2026-06-08 补齐 UI（ModifierGrid 四象限网格落 col3 / CompositionWorkbench 落 scene 列）| omar | [[asset-editing-and-adaptive-layout#P2]] |
 | Dashboard 可拖列布局（react-resizable-panels v4 `Group`/`Panel`/`Separator` + localStorage 持久化）| P1 | `done` | v1.1 | 73 前端 / 手测 拖拽+持久化 ✓（键盘 focus 待补）| omar | [[asset-editing-and-adaptive-layout#P4]] |
 
 ---
@@ -169,7 +169,7 @@ related:
 | S1 主形态 MVP | v1.0 | 5 模块 + 8 跨模块能力 | `planned` |
 | S2 闭环沉淀 | v1.1 | 4 功能 | `planned` |
 | M-X MCP write pipeline | v1.1 | 6 支撑能力 + 14 MCP tool | `done` |
-| AE 资产编辑 + 自适应布局 | v1.1 | 4 功能 | `in-progress`（3 done / Modifier·Composition UI 落点暂缓）|
+| AE 资产编辑 + 自适应布局 | v1.1 | 4 功能 | `done`（4/4：4 类资产编辑+排序 + 可拖列布局全收口）|
 | S3 SOP 导航 | v1.2 | 3 功能 | `planned` |
 | S4 配置个性化 | v1.3 | 4 功能 | `planned` |
 | S5 辅形态副屏 | v2.0 | 3 功能 | `planned` |
@@ -206,6 +206,7 @@ related:
 | 2026-06-03 | v0.7 bump：「复制即隐藏 / ESC 关闭」P0 → `done`（ADR-012 Phase 5 视觉+功能验收 11/11 收口：screencapture 自动化 9/11 + 用户手点 promote/discard 补 2/11；DB 核对 modifier 落 group_kind / alignment_phrase 落 phase / macro 丢弃不入库 / inbox 排空回落 Scene）；ADR-012 Phase 1-5 全链路 done | Phase 5 验收收口涟漪 |
 | 2026-06-03 | v0.8 bump：M0-4 Developer ID 签名公证链路收口（M0 四项全绿）——空壳 DMG 走 Developer ID 签名 + hardened runtime + 三项 JIT entitlements → 公证 Accepted → staple → Gatekeeper `accepted/Notarized Developer ID` → release 透明窗口运行时不黑屏；证伪「macos-private-api 与公证冲突」最坏假设；runbook [[m0-4-macos-signing]] | M0-4 收口涟漪 |
 | 2026-06-05 | v0.9 bump：新增 §3.8 资产编辑 + 自适应布局区（4 功能：Macro/AlignmentPhrase 编辑+排序 done / Modifier·Composition 后端 done·UI 落点暂缓 / Dashboard 可拖列布局 done）；§4 节奏表加 AE 行，合计 47→51 项 | [[asset-editing-and-adaptive-layout]] P1–P4 收口涟漪 |
+| 2026-06-08 | v1.0 bump：§3.8 Modifier/Composition 编辑 UI 落地（原 #3/#4 deferred 项收口），状态 in-progress→done；§4 AE 行 in-progress→done（4/4）；前端测试 75→87（+ModifierGrid 6 / CompositionWorkbench 6） | [[asset-editing-and-adaptive-layout#§7]] #7 落地涟漪 |
 
 ---
 
