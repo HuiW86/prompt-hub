@@ -4,7 +4,7 @@ project: prompt-hub
 id: ADR-013
 status: Accepted
 date: 2026-05-25
-description: AlignmentPhrases 从 PhaseBar 子级独立为顶层 region 并加入 Tab cycle（5 → 6 tab-reachable working regions）；追认 ADR-012 Phase 3 已 ship 的代码事实
+description: AlignmentPhrases 从 PhaseBar 子级独立为顶层 region 并加入 Tab cycle（5 → 6 tab-reachable working regions）；追认 ADR-012 Phase 3 已 ship 的代码事实；谱系备注 2026-06-11 AE P2.4 两编辑区入 cycle（6 → 8）
 related:
   - 02-constitution
   - 03-product-spec
@@ -123,6 +123,10 @@ ADR-012 Phase 3 视觉重写（commit `acf8229`）把 AlignmentPhrases.module.cs
 - ✅ 不触动上游底线（B1 三层资产 / B2 协议任务分离 / 哲学七）
 - ✅ Status: Accepted（2026-05-25）
 - ✅ 性质：追认（Phase 3 已 ship），不引入新代码改动
+
+## 谱系备注
+
+- **2026-06-11（6 → 8）**：AE plan P2.4 落地 `ModifierGrid` / `CompositionWorkbench` 两编辑工作面（均 `tabIndex=0`），Tab-reachable 6 → 8。omar 拍板沿用本 ADR 判断逻辑（代码已 ship / 键盘 a11y 不可倒退 / design-spec §11 focused 全组件强制）回流 [[03-product-spec]] §13.4（v0.8），不另开 ADR。两区是 working surface，不占用 §13.3 区域编号。
 
 ## 相关链接
 

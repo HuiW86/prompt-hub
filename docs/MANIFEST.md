@@ -50,7 +50,7 @@ related:
 
 | 路径 | 内容 | 状态 |
 |---|---|---|
-| `docs/design/03-product-spec.md` | UI 契约（双形态 / 布局 / 交互） | ratified v0.7（2026-06-01 M-X.0 涟漪：草稿 tab + 待审 badge UI 契约；omar 审定轮纠 Scene 激活 tab 紫→绿 + badge 不进 Tab cycle）|
+| `docs/design/03-product-spec.md` | UI 契约（双形态 / 布局 / 交互） | ratified v0.8（2026-06-11 AE P2.4 涟漪：Tab cycle 6 → 8，Modifier 四象限 + 拼装工作台入 cycle；前 v0.7 草稿 tab + 待审 badge）|
 | `docs/design/04-user-flows.md` | 用户流（边缘 / 异常 / 跨形态） | ratified |
 | `docs/design/05-design-spec.md` | 视觉/动效 token 体系 | ratified v0.8（2026-06-01 M-X.0 涟漪：PendingBadge/DraftInbox/DraftCard 视觉契约 + lucide Inbox；omar 审定轮清理草稿 tab 激活态 + 删 badge focused 态）|
 

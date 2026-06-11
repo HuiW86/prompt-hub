@@ -146,7 +146,11 @@ describe("Dashboard end-to-end render", () => {
       ),
       macroGrid: container.querySelector("[data-region='macro-grid']"),
       scenePanel: container.querySelector("[data-region='scene-panel']"),
+      compositionWorkbench: container.querySelector(
+        "[data-region='composition-workbench']",
+      ),
       recentList: container.querySelector("[data-region='recent-list']"),
+      modifierGrid: container.querySelector("[data-region='modifier-grid']"),
       sopProgress: container.querySelector("[data-region='sop-progress']"),
       statusBar: container.querySelector("[data-region='status-bar']"),
     };
@@ -170,12 +174,12 @@ describe("Dashboard end-to-end render", () => {
     expect(r.statusBar).not.toBeNull();
   });
 
-  // B5-5: per 03-product-spec §13.4 the working regions must be Tab-reachable
-  // (相位带 / 对齐话术 / Macro / Scene / 最近 / SOP). SearchBar relies on its
-  // native input for focus and StatusBar is read-only, so neither carries
-  // tabindex. AlignmentPhrases joined the Tab cycle in Phase 3 of ADR-012 — a
-  // §13.4 bump is queued for Phase 4 of the design handoff.
-  it("six working regions expose tabindex='0' for region-level Tab navigation", async () => {
+  // B5-5: per 03-product-spec §13.4 (v0.8) the working regions must be
+  // Tab-reachable (相位带 / 对齐话术 / Macro / Scene / 拼装工作台 / 最近 /
+  // Modifier 四象限 / SOP). SearchBar relies on its native input for focus and
+  // StatusBar is read-only, so neither carries tabindex. ModifierGrid and
+  // CompositionWorkbench joined the cycle in AE P2.4 (ADR-013 lineage note).
+  it("eight working regions expose tabindex='0' for region-level Tab navigation", async () => {
     const { container } = render(<App />);
     await waitFor(() =>
       expect(
@@ -187,7 +191,9 @@ describe("Dashboard end-to-end render", () => {
     expect(r.alignmentPhrases?.getAttribute("tabindex")).toBe("0");
     expect(r.macroGrid?.getAttribute("tabindex")).toBe("0");
     expect(r.scenePanel?.getAttribute("tabindex")).toBe("0");
+    expect(r.compositionWorkbench?.getAttribute("tabindex")).toBe("0");
     expect(r.recentList?.getAttribute("tabindex")).toBe("0");
+    expect(r.modifierGrid?.getAttribute("tabindex")).toBe("0");
     expect(r.sopProgress?.getAttribute("tabindex")).toBe("0");
     // SearchBar wrapper is a role=search div, not tabbable itself.
     expect(r.search?.getAttribute("tabindex")).toBeNull();
