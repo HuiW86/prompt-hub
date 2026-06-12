@@ -31,7 +31,9 @@ use crate::tools::{split_markdown_sections, PayloadArg, ProvenanceArg};
 // import_json hardening (plan §5.2). The DB-size guard and 5MB request cap are
 // deferred to M-X.4; the batch/payload caps and the hourly quota ship now.
 const MAX_IMPORT_BATCH: usize = 100;
-const MAX_PAYLOAD_BYTES: usize = 64 * 1024;
+// Per-payload 64KB cap lives in repo-core (PRD §10.1.1) so single writes
+// (create/update_draft) and this batch pre-check can't drift apart.
+use repo_core::MAX_PAYLOAD_BYTES;
 const IMPORT_QUOTA_PER_HOUR: usize = 5;
 const IMPORT_QUOTA_WINDOW: Duration = Duration::from_secs(3600);
 

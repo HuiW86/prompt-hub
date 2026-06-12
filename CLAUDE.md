@@ -53,8 +53,8 @@ cargo fmt --manifest-path src-tauri/Cargo.toml                        # Rust 格
 cargo clippy --workspace --all-targets --manifest-path src-tauri/Cargo.toml -- -D warnings  # Rust lint（--all-targets 覆盖 trybuild 等 test target）
 
 # 性能 benchmark（[[02-constitution#C1]] 200ms 唤起自检）
-pnpm bench:cold-start                                     # spawn → 首次 CGWindow entry P95（debug build baseline ~193ms；C1 不约束此项）
-pnpm bench:hotkey-wake                                    # show()+set_focus() Rust 调用 P95（baseline ~0.02ms；不含 OS shortcut dispatch ~10ms）
+pnpm bench:cold-start                                     # spawn → 首次 CGWindow entry P95（debug build baseline ~258ms / p50 ~175ms，2026-06-12 M0-4 签名后回归；C1 不约束此项）
+pnpm bench:hotkey-wake                                    # show()+set_focus() Rust 调用 P95（baseline ~13-15ms，2026-06-05 auto-cycle 主线程修复后口径，2026-06-12 签名后复测 12.9-13.5ms 无回归；旧 ~0.02ms 为跑不通的失效数字；不含 OS shortcut dispatch ~10ms）
 # BENCH_ROUNDS=N pnpm bench:cold-start                    # 自定义轮数（默认 20）
 ```
 

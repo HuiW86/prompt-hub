@@ -38,6 +38,10 @@ pub enum RepoError {
     // default and may not be hard-deleted (every phase must keep exactly one).
     #[error("alignment phrase `{0}` is its phase default and cannot be deleted")]
     DefaultAlignmentPhraseProtected(String),
+    // PRD §10.1.1: drafts.payload_json is capped at 64KB. Enforced at the repo
+    // layer so every single-write path (MCP create/update, Tauri IPC) shares it.
+    #[error("payload is {size_bytes} bytes, over the {limit_bytes}-byte limit")]
+    PayloadTooLarge { size_bytes: usize, limit_bytes: usize },
     #[error("{0}")]
     Other(String),
 }

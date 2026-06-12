@@ -24,6 +24,20 @@ pub trait DraftRepo {
     fn mark_discarded(&self, id: &str) -> RepoResult<()>;
 }
 
+// PRD §10.1.1: payload_json ≤ 64KB. Single source of truth for every write
+// path — import_json (MCP batch) and create/update_draft all check against it.
+pub const MAX_PAYLOAD_BYTES: usize = 64 * 1024;
+
+fn check_payload_size(payload_json: &str) -> RepoResult<()> {
+    if payload_json.len() > MAX_PAYLOAD_BYTES {
+        return Err(RepoError::PayloadTooLarge {
+            size_bytes: payload_json.len(),
+            limit_bytes: MAX_PAYLOAD_BYTES,
+        });
+    }
+    Ok(())
+}
+
 pub fn sha256_hex(s: &str) -> String {
     let mut hasher = Sha256::new();
     hasher.update(s.as_bytes());
@@ -57,6 +71,7 @@ fn is_unique_violation(err: &rusqlite::Error) -> bool {
 impl DraftRepo for Connection {
     fn create_draft(&self, payload: &DraftPayload, provenance: &Provenance) -> RepoResult<String> {
         let payload_json = serde_json::to_string(payload)?;
+        check_payload_size(&payload_json)?;
         let payload_hash = sha256_hex(&payload_json);
         let provenance_json = serde_json::to_string(provenance)?;
         let id = Uuid::new_v4().to_string();
@@ -222,6 +237,7 @@ impl DraftRepo for Connection {
 
     fn update_draft(&self, id: &str, payload: &DraftPayload) -> RepoResult<()> {
         let payload_json = serde_json::to_string(payload)?;
+        check_payload_size(&payload_json)?;
         let payload_hash = sha256_hex(&payload_json);
         let now = Utc::now().to_rfc3339();
 
@@ -342,6 +358,44 @@ mod tests {
         assert_eq!(got.payload, payload);
         assert_eq!(got.provenance, prov);
         assert_eq!(got.payload_hash.len(), 64, "sha-256 hex is 64 chars");
+    }
+
+    #[test]
+    fn create_oversize_payload_is_rejected() {
+        let conn = db::open_in_memory().expect("open db");
+        let mut payload = macro_payload("Huge");
+        if let DraftPayload::Macro { content, .. } = &mut payload {
+            *content = "x".repeat(MAX_PAYLOAD_BYTES + 1);
+        }
+        let err = conn
+            .create_draft(&payload, &sample_provenance("create_draft"))
+            .expect_err("oversize payload must be rejected");
+        assert!(
+            matches!(err, RepoError::PayloadTooLarge { size_bytes, limit_bytes }
+                if size_bytes > MAX_PAYLOAD_BYTES && limit_bytes == MAX_PAYLOAD_BYTES),
+            "expected PayloadTooLarge"
+        );
+    }
+
+    #[test]
+    fn update_oversize_payload_is_rejected_and_row_untouched() {
+        let conn = db::open_in_memory().expect("open db");
+        let payload = macro_payload("Small");
+        let id = conn
+            .create_draft(&payload, &sample_provenance("create_draft"))
+            .expect("create");
+
+        let mut big = macro_payload("Small");
+        if let DraftPayload::Macro { content, .. } = &mut big {
+            *content = "x".repeat(MAX_PAYLOAD_BYTES + 1);
+        }
+        let err = conn
+            .update_draft(&id, &big)
+            .expect_err("oversize update must be rejected");
+        assert!(matches!(err, RepoError::PayloadTooLarge { .. }));
+
+        let got = conn.get_draft(&id).expect("get").expect("present");
+        assert_eq!(got.payload, payload, "row must be unchanged after rejection");
     }
 
     #[test]

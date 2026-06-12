@@ -180,6 +180,37 @@ async fn draft_crud_roundtrips_over_stdio() {
 }
 
 #[tokio::test]
+async fn create_draft_rejects_oversize_payload() {
+    let (_dir, service) = spawn().await;
+
+    let (_, phases) = call(&service, "list_phases", json!({})).await;
+    let phase_id = phases[0]["id"].as_str().expect("seed phase id").to_string();
+
+    // 64KB cap (PRD §10.1.1) — content alone exceeds it.
+    let (is_error, inner) = call(
+        &service,
+        "create_draft",
+        json!({
+            "payload": {
+                "target_type": "macro",
+                "name": "Huge",
+                "content": "x".repeat(64 * 1024 + 1),
+                "phase_id": phase_id,
+            }
+        }),
+    )
+    .await;
+    assert!(is_error, "oversize payload should be a tool error");
+    let text = inner.as_str().expect("error text");
+    assert!(
+        text.contains("limit") && text.contains("Trim"),
+        "error should explain the cap and recovery: {text}"
+    );
+
+    service.cancel().await.expect("clean shutdown");
+}
+
+#[tokio::test]
 async fn errors_are_tool_level_so_the_model_can_read_them() {
     let (_dir, service) = spawn().await;
 

@@ -41,6 +41,14 @@ pub fn repo_error(err: RepoError) -> CallToolResult {
             "Promoting '{target_type}' needs '{field}', which happens in the \
              desktop app, not here. Stage the draft and let the user promote it."
         ),
+        RepoError::PayloadTooLarge {
+            size_bytes,
+            limit_bytes,
+        } => format!(
+            "The payload is {size_bytes} bytes, over the {limit_bytes}-byte \
+             per-draft limit. Trim the content (e.g. split it into smaller \
+             drafts) and retry."
+        ),
         RepoError::Serde(e) => format!(
             "The payload couldn't be parsed: {e}. Check that the fields match \
              the target_type (e.g. a modifier needs name, content, phase_id)."
