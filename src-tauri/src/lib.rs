@@ -90,28 +90,31 @@ pub fn run() {
                             if window.is_visible().unwrap_or(false) {
                                 let _ = window.hide();
                             } else {
-                                // Re-fit before showing so the overlay tracks the
-                                // current display / resolution / cursor screen
-                                // rather than the stale setup-time geometry.
-                                fit_to_active_monitor(&window);
-                                let _ = window.show();
-                                // Tao's set_focus() calls activateIgnoringOtherApps:
-                                // which actively yanks the window back into the
-                                // app's own Space, fighting the non-activating
-                                // panel model. orderFrontRegardless surfaces
-                                // the window without stealing app activation.
-                                #[cfg(not(target_os = "macos"))]
-                                let _ = window.set_focus();
-                                #[cfg(target_os = "macos")]
-                                {
-                                    // AppKit setters are MainThreadOnly; the
-                                    // global-shortcut handler runs on a worker
-                                    // thread.
-                                    let window = window.clone();
-                                    let _ = app.run_on_main_thread(move || {
-                                        macos::wake(&window);
-                                    });
-                                }
+                                // Re-fit + show + focus must all run on the main
+                                // thread: AppKit setters are MainThreadOnly, and
+                                // cursor/monitor queries crash when called off the
+                                // main thread (tauri-apps/tauri#15170). The
+                                // global-shortcut handler itself runs on a worker
+                                // thread, so dispatch the whole wake onto main.
+                                //
+                                // fit_to_active_monitor re-fits so the overlay
+                                // tracks the current display / resolution / cursor
+                                // screen rather than the stale setup-time geometry.
+                                //
+                                // macOS uses orderFrontRegardless (macos::wake)
+                                // rather than set_focus(): tao's set_focus() calls
+                                // activateIgnoringOtherApps:, yanking the window
+                                // into the app's own Space and fighting the
+                                // non-activating panel model.
+                                let window = window.clone();
+                                let _ = app.run_on_main_thread(move || {
+                                    fit_to_active_monitor(&window);
+                                    let _ = window.show();
+                                    #[cfg(not(target_os = "macos"))]
+                                    let _ = window.set_focus();
+                                    #[cfg(target_os = "macos")]
+                                    macos::wake(&window);
+                                });
                             }
                         })
                         .build(),
