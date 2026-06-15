@@ -13,6 +13,28 @@ pub(crate) mod macos;
 
 use commands::AppState;
 
+// Cover the monitor under the cursor with the overlay. Runs on every wake (not
+// just at setup) so resolution changes, display hot-plug, and the cursor's
+// current screen in multi-monitor setups are all honored — otherwise the window
+// stays frozen at the startup-time primary-monitor geometry. Full-screen-cover
+// style A: spans the entire monitor including the macOS menu bar (monitor.size(),
+// not work area).
+#[cfg(desktop)]
+fn fit_to_active_monitor(window: &tauri::WebviewWindow) {
+    let monitor = window
+        .cursor_position()
+        .ok()
+        .and_then(|p| window.monitor_from_point(p.x, p.y).ok().flatten())
+        .or_else(|| window.current_monitor().ok().flatten())
+        .or_else(|| window.primary_monitor().ok().flatten());
+    if let Some(monitor) = monitor {
+        let size = monitor.size();
+        let pos = monitor.position();
+        let _ = window.set_size(PhysicalSize::new(size.width, size.height));
+        let _ = window.set_position(PhysicalPosition::new(pos.x, pos.y));
+    }
+}
+
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
 pub fn run() {
     let app = tauri::Builder::default()
@@ -27,18 +49,14 @@ pub fn run() {
 
             #[cfg(desktop)]
             {
-                // Resize the main window to cover the primary monitor instead
-                // of using tauri.conf.json `fullscreen: true`, which on macOS
-                // creates a system fullscreen Space (independent space, no
-                // alwaysOnTop, transparency disabled — incompatible with
-                // spec §1.1 "全屏覆盖窗口浮于所有应用上方不抢焦点").
+                // Cover the active monitor instead of using tauri.conf.json
+                // `fullscreen: true`, which on macOS creates a system fullscreen
+                // Space (independent space, no alwaysOnTop, transparency disabled
+                // — incompatible with spec §1.1 "全屏覆盖窗口浮于所有应用上方不抢焦点").
+                // The same fit runs on every wake (see the shortcut handler), so
+                // this is just the initial geometry.
                 if let Some(window) = app.get_webview_window("main") {
-                    if let Ok(Some(monitor)) = window.primary_monitor() {
-                        let size = monitor.size();
-                        let pos = monitor.position();
-                        let _ = window.set_size(PhysicalSize::new(size.width, size.height));
-                        let _ = window.set_position(PhysicalPosition::new(pos.x, pos.y));
-                    }
+                    fit_to_active_monitor(&window);
 
                     // System fullscreen Spaces are WindowServer/AppKit domains,
                     // not z-order layers. AppKit only honors NonactivatingPanel
@@ -72,6 +90,10 @@ pub fn run() {
                             if window.is_visible().unwrap_or(false) {
                                 let _ = window.hide();
                             } else {
+                                // Re-fit before showing so the overlay tracks the
+                                // current display / resolution / cursor screen
+                                // rather than the stale setup-time geometry.
+                                fit_to_active_monitor(&window);
                                 let _ = window.show();
                                 // Tao's set_focus() calls activateIgnoringOtherApps:
                                 // which actively yanks the window back into the
