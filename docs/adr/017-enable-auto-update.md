@@ -10,6 +10,8 @@ description: 选择 tauri-plugin-updater + GitHub Releases 作为自动更新机
 > 状态：**Proposed**，等人审批准后转 Accepted。本文为 AI 起草（🤝 共创，CLAUDE §5.2），决策点 D1/D2 由人拍板（GitHub Releases / mac 先行后全平台），D3/D4 由 AI 按行业最佳实践补齐。
 >
 > **评审已回填（2026-06-15，ratification 前）**：经 3 路并行评审（安全/密钥 · 隐私/A2 · 工程/Tauri；codex 第四路因 API 余额不足缺席）。三路一致判"方向正确、可落地、无致命阻断"。已折入：HIGH×2（§5.3 用户可关开关 / §5.5 供应链加固）+ §5.1 隐私被动元数据记账 + §5.6 禁降级 + §6 不可逆点改顺序轮换 + 公证/minisign 互补非兜底 + §6 实现落地清单（工程坑）。
+>
+> **二轮官方/社区最佳实践调研补强（2026-06-15，ratification 前）**：交叉比对 Tauri v2 官方文档 + 社区 issue + 安全公告，方案主轴被印证（直连端点正解 / 公证·minisign 互补 / 禁降级 / 顺序轮换）。补三处实现级缺口：§5.5 加**客户端侧密钥泄漏第二战线**（安全公告 GHSA-2rcp-jvr4-r259，Vite `envPrefix` 误配会把私钥打进前端 bundle）/ §6 加 **v2 capabilities 放行** + **macOS 公证·打包·签名顺序锁死** + latest.json 端点与 draft 坑细化。仓库可见性前置（public/private 影响 Option A 是否成立）见 §4 缺点补注。
 
 ---
 
@@ -49,6 +51,7 @@ description: 选择 tauri-plugin-updater + GitHub Releases 作为自动更新机
   - 与现有 Developer ID 签名公证并存无冲突。
 - **缺点**：
   - 绑定 GitHub 生态（仓库必须可被客户端访问 latest.json；私有仓库需额外 token）。
+  - **仓库可见性是本方案的隐含前置（二轮调研补）**：直连 `releases/latest/download` 仅在**公开仓库**下匿名可达；**私有仓库**的资产下载链不可匿名认证，updater 直连直接失效，须自建 proxy/后端转发 token——会抹掉"零运维"优势并引入额外出站面（与 A2 边界二次冲突）。**Option A 成立的前提是发布仓库为 public**；若计划私有分发，须改走 Option B 或重写本 ADR 成本估算与 A2 论证。**此项需人拍板**。
   - 更新通道依赖 GitHub 可用性。
 - **预估成本**：插件接入 + conf 配置 + CI workflow ≈ 0.5–1 天；minisign keypair 一次性生成。
 
@@ -89,7 +92,7 @@ description: 选择 tauri-plugin-updater + GitHub Releases 作为自动更新机
 2. **C1 唤起预算**：更新检查在后台 `tauri::async_runtime::spawn` 执行，**绝不进 ⌥Space 唤起热路径**，不影响 P95（落地后附一次 bench 复测佐证）。
 3. **手动挡 + 用户可关开关（HIGH，评审新增）**：默认行为 = 启动后台静默检查 + 主形态内手动「检查更新」入口 + 非侵入提示；**下载和安装由用户显式确认触发**，不做静默强制自动安装。**且必须提供「更新检查」总开关，关闭后客户端零出站**——作为 A2 豁免的对价条件，不可省略。
 4. **CSP 不动**：updater 走 Rust reqwest，不受 webview `connect-src` 约束。（注：若生产构建启用 App Sandbox，出站需对应 entitlements 放行——工程实现注意，非隐私问题。）
-5. **签名密钥 + 供应链加固（D4，HIGH，评审强化）**：minisign keypair 由 `tauri signer generate` 生成（私钥带 password）；私钥进 GitHub **Environment** secret（`TAURI_SIGNING_PRIVATE_KEY` + `TAURI_SIGNING_PRIVATE_KEY_PASSWORD`）并挂 **required reviewer + 限 tag-push/protected-branch 触发，禁止 PR 触发签名**；第三方 GitHub Action 全部 **pin 到 commit SHA**（非 tag）；workflow `permissions:` 最小化为 `contents: write`；出包后**人工核验 `latest.json` 与资产 hash**；开 tag protection 限定可发 Release 的人。开发者本地备份用 password 保护的私钥，离线存（硬件/密码管理器），**绝不进任何同步盘/repo**；公钥写入 `tauri.conf.json` 的 `plugins.updater.pubkey`（填公钥**内容**非路径）。预写密钥泄漏应急 runbook（轮换路径见 §6 不可逆点）。
+5. **签名密钥 + 供应链加固（D4，HIGH，评审强化）**：minisign keypair 由 `tauri signer generate` 生成（私钥带 password）；私钥进 GitHub **Environment** secret（`TAURI_SIGNING_PRIVATE_KEY` + `TAURI_SIGNING_PRIVATE_KEY_PASSWORD`）并挂 **required reviewer + 限 tag-push/protected-branch 触发，禁止 PR 触发签名**；第三方 GitHub Action 全部 **pin 到 commit SHA**（非 tag）；workflow `permissions:` 最小化为 `contents: write`；出包后**人工核验 `latest.json` 与资产 hash**；开 tag protection 限定可发 Release 的人。开发者本地备份用 password 保护的私钥，离线存（硬件/密码管理器），**绝不进任何同步盘/repo**；公钥写入 `tauri.conf.json` 的 `plugins.updater.pubkey`（填公钥**内容**非路径）。**客户端侧泄漏第二战线（二轮调研补，HIGH，安全公告 GHSA-2rcp-jvr4-r259）**：CI 密钥卫生之外另有一条真实泄漏路径——Vite `envPrefix` 误配会把 `TAURI_SIGNING_PRIVATE_KEY` + password **注入前端 bundle 随安装包分发给用户**（等同私钥公开）。必须显式锁 `envPrefix: ['VITE_']` 并对 TAURI_* 变量手动白名单（仅放 `TAURI_PLATFORM/ARCH/FAMILY/...` 等非敏感项），**严禁 `TAURI_SIGNING_*` 进任何会被前端打包的前缀**。预写密钥泄漏应急 runbook（轮换路径见 §6 不可逆点）。
 6. **禁止降级（评审新增，固化默认安全）**：updater 默认拒装低于当前版本的包；**禁止开启 `allowDowngrades` / 禁止放宽自定义 `version_comparator`**，且服务端 `latest.json` 永不广播旧版本——防服务端驱动的降级攻击。
 7. **平台范围（D2）**：第一阶段 endpoint/manifest/客户端逻辑只对 macOS 生效；**平台扩展不另开 updater ADR**，但 Windows/Linux 各自的**签名链路需独立 ADR**（同一更新决策的平台扩展，但签名是新的不可逆决策）。
 
@@ -112,9 +115,11 @@ description: 选择 tauri-plugin-updater + GitHub Releases 作为自动更新机
 > 以下为三路评审发现的 MED 级工程坑，非决策项，记此防实现时遗漏：
 
 - `plugins.updater.pubkey` 为**必需字段**，填公钥**内容**（`.key.pub` 文本）非路径；`endpoints` 数组指向 GitHub Releases 的 `latest.json`。
-- 依赖钉版本：`tauri-plugin-updater >= 2.10`（多 installer key 格式）+ `@tauri-apps/plugin-updater`；同步登记进 `09-tech-stack`。
-- **GitHub `latest.json` 端点 401 redirect 已知坑**（重定向到 `objects.githubusercontent` AWS 链接）——评估用 `releases/latest/download/latest.json` 形式规避。
+- 依赖钉版本：`tauri-plugin-updater >= 2.10`（多 installer key 格式）+ `@tauri-apps/plugin-updater` + 配套 `tauri-plugin-process`（重启）+（若用内置提示 dialog）`tauri-plugin-dialog`；**Rust toolchain ≥ 1.77.2**（updater 插件下限）；同步登记进 `09-tech-stack`。
+- **v2 capabilities 显式放行（二轮调研补，v2 默认锁死全部危险命令）**：`src-tauri/capabilities/main.json` 的 `permissions` 须加 `updater:default` / `updater:allow-check` / `updater:allow-download-and-install` / `process:allow-restart`（用内置 dialog 则加 `dialog:default` / `dialog:allow-ask` / `dialog:allow-message`）——不加则前端调不通 updater。注意 **v1 内置「自动更新 dialog」在 v2 已移除**，提示 UI 须用 JS/Rust API 自建（正好承载 §5.3 手动「检查更新」入口 + 可关开关）。
+- **GitHub `latest.json` 端点 401 redirect 已知坑**（302 重定向到 `objects.githubusercontent` AWS 链接）——maintainer 确认正解就是 `releases/latest/download/latest.json` 形式（Discussion #10206 / plugins-workspace Issue #2579），无需额外逻辑；若仍受重定向影响可 fallback `raw.githubusercontent.com/<owner>/<repo>/<branch>/latest.json`。tauri-action 出包用 **`includeUpdaterJson: true`** 自动生成并附加 latest.json。**注意 draft / prerelease 不会成为 `latest`**（updater 取不到下一版）——发版纪律须确保 Release 正式发布（非草稿/预发布）。
 - macOS CI 需 **aarch64 + x86_64 双 target 矩阵**（否则只覆盖单架构）；公证凭据走 `APPLE_API_*`；防"`latest.json` 不生成"（tagName/releaseId 配置）。macos-private-api + 公证在 M0-4 已证伪冲突，CI 同链路可复用。
+- **macOS 公证·打包·签名顺序锁死（二轮调研补，防 minisign 签名失配）**：顺序必须为 **① 公证 `.app`（ticket staple 到 bundle）→ ② 从已 staple 的 `.app` 打 `app.tar.gz` → ③ 对最终归档跑 `tauri signer sign` 出 `.sig`**。updater 的 minisign 签名独立于 Apple 公证（Discussion #7703）；若先签后再改归档字节（重打包/重公证）会导致 `.sig` 与交付文件失配，updater 校验失败。`latest.json` 须引用最终归档 URL + 对应 `.sig`。
 - **版本三处无官方自动同步**：加 pre-tag 校验脚本（三处 version 一致才允许打 tag），写入发版 runbook。
 
 ### 未来反悔成本
@@ -141,3 +146,4 @@ description: 选择 tauri-plugin-updater + GitHub Releases 作为自动更新机
 - 受本决策影响/需 bump 的下游文档：`docs/design/07-features.md`（新增"自动更新"功能项）/ `docs/design/09-tech-stack.md`（新增 `tauri-plugin-updater` 依赖）/ `CLAUDE.md` §7 状态指针 / 用户隐私说明（披露更新出站）
 - 关联 ADR：[[008-enable-macos-private-api]]（signing 前置）/ 未来若转自托管或加灰度 → superseding ADR
 - 关联铁律：[[02-constitution#A2]]（隐私出站豁免边界）/ [[02-constitution#C1]]（唤起预算）
+- 外部最佳实践依据（2026-06-15 调研）：Tauri v2 Updater 官方文档 `v2.tauri.app/plugin/updater` / 安全公告 GHSA-2rcp-jvr4-r259（envPrefix 私钥泄漏）/ Discussion #10206（GitHub Releases 端点正解）/ plugins-workspace Issue #2579（401 redirect）/ Discussion #7703（公证 vs updater 签名互补）
