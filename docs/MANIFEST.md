@@ -60,7 +60,7 @@ related:
 
 | 路径 | 内容 | 状态 |
 |---|---|---|
-| `docs/design/06-prd.md` | 数据契约 / API / 状态机 / 错误码 | pre-code v0.7（2026-06-01 M-X.0 涟漪：drafts 表 migration 0003 + 14 tool 双层 API）|
+| `docs/design/06-prd.md` | 数据契约 / API / 状态机 / 错误码 | pre-code v0.9（2026-06-17 ADR-017 gate：§7.3 + N1 updater 受限豁免）|
 | `docs/design/07-features.md` | 28 功能矩阵 S1–S5 | in-progress v0.3（2026-06-01 M-X.0 涟漪：MCP write pipeline 功能条目）|
 | `docs/design/08-sitemap.md` | 资产对象树 + 视图导航图 | ratified |
 
@@ -71,7 +71,7 @@ related:
 | 路径 | 内容 | 状态 |
 |---|---|---|
 | `docs/design/09-tech-stack.md` | 全栈技术决议 | ratified v1.2（2026-06-01 M-X.0 涟漪：ADR-015 MCP server + workspace 4 crate 物理拆分）|
-| `docs/design/10-ops-spec.md` | 运维规格 | ratified |
+| `docs/design/10-ops-spec.md` | 运维规格 | ratified v0.2（2026-06-17 ADR-017 gate：§9 出站网络与隐私披露）|
 | `docs/design/11-test-spec.md` | 测试规格 | ratified |
 
 ---

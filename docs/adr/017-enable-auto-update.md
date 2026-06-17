@@ -1,13 +1,13 @@
 ---
 type: adr
 project: prompt-hub
-status: proposed
+status: accepted
 description: 选择 tauri-plugin-updater + GitHub Releases 作为自动更新机制，mac 先行后全平台；记录 A2 隐私铁律的出站网络豁免边界
 ---
 
 # ADR-017: 采用 tauri-plugin-updater + GitHub Releases 实现应用自动更新
 
-> 状态：**Proposed**，等人审批准后转 Accepted。本文为 AI 起草（🤝 共创，CLAUDE §5.2），决策点 D1/D2 由人拍板（GitHub Releases / mac 先行后全平台），D3/D4 由 AI 按行业最佳实践补齐。
+> 状态：**Accepted**（2026-06-17，Hui Wang 人审批准；ratification gate 隐私披露已就绪——[[10-ops-spec#§9]] v0.2 + [[06-prd]] §7.3/N1 v0.9）。本文为 AI 起草（🤝 共创，CLAUDE §5.2），决策点 D1/D2 由人拍板（GitHub Releases / mac 先行后全平台），D3/D4 由 AI 按行业最佳实践补齐。
 >
 > **评审已回填（2026-06-15，ratification 前）**：经 3 路并行评审（安全/密钥 · 隐私/A2 · 工程/Tauri；codex 第四路因 API 余额不足缺席）。三路一致判"方向正确、可落地、无致命阻断"。已折入：HIGH×2（§5.3 用户可关开关 / §5.5 供应链加固）+ §5.1 隐私被动元数据记账 + §5.6 禁降级 + §6 不可逆点改顺序轮换 + 公证/minisign 互补非兜底 + §6 实现落地清单（工程坑）。
 >
@@ -21,12 +21,12 @@ description: 选择 tauri-plugin-updater + GitHub Releases 作为自动更新机
 
 - **标题**：选择 tauri-plugin-updater + GitHub Releases 作为自动更新分发通道，而非自托管静态端点或不做自动更新
 - **日期**：2026-06-15
-- **决策者**：Hui Wang（待批准）
+- **决策者**：Hui Wang（已批准 2026-06-17）
 - **影响范围**：`src-tauri/tauri.conf.json`（新增 `plugins.updater` + `bundle.createUpdaterArtifacts`）/ `src-tauri/Cargo.toml`（新增 `tauri-plugin-updater`）/ `package.json`（`@tauri-apps/plugin-updater`）/ `src-tauri/src/lib.rs`（后台检查逻辑）/ 新增前端更新提示 UI / 新增 `.github/workflows/release.yml` / 关联 [[02-constitution#A2]] 隐私铁律 / 下游 features + tech-stack + CLAUDE §7
 
 ## 2. Status
 
-`Proposed`
+`Accepted`（2026-06-17）
 
 ## 3. Context
 
@@ -90,7 +90,7 @@ description: 选择 tauri-plugin-updater + GitHub Releases 作为自动更新机
 
 ### 关键执行约束（随 Decision 一并锁定）
 
-1. **A2 隐私豁免边界（已按评审修正）**：updater 出站请求的**业务字段仅** `当前版本号 + target/arch`（经 URL 模板传递）并下载更新包；**严禁**携带任何话术、用户数据、资产内容。但须**诚实记账**协议层固有的被动元数据：HTTP 请求头的 **User-Agent**（reqwest 默认 UA 含库版本，**必须覆盖为固定串如 `prompt-hub-updater`** 以免泄漏精确版本组合指纹）、TLS 握手的 **SNI/JA3**、以及 GitHub/CDN 侧可见的 **IP + 时间戳**。定性：**引入第三方元数据可见性，但不含任何资产载荷**——A2 字面禁的是"话术/隐私指纹上传"，此处无资产外泄，豁免成立但不轻描淡写。**用户隐私说明披露为 ratification gate（三轮评审补，HIGH）**：A2 豁免的对价之一是诚实告知——转 Accepted 前须在用户隐私说明文档显式新增「更新出站」披露条款（含上述被动元数据 IP/时间戳/SNI 可见性 + 关闭路径），该条款主笔归 🤖 AI（人审），列入下游涟漪清单（见相关链接）。披露文档悬空则豁免链条断在最后一环，**不得批准**。
+1. **A2 隐私豁免边界（已按评审修正）**：updater 出站请求的**业务字段仅** `当前版本号 + target/arch`（经 URL 模板传递）并下载更新包；**严禁**携带任何话术、用户数据、资产内容。但须**诚实记账**协议层固有的被动元数据：HTTP 请求头的 **User-Agent**（reqwest 默认 UA 含库版本，**必须覆盖为固定串如 `prompt-hub-updater`** 以免泄漏精确版本组合指纹）、TLS 握手的 **SNI/JA3**、以及 GitHub/CDN 侧可见的 **IP + 时间戳**。定性：**引入第三方元数据可见性，但不含任何资产载荷**——A2 字面禁的是"话术/隐私指纹上传"，此处无资产外泄，豁免成立但不轻描淡写。**用户隐私说明披露为 ratification gate（三轮评审补，HIGH）**：A2 豁免的对价之一是诚实告知——转 Accepted 前须在用户隐私说明文档显式新增「更新出站」披露条款（含上述被动元数据 IP/时间戳/SNI 可见性 + 关闭路径），该条款主笔归 🤖 AI（人审），列入下游涟漪清单（见相关链接）。披露文档悬空则豁免链条断在最后一环，**不得批准**。**gate 就绪状态（2026-06-17）**：披露条款已起草——核心出站披露落 [[10-ops-spec#§9]]（v0.2），[[06-prd]] §7.3 + N1（v0.9）开 updater 受限豁免口子解内部冲突；🤖 AI 主笔，**待人审**。gate 是否判定满足由人在批准时确认。
 2. **C1 唤起预算**：更新检查在后台 `tauri::async_runtime::spawn` 执行，**绝不进 ⌥Space 唤起热路径**，不影响 P95（落地后附一次 bench 复测佐证）。
 3. **手动挡 + 用户可关开关（HIGH，评审新增；三轮评审再修正默认值）**：**默认不静默出站**——首次启动一次性 opt-in 询问「是否启用更新检查」，用户显式同意后才后台检查（贴合手动挡/慢思考，避免首次出站在用户无感知下发生）+ 主形态内手动「检查更新」入口 + 非侵入提示；**下载和安装由用户显式确认触发**，不做静默强制自动安装。**且必须提供「更新检查」总开关，关闭后客户端零出站**——作为 A2 豁免的对价条件，不可省略。检查节奏须**低频**（启用后每日 ≤ 1 次或仅启动时一次）、**失败不密集重试**——否则 GitHub/CDN 侧 IP+时间戳序列会形成可被动观测的「在线/使用节律」指纹（与 §5.1 被动元数据记账同源，比单次检查泄漏更多）。
 4. **CSP 不动**：updater 走 Rust reqwest，不受 webview `connect-src` 约束。（注：若生产构建启用 App Sandbox，出站需对应 entitlements 放行——工程实现注意，非隐私问题。）

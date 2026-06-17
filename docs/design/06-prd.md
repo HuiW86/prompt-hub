@@ -1,9 +1,9 @@
 ---
 type: prd
 project: prompt-hub
-version: v0.8
+version: v0.9
 created: 2026-05-18
-last_modified: 2026-06-03
+last_modified: 2026-06-17
 status: pre-code
 author: ai  # 🤖 AI 主笔 + 人审（CLAUDE §5.2）
 related: [[01-spec]], [[03-product-spec]], [[prompt-hub-mvp]], [[015-expose-mcp-write-pipeline]], [[mcp-write-pipeline]]
@@ -908,7 +908,8 @@ stateDiagram-v2
 ### 7.3 隐私
 
 - 不内置任何第三方分析脚本（Google Analytics、Sentry 等一律禁用）
-- 不调用任何外部 API（不做话术的 AI 辅助生成，那是另一个产品的事）
+- 不调用任何外部 API 做话术生成（不做 AI 辅助生成，那是另一个产品的事）
+- **唯一出站例外**：应用自动更新检查出站至 GitHub Releases（[[017-enable-auto-update]] 受限豁免——仅版本号 + 下载包、无资产载荷、首启 opt-in + 总开关可关），披露见 [[10-ops-spec#§9]]
 - 如果部署到公网，必须有访问控制（Cloudflare Access 密码 / Tailscale-only）
 
 ### 7.4 跨设备
@@ -1050,7 +1051,7 @@ major 升级（v1.x → v2.0）需满足：
 
 | # | 操作 | Trigger | Why | Override |
 |---|------|---------|-----|----------|
-| N1 | 任何上传到外部 / 云端 / 第三方服务 | 任何含 `http(s)://` 且非 `localhost` 的网络请求 | §7.3 隐私 + 涉及敏感业务场景（政府 / 公安数据方向） | 无 override，必须改代码 + 显式声明 |
+| N1 | 任何上传到外部 / 云端 / 第三方服务 | 任何含 `http(s)://` 且非 `localhost` 的网络请求 | §7.3 隐私 + 涉及敏感业务场景（政府 / 公安数据方向） | 默认无 override。**唯一显式声明的受限豁免**：应用自动更新出站（[[017-enable-auto-update]] / [[10-ops-spec#§9]]——仅版本号 + 下载包、无资产载荷、首启 opt-in + 总开关可关）；其余一律必须改代码 + 显式声明 |
 | N2 | 自动调用任何外部 AI 生成内容 | 任何 LLM API 调用（Claude / OpenAI / Gemini 等） | [[01-spec#8.1-不做-AI-生成]]：失去自己思考 = 摧毁手动挡核心价值 | 无 override。**v0.7 reaffirm**：本条禁的是 prompt-hub 主动调 LLM；外部 AI（如 Claude Code）通过 §10 MCP server 调工具写 drafts **不违反**此条——方向相反 |
 | N3 | 自动发送话术给任何 AI | 复制后自动 paste / 自动 send to Claude Code | [[01-spec#8.3-不做自动执行]]：手动复制粘贴是思考的缓冲 | 无 override。**v0.7 reaffirm**：drafts promote 仍需 omar 在 Scene 草稿 tab 显式点击，不存在"自动 promote → 自动复制"路径 |
 | N4 | 跨进程 / 跨窗口写入 | 任何写入非应用本身 sandbox 的位置（修改其他应用配置 / 系统目录） | 应用应严格限制在自身数据范围 | 无 override |
