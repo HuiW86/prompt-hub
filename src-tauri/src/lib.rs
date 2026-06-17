@@ -38,6 +38,12 @@ fn fit_to_active_monitor(window: &tauri::WebviewWindow) {
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
 pub fn run() {
     let app = tauri::Builder::default()
+        // Auto-update (ADR-017). The check/download/install commands are driven
+        // from the frontend (updaterStore) over the capability allowlist; the
+        // process plugin backs relaunch() after install (#2273). The actual
+        // check runs in JS off the ⌥Space wake hot path, never threatening C1.
+        .plugin(tauri_plugin_updater::Builder::new().build())
+        .plugin(tauri_plugin_process::init())
         .setup(|app| {
             let data_dir = app.path().app_data_dir().expect("resolve app_data_dir");
             let db_path = data_dir.join("prompt-hub.db");

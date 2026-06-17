@@ -8,6 +8,21 @@ const host = process.env.TAURI_DEV_HOST;
 export default defineConfig(async () => ({
   plugins: [react()],
 
+  // ADR-017 §5.5 / GHSA-2rcp-jvr4-r259: a wide envPrefix would inline
+  // TAURI_SIGNING_PRIVATE_KEY into the shipped frontend bundle (= leaking the
+  // minisign private key to every user). Lock the prefix to VITE_ only and
+  // expose the few non-sensitive TAURI_* vars by explicit allowlist. NEVER add
+  // any TAURI_SIGNING_* prefix here.
+  envPrefix: [
+    "VITE_",
+    "TAURI_ENV_PLATFORM",
+    "TAURI_ENV_ARCH",
+    "TAURI_ENV_FAMILY",
+    "TAURI_ENV_PLATFORM_VERSION",
+    "TAURI_ENV_PLATFORM_TYPE",
+    "TAURI_ENV_DEBUG",
+  ],
+
   test: {
     environment: "jsdom",
     setupFiles: ["./src/test/setup.ts"],

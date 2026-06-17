@@ -7,6 +7,7 @@ import { Dashboard } from "./layouts/Dashboard";
 import { usePromptStore } from "./stores/promptStore";
 import { selectIsSearching, useSearchStore } from "./stores/searchStore";
 import { useSettingsStore } from "./stores/settingsStore";
+import { useUpdaterStore } from "./stores/updaterStore";
 import { isPrimaryModifier } from "./utils/platform";
 
 function App() {
@@ -16,6 +17,15 @@ function App() {
   useEffect(() => {
     void refreshAll();
   }, [refreshAll]);
+
+  // Auto-update check (ADR-017 §5.2): runs once at startup, off the ⌥Space wake
+  // hot path (that path is the Rust global-shortcut handler — untouched here),
+  // so it never threatens the C1 200ms budget. Gated on the opt-in total switch
+  // — when disabled, check() short-circuits before any network egress (§5.3).
+  useEffect(() => {
+    const { enabled, optInDecided, check } = useUpdaterStore.getState();
+    if (enabled && optInDecided) void check();
+  }, []);
 
   useEffect(() => {
     function onKey(e: KeyboardEvent) {

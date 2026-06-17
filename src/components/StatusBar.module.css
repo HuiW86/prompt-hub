@@ -56,6 +56,27 @@
   flex: 1;
 }
 
+/* Manual "检查更新" trigger (ADR-017 §5.3). Inherits the footer's dense type;
+   reads as a quiet text link rather than a chunky button. */
+.updater {
+  border: 0;
+  background: transparent;
+  padding: 0;
+  color: var(--fg-2);
+  font: inherit;
+  white-space: nowrap;
+  cursor: pointer;
+}
+
+.updater:hover:not(:disabled) {
+  color: var(--fg-1);
+}
+
+.updater:disabled {
+  color: var(--fg-4);
+  cursor: default;
+}
+
 /* Visually-hidden utility for screen-reader-only punctuation (C-P1-4).
  * Keeps the visible `·` decorative without losing sentence breaks for VO/NVDA. */
 .srOnly {

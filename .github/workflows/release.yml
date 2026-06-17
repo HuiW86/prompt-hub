@@ -1,0 +1,169 @@
+# Auto-update release pipeline (ADR-017).
+#
+# UNTESTABLE until Phase 0 keys exist — this is a reviewable first draft. It
+# cannot run end-to-end until: (1) a minisign keypair is generated and the
+# private key + password land in the `release-signing` Environment secrets,
+# (2) the Apple notarization creds land as secrets, (3) tauri.conf.json's
+# `plugins.updater.pubkey` placeholder is replaced with the real public key.
+#
+# Security model (ADR-017 §5.5):
+#   - Trigger is tag-push ONLY. workflow_dispatch / repository_dispatch /
+#     schedule are deliberately NOT listed, so they cannot trigger a release
+#     (closes the gate-bypass surface).
+#   - `permissions` is minimized to contents:write.
+#   - Third-party actions are pinned to commit SHA (not tags).
+#   - build and sign are SEPARATE jobs: the `build` job never sees the minisign
+#     key, so a poisoned build-time dependency cannot exfiltrate it. The `sign`
+#     job runs in a protected Environment (required reviewer) and signs only the
+#     already-built, notarized artifacts.
+#   - The release is created as a DRAFT; a human verifies hashes, then publishes.
+#     A draft is NOT served as `releases/latest`, so the updater never sees an
+#     unverified build.
+
+name: release
+
+on:
+  push:
+    tags:
+      - "v*.*.*"
+
+permissions:
+  contents: write
+
+jobs:
+  # ── Job 1: build + notarize. No minisign key in scope. ──────────────────────
+  build:
+    strategy:
+      fail-fast: true
+      matrix:
+        target:
+          - aarch64-apple-darwin
+          - x86_64-apple-darwin
+    runs-on: macos-latest
+    steps:
+      - uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5 # v4
+
+      - name: Verify version triple matches the tag
+        run: bash scripts/check-version.sh "${GITHUB_REF_NAME#v}"
+
+      - uses: pnpm/action-setup@f40ffcd9367d9f12939873eb1018b921a783ffaa # v4
+      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4
+        with:
+          node-version: 22
+          cache: pnpm
+      - uses: dtolnay/rust-toolchain@29eef336d9b2848a0b548edc03f92a220660cdb8 # stable
+        with:
+          targets: ${{ matrix.target }}
+
+      - run: pnpm install --frozen-lockfile
+
+      # Build + notarize the .app ONLY. createUpdaterArtifacts is disabled here
+      # so the bundler does not try to minisign (no key in this job) — the
+      # .app.tar.gz is packaged + signed later in the sign job, matching the
+      # ADR §6 order: notarize .app → package → tauri signer sign.
+      - name: Build + notarize
+        env:
+          APPLE_API_ISSUER: ${{ secrets.APPLE_API_ISSUER }}
+          APPLE_API_KEY_ID: ${{ secrets.APPLE_API_KEY_ID }}
+          APPLE_API_KEY: ${{ secrets.APPLE_API_KEY }}
+          APPLE_CERTIFICATE: ${{ secrets.APPLE_CERTIFICATE }}
+          APPLE_CERTIFICATE_PASSWORD: ${{ secrets.APPLE_CERTIFICATE_PASSWORD }}
+          APPLE_SIGNING_IDENTITY: ${{ secrets.APPLE_SIGNING_IDENTITY }}
+          APPLE_TEAM_ID: ${{ secrets.APPLE_TEAM_ID }}
+        run: |
+          pnpm tauri build \
+            --target ${{ matrix.target }} \
+            --bundles app \
+            --config '{"bundle":{"createUpdaterArtifacts":false}}'
+
+      - name: Pack notarized .app for handoff
+        run: |
+          dir="src-tauri/target/${{ matrix.target }}/release/bundle/macos"
+          tar -C "$dir" -czf "app-${{ matrix.target }}.tgz" prompt-hub.app
+
+      - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
+        with:
+          name: app-${{ matrix.target }}
+          path: app-${{ matrix.target }}.tgz
+          retention-days: 1
+          if-no-files-found: error
+
+  # ── Job 2: sign + assemble latest.json + draft release. Gated. ──────────────
+  sign:
+    needs: build
+    runs-on: macos-latest
+    # Required-reviewer gate: configure a protected Environment named
+    # `release-signing` (Settings → Environments) with a reviewer who is NOT the
+    # tag author. The minisign key is an Environment secret, so it is only
+    # injected after manual approval.
+    environment: release-signing
+    steps:
+      - uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5 # v4
+      - uses: pnpm/action-setup@f40ffcd9367d9f12939873eb1018b921a783ffaa # v4
+      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4
+        with:
+          node-version: 22
+          cache: pnpm
+      - run: pnpm install --frozen-lockfile
+
+      - uses: actions/download-artifact@d3f86a106a0bac45b974a628896c90dbdf5c8093 # v4
+        with:
+          path: artifacts
+
+      # Package each notarized .app into its updater .app.tar.gz, then minisign
+      # it. tauri signer reads the key from env. ::add-mask:: + no `set -x` keep
+      # the key out of the (public) Actions log.
+      - name: Sign + assemble latest.json
+        env:
+          TAURI_SIGNING_PRIVATE_KEY: ${{ secrets.TAURI_SIGNING_PRIVATE_KEY }}
+          TAURI_SIGNING_PRIVATE_KEY_PASSWORD: ${{ secrets.TAURI_SIGNING_PRIVATE_KEY_PASSWORD }}
+        run: |
+          echo "::add-mask::$TAURI_SIGNING_PRIVATE_KEY"
+          echo "::add-mask::$TAURI_SIGNING_PRIVATE_KEY_PASSWORD"
+          version="${GITHUB_REF_NAME#v}"
+          repo="${GITHUB_REPOSITORY}"
+          base="https://github.com/${repo}/releases/download/${GITHUB_REF_NAME}"
+          mkdir -p dist
+          declare -A platkey=(
+            [aarch64-apple-darwin]=darwin-aarch64
+            [x86_64-apple-darwin]=darwin-x86_64
+          )
+          platforms_json="{}"
+          for target in aarch64-apple-darwin x86_64-apple-darwin; do
+            tar -xzf "artifacts/app-${target}/app-${target}.tgz" -C artifacts
+            archive="dist/prompt-hub_${version}_${target}.app.tar.gz"
+            tar -C artifacts -czf "$archive" prompt-hub.app
+            rm -rf artifacts/prompt-hub.app
+            pnpm tauri signer sign "$archive"
+            sig="$(cat "${archive}.sig")"
+            url="${base}/$(basename "$archive")"
+            platforms_json="$(jq -n \
+              --argjson p "$platforms_json" \
+              --arg k "${platkey[$target]}" \
+              --arg sig "$sig" --arg url "$url" \
+              '$p + {($k): {signature: $sig, url: $url}}')"
+          done
+          jq -n \
+            --arg version "$version" \
+            --arg pub_date "$(date -u +%Y-%m-%dT%H:%M:%SZ)" \
+            --argjson platforms "$platforms_json" \
+            '{version: $version, pub_date: $pub_date, platforms: $platforms}' \
+            > dist/latest.json
+
+      # Provenance: assert tag ↔ latest.json ↔ every artifact agree on version,
+      # and that each latest.json URL points at a file present in dist. Fail the
+      # release rather than rely on a human spotting a malformed manifest.
+      - name: Assert provenance
+        run: bash scripts/assert-provenance.sh "${GITHUB_REF_NAME#v}" dist
+
+      # DRAFT release: a draft is never served as `releases/latest`, so the
+      # updater cannot pick it up until a human verifies hashes and publishes.
+      - name: Create draft release
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          gh release create "${GITHUB_REF_NAME}" \
+            --draft \
+            --title "${GITHUB_REF_NAME}" \
+            --notes "Draft — verify artifact hashes, then publish to go live." \
+            dist/*.app.tar.gz dist/*.app.tar.gz.sig dist/latest.json

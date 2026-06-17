@@ -17,6 +17,7 @@ import { SearchOverlay } from "../components/SearchOverlay";
 import { SopProgress } from "../components/SopProgress";
 import { StatusBar } from "../components/StatusBar";
 import { Toast } from "../components/Toast";
+import { UpdaterBanner } from "../components/UpdaterBanner";
 import { usePromptStore } from "../stores/promptStore";
 
 import styles from "./Dashboard.module.css";
@@ -51,6 +52,7 @@ export function Dashboard() {
       role="main"
       aria-label="prompt-hub dashboard"
     >
+      <UpdaterBanner />
       <SearchBar />
       <PhaseBar />
       <AlignmentPhrases />

@@ -1,5 +1,6 @@
 import { useAppStore } from "../stores/appStore";
 import { usePromptStore } from "../stores/promptStore";
+import { useUpdaterStore } from "../stores/updaterStore";
 
 import { Kbd } from "./primitives";
 import styles from "./StatusBar.module.css";
@@ -20,6 +21,19 @@ export function StatusBar() {
       : (s.phases.find((p) => p.id === activePhaseId)?.name ?? "未选"),
   );
   const hasActivePhase = activePhaseId != null;
+
+  // ADR-017 §5.3: manual "检查更新" entry. When the total switch is off the
+  // entry instead re-opens the opt-in prompt so a declined user has a path back
+  // — there is no settings panel yet (settingsStore is in-memory MVP).
+  const updaterEnabled = useUpdaterStore((s) => s.enabled);
+  const updaterStatus = useUpdaterStore((s) => s.status);
+  const checkUpdate = useUpdaterStore((s) => s.check);
+  const reopenOptIn = useUpdaterStore((s) => s.reopenOptIn);
+  const updaterLabel = !updaterEnabled
+    ? "更新已关闭"
+    : updaterStatus === "checking"
+      ? "检查中…"
+      : "检查更新";
 
   return (
     <footer
@@ -58,6 +72,19 @@ export function StatusBar() {
         <span>设置</span>
         <Kbd sm>⌘,</Kbd>
       </span>
+      <button
+        type="button"
+        className={styles.updater}
+        onClick={() =>
+          updaterEnabled ? void checkUpdate(true) : reopenOptIn()
+        }
+        disabled={updaterStatus === "checking"}
+        // Keep StatusBar out of the region-level Tab cycle (same pattern as the
+        // DraftInbox badge); the banner is the keyboard-reachable surface.
+        tabIndex={-1}
+      >
+        {updaterLabel}
+      </button>
     </footer>
   );
 }
