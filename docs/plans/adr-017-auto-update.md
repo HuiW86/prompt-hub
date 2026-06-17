@@ -75,7 +75,7 @@ description: ADR-017 自动更新实现任务清单——tauri-plugin-updater + 
 
 ## Phase 5 — 文档涟漪（方法论 §7，实现后同批）
 
-- [ ] C3/C4：`06-prd §8.3` L2 补 updater 例外 / `10-ops-spec §5.2` telemetry 措辞澄清
+- [x] C3/C4：`06-prd §8.3` L2 补 updater 例外（v0.10）/ `10-ops-spec §5.2` telemetry 措辞澄清（v0.3，反向指针 §9.4）—— 2026-06-17
 - [ ] `07-features` 加自动更新功能项
 - [ ] `09-tech-stack` 登记 updater + process 依赖 + Rust ≥1.77.2
 - [ ] `CLAUDE.md §7` 状态指针（ADR 14→15 Accepted，017 入列）

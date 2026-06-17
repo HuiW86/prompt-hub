@@ -1,8 +1,9 @@
 ---
 type: ops-spec
 project: prompt-hub
-version: v0.2
+version: v0.3
 created: 2026-05-19
+last_modified: 2026-06-17
 status: pre-code
 author: ai  # 🤖 AI 主笔 + 人审（CLAUDE §5.2）
 audience: [ai, human]
@@ -131,6 +132,8 @@ related:
 - ❌ Google Analytics / Mixpanel（[[06-prd#7.3]]）
 - ❌ 任何 telemetry / heartbeat 上报
 - ❌ 崩溃日志自动上传
+
+> **注**：自动更新检查（[[017-enable-auto-update]]）出站**不属于** telemetry / heartbeat——无业务载荷上报、低频、用户可关、目标是公开下载端点而非分析后端。本节禁令不放宽，详见 §9.4。
 
 **用户主动报错 flow**：错误页提供「复制错误信息」按钮，用户**手动**贴到 GitHub issue（用户主动 = 明确知情）。
 

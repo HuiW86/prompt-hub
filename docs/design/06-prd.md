@@ -1,7 +1,7 @@
 ---
 type: prd
 project: prompt-hub
-version: v0.9
+version: v0.10
 created: 2026-05-18
 last_modified: 2026-06-17
 status: pre-code
@@ -1064,7 +1064,7 @@ major 升级（v1.x → v2.0）需满足：
 | 层 | 本项目实现 | 状态 |
 |----|---------|------|
 | L1 PRD Boundaries | 本节 8.2 | ✅ |
-| L2 工具白名单 | Tauri/Electron 默认 sandbox + 关闭网络权限（Tauri allowlist 仅 fs/clipboard）| 实施时配置 |
+| L2 工具白名单 | Tauri 默认 sandbox + capabilities 收紧（fs/clipboard + updater/process）；网络出站仅「自动更新检查 → GitHub Releases」一条受限例外（[[017-enable-auto-update]]，详见 §7.3 / N1 + [[10-ops-spec#§9]]）| 实施时配置 |
 | L3 sandbox | 桌面应用进程隔离 + localStorage / IndexedDB 域隔离 | 实施时配置 |
 | L4 approval gate | 删除操作的二次确认 + 配置面板编辑保存确认 | 实施时配置 |
 | L5 审计 + 回滚 | UsageRecord append-only + 数据导出 JSON 作为备份 | ✅ |
