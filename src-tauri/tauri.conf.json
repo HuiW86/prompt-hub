@@ -35,7 +35,7 @@
       "endpoints": [
         "https://github.com/HuiW86/prompt-hub/releases/latest/download/latest.json"
       ],
-      "pubkey": "PLACEHOLDER_REPLACE_WITH_MINISIGN_PUBKEY_CONTENT"
+      "pubkey": "dW50cnVzdGVkIGNvbW1lbnQ6IG1pbmlzaWduIHB1YmxpYyBrZXk6IEEyQTdBREQ1RkNDNTFDNUEKUldSYUhNWDgxYTJub2s5NlNocXNoZ2p5N0NCODFzM0tIMU5BcXhBSDd6ZHN2L2R5YzFxVThiNlcK"
     }
   },
   "bundle": {
