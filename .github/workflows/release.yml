@@ -124,12 +124,12 @@ jobs:
           repo="${GITHUB_REPOSITORY}"
           base="https://github.com/${repo}/releases/download/${GITHUB_REF_NAME}"
           mkdir -p dist
-          declare -A platkey=(
-            [aarch64-apple-darwin]=darwin-aarch64
-            [x86_64-apple-darwin]=darwin-x86_64
-          )
           platforms_json="{}"
           for target in aarch64-apple-darwin x86_64-apple-darwin; do
+            case "$target" in
+              aarch64-apple-darwin) platkey=darwin-aarch64 ;;
+              x86_64-apple-darwin) platkey=darwin-x86_64 ;;
+            esac
             tar -xzf "artifacts/app-${target}/app-${target}.tgz" -C artifacts
             archive="dist/prompt-hub_${version}_${target}.app.tar.gz"
             tar -C artifacts -czf "$archive" prompt-hub.app
@@ -139,7 +139,7 @@ jobs:
             url="${base}/$(basename "$archive")"
             platforms_json="$(jq -n \
               --argjson p "$platforms_json" \
-              --arg k "${platkey[$target]}" \
+              --arg k "$platkey" \
               --arg sig "$sig" --arg url "$url" \
               '$p + {($k): {signature: $sig, url: $url}}')"
           done
