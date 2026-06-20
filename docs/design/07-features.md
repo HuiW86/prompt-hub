@@ -1,13 +1,13 @@
 ---
 type: features
 project: prompt-hub
-version: v1.0
+version: v1.1
 created: 2026-05-19
-last_modified: 2026-06-08
-status: in-progress  # S1 主形态 MVP 5 模块 + 跨模块 P0 多项 done（ADR-012 Phase 1-5 全 done）；M-X 全收口——数据层 + workspace + MCP server + UI 收件箱（草稿 tab + 待审 badge + 5 IPC + schema recheck）done；M0-4 签名公证链路 done（M0 四项全绿）
+last_modified: 2026-06-19
+status: in-progress  # S1 主形态 MVP 5 模块 + 跨模块 P0 多项 done（ADR-012 Phase 1-5 全 done）；M-X 全收口——数据层 + workspace + MCP server + UI 收件箱（草稿 tab + 待审 badge + 5 IPC + schema recheck）done；M0-4 签名公证链路 done（M0 四项全绿）；ADR-017 自动更新客户端 + CI 出包链路 done（dry-run 端到端验证）
 author: ai  # 🤖 AI 主笔 + 人审（CLAUDE §5.2）
 audience: [human, ai]
-description: prompt-hub 功能清单运营视图——功能 × 状态 × 测试覆盖 × 版本，单一事实源；v1.0 收口 §3.8 资产编辑全 4 功能 done（Modifier/Composition 编辑 UI 补齐），前序 v0.9 新增 §3.8 区 / v0.8 收口 M0-4 签名公证链路
+description: prompt-hub 功能清单运营视图——功能 × 状态 × 测试覆盖 × 版本，单一事实源；v1.1 新增 §3.9 自动更新区（ADR-017 客户端 + CI 出包 done），前序 v1.0 收口 §3.8 资产编辑全 4 功能 / v0.8 收口 M0-4 签名公证链路
 related:
   - 06-prd
   - prompt-hub-mvp
@@ -160,6 +160,20 @@ related:
 | Modifier / Composition 编辑（增删改名/改内容/排序）| P1 | `done` | v1.1 | ModifierGrid 6 + CompositionWorkbench 6 + composition-b2 源码 gate；2026-06-08 补齐 UI（ModifierGrid 四象限网格落 col3 / CompositionWorkbench 落 scene 列）| omar | [[asset-editing-and-adaptive-layout#P2]] |
 | Dashboard 可拖列布局（react-resizable-panels v4 `Group`/`Panel`/`Separator` + localStorage 持久化）| P1 | `done` | v1.1 | 73 前端 / 手测 拖拽+持久化 ✓（键盘 focus 待补）| omar | [[asset-editing-and-adaptive-layout#P4]] |
 
+### 3.9 自动更新（ADR-017 / auto-update）
+
+> 来源 [[017-enable-auto-update]] Accepted（2026-06-17）+ plan [[adr-017-auto-update]]。`tauri-plugin-updater` + GitHub Releases（`HuiW86/prompt-hub`）+ GitHub Actions 自动出包，mac 先行。隐私披露见 [[10-ops-spec#§9]]，A2 受限豁免边界见 [[06-prd#8.2]] N1。
+>
+> 边界 reaffirm：唯一显式声明的出站网络例外（守 [[02-constitution#A2]]）——首启 opt-in 默认 off + 总开关零出站 + 不上传话术，仅向 GitHub Releases 拉 `latest.json`。检查走 JS 侧启动一次，不进 ⌥Space 唤起热路径（守 [[02-constitution#C1]]）。
+
+| 功能 | 优先级 | 状态 | 目标版本 | 测试覆盖 | 责任人 | 引用 |
+|---|---|---|---|---|---|---|
+| updater 客户端接入（plugin 注册 + capabilities + pubkey 嵌入）| P1 | `done` | v1.1 | cargo build / 真机待 Phase 6 | omar | [[adr-017-auto-update#Phase-1]] |
+| opt-in 总开关 + 检查/下载/安装 UI（updaterStore + UpdaterBanner 四态 + StatusBar 入口）| P1 | `done` | v1.1 | updaterStore 5 test（总开关关闭零触网，守 A2）| omar | [[adr-017-auto-update#Phase-2]] |
+| Vite 密钥泄漏加固（`envPrefix` 白名单挡 `TAURI_SIGNING_*`，GHSA-2rcp-jvr4-r259）| P1 | `done` | v1.1 | 源码级 envPrefix 锁 | omar | [[adr-017-auto-update#Phase-3]] |
+| CI 自动出包（`release.yml` two-job 隔离 + minisign 签名 + latest.json + draft）| P1 | `done` | v1.1 | dry-run 端到端验证（run 27855601462 全绿，双架构 + 签名 + latest.json 核验）| omar | [[adr-017-auto-update#Phase-4]] |
+| 真机验收（opt-in/检查/提示链路 + hotkey-wake 复测守 C1）| P1 | `planned` | v1.1 | Phase 6 待办 | omar | [[adr-017-auto-update#Phase-6]] |
+
 ---
 
 ## §4 阶段交付节奏
@@ -170,10 +184,11 @@ related:
 | S2 闭环沉淀 | v1.1 | 4 功能 | `planned` |
 | M-X MCP write pipeline | v1.1 | 6 支撑能力 + 14 MCP tool | `done` |
 | AE 资产编辑 + 自适应布局 | v1.1 | 4 功能 | `done`（4/4：4 类资产编辑+排序 + 可拖列布局全收口）|
+| ADR-017 自动更新 | v1.1 | 5 功能 | `done`（4/5：客户端 + CI 出包 done / 真机验收 planned）|
 | S3 SOP 导航 | v1.2 | 3 功能 | `planned` |
 | S4 配置个性化 | v1.3 | 4 功能 | `planned` |
 | S5 辅形态副屏 | v2.0 | 3 功能 | `planned` |
-| **合计** | — | **51 项** | — |
+| **合计** | — | **56 项** | — |
 
 **注**：版本号语义为 prompt-hub 自身版本，与 prd / spec / methodology 各自独立。v1.0 = 第一阶段 MVP 可发布；v2.0 = 辅形态加入（双形态完整）。
 
@@ -207,6 +222,7 @@ related:
 | 2026-06-03 | v0.8 bump：M0-4 Developer ID 签名公证链路收口（M0 四项全绿）——空壳 DMG 走 Developer ID 签名 + hardened runtime + 三项 JIT entitlements → 公证 Accepted → staple → Gatekeeper `accepted/Notarized Developer ID` → release 透明窗口运行时不黑屏；证伪「macos-private-api 与公证冲突」最坏假设；runbook [[m0-4-macos-signing]] | M0-4 收口涟漪 |
 | 2026-06-05 | v0.9 bump：新增 §3.8 资产编辑 + 自适应布局区（4 功能：Macro/AlignmentPhrase 编辑+排序 done / Modifier·Composition 后端 done·UI 落点暂缓 / Dashboard 可拖列布局 done）；§4 节奏表加 AE 行，合计 47→51 项 | [[asset-editing-and-adaptive-layout]] P1–P4 收口涟漪 |
 | 2026-06-08 | v1.0 bump：§3.8 Modifier/Composition 编辑 UI 落地（原 #3/#4 deferred 项收口），状态 in-progress→done；§4 AE 行 in-progress→done（4/4）；前端测试 75→87（+ModifierGrid 6 / CompositionWorkbench 6） | [[asset-editing-and-adaptive-layout#§7]] #7 落地涟漪 |
+| 2026-06-19 | v1.1 bump：新增 §3.9 自动更新区（5 功能：updater 客户端接入 / opt-in 总开关+UI / Vite 加固 / CI 出包 → done，真机验收 → planned）；§4 节奏表加 ADR-017 行，合计 51→56 项 | [[017-enable-auto-update]] 客户端 + CI dry-run 端到端验证收口涟漪 |
 
 ---
 

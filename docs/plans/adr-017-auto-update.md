@@ -3,8 +3,8 @@ type: plan
 project: prompt-hub
 version: v0.1
 created: 2026-06-17
-last_modified: 2026-06-17
-status: in-progress
+last_modified: 2026-06-19
+status: in-progress  # Phase 0-4 全 done（dry-run 端到端验证）；Phase 5 文档涟漪 done；唯一待办 Phase 6 真机验收
 author: co  # 🤝 人机共创（CLAUDE §5.2）
 related: [[017-enable-auto-update]], [[10-ops-spec]], [[06-prd]], [[09-tech-stack]], [[07-features]], [[02-constitution]]
 description: ADR-017 自动更新实现任务清单——tauri-plugin-updater + GitHub Releases，分 6 阶段（密钥前置 / 配置接入 / 客户端逻辑+UI / Vite 加固 / CI 出包 / 文档涟漪+验证）
@@ -25,12 +25,12 @@ description: ADR-017 自动更新实现任务清单——tauri-plugin-updater + 
 
 ---
 
-## Phase 0 — 密钥前置 🧑 人执行 [BLOCKING]
+## Phase 0 — 密钥前置 🧑 人执行 ✅（2026-06-19）
 
-- [ ] `tauri signer generate -w ~/.tauri/prompt-hub.key`（带 password，离线存，绝不进同步盘/repo）
-- [ ] 公钥内容交 AI → 填进 `tauri.conf.json` `plugins.updater.pubkey`
-- [ ] 私钥 + password 进 GitHub Environment secret（`TAURI_SIGNING_PRIVATE_KEY` / `TAURI_SIGNING_PRIVATE_KEY_PASSWORD`）+ 挂 required reviewer（第二人，非发版触发者）
-- [ ] 确认发布仓库 public（ADR §4 已拍板）+ 仓库内无真实话术 / 隐私指纹 / 私钥
+- [x] `tauri signer generate -w ~/.tauri/prompt-hub.key`（带 password，离线存；key ID `A2A7ADD5FCC51C5A`）
+- [x] 公钥内容填进 `tauri.conf.json` `plugins.updater.pubkey`（提交 `49bc78d`）
+- [x] 9 GitHub secret 配齐（`TAURI_SIGNING_PRIVATE_KEY(_PASSWORD)` + `APPLE_API_ISSUER/_KEY_ID/_KEY` + `APPLE_CERTIFICATE(_PASSWORD)` + `APPLE_SIGNING_IDENTITY` + `APPLE_TEAM_ID`）+ Environment `release-signing` required reviewer = `HuiW86`（单人项目自审）
+- [x] 确认发布仓库 public（ADR §4 已拍板）+ 仓库内无真实话术 / 隐私指纹 / 私钥（push 前扫描确认）
 
 ## Phase 1 — 配置接入（本地可验）✅
 
@@ -57,9 +57,9 @@ description: ADR-017 自动更新实现任务清单——tauri-plugin-updater + 
 
 > **Phase 1-3 验证全绿（2026-06-17）**：pnpm build ✓ / pnpm test 92（+5）✓ / lint + prettier clean / cargo test --workspace ✓ / clippy + fmt clean
 
-## Phase 4 — CI 自动出包 [草稿就绪，待 Phase 0 dry-run]
+## Phase 4 — CI 自动出包 ✅（dry-run 端到端验证 2026-06-19）
 
-> 仓库已锁定 `HuiW86/prompt-hub`（2026-06-17）。草稿可审查 + 可本地验的部分全绿，但**端到端不可验**——需 Phase 0 密钥 + secret + Environment 配置后跑真实 dry-run。
+> 仓库锁定 `HuiW86/prompt-hub`。Phase 0 配齐后 push tag `v0.1.0` 触发 run `27855601462` 全绿：`build (aarch64) 4m23s` + `build (x86_64) 4m26s` + `sign 21s`；draft release 出 5 资产（latest.json + 双架构 .app.tar.gz + .sig），`latest.json` 核验通过（version 0.1.0 / darwin-aarch64 + darwin-x86_64 / URL 正确 / 签名存在）。dry-run 暴露并修复 4 个真实 CI bug：① pnpm version（加 `packageManager`，`c2fa90f`）② .p12 密码不符（随机密码重导）③ Developer ID 证书在 System keychain（按 localKeyID 抽单一 identity 重建 p12）④ macOS runner bash 3.2 不支持关联数组（sign step 改 `case`，`db272e5`）。draft v0.1.0 为 dry-run 产物已删。
 
 - [x] `.github/workflows/release.yml`（two-job 隔离）：
   - [x] 仅 `on.push.tags: v*.*.*` 触发；`workflow_dispatch`/`repository_dispatch`/`schedule` 不列入 = 无法旁路触发
@@ -71,15 +71,15 @@ description: ADR-017 自动更新实现任务清单——tauri-plugin-updater + 
 - [x] pre-tag version 校验脚本（`scripts/check-version.sh`，三处 version vs tag）
 - [x] 本地验证：check-version（0.1.0 pass / 9.9.9 fail）✓ / assert-provenance（happy/版本不符/缺签名 三态）✓ / YAML 合法 ✓
 
-> **待 Phase 0 后核对**：① pubkey 占位替换 ② secret 配齐（TAURI_SIGNING_* + APPLE_* + APPLE_CERTIFICATE*）③ Environment `release-signing` + required reviewer ④ dry-run 验 `tauri build --bundles app` 的 .app 路径 + `tauri signer sign` CLI 行为 + 公证链路
+> **Phase 0 后核对全过** ✅：① pubkey 已替换 ② secret 配齐 ③ Environment + required reviewer ④ dry-run 验 `tauri build --bundles app` 的 .app 路径 + `tauri signer sign` CLI + 公证链路全跑通（run 27855601462）
 
 ## Phase 5 — 文档涟漪（方法论 §7，实现后同批）
 
 - [x] C3/C4：`06-prd §8.3` L2 补 updater 例外（v0.10）/ `10-ops-spec §5.2` telemetry 措辞澄清（v0.3，反向指针 §9.4）—— 2026-06-17
-- [ ] `07-features` 加自动更新功能项
-- [ ] `09-tech-stack` 登记 updater + process 依赖 + Rust ≥1.77.2
-- [ ] `CLAUDE.md §7` 状态指针（ADR 14→15 Accepted，017 入列）
-- [ ] `CHANGELOG` + `MANIFEST` bump
+- [x] `07-features` 加自动更新功能项（v1.1 §3.9，5 功能；2026-06-19）
+- [x] `09-tech-stack` 登记 updater + process 依赖 + Rust ≥1.77.2（v1.3 D14 + §4.4；2026-06-19）
+- [x] `CLAUDE.md §7` 状态指针（ADR 14→16 Accepted，016+017 入列 + 自动更新 landed 行；2026-06-19）
+- [x] `CHANGELOG` + `MANIFEST` bump（2026-06-19；MANIFEST 顺带校正 prd/ops-spec/ADR drift）
 - [ ] 可选 🧑：`02-constitution` A2 加 ADR-017 指针 note（人主笔）
 
 ## Phase 6 — 验证 + 真机

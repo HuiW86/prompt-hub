@@ -1,10 +1,10 @@
 ---
 type: manifest
 project: prompt-hub
-version: v1.4
+version: v1.5
 status: active
 created: 2026-05-24
-last_modified: 2026-06-04
+last_modified: 2026-06-19
 audience: [human, ai]
 description: prompt-hub 项目前期准备文件总清单——按方法论 v1.3 六层架构（L0 宪法 / L1 产品契约 / L2 工程规格 / L3 实施规格 / L4 索引 / L5 协作契约）+ ADR + 实施方案 + 视觉原型 + AI 上下文。AI 进项目读完 CLAUDE.md 后接读本文件能 1 分钟拿全貌；不写行数（参考性强但易过期）
 related:
@@ -29,7 +29,7 @@ related:
 | 🤝 共创 | 6 | 6/6 ratified（2026-06-01 product-spec v0.7 / design-spec v0.8 omar 审定升 ratified）|
 | 🤖 AI 主笔（人审） | 6 | 4/6 ratified + prd pre-code + features in-progress |
 | 🤖 AI 派生人审（L5） | 2 | 2/2 active |
-| ADR 决策记录 | 13 | 12 Accepted + 1 Proposed |
+| ADR 决策记录 | 16 | 15 Accepted + 1 Proposed（+ 011 Reserved）|
 | 实施方案 | 1 | active |
 | 视觉原型 | 1 | v1 已归档至 archive/（2026-05-25）|
 | 项目 AI 上下文 | 2 | active |
@@ -60,8 +60,8 @@ related:
 
 | 路径 | 内容 | 状态 |
 |---|---|---|
-| `docs/design/06-prd.md` | 数据契约 / API / 状态机 / 错误码 | pre-code v0.9（2026-06-17 ADR-017 gate：§7.3 + N1 updater 受限豁免）|
-| `docs/design/07-features.md` | 28 功能矩阵 S1–S5 | in-progress v0.3（2026-06-01 M-X.0 涟漪：MCP write pipeline 功能条目）|
+| `docs/design/06-prd.md` | 数据契约 / API / 状态机 / 错误码 | pre-code v0.10（2026-06-17 ADR-017 C3：§8.3 L2 updater 例外指针）|
+| `docs/design/07-features.md` | 56 功能矩阵 S1–S5 + AE + 自动更新 | in-progress v1.1（2026-06-19 ADR-017 涟漪：§3.9 自动更新区 5 功能）|
 | `docs/design/08-sitemap.md` | 资产对象树 + 视图导航图 | ratified |
 
 ---
@@ -70,8 +70,8 @@ related:
 
 | 路径 | 内容 | 状态 |
 |---|---|---|
-| `docs/design/09-tech-stack.md` | 全栈技术决议 | ratified v1.2（2026-06-01 M-X.0 涟漪：ADR-015 MCP server + workspace 4 crate 物理拆分）|
-| `docs/design/10-ops-spec.md` | 运维规格 | ratified v0.2（2026-06-17 ADR-017 gate：§9 出站网络与隐私披露）|
+| `docs/design/09-tech-stack.md` | 全栈技术决议 | ratified v1.3（2026-06-19 ADR-017 涟漪：D14 自动更新 + §4.4 updater 子系统 + plugin-process 依赖锁）|
+| `docs/design/10-ops-spec.md` | 运维规格 | ratified v0.3（2026-06-17 ADR-017 C4：§5.2 telemetry 措辞澄清 + §9.4 反向指针）|
 | `docs/design/11-test-spec.md` | 测试规格 | ratified |
 
 ---
@@ -104,7 +104,7 @@ related:
 
 ---
 
-## §8 ADR 决策记录（14 份）
+## §8 ADR 决策记录（16 份）
 
 | 编号 | 标题 | 状态 |
 |---|---|---|
@@ -124,15 +124,18 @@ related:
 | 013 | alignment-phrases-tab-inclusion（AlignmentPhrases 独立 region + Tab cycle 6 tab-reachable，追认 ADR-012 Phase 3） | Accepted（2026-05-25） |
 | 014 | nspanel-isa-swizzle（NSPanel 子类 override canBecomeKeyWindow + isa-swizzle 取得 borderless key-window 资格，下位于 ADR-008） | Accepted（2026-06-03） |
 | 015 | expose-mcp-write-pipeline（暴露 MCP server 给外部 AI 入库，14 tool + workspace 物理拆 4 crate + drafts staging） | Accepted（2026-05-27） |
+| 016 | choose-dnd-and-resizable-layout（@dnd-kit/react 0.4 区域内拖排 + react-resizable-panels v4 可拖列布局） | Accepted（2026-06-04） |
+| 017 | enable-auto-update（tauri-plugin-updater + GitHub Releases + Actions 出包，mac 先行；A2 唯一出站豁免边界） | Accepted（2026-06-17） |
 
 ---
 
-## §9 实施方案（2 份 · 🤝 共创）
+## §9 实施方案（3 份 · 🤝 共创）
 
 | 路径 | 内容 | 状态 |
 |---|---|---|
 | `docs/plans/prompt-hub-mvp.md` | 五阶段任务清单 | v0.8（第一阶段 MVP 收尾中） |
 | `docs/plans/mcp-write-pipeline.md` | MCP write pipeline 实施 plan（drafts staging + 14 tool 双层 + workspace 4 crate 物理拆分） | v0.2（2026-05-27 · pre-code） |
+| `docs/plans/adr-017-auto-update.md` | 自动更新实施 plan（6 阶段：密钥 / 配置接入 / 客户端+UI / Vite 加固 / CI 出包 / 验证）| v0.1（2026-06-19 · Phase 1-4 done，Phase 6 真机待办）|
 
 ---
 

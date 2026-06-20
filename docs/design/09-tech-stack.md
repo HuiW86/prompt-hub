@@ -1,13 +1,13 @@
 ---
 type: tech-stack
 project: prompt-hub
-version: v1.2
+version: v1.3
 created: 2026-05-19
-updated: 2026-06-01
-status: ratified  # ADR-001~004/006~009/015 全部 Accepted；ADR-005（prompt-combiner 复用）仍 Proposed
+updated: 2026-06-19
+status: ratified  # ADR-001~004/006~009/015/016/017 全部 Accepted；ADR-005（prompt-combiner 复用）仍 Proposed
 author: ai  # 🤖 AI 主笔 + 人审（CLAUDE §5.2）
 audience: [ai]
-description: prompt-hub 技术栈快照——全栈拍板：Tauri 2.x + React 19.2 + rusqlite 0.32 + pnpm 10.x + Zustand 5 + Vitest 4 + CSS Modules，macos-private-api 启用；v1.2 加 rmcp 1.7（prompt-hub-mcp binary）+ Cargo workspace 4 crate
+description: prompt-hub 技术栈快照——全栈拍板：Tauri 2.x + React 19.2 + rusqlite 0.32 + pnpm 10.x + Zustand 5 + Vitest 4 + CSS Modules，macos-private-api 启用；v1.3 加 tauri-plugin-updater + plugin-process（ADR-017 自动更新）+ GitHub Actions 出包；v1.2 加 rmcp 1.7（prompt-hub-mcp binary）+ Cargo workspace 4 crate
 related:
   - 02-constitution
   - prompt-hub-mvp
@@ -21,7 +21,10 @@ related:
   - 008-enable-macos-private-api
   - 009-choose-styling
   - 015-expose-mcp-write-pipeline
+  - 016-choose-dnd-and-resizable-layout
+  - 017-enable-auto-update
   - mcp-write-pipeline
+  - adr-017-auto-update
 ---
 
 # Tech Stack: prompt-hub
@@ -81,6 +84,7 @@ related:
 | **D11** | 测试栈 | Vitest 4 + Testing Library + jsdom 29 + cargo test + tempfile | [[007-choose-test-stack]] | ✅ Accepted 2026-05-19 |
 | **D12** | MCP server 运行时 | `rmcp` 1.7（stdio transport）+ Cargo workspace 4 crate（repo-core / repo-write / prompt-hub / prompt-hub-mcp）| [[015-expose-mcp-write-pipeline]] | ✅ Accepted 2026-05-27（第二阶段 M-X）|
 | **D13** | 拖拽排序 + 可拖分隔条 | `@dnd-kit/react@0.4.0` + `@dnd-kit/helpers@0.4.0`（区域内 useSortable + move helper）+ `react-resizable-panels@^4.11`（布局 percent 持久化）| [[016-choose-dnd-and-resizable-layout]] | ✅ Accepted 2026-06-04（资产编辑 + 自适应布局 P1）|
+| **D14** | 自动更新机制 | `tauri-plugin-updater` + `tauri-plugin-process`（JS `@tauri-apps/plugin-updater` + `plugin-process`）+ GitHub Releases（`HuiW86/prompt-hub`）+ GitHub Actions minisign 出包 | [[017-enable-auto-update]] | ✅ Accepted 2026-06-17（mac 先行，客户端 + CI dry-run 验证）|
 
 **仅剩 D8 阻塞**：第一阶段 MVP 建仓不依赖 D8（可走「重写」路径），D8 调研结果只影响迁移节奏。D12 属第二阶段 MCP write pipeline，不阻塞第一阶段。
 
@@ -141,6 +145,22 @@ related:
 **为什么物理拆而非同 crate trait**：pub(crate) 跨 crate 不可见 / feature unification 会让 MCP crate 也看见 AssetRepo / sealed trait 只防 impl 不防 import——真正的编译期隔离 = Cargo 依赖图就是边界。详见 [[015-expose-mcp-write-pipeline#§5]]。
 
 **版本号锁**：`prompt-hub-mcp` 与主 app 同版本号发布，避免 dmg 升级后 MCP binary 滞留旧版（[[015-expose-mcp-write-pipeline#§6]]）。
+
+### 4.4 自动更新（ADR-017 / [[017-enable-auto-update]]）
+
+| 维度 | 选定 | 版本 | 来源 |
+|---|---|---|---|
+| **更新插件** | `tauri-plugin-updater`（Rust）+ `@tauri-apps/plugin-updater`（JS）| `^2.0` | minisign 验签 + `latest.json` manifest |
+| **重启插件** | `tauri-plugin-process`（Rust）+ `@tauri-apps/plugin-process`（JS）| `^2.0` | 安装后 `relaunch()` |
+| **签名嵌入** | `serde_json`（Rust 直接依赖）| 1.x | `generate_context!` 嵌 pubkey 需直接依赖，否则 `cargo test` E0433 |
+| **分发** | GitHub Releases（`HuiW86/prompt-hub`，public）| — | endpoint `releases/latest/download/latest.json`（守 [[02-constitution#A2]] 唯一出站）|
+| **出包** | GitHub Actions（`.github/workflows/release.yml`）| — | two-job 隔离：build 无钥 + sign 挂 `release-signing` Environment（required reviewer）|
+
+**A2 出站豁免边界**：updater 是唯一显式声明的出站网络例外——首启 opt-in 默认 off + 总开关零出站 + 不上传话术。检查走 JS 侧 `updaterStore.check()` 启动一次，不进 ⌥Space 唤起热路径（守 [[02-constitution#C1]]）。隐私披露见 [[10-ops-spec#§9]]，豁免链见 [[06-prd#8.2]] N1。
+
+**密钥隔离三战线**（[[017-enable-auto-update#§5.5]]）：① build / sign job 物理拆分，build 永不见 minisign 私钥；② sign job 挂 protected Environment（人审）；③ Vite `envPrefix` 白名单挡 `TAURI_SIGNING_*` 进前端 bundle（GHSA-2rcp-jvr4-r259）。
+
+**Rust MSRV**：updater 不抬高 MSRV，仍 1.77.2+（见 §4 表）。
 
 ---
 
@@ -220,7 +240,8 @@ cargo clippy --manifest-path src-tauri/Cargo.toml -- -D warnings
 | `tauri` (Rust) | `^2.0` | 2.x 不兼容 1.x；私有 API 行为绑定 macOS 版本 | major bump → ADR |
 | `@tauri-apps/api` | `^2.0` | 与 Rust 端协议绑定 | 同上 |
 | `@tauri-apps/plugin-global-shortcut` | `^2.0` | Tauri 2.x 插件协议 | 同上 |
-| `@tauri-apps/plugin-updater` | `^2.0` | Tauri 2.x 插件协议 | 同上 |
+| `@tauri-apps/plugin-updater` | `^2.0` | Tauri 2.x 插件协议；自动更新（ADR-017）| 同上 |
+| `@tauri-apps/plugin-process` | `^2.0` | Tauri 2.x 插件协议；安装后 relaunch（ADR-017）| 同上 |
 | `react` / `react-dom` | `^19.2` | Actions / useOptimistic 是 19 特性，不可降级 | major bump → ADR |
 | `zustand` | `^5.0` | v5 类型推断与 v4 不兼容 | major bump → ADR |
 | `rusqlite` | `0.32` | bundled SQLite 版本影响 schema 迁移 | minor bump 即评估 |
