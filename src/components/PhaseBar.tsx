@@ -4,6 +4,7 @@ import { useSettingsStore } from "../stores/settingsStore";
 import { useToastStore } from "../stores/toastStore";
 import { primaryModifierLabel } from "../utils/platform";
 
+import primitiveStyles from "./primitives/primitives.module.css";
 import styles from "./PhaseBar.module.css";
 
 export function PhaseBar() {
@@ -26,7 +27,9 @@ export function PhaseBar() {
         const cls = [
           styles.phase,
           isActive ? styles.active : "",
-          flashId === phase.id ? styles.flash : "",
+          flashId === phase.id
+            ? `${primitiveStyles.protocol} ${primitiveStyles.flash}`
+            : "",
         ]
           .filter(Boolean)
           .join(" ");

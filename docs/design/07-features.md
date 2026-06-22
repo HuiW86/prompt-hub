@@ -1,13 +1,13 @@
 ---
 type: features
 project: prompt-hub
-version: v1.1
+version: v1.2
 created: 2026-05-19
-last_modified: 2026-06-19
-status: in-progress  # S1 主形态 MVP 5 模块 + 跨模块 P0 多项 done（ADR-012 Phase 1-5 全 done）；M-X 全收口——数据层 + workspace + MCP server + UI 收件箱（草稿 tab + 待审 badge + 5 IPC + schema recheck）done；M0-4 签名公证链路 done（M0 四项全绿）；ADR-017 自动更新客户端 + CI 出包链路 done（dry-run 端到端验证）
+last_modified: 2026-06-21
+status: in-progress  # S1 主形态 MVP 5 模块 + 跨模块 P0 多项 done（ADR-012 Phase 1-5 全 done）；M-X 全收口——数据层 + workspace + MCP server + UI 收件箱（草稿 tab + 待审 badge + 5 IPC + schema recheck）done；M0-4 签名公证链路 done（M0 四项全绿）；ADR-017 自动更新客户端 + CI 出包链路 done（dry-run 端到端验证）；design-spec v0.10 UI 一致性治理 A 阶段 primitives 迁移 done（真机验证待补）
 author: ai  # 🤖 AI 主笔 + 人审（CLAUDE §5.2）
 audience: [human, ai]
-description: prompt-hub 功能清单运营视图——功能 × 状态 × 测试覆盖 × 版本，单一事实源；v1.1 新增 §3.9 自动更新区（ADR-017 客户端 + CI 出包 done），前序 v1.0 收口 §3.8 资产编辑全 4 功能 / v0.8 收口 M0-4 签名公证链路
+description: prompt-hub 功能清单运营视图——功能 × 状态 × 测试覆盖 × 版本，单一事实源；v1.2 新增 §3.10 UI 一致性治理区（design-spec v0.10 A 阶段 primitives 迁移 done），前序 v1.1 §3.9 自动更新区（ADR-017 客户端 + CI 出包 done）/ v1.0 收口 §3.8 资产编辑全 4 功能
 related:
   - 06-prd
   - prompt-hub-mvp
@@ -174,6 +174,19 @@ related:
 | CI 自动出包（`release.yml` two-job 隔离 + minisign 签名 + latest.json + draft）| P1 | `done` | v1.1 | dry-run 端到端验证（run 27855601462 全绿，双架构 + 签名 + latest.json 核验）| omar | [[adr-017-auto-update#Phase-4]] |
 | 真机验收（opt-in/检查/提示链路 + hotkey-wake 复测守 C1）| P1 | `planned` | v1.1 | Phase 6 待办 | omar | [[adr-017-auto-update#Phase-6]] |
 
+### 3.10 UI 风格一致性治理（design-spec v0.10 A 阶段）
+
+> 来源 [[05-design-spec]] v0.10（§10.2.2 primitive 清单 + §10.6 Card/List 范式矩阵 + §10.7 Button 矩阵 + §11 flash 共享契约）。消除范式漂移：editor 五件套重复 4×、action/confirm 控件重复 4×、「新增」入口分叉（文字 pill vs icon 方块）、flash keyframes 重定义 3×。
+>
+> 行为变更（非纯去重，真机验证必查）：卡片圆角 `--r-3`→`--r-4`；focus outline 全组件统一 `--protocol`；ModifierGrid 绿→紫（protocol）；CompositionWorkbench box-row→divider list-row；DraftCard divider→neutral CardSurface + promote 去 task 绿（neutral ghost）；ScenePanel 复制 flash 收敛到单一 `ph-flash`。
+
+| 功能 | 优先级 | 状态 | 目标版本 | 测试覆盖 | 责任人 | 引用 |
+|---|---|---|---|---|---|---|
+| primitives 基础层（`CardSurface`/`ListRowSurface`/`Button`/`IconButton`/`Input`+`EditorInput`/`EditorPanel`+`EditorActions`/`Chip`/`ActionCluster`/`ConfirmInline` + `ph-flash` + `--layer-*` 变体）| P1 | `done` | v1.1 | 110 前端（既有组件测试零回归）| omar | [[05-design-spec#10.2.2]] |
+| editor 簇迁移（MacroGrid / ModifierGrid / AlignmentPhrases / CompositionWorkbench）| P1 | `done` | v1.1 | 110 前端 / 真机验证待补 | omar | [[05-design-spec#10.6]] |
+| surface/control 迁移（ScenePanel flash + focus / DraftInbox+DraftCard → neutral CardSurface + ghost Button）| P1 | `done` | v1.1 | 110 前端 / 真机验证待补 | omar | [[05-design-spec#10.4.3]] |
+| CSS 裸值 gate（`token-gate.test.ts` 扫 px/hex/ms，仅 tokens.css 豁免）+ SearchBar `outline-offset`→`var(--hairline)` | P1 | `done` | v1.1 | token-gate 18 file scan | omar | [[05-design-spec#10.2.2]] |
+
 ---
 
 ## §4 阶段交付节奏
@@ -185,10 +198,11 @@ related:
 | M-X MCP write pipeline | v1.1 | 6 支撑能力 + 14 MCP tool | `done` |
 | AE 资产编辑 + 自适应布局 | v1.1 | 4 功能 | `done`（4/4：4 类资产编辑+排序 + 可拖列布局全收口）|
 | ADR-017 自动更新 | v1.1 | 5 功能 | `done`（4/5：客户端 + CI 出包 done / 真机验收 planned）|
+| UI 一致性治理（design-spec v0.10 A 阶段）| v1.1 | 4 功能 | `done`（4/4 实装 + 测试零回归；真机验证待补）|
 | S3 SOP 导航 | v1.2 | 3 功能 | `planned` |
 | S4 配置个性化 | v1.3 | 4 功能 | `planned` |
 | S5 辅形态副屏 | v2.0 | 3 功能 | `planned` |
-| **合计** | — | **56 项** | — |
+| **合计** | — | **60 项** | — |
 
 **注**：版本号语义为 prompt-hub 自身版本，与 prd / spec / methodology 各自独立。v1.0 = 第一阶段 MVP 可发布；v2.0 = 辅形态加入（双形态完整）。
 

@@ -44,7 +44,7 @@
 
 .input:focus-visible {
   outline: var(--border-thick) solid var(--protocol);
-  outline-offset: 1px;
+  outline-offset: var(--hairline);
   border-radius: var(--r-1);
 }
 
@@ -76,7 +76,7 @@
 }
 
 .badge:focus-visible {
-  outline: var(--border-thick) solid var(--task);
+  outline: var(--border-thick) solid var(--protocol);
   outline-offset: 0;
   border-radius: var(--r-1);
 }

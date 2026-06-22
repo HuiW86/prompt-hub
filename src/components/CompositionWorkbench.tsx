@@ -5,7 +5,6 @@ import { move } from "@dnd-kit/helpers";
 import {
   ArrowDown,
   ArrowUp,
-  Check,
   GripVertical,
   Pencil,
   Plus,
@@ -18,7 +17,18 @@ import { usePromptStore } from "../stores/promptStore";
 import { useToastStore } from "../stores/toastStore";
 import type { Composition, Modifier } from "../ipc/types";
 
-import { EmptyState, RegionHeader } from "./primitives";
+import {
+  ActionCluster,
+  Button,
+  ConfirmInline,
+  EditorActions,
+  EditorPanel,
+  EmptyState,
+  IconButton,
+  Input,
+  ListRowSurface,
+  RegionHeader,
+} from "./primitives";
 import styles from "./CompositionWorkbench.module.css";
 
 type EditTarget =
@@ -72,16 +82,15 @@ export function CompositionWorkbench() {
         title="Composition"
         count={`${compositions.length} 件`}
         right={
-          <button
-            type="button"
-            className={styles.addBtn}
+          <Button
+            layer="task"
             aria-label="新增 Composition"
             disabled={activePhaseId == null}
             onClick={() => setEditing({ mode: "create" })}
           >
             <Plus size={14} aria-hidden strokeWidth={2} />
             <span>新增</span>
-          </button>
+          </Button>
         }
       />
 
@@ -112,7 +121,7 @@ export function CompositionWorkbench() {
             });
           }}
         >
-          <ul className={styles.list}>
+          <div className={styles.list}>
             {items.map((c, idx) => (
               <SortableCompositionRow
                 key={c.id}
@@ -125,7 +134,7 @@ export function CompositionWorkbench() {
                 onConfirmDelete={() => void handleDelete(c.id)}
               />
             ))}
-          </ul>
+          </div>
         </DragDropProvider>
       )}
     </section>
@@ -156,70 +165,50 @@ function SortableCompositionRow({
     index,
   });
 
-  const classes = [styles.row, isDragging ? styles.dragging : ""]
-    .filter(Boolean)
-    .join(" ");
-
   return (
-    <li ref={ref} className={classes} data-composition-id={composition.id}>
-      <button
-        type="button"
+    <ListRowSurface
+      layer="task"
+      ref={ref}
+      dragging={isDragging}
+      className={styles.row}
+      data-composition-id={composition.id}
+    >
+      <IconButton
         ref={handleRef}
-        className={styles.rowHandle}
+        plain
+        dragHandle
         aria-label={`拖动排序 ${composition.name}`}
       >
         <GripVertical size={14} aria-hidden strokeWidth={2} />
-      </button>
+      </IconButton>
       <span className={styles.rowName}>{composition.name}</span>
       <span className={styles.rowCount}>
         {composition.modifierIds.length} 材料
       </span>
 
       {isConfirming ? (
-        <div
-          className={styles.confirm}
-          role="alertdialog"
-          aria-label="确认删除"
-        >
-          <span className={styles.confirmText}>永久删除？</span>
-          <button
-            type="button"
-            className={styles.confirmYes}
-            aria-label="确认永久删除"
-            onClick={onConfirmDelete}
-          >
-            <Check size={13} aria-hidden strokeWidth={2} />
-          </button>
-          <button
-            type="button"
-            className={styles.confirmNo}
-            aria-label="取消删除"
-            onClick={onCancelDelete}
-          >
-            <X size={13} aria-hidden strokeWidth={2} />
-          </button>
-        </div>
+        <ConfirmInline
+          className={styles.rowActions}
+          text="永久删除？"
+          confirmLabel="确认永久删除"
+          cancelLabel="取消删除"
+          onConfirm={onConfirmDelete}
+          onCancel={onCancelDelete}
+        />
       ) : (
-        <div className={styles.rowActions}>
-          <button
-            type="button"
-            className={styles.actBtn}
-            aria-label={`编辑 ${composition.name}`}
-            onClick={onEdit}
-          >
+        <ActionCluster className={styles.rowActions} reveal>
+          <IconButton aria-label={`编辑 ${composition.name}`} onClick={onEdit}>
             <Pencil size={13} aria-hidden strokeWidth={2} />
-          </button>
-          <button
-            type="button"
-            className={styles.actBtn}
+          </IconButton>
+          <IconButton
             aria-label={`删除 ${composition.name}`}
             onClick={onRequestDelete}
           >
             <Trash2 size={13} aria-hidden strokeWidth={2} />
-          </button>
-        </div>
+          </IconButton>
+        </ActionCluster>
       )}
-    </li>
+    </ListRowSurface>
   );
 }
 
@@ -296,22 +285,23 @@ function CompositionEditor({ target, phaseId, onClose, onError }: EditorProps) {
   };
 
   return (
-    <form
+    <EditorPanel
+      layer="task"
       className={styles.editor}
+      role="group"
       aria-label={existing ? "编辑 Composition" : "新增 Composition"}
-      onSubmit={(e) => {
-        e.preventDefault();
-        void handleSave();
-      }}
     >
-      <input
+      <Input
         ref={nameRef}
-        className={styles.editorName}
         placeholder="名称"
         value={name}
         onChange={(e) => setName(e.target.value)}
         onKeyDown={(e) => {
           if (e.key === "Escape") onClose();
+          if (e.key === "Enter") {
+            e.preventDefault();
+            void handleSave();
+          }
         }}
       />
 
@@ -385,14 +375,19 @@ function CompositionEditor({ target, phaseId, onClose, onError }: EditorProps) {
         )}
       </div>
 
-      <div className={styles.editorActions}>
-        <button type="button" className={styles.editorCancel} onClick={onClose}>
+      <EditorActions>
+        <Button intent="subtle" onClick={onClose}>
           取消
-        </button>
-        <button type="submit" className={styles.editorSave} disabled={!canSave}>
+        </Button>
+        <Button
+          layer="task"
+          intent="primary"
+          onClick={() => void handleSave()}
+          disabled={!canSave}
+        >
           {existing ? "保存" : "新增"}
-        </button>
-      </div>
-    </form>
+        </Button>
+      </EditorActions>
+    </EditorPanel>
   );
 }

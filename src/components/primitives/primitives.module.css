@@ -99,3 +99,328 @@
   align-items: center;
   gap: var(--s-1_5);
 }
+
+/* ============================================================
+   v0.10 surface / control / editor primitives (design-spec §10.2.2)
+
+   Ontology layer is expressed by a single modifier class that sets
+   local --layer-* vars; surfaces/controls reference those vars so a
+   variant never duplicates the base rule. Layer fill follows §13.2:
+   a task surface only ever shows task fill, protocol only protocol.
+   ============================================================ */
+.task {
+  --layer: var(--task);
+  --layer-fg: var(--task-fg);
+  --layer-8: var(--task-8);
+  --layer-16: var(--task-16);
+}
+
+.protocol {
+  --layer: var(--protocol);
+  --layer-fg: var(--protocol-fg);
+  --layer-8: var(--protocol-8);
+  --layer-16: var(--protocol-16);
+}
+
+/* Neutral: no ontology fill — selected/active lift via surface only. */
+.neutral {
+  --layer: var(--border-3);
+  --layer-fg: var(--fg-1);
+  --layer-8: var(--surface-2);
+  --layer-16: var(--surface-3);
+}
+
+/* ── Flash (single @keyframes source — §11). Color injected per layer
+   via --layer-16; holds the fill for --d-fast then snaps to base bg. ── */
+@keyframes ph-flash {
+  0%,
+  100% {
+    background-color: var(--layer-16);
+  }
+}
+
+.flash {
+  animation: ph-flash var(--d-fast) var(--ease);
+}
+
+/* ── CardSurface — independent asset card shell (§10.2.2) ────────────── */
+.card {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  gap: var(--s-2);
+  min-width: 0;
+  min-height: var(--s-12);
+  padding: var(--s-4);
+  background: var(--surface-1);
+  border: var(--hairline) solid var(--border-2);
+  border-radius: var(--r-4);
+  text-align: left;
+  transition:
+    border-color var(--d-fast) var(--ease),
+    background-color var(--d-fast) var(--ease);
+}
+
+.card:hover {
+  border-color: var(--border-3);
+}
+
+.cardSelected {
+  background: var(--layer-16);
+  border-color: var(--layer);
+}
+
+.cardDragging {
+  opacity: var(--op-dim);
+  border-color: var(--layer);
+  cursor: grabbing;
+}
+
+/* ── ListRowSurface — list row shell (§10.2.2) ───────────────────────── */
+.row {
+  position: relative;
+  display: flex;
+  align-items: center;
+  gap: var(--s-2);
+  min-width: 0;
+  padding: 0 var(--s-3_5);
+  background: transparent;
+  border-bottom: var(--hairline) solid var(--border-1);
+  border-radius: var(--r-3);
+  text-align: left;
+  transition:
+    border-color var(--d-fast) var(--ease),
+    background-color var(--d-fast) var(--ease);
+}
+
+.row:hover {
+  background: var(--surface-1);
+}
+
+.rowSelected {
+  background: var(--layer-8);
+}
+
+.rowDragging {
+  opacity: var(--op-dim);
+  border-color: var(--layer);
+}
+
+/* ── Button — text button incl. "add" entry (§10.2.2 / §10.7) ─────────── */
+.btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: var(--s-1);
+  height: var(--h-chip);
+  padding: 0 var(--s-2_25);
+  appearance: none;
+  background: none;
+  border: var(--hairline) solid var(--border-2);
+  border-radius: var(--r-4);
+  color: var(--fg-2);
+  cursor: pointer;
+  white-space: nowrap;
+  font: var(--w-500) var(--t-12) / 1 var(--font-sans);
+  transition:
+    color var(--d-fast) var(--ease),
+    background-color var(--d-fast) var(--ease),
+    border-color var(--d-fast) var(--ease);
+}
+
+.btn:disabled {
+  opacity: var(--op-dim);
+  cursor: not-allowed;
+}
+
+/* intent=ghost: border-only baseline (default look above) */
+.btnGhost:hover:not(:disabled) {
+  color: var(--fg-1);
+  border-color: var(--border-3);
+}
+
+/* intent=primary: current-layer fill */
+.btnPrimary {
+  background: var(--layer-16);
+  border-color: var(--layer);
+  color: var(--layer);
+}
+
+.btnPrimary:hover:not(:disabled) {
+  background: var(--layer);
+  color: var(--layer-fg);
+}
+
+/* intent=subtle: text-only, no border */
+.btnSubtle {
+  border-color: transparent;
+}
+
+.btnSubtle:hover:not(:disabled) {
+  color: var(--fg-1);
+}
+
+/* shape=square handled by .iconBtn; .btn focus shares unified outline */
+.btn:focus-visible {
+  outline: var(--border-thick) solid var(--protocol);
+  outline-offset: var(--hairline);
+}
+
+/* ── IconButton — bare icon square tool (§10.2.2) ────────────────────── */
+.iconBtn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: var(--s-5);
+  height: var(--s-5);
+  padding: 0;
+  appearance: none;
+  background: var(--surface-2);
+  border: var(--hairline) solid var(--border-1);
+  border-radius: var(--r-2);
+  color: var(--fg-3);
+  cursor: pointer;
+  transition:
+    color var(--d-fast) var(--ease),
+    border-color var(--d-fast) var(--ease);
+}
+
+.iconBtn:hover:not(:disabled) {
+  color: var(--fg-1);
+  border-color: var(--border-2);
+}
+
+.iconBtn:disabled {
+  opacity: var(--op-dim);
+  cursor: not-allowed;
+}
+
+.iconBtn:focus-visible {
+  outline: var(--border-thick) solid var(--protocol);
+  outline-offset: 0;
+}
+
+/* chromeless icon button variant (e.g. row drag handle) */
+.iconBtnPlain {
+  background: none;
+  border: none;
+}
+
+.iconBtnGrab {
+  cursor: grab;
+}
+
+/* ── Input / EditorInput (§10.2.2) ───────────────────────────────────── */
+.input,
+.editorInput {
+  width: 100%;
+  appearance: none;
+  padding: var(--s-2);
+  background: var(--surface-2);
+  border: var(--hairline) solid var(--border-2);
+  border-radius: var(--r-3);
+  color: var(--fg-1);
+  font: var(--w-400) var(--t-13) / var(--lh-body) var(--font-sans);
+}
+
+.editorInput {
+  resize: vertical;
+  min-height: var(--s-12);
+}
+
+.input:focus-visible,
+.editorInput:focus-visible {
+  outline: var(--border-thick) solid var(--protocol);
+  outline-offset: var(--hairline);
+  border-color: var(--protocol);
+}
+
+/* ── EditorPanel — inline edit shell (§10.2.2) ───────────────────────── */
+.editorPanel {
+  display: flex;
+  flex-direction: column;
+  gap: var(--s-2);
+  padding: var(--s-3);
+  background: var(--surface-1);
+  border: var(--hairline) solid var(--border-2);
+  border-radius: var(--r-3);
+}
+
+.editorActions {
+  display: flex;
+  justify-content: flex-end;
+  gap: var(--s-2);
+}
+
+/* ── Chip — single tag (§10.2.2) ─────────────────────────────────────── */
+.chip {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--s-1_5);
+  height: var(--h-chip);
+  padding: 0 var(--s-2_25);
+  appearance: none;
+  background: var(--surface-1);
+  border: var(--hairline) solid var(--border-1);
+  border-radius: var(--r-2);
+  color: var(--fg-1);
+  cursor: pointer;
+  user-select: none;
+  white-space: nowrap;
+  font: var(--w-500) var(--t-12) / 1 var(--font-sans);
+  transition:
+    border-color var(--d-fast) var(--ease),
+    background-color var(--d-fast) var(--ease);
+}
+
+.chip:hover {
+  border-color: var(--border-2);
+}
+
+.chipActive {
+  background: var(--layer-8);
+  border-color: var(--layer);
+}
+
+.chipDim {
+  opacity: var(--op-dim);
+}
+
+.chip:focus-visible {
+  outline: var(--border-thick) solid var(--protocol);
+  outline-offset: 0;
+  border-color: var(--protocol);
+}
+
+/* ── ActionCluster — hover/focus card action group (§10.2.2). Positioning
+   stays domain-local (className); reveal is driven by parent card/row. ── */
+.actionCluster {
+  display: flex;
+  align-items: center;
+  gap: var(--s-1_5);
+}
+
+.actionClusterReveal {
+  opacity: 0;
+  transition: opacity var(--d-fast) var(--ease);
+}
+
+.card:hover .actionClusterReveal,
+.card:focus-within .actionClusterReveal,
+.row:hover .actionClusterReveal,
+.row:focus-within .actionClusterReveal,
+.actionClusterReveal:focus-within {
+  opacity: 1;
+}
+
+/* ── ConfirmInline — in-place delete confirm (§10.2.2) ───────────────── */
+.confirmInline {
+  display: flex;
+  align-items: center;
+  gap: var(--s-1);
+}
+
+.confirmText {
+  font: var(--w-500) var(--t-11) / 1 var(--font-sans);
+  color: var(--fg-1);
+}

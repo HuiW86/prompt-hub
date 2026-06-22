@@ -7,7 +7,7 @@ import { usePromptStore } from "../stores/promptStore";
 import { useToastStore } from "../stores/toastStore";
 import { relativeTime } from "../utils/time";
 
-import { EmptyState } from "./primitives";
+import { Button, CardSurface, EmptyState } from "./primitives";
 import styles from "./DraftInbox.module.css";
 
 const TYPE_LABEL: Record<DraftTargetType, string> = {
@@ -34,11 +34,11 @@ export function DraftInbox() {
   }
 
   return (
-    <ul className={styles.list} aria-label="草稿收件箱">
+    <div className={styles.list} role="list" aria-label="草稿收件箱">
       {drafts.map((draft) => (
         <DraftCard key={draft.id} draft={draft} />
       ))}
-    </ul>
+    </div>
   );
 }
 
@@ -86,7 +86,7 @@ function DraftCard({ draft }: { draft: DraftSummary }) {
   }
 
   return (
-    <li className={styles.card}>
+    <CardSurface layer="neutral" role="listitem">
       <div className={styles.head}>
         <span className={styles.type}>{TYPE_LABEL[draft.targetType]}</span>
         <h4 className={styles.name}>{draft.name}</h4>
@@ -98,25 +98,23 @@ function DraftCard({ draft }: { draft: DraftSummary }) {
           <span className={styles.time}>{relativeTime(draft.createdAt)}</span>
         </div>
         <div className={styles.actions}>
-          <button
-            type="button"
-            className={styles.discard}
+          <Button
+            intent="ghost"
             onClick={() => void doDiscard()}
             disabled={busy}
           >
             <X size={13} aria-hidden strokeWidth={2} />
             丢弃
-          </button>
-          <button
-            type="button"
-            className={styles.promote}
+          </Button>
+          <Button
+            intent="ghost"
             onClick={onPromoteClick}
             disabled={busy}
             aria-expanded={isModifier ? picking : undefined}
           >
             <Check size={13} aria-hidden strokeWidth={2} />
             归档
-          </button>
+          </Button>
         </div>
       </div>
       {isModifier && picking && (
@@ -134,6 +132,6 @@ function DraftCard({ draft }: { draft: DraftSummary }) {
           ))}
         </div>
       )}
-    </li>
+    </CardSurface>
   );
 }

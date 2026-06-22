@@ -9,6 +9,7 @@ import { useToastStore } from "../stores/toastStore";
 
 import { DraftInbox } from "./DraftInbox";
 import { EmptyState, RegionHeader } from "./primitives";
+import primitiveStyles from "./primitives/primitives.module.css";
 import styles from "./ScenePanel.module.css";
 
 type Grouped = Array<{ subStage: SubStage | null; phrases: Phrase[] }>;
@@ -145,7 +146,7 @@ export function ScenePanel() {
                   <div className={styles.subStage}>{g.subStage.name}</div>
                 )}
                 {g.phrases.map((p) => {
-                  const cls = `${styles.phrase} ${flashId === p.id ? styles.phraseFlash : ""}`;
+                  const cls = `${styles.phrase} ${flashId === p.id ? `${primitiveStyles.task} ${primitiveStyles.flash}` : ""}`;
                   return (
                     <button
                       key={p.id}

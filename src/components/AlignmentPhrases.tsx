@@ -2,7 +2,7 @@ import { useEffect, useMemo, useRef, useState } from "react";
 import { DragDropProvider } from "@dnd-kit/react";
 import { useSortable } from "@dnd-kit/react/sortable";
 import { move } from "@dnd-kit/helpers";
-import { Check, GripVertical, Pencil, Plus, Trash2, X } from "lucide-react";
+import { GripVertical, Pencil, Plus, Trash2 } from "lucide-react";
 
 import { useCopy } from "../hooks/useCopy";
 import { useAppStore } from "../stores/appStore";
@@ -10,6 +10,17 @@ import { usePromptStore } from "../stores/promptStore";
 import { useToastStore } from "../stores/toastStore";
 import type { AlignmentPhrase } from "../ipc/types";
 
+import {
+  ActionCluster,
+  Button,
+  Chip,
+  ConfirmInline,
+  EditorActions,
+  EditorInput,
+  EditorPanel,
+  IconButton,
+  Input,
+} from "./primitives";
 import styles from "./AlignmentPhrases.module.css";
 
 type EditTarget =
@@ -74,51 +85,46 @@ export function AlignmentPhrases() {
             {activePhaseId == null ? "未选相位" : "暂无对齐话术"}
           </span>
         ) : (
-          phrases.map((p) => {
-            const cls = [
-              styles.chip,
-              p.isDefault ? styles.active : styles.dim,
-              flashId === p.id ? styles.flash : "",
-            ]
-              .filter(Boolean)
-              .join(" ");
-            return (
-              <button
-                key={p.id}
-                type="button"
-                className={cls}
-                aria-label={p.name}
-                onClick={() =>
-                  void copy(
-                    p.content,
-                    {
-                      targetType: "alignment",
-                      targetId: p.id,
-                      source: "phase_bar",
-                      modifierIds: null,
-                      sopId: null,
-                      sopStepOrder: null,
-                      phaseId: p.phaseId,
-                    },
-                    p.id,
-                  )
-                }
-              >
-                <span className={styles.dot} aria-hidden />
-                {p.name}
-              </button>
-            );
-          })
+          phrases.map((p) => (
+            <Chip
+              key={p.id}
+              layer="protocol"
+              active={p.isDefault}
+              dim={!p.isDefault}
+              flash={flashId === p.id}
+              aria-label={p.name}
+              onClick={() =>
+                void copy(
+                  p.content,
+                  {
+                    targetType: "alignment",
+                    targetId: p.id,
+                    source: "phase_bar",
+                    modifierIds: null,
+                    sopId: null,
+                    sopStepOrder: null,
+                    phaseId: p.phaseId,
+                  },
+                  p.id,
+                )
+              }
+            >
+              <span
+                className={p.isDefault ? styles.dot : styles.dotDim}
+                aria-hidden
+              />
+              {p.name}
+            </Chip>
+          ))
         )}
         {activePhaseId != null && (
-          <button
-            type="button"
+          <IconButton
             className={styles.manageBtn}
             aria-label="管理对齐话术"
             onClick={() => setEditMode(true)}
           >
             <Pencil size={12} aria-hidden strokeWidth={2} />
-          </button>
+          </IconButton>
         )}
       </section>
     );
@@ -133,25 +139,22 @@ export function AlignmentPhrases() {
       <div className={styles.editHeader}>
         <span className={styles.label}>aligned · 编辑</span>
         <div className={styles.editHeaderActions}>
-          <button
-            type="button"
-            className={styles.addBtn}
+          <Button
+            layer="protocol"
             aria-label="新增对齐话术"
             onClick={() => setEditing({ mode: "create" })}
           >
             <Plus size={14} aria-hidden strokeWidth={2} />
             <span>新增</span>
-          </button>
-          <button
-            type="button"
-            className={styles.doneBtn}
+          </Button>
+          <Button
             onClick={() => {
               setEditMode(false);
               setEditing(null);
             }}
           >
             完成
-          </button>
+          </Button>
         </div>
       </div>
 
@@ -230,61 +233,38 @@ function SortablePhraseRow({
 
   return (
     <li ref={ref} className={classes} data-phrase-id={phrase.id}>
-      <button
-        type="button"
+      <IconButton
         ref={handleRef}
-        className={styles.rowHandle}
+        plain
+        dragHandle
         aria-label={`拖动排序 ${phrase.name}`}
       >
         <GripVertical size={14} aria-hidden strokeWidth={2} />
-      </button>
+      </IconButton>
       <span className={styles.rowDot} aria-hidden />
       <span className={styles.rowName}>{phrase.name}</span>
       {phrase.isDefault && <span className={styles.rowBadge}>默认</span>}
 
       {isConfirming ? (
-        <div
-          className={styles.confirm}
-          role="alertdialog"
-          aria-label="确认删除"
-        >
-          <span className={styles.confirmText}>永久删除？</span>
-          <button
-            type="button"
-            className={styles.confirmYes}
-            aria-label="确认永久删除"
-            onClick={onConfirmDelete}
-          >
-            <Check size={13} aria-hidden strokeWidth={2} />
-          </button>
-          <button
-            type="button"
-            className={styles.confirmNo}
-            aria-label="取消删除"
-            onClick={onCancelDelete}
-          >
-            <X size={13} aria-hidden strokeWidth={2} />
-          </button>
-        </div>
+        <ConfirmInline
+          text="永久删除？"
+          confirmLabel="确认永久删除"
+          cancelLabel="取消删除"
+          onConfirm={onConfirmDelete}
+          onCancel={onCancelDelete}
+        />
       ) : (
-        <div className={styles.rowActions}>
-          <button
-            type="button"
-            className={styles.actBtn}
-            aria-label={`编辑 ${phrase.name}`}
-            onClick={onEdit}
-          >
+        <ActionCluster>
+          <IconButton aria-label={`编辑 ${phrase.name}`} onClick={onEdit}>
             <Pencil size={13} aria-hidden strokeWidth={2} />
-          </button>
-          <button
-            type="button"
-            className={styles.actBtn}
+          </IconButton>
+          <IconButton
             aria-label={`删除 ${phrase.name}`}
             onClick={onRequestDelete}
           >
             <Trash2 size={13} aria-hidden strokeWidth={2} />
-          </button>
-        </div>
+          </IconButton>
+        </ActionCluster>
       )}
     </li>
   );
@@ -338,26 +318,25 @@ function PhraseEditor({ target, phaseId, onClose, onError }: EditorProps) {
   };
 
   return (
-    <form
-      className={styles.editor}
+    <EditorPanel
+      layer="protocol"
+      role="group"
       aria-label={existing ? "编辑对齐话术" : "新增对齐话术"}
-      onSubmit={(e) => {
-        e.preventDefault();
-        void handleSave();
-      }}
     >
-      <input
+      <Input
         ref={nameRef}
-        className={styles.editorName}
         placeholder="名称"
         value={name}
         onChange={(e) => setName(e.target.value)}
         onKeyDown={(e) => {
           if (e.key === "Escape") onClose();
+          if (e.key === "Enter") {
+            e.preventDefault();
+            void handleSave();
+          }
         }}
       />
-      <textarea
-        className={styles.editorBody}
+      <EditorInput
         placeholder="话术内容"
         value={content}
         rows={3}
@@ -370,18 +349,19 @@ function PhraseEditor({ target, phaseId, onClose, onError }: EditorProps) {
           }
         }}
       />
-      <div className={styles.editorActions}>
-        <button type="button" className={styles.editorCancel} onClick={onClose}>
+      <EditorActions>
+        <Button intent="subtle" onClick={onClose}>
           取消
-        </button>
-        <button
-          type="submit"
-          className={styles.editorSave}
+        </Button>
+        <Button
+          layer="protocol"
+          intent="primary"
+          onClick={() => void handleSave()}
           disabled={!canSave || saving}
         >
           {existing ? "保存" : "新增"}
-        </button>
-      </div>
-    </form>
+        </Button>
+      </EditorActions>
+    </EditorPanel>
   );
 }

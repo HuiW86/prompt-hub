@@ -52,7 +52,7 @@
 }
 
 .item:focus-visible {
-  outline: var(--border-thick) solid var(--task);
+  outline: var(--border-thick) solid var(--protocol);
   outline-offset: calc(-1 * var(--border-thick));
 }
 

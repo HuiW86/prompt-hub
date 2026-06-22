@@ -2,14 +2,26 @@ import { useEffect, useMemo, useRef, useState } from "react";
 import { DragDropProvider } from "@dnd-kit/react";
 import { useSortable } from "@dnd-kit/react/sortable";
 import { move } from "@dnd-kit/helpers";
-import { Check, GripVertical, Pencil, Plus, Trash2, X } from "lucide-react";
+import { GripVertical, Pencil, Plus, Trash2 } from "lucide-react";
 
 import { usePromptStore } from "../stores/promptStore";
 import { useToastStore } from "../stores/toastStore";
 import { GROUP_KINDS } from "../ipc/types";
 import type { GroupKind, Modifier } from "../ipc/types";
 
-import { EmptyState, RegionHeader } from "./primitives";
+import {
+  ActionCluster,
+  Button,
+  CardSurface,
+  ConfirmInline,
+  EditorActions,
+  EditorInput,
+  EditorPanel,
+  EmptyState,
+  IconButton,
+  Input,
+  RegionHeader,
+} from "./primitives";
 import styles from "./ModifierGrid.module.css";
 
 // Mirrors DraftInbox's promote popover labels — keep the two in sync.
@@ -142,14 +154,15 @@ function ModifierQuadrant({
       <div className={styles.quadrantHeader}>
         <span className={styles.quadrantTitle}>{label}</span>
         <span className={styles.quadrantCount}>{modifiers.length}</span>
-        <button
-          type="button"
+        <Button
+          layer="protocol"
           className={styles.addBtn}
           aria-label={`新增${label} Modifier`}
           onClick={onAdd}
         >
           <Plus size={13} aria-hidden strokeWidth={2} />
-        </button>
+          <span>新增</span>
+        </Button>
       </div>
 
       {items.length === 0 ? (
@@ -212,70 +225,48 @@ function SortableModifierCard({
     index,
   });
 
-  const classes = [styles.card, isDragging ? styles.dragging : ""]
-    .filter(Boolean)
-    .join(" ");
-
   return (
-    <div ref={ref} className={classes} data-modifier-id={modifier.id}>
+    <CardSurface
+      layer="protocol"
+      ref={ref}
+      dragging={isDragging}
+      data-modifier-id={modifier.id}
+    >
       <div className={styles.cardBody}>
         <h4 className={styles.title}>{modifier.name}</h4>
         <p className={styles.body}>{modifier.content}</p>
       </div>
 
       {isConfirming ? (
-        <div
-          className={styles.confirm}
-          role="alertdialog"
-          aria-label="确认删除"
-        >
-          <span className={styles.confirmText}>永久删除？</span>
-          <button
-            type="button"
-            className={styles.confirmYes}
-            aria-label="确认永久删除"
-            onClick={onConfirmDelete}
-          >
-            <Check size={13} aria-hidden strokeWidth={2} />
-          </button>
-          <button
-            type="button"
-            className={styles.confirmNo}
-            aria-label="取消删除"
-            onClick={onCancelDelete}
-          >
-            <X size={13} aria-hidden strokeWidth={2} />
-          </button>
-        </div>
+        <ConfirmInline
+          className={styles.cardActions}
+          text="永久删除？"
+          confirmLabel="确认永久删除"
+          cancelLabel="取消删除"
+          onConfirm={onConfirmDelete}
+          onCancel={onCancelDelete}
+        />
       ) : (
-        <div className={styles.actions}>
-          <button
-            type="button"
+        <ActionCluster className={styles.cardActions} reveal>
+          <IconButton
             ref={handleRef}
-            className={styles.handle}
+            dragHandle
             aria-label={`拖动排序 ${modifier.name}`}
           >
             <GripVertical size={14} aria-hidden strokeWidth={2} />
-          </button>
-          <button
-            type="button"
-            className={styles.actBtn}
-            aria-label={`编辑 ${modifier.name}`}
-            onClick={onEdit}
-          >
+          </IconButton>
+          <IconButton aria-label={`编辑 ${modifier.name}`} onClick={onEdit}>
             <Pencil size={13} aria-hidden strokeWidth={2} />
-          </button>
-          <button
-            type="button"
-            className={styles.actBtn}
+          </IconButton>
+          <IconButton
             aria-label={`删除 ${modifier.name}`}
             onClick={onRequestDelete}
           >
             <Trash2 size={13} aria-hidden strokeWidth={2} />
-          </button>
-        </div>
+          </IconButton>
+        </ActionCluster>
       )}
-    </div>
+    </CardSurface>
   );
 }
 
@@ -329,27 +320,27 @@ function ModifierEditor({ target, label, onClose, onError }: EditorProps) {
   };
 
   return (
-    <form
+    <EditorPanel
+      layer="protocol"
       className={styles.editor}
+      role="group"
       aria-label={existing ? "编辑 Modifier" : "新增 Modifier"}
-      onSubmit={(e) => {
-        e.preventDefault();
-        void handleSave();
-      }}
     >
       <span className={styles.editorQuadrant}>{label}</span>
-      <input
+      <Input
         ref={nameRef}
-        className={styles.editorName}
         placeholder="名称"
         value={name}
         onChange={(e) => setName(e.target.value)}
         onKeyDown={(e) => {
           if (e.key === "Escape") onClose();
+          if (e.key === "Enter") {
+            e.preventDefault();
+            void handleSave();
+          }
         }}
       />
-      <textarea
-        className={styles.editorBody}
+      <EditorInput
         placeholder="内容"
         value={content}
         rows={3}
@@ -362,18 +353,19 @@ function ModifierEditor({ target, label, onClose, onError }: EditorProps) {
           }
         }}
       />
-      <div className={styles.editorActions}>
-        <button type="button" className={styles.editorCancel} onClick={onClose}>
+      <EditorActions>
+        <Button intent="subtle" onClick={onClose}>
           取消
-        </button>
-        <button
-          type="submit"
-          className={styles.editorSave}
+        </Button>
+        <Button
+          layer="protocol"
+          intent="primary"
+          onClick={() => void handleSave()}
           disabled={!canSave || saving}
         >
           {existing ? "保存" : "新增"}
-        </button>
-      </div>
-    </form>
+        </Button>
+      </EditorActions>
+    </EditorPanel>
   );
 }

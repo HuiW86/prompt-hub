@@ -55,9 +55,8 @@
 }
 
 .tab:focus-visible {
-  outline: var(--border-thick) solid var(--task);
+  outline: var(--border-thick) solid var(--protocol);
   outline-offset: 0;
-  border-color: var(--task);
 }
 
 .tab.active {
@@ -152,7 +151,7 @@
 }
 
 .phrase:focus-visible {
-  outline: var(--border-thick) solid var(--task);
+  outline: var(--border-thick) solid var(--protocol);
   outline-offset: calc(-1 * var(--border-thick));
 }
 
@@ -173,19 +172,5 @@
   overflow: hidden;
 }
 
-.phraseFlash {
-  animation: phraseCopyFlash var(--d-slow) var(--ease);
-}
-
-@keyframes phraseCopyFlash {
-  0% {
-    background: var(--task-16);
-  }
-  50% {
-    background: var(--task);
-    color: var(--canvas);
-  }
-  100% {
-    background: transparent;
-  }
-}
+/* Copy-success flash reuses the single ph-flash keyframe (design-spec §11);
+   the task-layer fill is injected via the primitives .task class in the TSX. */

@@ -4,7 +4,7 @@ project: prompt-hub
 version: v0.10
 created: 2026-05-18
 last_modified: 2026-06-21
-status: draft  # 🤝 共创，v0.10 UI 一致性治理 AI 主笔起草，待 omar 人审升 ratified
+status: ratified  # 🤝 共创，v0.10 UI 一致性治理 omar 人审通过（2026-06-21）；A 阶段 primitives 迁移已实装，真机验证待补
 author: co  # 🤝 人机共创（CLAUDE §5.2）
 related: [[01-spec]], [[02-constitution]], [[03-product-spec]], [[012-lock-visual-quality-anchor]], [[CLAUDE-DESIGN]], [[015-expose-mcp-write-pipeline]], [[016-choose-dnd-and-resizable-layout]], [[asset-editing-and-adaptive-layout]]
 description: 手动 AI 编程仪表盘的视觉规范——token 命名与 tokens.css 单一真源对齐（--t-/--s-/ontology + neutral scale），WCAG light 实测 + dark v1.0 实装；v0.7 加 §8-§13 bundle 派生 6 章；v0.8 涟漪 ADR-015 加 §10.4 MCP write pipeline 组件视觉；v0.9 涟漪 ADR-016 加 §10.5 全景区可拖列布局 + PanoramaSeparator；v0.10 UI 一致性治理：§2.2 圆角 surface→radius 归一表 + §10.2 完整 primitive 清单（含 task/protocol/neutral 变体）+ §10.6 Card vs List 范式矩阵 + §10.7 Button 形态矩阵 + §11 flash 共享 keyframes 契约

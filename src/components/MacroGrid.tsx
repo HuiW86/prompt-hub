@@ -2,15 +2,7 @@ import { useEffect, useMemo, useRef, useState } from "react";
 import { DragDropProvider } from "@dnd-kit/react";
 import { useSortable } from "@dnd-kit/react/sortable";
 import { move } from "@dnd-kit/helpers";
-import {
-  Check,
-  Flame,
-  GripVertical,
-  Pencil,
-  Plus,
-  Trash2,
-  X,
-} from "lucide-react";
+import { Flame, GripVertical, Pencil, Plus, Trash2 } from "lucide-react";
 
 import { useCopy } from "../hooks/useCopy";
 import { usePromptStore } from "../stores/promptStore";
@@ -18,7 +10,19 @@ import { useToastStore } from "../stores/toastStore";
 import type { Macro } from "../ipc/types";
 import { relativeTime } from "../utils/time";
 
-import { EmptyState, RegionHeader } from "./primitives";
+import {
+  ActionCluster,
+  Button,
+  CardSurface,
+  ConfirmInline,
+  EditorActions,
+  EditorInput,
+  EditorPanel,
+  EmptyState,
+  IconButton,
+  Input,
+  RegionHeader,
+} from "./primitives";
 import styles from "./MacroGrid.module.css";
 
 const HOT_TOP_N = 4;
@@ -73,15 +77,14 @@ export function MacroGrid() {
         title="Macro"
         count={`${macros.length} 张`}
         right={
-          <button
-            type="button"
-            className={styles.addBtn}
+          <Button
+            layer="task"
             aria-label="新增 Macro"
             onClick={() => setEditing({ mode: "create" })}
           >
             <Plus size={14} aria-hidden strokeWidth={2} />
             <span>新增</span>
-          </button>
+          </Button>
         }
       />
 
@@ -157,16 +160,14 @@ function SortableMacroCard({
   const copy = useCopy();
   const flashId = useToastStore((s) => s.flashTargetId);
 
-  const classes = [
-    styles.card,
-    flashId === macro.id ? styles.flash : "",
-    isDragging ? styles.dragging : "",
-  ]
-    .filter(Boolean)
-    .join(" ");
-
   return (
-    <div ref={ref} className={classes} data-macro-id={macro.id}>
+    <CardSurface
+      layer="task"
+      ref={ref}
+      flash={flashId === macro.id}
+      dragging={isDragging}
+      data-macro-id={macro.id}
+    >
       <button
         type="button"
         className={styles.copyArea}
@@ -207,58 +208,35 @@ function SortableMacroCard({
       </button>
 
       {isConfirming ? (
-        <div
-          className={styles.confirm}
-          role="alertdialog"
-          aria-label="确认删除"
-        >
-          <span className={styles.confirmText}>永久删除？</span>
-          <button
-            type="button"
-            className={styles.confirmYes}
-            aria-label="确认永久删除"
-            onClick={onConfirmDelete}
-          >
-            <Check size={13} aria-hidden strokeWidth={2} />
-          </button>
-          <button
-            type="button"
-            className={styles.confirmNo}
-            aria-label="取消删除"
-            onClick={onCancelDelete}
-          >
-            <X size={13} aria-hidden strokeWidth={2} />
-          </button>
-        </div>
+        <ConfirmInline
+          className={styles.cardActions}
+          text="永久删除？"
+          confirmLabel="确认永久删除"
+          cancelLabel="取消删除"
+          onConfirm={onConfirmDelete}
+          onCancel={onCancelDelete}
+        />
       ) : (
-        <div className={styles.actions}>
-          <button
-            type="button"
+        <ActionCluster className={styles.cardActions} reveal>
+          <IconButton
             ref={handleRef}
-            className={styles.handle}
+            dragHandle
             aria-label={`拖动排序 ${macro.name}`}
           >
             <GripVertical size={14} aria-hidden strokeWidth={2} />
-          </button>
-          <button
-            type="button"
-            className={styles.actBtn}
-            aria-label={`编辑 ${macro.name}`}
-            onClick={onEdit}
-          >
+          </IconButton>
+          <IconButton aria-label={`编辑 ${macro.name}`} onClick={onEdit}>
             <Pencil size={13} aria-hidden strokeWidth={2} />
-          </button>
-          <button
-            type="button"
-            className={styles.actBtn}
+          </IconButton>
+          <IconButton
             aria-label={`删除 ${macro.name}`}
             onClick={onRequestDelete}
           >
             <Trash2 size={13} aria-hidden strokeWidth={2} />
-          </button>
-        </div>
+          </IconButton>
+        </ActionCluster>
       )}
-    </div>
+    </CardSurface>
   );
 }
 
@@ -305,26 +283,26 @@ function MacroEditor({ target, onClose, onError }: EditorProps) {
   };
 
   return (
-    <form
+    <EditorPanel
+      layer="task"
       className={styles.editor}
+      role="group"
       aria-label={existing ? "编辑 Macro" : "新增 Macro"}
-      onSubmit={(e) => {
-        e.preventDefault();
-        void handleSave();
-      }}
     >
-      <input
+      <Input
         ref={nameRef}
-        className={styles.editorName}
         placeholder="名称"
         value={name}
         onChange={(e) => setName(e.target.value)}
         onKeyDown={(e) => {
           if (e.key === "Escape") onClose();
+          if (e.key === "Enter") {
+            e.preventDefault();
+            void handleSave();
+          }
         }}
       />
-      <textarea
-        className={styles.editorBody}
+      <EditorInput
         placeholder="内容"
         value={content}
         rows={3}
@@ -337,18 +315,19 @@ function MacroEditor({ target, onClose, onError }: EditorProps) {
           }
         }}
       />
-      <div className={styles.editorActions}>
-        <button type="button" className={styles.editorCancel} onClick={onClose}>
+      <EditorActions>
+        <Button intent="subtle" onClick={onClose}>
           取消
-        </button>
-        <button
-          type="submit"
-          className={styles.editorSave}
+        </Button>
+        <Button
+          layer="task"
+          intent="primary"
+          onClick={() => void handleSave()}
           disabled={!canSave || saving}
         >
           {existing ? "保存" : "新增"}
-        </button>
-      </div>
-    </form>
+        </Button>
+      </EditorActions>
+    </EditorPanel>
   );
 }

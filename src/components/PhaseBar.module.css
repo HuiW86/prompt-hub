@@ -96,20 +96,5 @@
   color: var(--protocol);
 }
 
-/* Copy flash highlight (preserved from previous PhaseBar). */
-.flash {
-  animation: phaseCopyFlash var(--d-slow) var(--ease);
-}
-
-@keyframes phaseCopyFlash {
-  0% {
-    background: var(--protocol-16);
-  }
-  50% {
-    background: var(--protocol);
-    color: var(--canvas);
-  }
-  100% {
-    background: var(--protocol-16);
-  }
-}
+/* Copy flash uses the single shared ph-flash keyframe (§11); injected by
+   composing primitives .protocol + .flash on the active phase in PhaseBar.tsx. */

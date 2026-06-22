@@ -1,6 +1,8 @@
 /* CompositionWorkbench — task-layer composition editor (modifierIds picker).
-   B2: a task-layer surface — protocol AlignmentPhrases never appear here.
-   Token vocabulary mirrors AlignmentPhrases / MacroGrid (ADR-012). */
+   Visual shell comes from primitives (ListRowSurface / Button / ActionCluster /
+   ConfirmInline / Editor*); this module carries domain layout (list scaffold,
+   row content, and the selected/pool modifier picker).
+   B2: a task-layer surface — protocol AlignmentPhrases never appear here. */
 
 .region {
   display: flex;
@@ -15,88 +17,18 @@
   outline-offset: calc(-1 * var(--border-thick));
 }
 
-.addBtn {
-  display: inline-flex;
-  align-items: center;
-  gap: var(--s-1);
-  height: var(--h-chip);
-  padding: 0 var(--s-2_25);
-  appearance: none;
-  background: var(--task-8);
-  border: var(--hairline) solid var(--border-1);
-  border-radius: var(--r-2);
-  color: var(--task);
-  cursor: pointer;
-  font: var(--w-500) var(--t-11) / 1 var(--font-sans);
-  transition:
-    background-color var(--d-fast) var(--ease),
-    border-color var(--d-fast) var(--ease);
-}
-
-.addBtn:hover:not(:disabled) {
-  background: var(--task-16);
-  border-color: var(--task);
-}
-
-.addBtn:disabled {
-  opacity: var(--op-dim);
-  cursor: not-allowed;
-}
-
-.addBtn:focus-visible {
-  outline: var(--border-thick) solid var(--task);
-  outline-offset: 0;
-}
-
 .list {
-  list-style: none;
   margin: 0;
-  padding: var(--s-2) var(--s-3_5) var(--s-3_5);
+  padding: 0;
   display: flex;
   flex-direction: column;
-  gap: var(--s-1_5);
   overflow: auto;
   min-height: 0;
 }
 
+/* List Row height anchor (§10.2.2 — row height set per component). */
 .row {
-  display: flex;
-  align-items: center;
-  gap: var(--s-2);
-  padding: var(--s-1_5) var(--s-2);
-  background: var(--surface-1);
-  border: var(--hairline) solid var(--border-1);
-  border-radius: var(--r-2);
-  min-width: 0;
-  transition: border-color var(--d-fast) var(--ease);
-}
-
-.row:hover {
-  border-color: var(--border-2);
-}
-
-.row.dragging {
-  opacity: var(--op-dim);
-  border-color: var(--task);
-}
-
-.rowHandle {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  width: var(--s-5);
-  height: var(--s-5);
-  padding: 0;
-  appearance: none;
-  background: none;
-  border: none;
-  color: var(--fg-3);
-  cursor: grab;
-}
-
-.rowHandle:focus-visible {
-  outline: var(--border-thick) solid var(--task);
-  outline-offset: 0;
+  min-height: var(--h-scene-row);
 }
 
 .rowName {
@@ -116,94 +48,13 @@
   font-variant-numeric: tabular-nums;
 }
 
-.rowActions,
-.confirm {
-  display: flex;
-  align-items: center;
-  gap: var(--s-1);
+.rowActions {
   flex-shrink: 0;
-  opacity: 0;
-  transition: opacity var(--d-fast) var(--ease);
 }
 
-.row:hover .rowActions,
-.row:focus-within .rowActions,
-.confirm {
-  opacity: 1;
-}
-
-.actBtn,
-.confirmYes,
-.confirmNo {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  width: var(--s-5);
-  height: var(--s-5);
-  padding: 0;
-  appearance: none;
-  background: var(--surface-2);
-  border: var(--hairline) solid var(--border-1);
-  border-radius: var(--r-2);
-  color: var(--fg-3);
-  cursor: pointer;
-  transition:
-    color var(--d-fast) var(--ease),
-    border-color var(--d-fast) var(--ease);
-}
-
-.actBtn:hover {
-  color: var(--fg-1);
-  border-color: var(--border-2);
-}
-
-.actBtn:focus-visible,
-.confirmYes:focus-visible,
-.confirmNo:focus-visible {
-  outline: var(--border-thick) solid var(--task);
-  outline-offset: 0;
-}
-
-.confirmText {
-  font: var(--w-500) var(--t-11) / 1 var(--font-sans);
-  color: var(--fg-1);
-}
-
-.confirmYes {
-  color: var(--task);
-}
-
-.confirmNo {
-  color: var(--fg-3);
-}
-
-/* Central edit panel (Q8: a single edit entry, not scattered popovers). */
+/* Central edit panel inset within the region (panel visuals from EditorPanel). */
 .editor {
-  display: flex;
-  flex-direction: column;
-  gap: var(--s-2_5);
   margin: var(--s-2) var(--s-3_5) 0;
-  padding: var(--s-3);
-  background: var(--surface-1);
-  border: var(--hairline) solid var(--border-2);
-  border-radius: var(--r-3);
-}
-
-.editorName {
-  width: 100%;
-  appearance: none;
-  background: var(--surface-2);
-  border: var(--hairline) solid var(--border-1);
-  border-radius: var(--r-2);
-  padding: var(--s-2);
-  color: var(--fg-1);
-  font: var(--w-500) var(--t-13) / var(--lh-body) var(--font-sans);
-}
-
-.editorName:focus-visible {
-  outline: var(--border-thick) solid var(--task);
-  outline-offset: 0;
-  border-color: var(--task);
 }
 
 .pickerGroup {
@@ -279,7 +130,7 @@
 }
 
 .chipBtn:focus-visible {
-  outline: var(--border-thick) solid var(--task);
+  outline: var(--border-thick) solid var(--protocol);
   outline-offset: 0;
 }
 
@@ -312,53 +163,6 @@
 }
 
 .poolChip:focus-visible {
-  outline: var(--border-thick) solid var(--task);
+  outline: var(--border-thick) solid var(--protocol);
   outline-offset: 0;
-}
-
-.editorActions {
-  display: flex;
-  justify-content: flex-end;
-  gap: var(--s-2);
-}
-
-.editorCancel,
-.editorSave {
-  height: var(--h-chip);
-  padding: 0 var(--s-3);
-  appearance: none;
-  border-radius: var(--r-2);
-  cursor: pointer;
-  font: var(--w-500) var(--t-12) / 1 var(--font-sans);
-  transition:
-    background-color var(--d-fast) var(--ease),
-    border-color var(--d-fast) var(--ease);
-}
-
-.editorCancel {
-  background: none;
-  border: var(--hairline) solid var(--border-2);
-  color: var(--fg-2);
-}
-
-.editorCancel:hover {
-  border-color: var(--border-3);
-  color: var(--fg-1);
-}
-
-.editorSave {
-  background: var(--task);
-  border: var(--hairline) solid var(--task);
-  color: var(--task-fg);
-}
-
-.editorSave:disabled {
-  opacity: var(--op-dim);
-  cursor: not-allowed;
-}
-
-.editorCancel:focus-visible,
-.editorSave:focus-visible {
-  outline: var(--border-thick) solid var(--task);
-  outline-offset: var(--s-0_5);
 }
