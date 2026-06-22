@@ -1,13 +1,13 @@
 ---
 type: features
 project: prompt-hub
-version: v1.2
+version: v1.3
 created: 2026-05-19
-last_modified: 2026-06-21
-status: in-progress  # S1 主形态 MVP 5 模块 + 跨模块 P0 多项 done（ADR-012 Phase 1-5 全 done）；M-X 全收口——数据层 + workspace + MCP server + UI 收件箱（草稿 tab + 待审 badge + 5 IPC + schema recheck）done；M0-4 签名公证链路 done（M0 四项全绿）；ADR-017 自动更新客户端 + CI 出包链路 done（dry-run 端到端验证）；design-spec v0.10 UI 一致性治理 A 阶段 primitives 迁移 done（真机验证待补）
+last_modified: 2026-06-22
+status: in-progress  # S1 主形态 MVP 5 模块 + 跨模块 P0 多项 done（ADR-012 Phase 1-5 全 done）；M-X 全收口——数据层 + workspace + MCP server + UI 收件箱（草稿 tab + 待审 badge + 5 IPC + schema recheck）done；M0-4 签名公证链路 done（M0 四项全绿）；ADR-017 自动更新客户端 + CI 出包链路 done（dry-run 端到端验证）；design-spec v0.10 UI 一致性治理 A 阶段 primitives 迁移 done（真机验证待补）；v1.3 UI 减负移除 Composition/Modifier 编辑面板（Tab cycle 8→6，数据层保留）
 author: ai  # 🤖 AI 主笔 + 人审（CLAUDE §5.2）
 audience: [human, ai]
-description: prompt-hub 功能清单运营视图——功能 × 状态 × 测试覆盖 × 版本，单一事实源；v1.2 新增 §3.10 UI 一致性治理区（design-spec v0.10 A 阶段 primitives 迁移 done），前序 v1.1 §3.9 自动更新区（ADR-017 客户端 + CI 出包 done）/ v1.0 收口 §3.8 资产编辑全 4 功能
+description: prompt-hub 功能清单运营视图——功能 × 状态 × 测试覆盖 × 版本，单一事实源；v1.3 UI 减负移除主仪表盘 Composition/Modifier 编辑面板（Tab cycle 8→6，资产类型保留在数据层），前序 v1.2 §3.10 UI 一致性治理区（design-spec v0.10 A 阶段 primitives 迁移 done）/ v1.1 §3.9 自动更新区（ADR-017 客户端 + CI 出包 done）
 related:
   - 06-prd
   - prompt-hub-mvp
@@ -157,7 +157,8 @@ related:
 |---|---|---|---|---|---|---|
 | Macro 编辑（增删改名/改内容）+ dnd-kit 拖动排序（`order_index` 持久化）| P1 | `done` | v1.1 | 73 前端 / repo-write reorder | omar | [[asset-editing-and-adaptive-layout#P1]] |
 | AlignmentPhrase 编辑面板（edit-mode toggle + dnd 排序，per-phase `order_index`）| P1 | `done` | v1.1 | 73 前端 | omar | [[asset-editing-and-adaptive-layout#P2]] |
-| Modifier / Composition 编辑（增删改名/改内容/排序）| P1 | `done` | v1.1 | ModifierGrid 6 + CompositionWorkbench 6 + composition-b2 源码 gate；2026-06-08 补齐 UI（ModifierGrid 四象限网格落 col3 / CompositionWorkbench 落 scene 列）| omar | [[asset-editing-and-adaptive-layout#P2]] |
+| Modifier / Composition 编辑（增删改名/改内容/排序）| P1 | `withdrawn` | v1.3 | ~~ModifierGrid 6 + CompositionWorkbench 6 + composition-b2 gate~~（v1.3 移除）| omar | [[asset-editing-and-adaptive-layout#P2]] |
+| └ v1.3 UI 减负：两编辑面板移出主仪表盘（[[03-product-spec#修订记录]] v0.9）。资产类型、数据层、DraftInbox promote 分支保留（「只进不显」），随时可重挂或落地 ⌘N 子窗口；未改 [[02-constitution#B1]] | — | — | — | — | — | — |
 | Dashboard 可拖列布局（react-resizable-panels v4 `Group`/`Panel`/`Separator` + localStorage 持久化）| P1 | `done` | v1.1 | 73 前端 / 手测 拖拽+持久化 ✓（键盘 focus 待补）| omar | [[asset-editing-and-adaptive-layout#P4]] |
 
 ### 3.9 自动更新（ADR-017 / auto-update）
@@ -178,12 +179,12 @@ related:
 
 > 来源 [[05-design-spec]] v0.10（§10.2.2 primitive 清单 + §10.6 Card/List 范式矩阵 + §10.7 Button 矩阵 + §11 flash 共享契约）。消除范式漂移：editor 五件套重复 4×、action/confirm 控件重复 4×、「新增」入口分叉（文字 pill vs icon 方块）、flash keyframes 重定义 3×。
 >
-> 行为变更（非纯去重，真机验证必查）：卡片圆角 `--r-3`→`--r-4`；focus outline 全组件统一 `--protocol`；ModifierGrid 绿→紫（protocol）；CompositionWorkbench box-row→divider list-row；DraftCard divider→neutral CardSurface + promote 去 task 绿（neutral ghost）；ScenePanel 复制 flash 收敛到单一 `ph-flash`。
+> 行为变更（非纯去重，真机验证必查）：卡片圆角 `--r-3`→`--r-4`；focus outline 全组件统一 `--protocol`；~~ModifierGrid 绿→紫；CompositionWorkbench box-row→divider list-row~~（v1.3 这两组件已移出主仪表盘，迁移成果随组件删除作废）；DraftCard divider→neutral CardSurface + promote 去 task 绿（neutral ghost）；ScenePanel 复制 flash 收敛到单一 `ph-flash`；PhaseBar `phaseCopyFlash`→共享 `ph-flash`；RecentList/SearchBar focus outline `--task`→`--protocol`。
 
 | 功能 | 优先级 | 状态 | 目标版本 | 测试覆盖 | 责任人 | 引用 |
 |---|---|---|---|---|---|---|
 | primitives 基础层（`CardSurface`/`ListRowSurface`/`Button`/`IconButton`/`Input`+`EditorInput`/`EditorPanel`+`EditorActions`/`Chip`/`ActionCluster`/`ConfirmInline` + `ph-flash` + `--layer-*` 变体）| P1 | `done` | v1.1 | 110 前端（既有组件测试零回归）| omar | [[05-design-spec#10.2.2]] |
-| editor 簇迁移（MacroGrid / ModifierGrid / AlignmentPhrases / CompositionWorkbench）| P1 | `done` | v1.1 | 110 前端 / 真机验证待补 | omar | [[05-design-spec#10.6]] |
+| editor 簇迁移（MacroGrid / AlignmentPhrases；~~ModifierGrid / CompositionWorkbench~~ v1.3 删）| P1 | `done` | v1.1 | 94 前端 / 真机验证待补 | omar | [[05-design-spec#10.6]] |
 | surface/control 迁移（ScenePanel flash + focus / DraftInbox+DraftCard → neutral CardSurface + ghost Button）| P1 | `done` | v1.1 | 110 前端 / 真机验证待补 | omar | [[05-design-spec#10.4.3]] |
 | CSS 裸值 gate（`token-gate.test.ts` 扫 px/hex/ms，仅 tokens.css 豁免）+ SearchBar `outline-offset`→`var(--hairline)` | P1 | `done` | v1.1 | token-gate 18 file scan | omar | [[05-design-spec#10.2.2]] |
 
@@ -196,13 +197,13 @@ related:
 | S1 主形态 MVP | v1.0 | 5 模块 + 8 跨模块能力 | `planned` |
 | S2 闭环沉淀 | v1.1 | 4 功能 | `planned` |
 | M-X MCP write pipeline | v1.1 | 6 支撑能力 + 14 MCP tool | `done` |
-| AE 资产编辑 + 自适应布局 | v1.1 | 4 功能 | `done`（4/4：4 类资产编辑+排序 + 可拖列布局全收口）|
+| AE 资产编辑 + 自适应布局 | v1.1 | 3 功能 | `done`（3/3 在用：Macro/AlignmentPhrase 编辑+排序 + 可拖列布局；Modifier/Composition 编辑 v1.3 `withdrawn` 移出主仪表盘）|
 | ADR-017 自动更新 | v1.1 | 5 功能 | `done`（4/5：客户端 + CI 出包 done / 真机验收 planned）|
 | UI 一致性治理（design-spec v0.10 A 阶段）| v1.1 | 4 功能 | `done`（4/4 实装 + 测试零回归；真机验证待补）|
 | S3 SOP 导航 | v1.2 | 3 功能 | `planned` |
 | S4 配置个性化 | v1.3 | 4 功能 | `planned` |
 | S5 辅形态副屏 | v2.0 | 3 功能 | `planned` |
-| **合计** | — | **60 项** | — |
+| **合计** | — | **59 项** | — |
 
 **注**：版本号语义为 prompt-hub 自身版本，与 prd / spec / methodology 各自独立。v1.0 = 第一阶段 MVP 可发布；v2.0 = 辅形态加入（双形态完整）。
 
@@ -238,6 +239,8 @@ related:
 | 2026-06-08 | v1.0 bump：§3.8 Modifier/Composition 编辑 UI 落地（原 #3/#4 deferred 项收口），状态 in-progress→done；§4 AE 行 in-progress→done（4/4）；前端测试 75→87（+ModifierGrid 6 / CompositionWorkbench 6） | [[asset-editing-and-adaptive-layout#§7]] #7 落地涟漪 |
 | 2026-06-19 | v1.1 bump：新增 §3.9 自动更新区（5 功能：updater 客户端接入 / opt-in 总开关+UI / Vite 加固 / CI 出包 → done，真机验收 → planned）；§4 节奏表加 ADR-017 行，合计 51→56 项 | [[017-enable-auto-update]] 客户端 + CI dry-run 端到端验证收口涟漪 |
 | 2026-06-21 | UI 一致性治理（design-spec v0.10 涟漪记录，**非功能矩阵新增**）：诊断主形态风格不一致根因 = 缺共享 primitives 层（9 组件复制 Card/Button/Editor CSS 漂移）；design-spec 落定 §2.2 圆角归一 + §10.2 完整 primitive 清单 + §10.6 Card/List 范式矩阵 + §10.7 Button 形态矩阵 + §11 flash 共享契约。**A 阶段实施（`primitives.module.css` + 9 组件迁移）仍 planned**，待 omar 审 design-spec v0.10 后启动；合计仍 56 项（治理性改动不计入功能数）| design-spec v0.10 UI 一致性治理涟漪 |
+| 2026-06-21 | v1.2 bump：§3.10 A 阶段实装收口（primitives 基础层 + 9 组件迁移 + surface/control 迁移 + CSS 裸值 gate，4 功能 → `done`，110 前端零回归）；§4 节奏表加 UI 一致性治理行，合计 56→60 项 | design-spec v0.10 A 阶段 primitives 迁移落地涟漪 |
+| 2026-06-22 | v1.3 bump：UI 减负——主仪表盘移除 Composition/Modifier 编辑面板（删 ModifierGrid/CompositionWorkbench 组件 + 测试，Tab cycle 8→6）。§3.8 Modifier/Composition 编辑 → `withdrawn`；§3.10 editor 簇迁移行删两组件、测试 110→94；§4 AE 行 4→3 功能，合计 60→59。**不改 [[02-constitution#B1]]**：资产类型/数据层/promote 分支保留（选项 2「保本体·收 UX」）。涟漪 [[03-product-spec]] v0.9 | 资产分类复盘（外部最佳实践 + 内部立意调研收敛）→ 选项 2 执行 |
 
 ---
 

@@ -1,13 +1,13 @@
 ---
 type: product-spec
 project: prompt-hub
-version: v0.8
+version: v0.9
 created: 2026-05-18
-last_modified: 2026-06-11
-status: ratified  # 🤝 共创，omar 审定升 ratified（2026-06-01 M-X.0 涟漪）
+last_modified: 2026-06-22
+status: draft  # 🤝 共创，v0.9 待 omar 人审（Composition/Modifier 主仪表盘移除）；前序 v0.8 已 ratified
 author: co  # 🤝 人机共创（CLAUDE §5.2）
 related: [[01-spec]], [[05-design-spec]], [[06-prd]], [[012-lock-visual-quality-anchor]], [[013-alignment-phrases-tab-inclusion]], [[015-expose-mcp-write-pipeline]]
-description: 手动 AI 编程仪表盘的 UI 契约——双形态架构/布局/点击路径/交互频率/状态反馈/引导/用户旅程/主形态 UI 草案；v0.8 涟漪 AE P2.4：Tab cycle 6 → 8（Modifier 四象限 + 拼装工作台两编辑区入 cycle）；v0.7 涟漪 ADR-015 草稿收件箱 tab + 待审 badge
+description: 手动 AI 编程仪表盘的 UI 契约——双形态架构/布局/点击路径/交互频率/状态反馈/引导/用户旅程/主形态 UI 草案；v0.9 移除主仪表盘的 Composition/Modifier 编辑面板（UI 减负·选项 2），Tab cycle 8 → 6，资产类型保留在数据层；v0.7 涟漪 ADR-015 草稿收件箱 tab + 待审 badge
 ---
 
 # Product Spec: prompt-hub（UI 契约）
@@ -751,15 +751,15 @@ graph TD
 | `⌘N` | 唤起 Composition 工作台子窗口 | 现场组装 |
 | `⌘,` | 唤起配置面板 | 编辑 Scene/Phase/Modifier |
 | `↑` `↓` `←` `→` | 在卡片间移动焦点 | 键盘党的扫视路径 |
-| `Tab` | 在区域间切换焦点（相位带 / 对齐话术 / Macro / Scene / 拼装工作台 / 最近 / Modifier 四象限 / SOP） | 区域级导航（8 tab-reachable，v0.8 起；6 时代谱系见 [[013-alignment-phrases-tab-inclusion]] 谱系备注）|
+| `Tab` | 在区域间切换焦点（相位带 / 对齐话术 / Macro / Scene / 最近 / SOP） | 区域级导航（6 tab-reachable，v0.9 起——Composition/Modifier 编辑面板移出主仪表盘；8 时代谱系见下方 v0.8 修订记录与 [[013-alignment-phrases-tab-inclusion]]）|
 
-> **v0.7 草稿收件箱键盘入口**：待审 badge（区域 8）是**纯状态指示器，不进 Tab cycle**（避免 badge 条件渲染导致 tab 数跳变；v0.7 时为 6 tab-reachable，v0.8 起 8）。草稿收件箱的键盘路径 = Tab 到 **Scene region** → `←`/`→` 到最左「📥 草稿」tab → 方向键选草稿卡 + 动作键 promote/discard。badge 的点击跳转是鼠标快捷增强，非唯一动作路径。**promote 不绑定单 `⏎` 误触**——须显式动作键确认，守 [[06-prd#8.2]] N3 / [[02-constitution#D1]] 从容闸门。
+> **v0.7 草稿收件箱键盘入口**：待审 badge（区域 8）是**纯状态指示器，不进 Tab cycle**（避免 badge 条件渲染导致 tab 数跳变；v0.7 时 6 tab-reachable，v0.8 升 8，v0.9 移除两编辑面板后回落 6）。草稿收件箱的键盘路径 = Tab 到 **Scene region** → `←`/`→` 到最左「📥 草稿」tab → 方向键选草稿卡 + 动作键 promote/discard。badge 的点击跳转是鼠标快捷增强，非唯一动作路径。**promote 不绑定单 `⏎` 误触**——须显式动作键确认，守 [[06-prd#8.2]] N3 / [[02-constitution#D1]] 从容闸门。
 
 ### 13.5 这个 UI 草案没解决的问题（v0.5 明示）
 
 为了诚实，列出本 UI 草案**尚未给出明确答案**的问题：
 
-1. **Composition 工作台的 UI**：通过 ⌘N 唤起子窗口，但子窗口的具体布局未画
+1. **Composition 工作台的 UI**：通过 ⌘N 唤起子窗口，但子窗口的具体布局未画。**v0.9 起**主仪表盘内的常驻 Composition/Modifier 编辑面板已移除（UI 减负·选项 2），故现阶段二者**无任何在用 UI**——`⌘N` 子窗口仍是未实装的规划态；资产类型与数据/promote 链路保留（见 [[06-prd]]），随时可重新挂回或落地 ⌘N 子窗口
 2. **配置面板的 UI**：通过 ⌘, 唤起，但配置 UI 未画
 3. **AlignmentPhrase 多条候选展开 UI**：长按 Phase 后如何展开多条 AlignmentPhrase，具体浮层样式未定
 4. **搜索结果列表的具体样式**：草案描述了"按资产类型分组"，但每组的视觉细节未画
@@ -780,6 +780,18 @@ graph TD
 ---
 
 ## 修订记录
+
+### v0.9（2026-06-22）— UI 减负：主仪表盘移除 Composition/Modifier 编辑面板（Tab cycle 8 → 6）
+
+回应「资产分类是否过度」的复盘（外部最佳实践调研 + 内部立意复盘收敛：分层价值集中在底层检索轴，组合/沉淀层是少数高级功能，按使用频次给 UI 分主次）。采选项 2「保本体·收 UX」——**不改 [[02-constitution#B1]] 三层资产铁律、不开 ADR**：Modifier / Composition 作为数据类型与 promote 链路完整保留，仅从主仪表盘移除两个常驻编辑面板，让界面回归「Macro 首屏 0 步 + 协议层（相位带/对齐话术）」两个一等公民。
+
+| 章节 | 改动 |
+|------|------|
+| §13.4 Tab cycle | 8 tab-reachable → 6（移除「拼装工作台 / Modifier 四象限」；顺序：相位带 / 对齐话术 / Macro / Scene / 最近 / SOP）|
+| §13.4 v0.7 note | tab 数谱系补 v0.9 回落 6 |
+| §13.5 开放问题 #1 | 标注两编辑面板已移除，⌘N 子窗口仍为规划态，数据层保留 |
+
+**保留**：区域编号体系 1-8 不动；DraftInbox 的 modifier/composition promote 分支不动（草稿仍可归档为这两类，「只进不显」）。**未动**：用户旅程叙事（§5.x）中的 ⌘N Composition 工作台引用——那指向未实装的子窗口概念，非本次移除的常驻面板，待 omar 决定是否一并废止 ⌘N 概念。
 
 ### v0.8（2026-06-11）— AE P2.4 涟漪：Tab cycle 6 → 8（追认 Modifier/Composition 编辑区入 cycle）
 

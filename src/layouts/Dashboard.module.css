@@ -53,15 +53,7 @@
 
 .col3 {
   display: grid;
-  grid-template-rows: minmax(0, 1fr) minmax(0, 1.2fr) auto;
-  min-height: 0;
-}
-
-/* Scene column hosts the Scene panorama above the Composition workbench
- * (asset-editing plan §7 #1 — Composition落 scene 列, grouped by phase). */
-.sceneCol {
-  display: grid;
-  grid-template-rows: minmax(0, 1.4fr) minmax(0, 1fr);
+  grid-template-rows: minmax(0, 1fr) auto;
   min-height: 0;
 }
 
