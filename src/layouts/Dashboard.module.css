@@ -51,9 +51,14 @@
   background: var(--border-3);
 }
 
+/* Stack the two aux blocks from the top: a short recent list keeps its natural
+ * height instead of stretching and pushing SopProgress to the column floor.
+ * RecentList (default flex 0 1 auto + its own .list overflow) still scrolls
+ * when long; SopProgress is flex-shrink:0 so it never collapses. */
 .col3 {
-  display: grid;
-  grid-template-rows: minmax(0, 1fr) auto;
+  display: flex;
+  flex-direction: column;
+  gap: var(--s-3);
   min-height: 0;
 }
 

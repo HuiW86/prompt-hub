@@ -23,6 +23,10 @@ function App() {
   // so it never threatens the C1 200ms budget. Gated on the opt-in total switch
   // — when disabled, check() short-circuits before any network egress (§5.3).
   useEffect(() => {
+    // Dev builds have no signed release endpoint, so an auto check() always
+    // fails and leaves a stuck "更新失败" banner. Gate the startup check on
+    // PROD; the manual "检查更新" button still exercises the failure path.
+    if (!import.meta.env.PROD) return;
     const { enabled, optInDecided, check } = useUpdaterStore.getState();
     if (enabled && optInDecided) void check();
   }, []);

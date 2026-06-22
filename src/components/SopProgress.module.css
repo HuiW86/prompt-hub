@@ -3,6 +3,7 @@
 .sopProgress {
   display: flex;
   flex-direction: column;
+  flex-shrink: 0;
   gap: var(--s-2);
   padding: var(--s-3);
   background: var(--surface-1);
