@@ -1,13 +1,13 @@
 ---
 type: design-spec
 project: prompt-hub
-version: v0.9
+version: v0.10
 created: 2026-05-18
-last_modified: 2026-06-05
-status: ratified  # 🤝 共创，omar 审定升 ratified（2026-06-01 M-X.0 涟漪）
+last_modified: 2026-06-21
+status: draft  # 🤝 共创，v0.10 UI 一致性治理 AI 主笔起草，待 omar 人审升 ratified
 author: co  # 🤝 人机共创（CLAUDE §5.2）
 related: [[01-spec]], [[02-constitution]], [[03-product-spec]], [[012-lock-visual-quality-anchor]], [[CLAUDE-DESIGN]], [[015-expose-mcp-write-pipeline]], [[016-choose-dnd-and-resizable-layout]], [[asset-editing-and-adaptive-layout]]
-description: 手动 AI 编程仪表盘的视觉规范——token 命名与 tokens.css 单一真源对齐（--t-/--s-/ontology + neutral scale），WCAG light 实测 + dark v1.0 实装；v0.7 加 §8-§13 bundle 派生 6 章；v0.8 涟漪 ADR-015 加 §10.4 MCP write pipeline 组件视觉；v0.9 涟漪 ADR-016 加 §10.5 全景区可拖列布局 + PanoramaSeparator（ADR-012 合规评估：列宽可调不违反反设计/一屏全景/色块即本体）
+description: 手动 AI 编程仪表盘的视觉规范——token 命名与 tokens.css 单一真源对齐（--t-/--s-/ontology + neutral scale），WCAG light 实测 + dark v1.0 实装；v0.7 加 §8-§13 bundle 派生 6 章；v0.8 涟漪 ADR-015 加 §10.4 MCP write pipeline 组件视觉；v0.9 涟漪 ADR-016 加 §10.5 全景区可拖列布局 + PanoramaSeparator；v0.10 UI 一致性治理：§2.2 圆角 surface→radius 归一表 + §10.2 完整 primitive 清单（含 task/protocol/neutral 变体）+ §10.6 Card vs List 范式矩阵 + §10.7 Button 形态矩阵 + §11 flash 共享 keyframes 契约
 ---
 
 # Design Spec: prompt-hub（视觉规范）
@@ -95,6 +95,19 @@ description: 手动 AI 编程仪表盘的视觉规范——token 命名与 token
 - 新增 sub-tier token 视为对 bundle 视觉锚点的扩展，需走方法论 §7 八步流程
 
 **圆角 token**：`--r-1` 2px tags / `--r-2` 3px chips / `--r-3` 4px 默认 / `--r-4` 6px 外层卡片 / `--r-frame` 8px overlay frame only。functional surfaces 圆角 ≤ 6px（hard rule，见 §8.2）。
+
+**surface → radius 归一表（v0.10 hard rule）**：圆角不靠"手感"，按 surface 类型查表。同类 surface 必须用同一档，杜绝 `--r-3`/`--r-4` 混用漂移。
+
+| surface 类型 | radius | 代表组件 |
+|------------|--------|---------|
+| overlay frame（全屏唤起外框）| `--r-frame` 8px | 主形态 overlay 唯一例外（> 6px）|
+| 外层卡片（card surface — 独立资产卡）| `--r-4` 6px | `MacroGrid` 卡 / `ModifierGrid` 卡 / `DraftCard` |
+| 内嵌面板 / editor panel | `--r-3` 4px | `EditorPanel`（行内编辑壳）|
+| 列表行 surface（list row）| `--r-3` 4px | `ScenePanel` row / `CompositionWorkbench` row / `DraftInbox` row（行整体可选圆角，hover/selected 时显）|
+| chip | `--r-2` 3px | `AlignmentPhrases` chip |
+| tag / tiny pill / kbd | `--r-1` 2px | `Kbd` badge / num tag |
+
+> **v0.10 裁定**：卡片类 surface（Macro / Modifier / DraftCard）统一 `--r-4` 6px——此前 `MacroGrid`/`ModifierGrid` 用 `--r-3` 4px 与 §2.2「外层卡片 = `--r-4`」规则及 `DraftCard`（§10.4.3 已用 `--r-4`）不一致，本次归一。列表行 / editor panel 保持 `--r-3` 4px（非外层卡片，视觉层级低一档）。
 
 **Border token**：`--hairline: 1px`（默认边框）/ `--border-thick: 2px`（focus outline only）。
 
@@ -447,9 +460,13 @@ bundle / Claude Design 视觉锚点变更时（如 Linear 大版本视觉重做 
 | loading | skeleton bar | `--skeleton` / `--skeleton-hi` 动画 | hidden | neutral gray only，不染色 |
 | empty | n/a | n/a | `.ph-empty` 中央 | 见 §10.3 EmptyState |
 
-### 10.2 共享 primitive 三件套
+### 10.2 共享 primitive 清单
 
-bundle 派生的 3 个跨组件 primitive，避免重复实现：
+> **v0.10 背景**：截至 v0.9，`primitives.module.css` 仅封装 `RegionHeader`/`EmptyState`/`Kbd` 三件套。Card / Button / IconButton / Input / Chip / EditorPanel 各组件自行复制 CSS 并漂移（editor 五件套复制 4 份、action/confirm 图标按钮复制 4 份、`.addBtn` 分叉成 text-pill vs icon-square）。本节升级为**完整 primitive 清单**，作为 A 阶段（自建 primitives 重构）的视觉契约真源。
+
+#### 10.2.1 chrome 三件套（v0.7，沿用）
+
+bundle 派生的 3 个跨组件 chrome primitive：
 
 | Primitive | 用途 | 视觉契约 |
 |-----------|------|---------|
@@ -457,7 +474,31 @@ bundle 派生的 3 个跨组件 primitive，避免重复实现：
 | `EmptyState` | 区域无数据时的中央提示 | 中央对齐 / typography `.ph-empty` / 与 region edge 距离 `--s-6` 24px |
 | `Kbd` | 快捷键 badge（⌘K / ⌥Space / ⌘1-8）| 矩形 / `--r-1` 2px 圆角 / 内边距 `--s-0_5` 2px × `--s-1_25` 5px / typography `.ph-hotkey` |
 
-**hard rule**：不允许组件自己实现 header / empty / kbd 视觉，必须用 primitive。实现见 `src/components/primitives/primitives.module.css`。
+#### 10.2.2 surface / control / editor primitive（v0.10 新增）
+
+> **变体设计原则**（采纳 codex review）：primitive **不是逐字抽取**——它带 ontology 层变体（`task` / `protocol` / `neutral`）+ 形态变体。域内布局（拖手柄位置 / 象限尺寸 / 协议层 manage 控件）仍留各组件本地，primitive 只收敛**视觉壳**（边框 / 底色 / 圆角 / padding / 状态叠层 / typography）。`CompositionWorkbench`、`AlignmentPhrases` 的局部差异通过变体或本地补充表达，不强行抹平。
+
+| Primitive | 用途 | 视觉契约 | 变体 |
+|-----------|------|---------|------|
+| `CardSurface` | 独立资产卡外壳 | `--surface-1` 底 / `--border-2` hairline / **`--r-4` 6px**（§2.2 归一）/ 内边距 `--s-4` 16px / 最小高 `--s-12` 48px；状态叠层走 §10.1 | `layer`: task / protocol / neutral（决定 active/selected 时的 `-8`/`-16` fill + selected 边框色）|
+| `ListRowSurface` | 列表行外壳 | 透明底 / `--border-1` 下分隔 hairline / **`--r-3` 4px**（hover/selected 时整行显圆角）/ 行高按组件 anchor（如 `--h-scene-row` 32px）/ padding-x `--s-3_5` 14px | `layer`: task / protocol / neutral |
+| `Button` | 文字按钮（含「新增」入口）| border-only baseline（§10.1）/ 高 `--h-chip` 24px / 圆角 `--r-4` 6px（圆角矩形，**非全高 stadium**——见下方 ⚠️ 待裁定）/ padding-x `--s-2_25` 9px / typography `.ph-card-title` 或 `.ph-meta`（按密度）| 形状 `pill`\|`square`；层 task\|protocol\|neutral；意图 primary\|ghost\|subtle（见 §10.7 矩阵）|
+| `IconButton` | 纯图标方块按钮（无文字标签的工具位：行内编辑 confirm/cancel、卡片悬浮动作）| 正方 `--s-5` 20px 或 `--h-chip` 24px / `--r-2` 3px / lucide 14px `--op-icon` 0.7 / border-only baseline | 层 neutral（默认）；危险动作（discard）hover 时 icon `--fg-2`，**不染红/不染 ontology**（§13.2）|
+| `Input` / `EditorInput` | 单行 / 多行文本输入 | `--surface-2` 底 / `--border-2` hairline / `--r-3` 4px / padding `--s-2` 8px / typography `.ph-card-body`；focus 走 §10.1 focused（`--border-thick` 2px `--protocol` outline，offset 用 `var(--hairline)` 而非裸 `outline-offset: 1px`，见下 ⚠️ 缺口 2）| — |
+| `EditorPanel` | 行内编辑壳（name input + body input + 动作行）| `--surface-1` 底 / `--border-2` hairline / **`--r-3` 4px**（内嵌面板，非外层卡）/ 内边距 `--s-3` 12px / 内部用 `EditorInput` × N + `EditorActions` | 层 task\|protocol（决定 save 按钮归属层 + focus 强调）|
+| `EditorActions` | 编辑壳底部动作行（cancel + save）| 右对齐 / gap `--s-2` 8px / save = `Button`(primary, 当层) / cancel = `Button`(subtle, neutral) | 继承父 `EditorPanel` 层 |
+| `Chip` | 单标签（AlignmentPhrase chip / tag）| 高 `--h-chip` 24px / `--r-2` 3px / padding-x `--s-2_25` 9px / typography `.ph-card-body` / border-only baseline + clicked flash（§11） | 层 protocol（chip 当前唯一使用者）|
+| `ActionCluster` | 卡片悬浮动作组（多个 `IconButton` 横排）| gap `--s-1_5` 6px / 默认 hover/focus 时显（主形态不依赖 hover，键盘 focus 必显，§5）| — |
+| `ConfirmInline` | 行内删除二次确认（`role="alertdialog"`）| 复用 `IconButton` 对（确认 `Check` / 取消 `X`）/ 不弹模态 / 就地替换 ActionCluster | — |
+
+**hard rule**：
+1. 不允许组件自行实现 header / empty / kbd / card / list-row / button / icon-button / input / editor / chip 视觉，必须用 primitive（含变体）。实现见 `src/components/primitives/primitives.module.css`。
+2. primitive 变体只通过 `layer` / 形状 / 意图 参数表达，**不允许组件 override primitive 的边框/圆角/padding 散值**——需要新视觉时**扩展 primitive 变体**（走方法论 §7 bump），不就地补丁。
+3. 层变体必须守 §13.2 cross-contamination：`CardSurface[layer=task]` 不得出现 `--protocol` fill，反之亦然。
+
+> **⚠️ v0.10 两个 token 缺口（待人审裁定，A 阶段实施前需定）**：
+> 1. **Button 圆角**：本节暂定 `Button` 用 `--r-4` 6px 圆角矩形。若设计意图是「真 pill / stadium 全高圆角」，现有 token 表（`--r-1`~`--r-frame`，最大 8px）无对应档，需新增 `--r-pill`（如 `999px` 或 `--h-chip` 半值）——属 tokens.css 扩展，走方法论 §7 bump。**默认建议**：用 `--r-4` 6px 圆角矩形即可，与卡片同档，避免引新 token。
+> 2. **focus outline-offset**：§10.1 / `Input` 契约要求 focus outline offset「1px」，但 tokens.css 无 offset 专用 token（最接近 `--hairline` 1px）。`SearchBar` 现用裸 `outline-offset: 1px` 违反 §4.1 token 铁律。**默认建议**：复用 `--hairline`（值即 1px）作 `outline-offset: var(--hairline)`，不引新 token。
 
 ### 10.3 组件清单（v1.0）
 
@@ -546,6 +587,67 @@ bundle 派生的 3 个跨组件 primitive，避免重复实现：
 
 ---
 
+### 10.6 Card vs List 范式决策矩阵（v0.10 新增）
+
+> **背景**：截至 v0.9，同属任务层的资产用了三种视觉语言——`MacroGrid` 大卡片、`ModifierGrid` 小卡片、`CompositionWorkbench` 列表行——一眼看不像一个体系。本节把"何时卡片、何时列表行"从手感固化为 hard rule，消除范式漂移。范式由**资产性质**决定，**不由所在层**决定（task / protocol 层都可能用任一范式）。
+
+**判定矩阵**（按资产性质查表，命中即定范式）：
+
+| 判定维度 | → Card（`CardSurface`，`--r-4` 6px）| → List Row（`ListRowSurface`，`--r-3` 4px）|
+|---------|------------------------------------|--------------------------------------------|
+| 单条信息量 | 多字段（标题 + 多行正文 + meta + 图标）| 单/少字段（标题 + 一个 meta）|
+| 视觉粒度 | 资产本身是"作品"，值得独立呈现 | 资产是"条目"，靠序列呈现 |
+| 操作密度 | 卡内多动作（copy + edit + delete + 悬浮 ActionCluster）| 行内轻动作（点选为主，编辑次要）|
+| 排列方式 | 网格（grid，2D 扫视）| 纵向列表（1D 扫视 + 可拖排序）|
+
+**v0.10 范式归属（hard rule）**：
+
+| 组件 | 范式 | 理由 |
+|------|------|------|
+| `MacroGrid` | **Card** | Macro 是多字段作品（Flame + 标题 + 2 行正文 + meta），网格扫视 |
+| `ModifierGrid` | **Card** | Modifier 是带正文的资产卡，四象限网格；卡片同 Macro 一档（`--r-4` 6px，不再是"小卡片"）|
+| `ScenePanel` | **List Row** | Scene 是导航条目，按 SubStage 分组的轻列表 |
+| `CompositionWorkbench` | **List Row** | Composition 的 modifier 序列是可拖排序列表，单条信息量低 |
+| `DraftInbox` | **List Row** | 草稿是收件箱条目，纵向堆叠（注：单张 `DraftCard` 内部仍是 card 壳，§10.4.3；这里指 inbox 的列表组织方式）|
+| `AlignmentPhrases` | **Chip 行**（第三范式）| chip 是协议层短语标签，既非 card 也非 list row，用 `Chip` primitive（§10.2.2）|
+
+> **变体而非抹平**：同范式下允许 layer 变体差异——`MacroGrid`(task 绿) 与 `ModifierGrid`(protocol 紫) 都是 Card，但 active/selected fill 取各自层色（§13.2）。范式统一的是**形态壳**，不是颜色。
+
+---
+
+### 10.7 Button 形态矩阵（v0.10 新增）
+
+> **背景**：截至 v0.9，「新增」入口分叉——`MacroGrid`/`CompositionWorkbench` 用文字 pill，`ModifierGrid` 用纯 `+` 图标方块（截图右列四象限那个孤立加号）。同一动作两种长相。本节固化按钮三维矩阵 + 入口形态裁定。
+
+**三维**：形状 × 层 × 意图。
+
+| 维度 | 取值 | 含义 |
+|------|------|------|
+| **形状** | `pill`（文字按钮，全高圆角）| 有文字标签的动作（新增 / 采纳 / 丢弃 / 保存 / 取消）|
+| | `square`（`IconButton`，`--r-2` 3px 方形）| **仅**无文字标签的工具位（行内 confirm/cancel 图标、卡片悬浮 ActionCluster）|
+| **层** | `task` / `protocol` / `neutral` | 决定 primary 意图的 fill / 强调色；按钮所在区域的层归属（§13.2）|
+| **意图** | `primary` | 主动作（save / 采纳）：当层 `-16` fill + 同层边框 + `--w-500` |
+| | `ghost` | 次动作（新增 / cancel）：border-only baseline，无 fill |
+| | `subtle` | 弱动作（取消 / dismiss）：仅文字 + hover 提亮，无边框 |
+
+**入口形态 hard rule（v0.10 裁定）**：
+
+1. **「新增」入口一律 `pill` 文字按钮**（`Button` shape=pill, intent=ghost），文案如「+ 新增 Macro」。`ModifierGrid` 四象限的 icon-square 加号**改为文字 pill**，与 Macro/Composition 统一。
+2. **`square`（`IconButton`）仅用于真正无标签的工具位**：行内编辑的 confirm（`Check`）/ cancel（`X`）、卡片悬浮 `ActionCluster` 的 edit/delete 图标。这些位置文字 pill 会过重，图标方块合理。
+3. **按钮自身不承载 ontology fill 除非是 primary 意图**：promote/discard 等"送资产进某层"的动作按钮，自身非层成员，用 ghost（border-only），强调靠字重 + 图标位置而非层色（沿用 §10.4.3 promote 不染绿的决策）。
+4. 按钮 focus 统一 `--protocol` outline（§11 focused，ontology 例外）。
+
+| 典型按钮 | 形状 | 层 | 意图 | 出处 |
+|---------|------|-----|------|------|
+| 新增 Macro / Modifier / Composition | pill | task / protocol | ghost | 各区域底部入口（**统一后**）|
+| 行内编辑 save | pill | 当区层 | primary | `EditorActions`（§10.2.2）|
+| 行内编辑 cancel | pill | neutral | subtle | `EditorActions` |
+| 编辑 confirm `Check` / cancel `X` | square | neutral | ghost | `IconButton` 工具位 |
+| 卡片悬浮 edit / delete | square | neutral | ghost | `ActionCluster` |
+| DraftCard promote / discard | pill | neutral | ghost | §10.4.3（不染层色）|
+
+---
+
 ## 11. States（每组件多态契约）
 
 > 每个组件**必须**实现以下态（empty / loading 视组件性质可选），不允许只实现 default + hover。
@@ -563,6 +665,16 @@ bundle 派生的 3 个跨组件 primitive，避免重复实现：
 | 9 | empty | 无数据 | §10.1 empty 行 | EmptyState primitive |
 
 **hard rule**：focused 不可省略（键盘用户 + Accessibility）。focused outline 必须用 `--protocol`（协议层强调色，所有组件统一）— 这是 ontology 的例外：focused 不承载 ontology 含义，统一用 `--protocol` 是无障碍标准。
+
+**flash 态共享契约（v0.10 新增）**：
+
+> **背景**：截至 v0.9，flash 复制/保存反馈在三处重名重定义——`MacroGrid.macroCopyFlash`、`ScenePanel` + `PhaseBar` 各自的 `phaseCopyFlash`（同名却各写一份）、`AlignmentPhrases` 用静态 `.flash`。逻辑完全相同，实现各写各的。
+
+- **单一 `@keyframes` 真源**：flash 动画只允许定义**一次**，命名 `ph-flash`，落在 `primitives.module.css`。所有组件复用，**禁止**组件本地再定义 `@keyframes`（无论同名或异名）。
+- **语义色由调用方传参**：`ph-flash` 用 `currentColor` 或 CSS 变量占位，flash 的 fill 色由组件按层注入（task 区 → `--task-16`，protocol 区 → `--protocol-16`），动画曲线统一 `--d-fast` + `--ease`。守 §13.2：flash 色必须是组件所属层的色。
+- **时长锁定**：flash = `--d-fast` 120ms semantic fill → 回 default，禁止自定义时长（§3.1 hard rule）。
+
+**hard rule**：新增需要"瞬时高亮"反馈的组件，复用 `ph-flash`，不新建 keyframes。
 
 ---
 
@@ -675,6 +787,34 @@ bundle 视觉锚点的核心洞察：**视觉权重通过 typography rhythm + on
 ---
 
 ## 修订记录
+
+### v0.10（2026-06-21）— UI 一致性治理：共享 primitive 收敛
+
+诊断主形态 UI「整体风格不一致」，定位根因 = **缺共享 primitives 层**：截至 v0.9，`primitives.module.css` 仅三件套，Card/Button/Input/Chip/EditorPanel 各组件复制 CSS 并漂移（editor 五件套复制 4 份、action/confirm 图标按钮复制 4 份、`.addBtn` 分叉成 text-pill vs icon-square、flash 动画重名定义 3 份、卡片圆角 `--r-3`/`--r-4` 混用）。本批为 A 阶段（自建 primitives 重构）提供视觉契约真源。🤖 AI 主笔起草，待 omar 人审。
+
+**调研结论**（2 Agent + codex review）：不引样式组件库——styled libs（shadcn/Mantine/MUI 等）均带第二套 token 引擎与 tokens.css 双轨，且 shadcn 撞 ADR-009（拒 Tailwind）、MUI/Ant 运行时 CSS-in-JS 撞 C1 200ms。正解是自建 primitives。headless 库（Base UI/Radix）仅留作未来 a11y 行为层，本阶段不引（无 ADR）。
+
+| 章节 | 改动 |
+|------|------|
+| §2.2 圆角 | 新增 surface→radius 归一表（hard rule）；**裁定卡片类 surface（Macro/Modifier/DraftCard）统一 `--r-4` 6px**，此前 Macro/Modifier 用 `--r-3` 4px 与「外层卡片 = `--r-4`」规则不一致 |
+| §10.2 | 「三件套」→ **完整 primitive 清单**：§10.2.1 chrome 三件套（沿用）+ §10.2.2 新增 `CardSurface`/`ListRowSurface`/`Button`/`IconButton`/`Input`+`EditorInput`/`EditorPanel`+`EditorActions`/`Chip`/`ActionCluster`/`ConfirmInline`，含 task/protocol/neutral 层变体 + 「变体而非逐字抽取」原则 |
+| §10.6（新增）| Card vs List 范式决策矩阵：按资产性质（信息量/粒度/操作密度/排列）判定；归属 hard rule（Macro/Modifier=Card，Scene/Composition/DraftInbox=List Row，AlignmentPhrases=Chip 行）|
+| §10.7（新增）| Button 形态矩阵：形状(pill\|square)×层×意图(primary\|ghost\|subtle)；**裁定「新增」入口统一文字 pill**（ModifierGrid icon-square 加号改 pill），square 仅留无标签工具位 |
+| §11 flash | 新增 flash 共享契约：单一 `ph-flash` `@keyframes` 真源落 primitives，禁组件本地重定义；语义色按层注入 |
+
+**关键决策**：
+
+1. **不引样式库，自建 primitives**——避免 token 双轨，守 ADR-009 / C1 / tokens.css 单一真源。
+2. **圆角归一 `--r-4` 6px**（卡片类）——消除 `--r-3`/`--r-4` 漂移，与 §2.2 既有规则 + DraftCard 对齐。
+3. **「新增」统一文字 pill**——`ModifierGrid` 四象限 icon-square 加号改文字 pill；icon-square 仅留无标签工具位。
+4. **primitive 带层变体而非抹平**（采纳 codex）——`CompositionWorkbench`/`AlignmentPhrases` 局部差异通过变体表达，域内布局留本地。
+5. **不开 ADR**——自建 primitives 无新依赖、无不可逆选型，design-spec 本身即决策记录。
+
+**影响半径**：下游 A 阶段 `primitives.module.css` + 9 组件迁移（本次不动代码）；features.md (07) 回写 UI 一致性治理记录；product-spec 不动（Card vs List 属视觉范畴）；CLAUDE §4.1 token 铁律已有，codex 建议的裸值 lint gate 列为 A 阶段工程项不入本文。
+
+**frontmatter**：version v0.9 → v0.10 / last_modified 2026-06-05 → 2026-06-21 / status ratified → draft（待人审）/ description 补 §10.6/§10.7/§11 flash。
+
+**A 阶段验证要求**（codex review 最大风险 = 类抽取导致交互回归）：迁移 `MacroGrid`/`ModifierGrid`/`AlignmentPhrases`/`CompositionWorkbench` 后**必须**做键盘可达性 + 拖拽命中区 + focus 可见性 + task/protocol 分色的真机验证，不只跑 `pnpm test`。
 
 ### v0.9（2026-06-05）— ADR-016 涟漪：全景区可拖列布局视觉契约
 
