@@ -172,5 +172,74 @@
   overflow: hidden;
 }
 
+/* ── Edit mode: manage toolbar + sortable phrase rows ─────────────────────── */
+.toolbar {
+  display: flex;
+  align-items: center;
+  gap: var(--s-2);
+  padding: var(--s-2) var(--s-3_5);
+  border-bottom: var(--hairline) solid var(--border-1);
+}
+
+/* Pencil toggle pushed to the right edge when not editing. */
+.manageBtn {
+  margin-left: auto;
+}
+
+.list {
+  display: flex;
+  flex-direction: column;
+  gap: var(--s-1_5);
+  margin: 0;
+  padding: var(--s-2) var(--s-3_5);
+  list-style: none;
+}
+
+.row {
+  display: flex;
+  align-items: center;
+  gap: var(--s-2);
+  padding: var(--s-1_5) var(--s-2);
+  background: var(--surface-1);
+  border: var(--hairline) solid var(--border-1);
+  border-radius: var(--r-2);
+  min-width: 0;
+}
+
+.row.dragging {
+  opacity: var(--op-dim);
+  border-color: var(--task);
+}
+
+.rowName {
+  flex: 1;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  font: var(--w-500) var(--t-12) / 1 var(--font-sans);
+  color: var(--fg-1);
+}
+
+/* Sub-stage picker inside the editor panel; native control, token-styled to
+   match the Editor primitives. */
+.subStageSelect {
+  width: 100%;
+  height: var(--h-chip);
+  padding: 0 var(--s-2);
+  border: var(--hairline) solid var(--border-1);
+  border-radius: var(--r-2);
+  background: var(--surface-1);
+  color: var(--fg-1);
+  font: var(--w-400) var(--t-12) / 1 var(--font-sans);
+  appearance: none;
+  cursor: pointer;
+}
+
+.subStageSelect:focus-visible {
+  outline: var(--border-thick) solid var(--task);
+  outline-offset: 0;
+}
+
 /* Copy-success flash reuses the single ph-flash keyframe (design-spec §11);
    the task-layer fill is injected via the primitives .task class in the TSX. */

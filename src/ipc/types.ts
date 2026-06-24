@@ -120,6 +120,7 @@ export interface Phrase {
   notes: string | null;
   deprecated: boolean;
   subStageId: string | null;
+  orderIndex: number;
 }
 
 export interface SceneWithChildren {

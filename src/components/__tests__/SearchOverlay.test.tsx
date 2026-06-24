@@ -81,6 +81,7 @@ const fakeScene: SceneWithChildren = {
       notes: null,
       deprecated: false,
       subStageId: null,
+      orderIndex: 0,
     },
   ],
 };

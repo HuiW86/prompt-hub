@@ -126,6 +126,7 @@ pub struct Phrase {
     pub notes: Option<String>,
     pub deprecated: bool,
     pub sub_stage_id: Option<String>,
+    pub order_index: i64,
 }
 
 #[derive(Debug, Serialize, Deserialize, Clone)]

@@ -165,6 +165,10 @@ pub fn run() {
             commands::update_composition,
             commands::delete_composition,
             commands::reorder_compositions,
+            commands::create_phrase,
+            commands::update_phrase,
+            commands::delete_phrase,
+            commands::reorder_phrases,
         ])
         .build(tauri::generate_context!())
         .expect("error while building tauri application");

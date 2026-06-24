@@ -299,10 +299,10 @@ fn list_sub_stages_by_scene(conn: &Connection, scene_id: &str) -> RepoResult<Vec
 fn list_phrases_by_scene(conn: &Connection, scene_id: &str) -> RepoResult<Vec<Phrase>> {
     let mut stmt = conn.prepare(
         "SELECT id, scene_id, name, content, usage_count, last_used_at, created_at,
-                notes, deprecated, sub_stage_id
+                notes, deprecated, sub_stage_id, order_index
          FROM phrases
          WHERE scene_id = ?1 AND deprecated = 0
-         ORDER BY usage_count DESC, created_at ASC",
+         ORDER BY order_index ASC, created_at ASC, rowid ASC",
     )?;
     let raw = stmt.query_map(params![scene_id], |row| {
         Ok((
@@ -316,6 +316,7 @@ fn list_phrases_by_scene(conn: &Connection, scene_id: &str) -> RepoResult<Vec<Ph
             row.get::<_, Option<String>>("notes")?,
             row.get::<_, i64>("deprecated")? != 0,
             row.get::<_, Option<String>>("sub_stage_id")?,
+            row.get::<_, i64>("order_index")?,
         ))
     })?;
     let mut out = Vec::new();
@@ -331,6 +332,7 @@ fn list_phrases_by_scene(conn: &Connection, scene_id: &str) -> RepoResult<Vec<Ph
             notes,
             deprecated,
             sub_stage_id,
+            order_index,
         ) = r?;
         out.push(Phrase {
             id,
@@ -343,6 +345,7 @@ fn list_phrases_by_scene(conn: &Connection, scene_id: &str) -> RepoResult<Vec<Ph
             notes,
             deprecated,
             sub_stage_id,
+            order_index,
         });
     }
     Ok(out)

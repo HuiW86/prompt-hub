@@ -12,6 +12,7 @@ import type {
   Modifier,
   OkAck,
   Phase,
+  Phrase,
   PromoteResult,
   RecentUsageEntry,
   RecordUsageInput,
@@ -159,6 +160,40 @@ export const ipc = {
     invoke<OkAck>("delete_composition", { id }),
   reorderCompositions: (phaseId: string, orderedIds: string[]) =>
     invoke<OkAck>("reorder_compositions", { phaseId, orderedIds }),
+
+  // ── Scene phrase direct editing (plan scene-phrase-editing) — Tauri-only. A
+  // phrase is bound to a scene + OPTIONAL sub-stage; reorder is scoped to one
+  // (sceneId, subStageId) partition. subStageId null = the ungrouped partition.
+  createPhrase: (args: {
+    sceneId: string;
+    name: string;
+    content: string;
+    subStageId: string | null;
+  }) =>
+    invoke<Phrase>("create_phrase", {
+      sceneId: args.sceneId,
+      name: args.name,
+      content: args.content,
+      subStageId: args.subStageId,
+    }),
+  updatePhrase: (args: {
+    id: string;
+    name: string;
+    content: string;
+    subStageId: string | null;
+  }) =>
+    invoke<OkAck>("update_phrase", {
+      id: args.id,
+      name: args.name,
+      content: args.content,
+      subStageId: args.subStageId,
+    }),
+  deletePhrase: (id: string) => invoke<OkAck>("delete_phrase", { id }),
+  reorderPhrases: (
+    sceneId: string,
+    subStageId: string | null,
+    orderedIds: string[],
+  ) => invoke<OkAck>("reorder_phrases", { sceneId, subStageId, orderedIds }),
 };
 
 export type Ipc = typeof ipc;

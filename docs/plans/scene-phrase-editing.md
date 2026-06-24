@@ -1,7 +1,7 @@
 # Scene 场景话术（Phrase）编辑功能
 
-Status: active
-Progress: 0/9
+Status: done
+Progress: 9/9
 Date: 2026-06-22
 
 > **命名警示**：本方案的 `Phrase` 指 **scene 绑定的场景话术**（`models.rs` 第 120 行 `scene_id`），与已完成的 `AlignmentPhrase`（phase 绑定，order_index/CRUD 由 ADR-013 + 0007 migration 早已落地）是**两个不同实体**。phrases.rs ≠ alignment_phrases.rs，勿混淆。
@@ -31,18 +31,18 @@ Date: 2026-06-22
 
 ### M1 — 数据层 + 写面 + IPC（后端，独立验收：`cargo test --workspace` 全绿 + clippy `-D warnings` 0 + fmt clean）
 
-- [ ] 写 `0009_phrases_order_index.sql`（`src-tauri/crates/repo-core/migrations/`）：`ALTER TABLE phrases ADD COLUMN order_index INTEGER NOT NULL DEFAULT 0 CHECK(order_index >= 0)` + 分区 backfill（含 NULL 分区注释）+ `CREATE INDEX idx_phrases_order ON phrases(scene_id, sub_stage_id, order_index)`
-- [ ] `db.rs` MIGRATIONS 注册第 9 项（`include_str!` + target_version=9，latest_version 自动→9）
-- [ ] `models.rs` `Phrase` 加 `pub order_index: i64`；`repo.rs` `list_phrases_by_scene` select order_index + 改 ORDER BY（决策 tie-break）
-- [ ] 新建 `repo-write/src/phrases.rs`：`create_phrase` / `update_phrase`（含跨组移动原子子查询）/ `delete_phrase` / `reorder_phrases`（NULL 分区 WHERE）+ 模块测试（create 追加末尾 / update 改名 / update 跨组移动追加目标分区末尾 / update 不改组保 order_index / delete / reorder 拒绝未知 id + 跨分区 id / **NULL 分区 reorder**）；`repo-write/src/lib.rs` 加 `pub mod phrases`
-- [ ] `commands.rs` 加 `create_phrase`/`update_phrase`/`delete_phrase`/`reorder_phrases` 4 IPC（全走 `with_write_conn` → guard_schema_then schema recheck）；`src-tauri/src/lib.rs` invoke_handler 注册
+- [x] 写 `0009_phrases_order_index.sql`（`src-tauri/crates/repo-core/migrations/`）：`ALTER TABLE phrases ADD COLUMN order_index INTEGER NOT NULL DEFAULT 0 CHECK(order_index >= 0)` + 分区 backfill（含 NULL 分区注释）+ `CREATE INDEX idx_phrases_order ON phrases(scene_id, sub_stage_id, order_index)`
+- [x] `db.rs` MIGRATIONS 注册第 9 项（`include_str!` + target_version=9，latest_version 自动→9）
+- [x] `models.rs` `Phrase` 加 `pub order_index: i64`；`repo.rs` `list_phrases_by_scene` select order_index + 改 ORDER BY（决策 tie-break）
+- [x] 新建 `repo-write/src/phrases.rs`：`create_phrase` / `update_phrase`（含跨组移动原子子查询）/ `delete_phrase` / `reorder_phrases`（NULL 分区 WHERE）+ 模块测试（create 追加末尾 / update 改名 / update 跨组移动追加目标分区末尾 / update 不改组保 order_index / delete / reorder 拒绝未知 id + 跨分区 id / **NULL 分区 reorder**）；`repo-write/src/lib.rs` 加 `pub mod phrases`
+- [x] `commands.rs` 加 `create_phrase`/`update_phrase`/`delete_phrase`/`reorder_phrases` 4 IPC（全走 `with_write_conn` → guard_schema_then schema recheck）；`src-tauri/src/lib.rs` invoke_handler 注册
 
 ### M2 — 前端 UI（独立验收：`pnpm test` 全绿 + lint + prettier `--check .` + build exit 0 + 真机手测增改删排序落盘）
 
-- [ ] `ipc/types.ts` `Phrase` 加 `orderIndex: number`；`ipc/index.ts` 加 4 包装函数；`stores/promptStore.ts` 加 4 action + mutation 后 refetch scenes
-- [ ] `ScenePanel.tsx` 加编辑模式：铅笔开关；**每个 subStage 组一个独立 DragDropProvider**（防跨组拖拽）；行级编辑/删除 + ConfirmInline；`PhraseEditor`（name + content + subStage 下拉含「无分组」）
-- [ ] `ScenePanel.module.css` 编辑态样式（token 化，禁裸 px/hex/ms，守 CLAUDE §4.1）
-- [ ] 文档涟漪（方法论 §7，收尾回流不就地补丁）：product-spec §13.4 + features 备注 Scene 话术可编辑
+- [x] `ipc/types.ts` `Phrase` 加 `orderIndex: number`；`ipc/index.ts` 加 4 包装函数；`stores/promptStore.ts` 加 4 action + mutation 后 refetch scenes
+- [x] `ScenePanel.tsx` 加编辑模式：铅笔开关；**每个 subStage 组一个独立 DragDropProvider**（防跨组拖拽）；行级编辑/删除 + ConfirmInline；`PhraseEditor`（name + content + subStage 下拉含「无分组」）
+- [x] `ScenePanel.module.css` 编辑态样式（token 化，禁裸 px/hex/ms，守 CLAUDE §4.1）
+- [x] 文档涟漪（方法论 §7，收尾回流不就地补丁）：product-spec §13.4 + features 备注 Scene 话术可编辑
 
 ## 非目标（本次不做）
 

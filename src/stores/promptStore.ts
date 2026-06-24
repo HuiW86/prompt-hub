@@ -113,6 +113,29 @@ interface PromptState {
   }) => Promise<void>;
   deleteComposition: (id: string) => Promise<void>;
   reorderCompositions: (phaseId: string, orderedIds: string[]) => Promise<void>;
+
+  // Direct scene-phrase editing (plan scene-phrase-editing). Operates on the
+  // nested `scenes` structure; each mutation re-pulls listScenesWithChildren
+  // rather than patching in place (the tree is deeply nested). reorder is scoped
+  // to one (sceneId, subStageId) partition; subStageId null = ungrouped.
+  createPhrase: (args: {
+    sceneId: string;
+    name: string;
+    content: string;
+    subStageId: string | null;
+  }) => Promise<void>;
+  updatePhrase: (args: {
+    id: string;
+    name: string;
+    content: string;
+    subStageId: string | null;
+  }) => Promise<void>;
+  deletePhrase: (id: string) => Promise<void>;
+  reorderPhrases: (
+    sceneId: string,
+    subStageId: string | null,
+    orderedIds: string[],
+  ) => Promise<void>;
 }
 
 const RECENT_LIMIT = 5;
@@ -523,5 +546,28 @@ export const usePromptStore = create<PromptState>()((set, get) => ({
       set({ compositionsByPhase: snapshot });
       throw err;
     }
+  },
+
+  // Scene phrases live inside the deeply-nested `scenes` tree, so every mutation
+  // re-pulls listScenesWithChildren (same path promoteDraft uses) instead of
+  // patching the nested structure in place. No optimistic update.
+  createPhrase: async ({ sceneId, name, content, subStageId }) => {
+    await ipc.createPhrase({ sceneId, name, content, subStageId });
+    set({ scenes: await ipc.listScenesWithChildren() });
+  },
+
+  updatePhrase: async ({ id, name, content, subStageId }) => {
+    await ipc.updatePhrase({ id, name, content, subStageId });
+    set({ scenes: await ipc.listScenesWithChildren() });
+  },
+
+  deletePhrase: async (id) => {
+    await ipc.deletePhrase(id);
+    set({ scenes: await ipc.listScenesWithChildren() });
+  },
+
+  reorderPhrases: async (sceneId, subStageId, orderedIds) => {
+    await ipc.reorderPhrases(sceneId, subStageId, orderedIds);
+    set({ scenes: await ipc.listScenesWithChildren() });
   },
 }));

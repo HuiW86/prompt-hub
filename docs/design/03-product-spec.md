@@ -693,6 +693,7 @@ graph TD
   - 点击 Tab → 切换 Scene；点击 📥 草稿 tab → 进入收件箱视图
   - 点击 Phrase → 复制 → 自动隐藏窗口
   - 长按 Phrase → 升级为 Macro / 添加到 Composition 队列
+  - **管理话术（编辑模式，[[scene-phrase-editing]]）**：Scene tab 行右侧铅笔切换编辑态；编辑态下每条 Phrase 行内可改名/改内容/删（行内二次确认）+ 拖拽排序（**每个 SubStage 组独立 DnD，不跨组**，order_index 按 (scene, sub_stage) 分区）；「新增」弹编辑器，子阶段下拉含「无分组」。镜像对齐话术编辑模式（[[013-alignment-phrases-tab-inclusion]]），仅作用于已有 Scene/SubStage，不新建结构
   - **草稿卡片 promote 须 omar 显式点击**——无自动 promote 路径（守 [[06-prd#8.2]] N3 / [[02-constitution#D1]]）。promote / discard 是 omar 主导动作，外部 AI 不可触达（IPC 不经 MCP 暴露，[[06-prd#10.3]] 边界）
 
 #### 区域 5：最近使用区（[[06-prd#5.5-最近使用区]]）

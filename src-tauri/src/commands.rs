@@ -19,7 +19,7 @@ const RECENT_USAGE_LIMIT_MAX: i64 = 100;
 use crate::error::{AppError, AppResult};
 use repo_core::models::{
     AlignmentPhrase, Composition, DraftPayload, DraftStatus, DraftSummary, DraftTargetType, Macro,
-    Modifier, Phase, RecentUsageEntry, RecordUsageInput, SceneWithChildren, UsageRecord,
+    Modifier, Phase, Phrase, RecentUsageEntry, RecordUsageInput, SceneWithChildren, UsageRecord,
 };
 use repo_core::{repo, DraftRepo, RepoError};
 use repo_write::promote::PromoteOptions;
@@ -453,6 +453,58 @@ pub fn reorder_compositions(
 ) -> AppResult<OkAck> {
     with_write_conn(&state, |c| {
         repo_write::reorder_compositions(c, &phase_id, &ordered_ids)
+    })?;
+    Ok(OkAck { ok: true })
+}
+
+// ── Scene phrase direct editing (plan scene-phrase-editing) ───────────────────
+// omar-driven create / update / delete / reorder of scene-phrase assets. Tauri-only:
+// the MCP server has no repo-write dependency and can only stage drafts. A phrase is
+// bound to a scene and an OPTIONAL sub-stage; order_index restarts per
+// (scene_id, sub_stage_id) partition, so reorder is scoped to one such group.
+
+#[tauri::command]
+pub fn create_phrase(
+    state: State<'_, AppState>,
+    scene_id: String,
+    name: String,
+    content: String,
+    sub_stage_id: Option<String>,
+) -> AppResult<Phrase> {
+    with_write_conn(&state, |c| {
+        repo_write::create_phrase(c, &scene_id, &name, &content, sub_stage_id.as_deref())
+    })
+}
+
+#[tauri::command]
+pub fn update_phrase(
+    state: State<'_, AppState>,
+    id: String,
+    name: String,
+    content: String,
+    sub_stage_id: Option<String>,
+) -> AppResult<OkAck> {
+    with_write_conn(&state, |c| {
+        repo_write::update_phrase(c, &id, &name, &content, sub_stage_id.as_deref())
+    })?;
+    Ok(OkAck { ok: true })
+}
+
+#[tauri::command]
+pub fn delete_phrase(state: State<'_, AppState>, id: String) -> AppResult<OkAck> {
+    with_write_conn(&state, |c| repo_write::delete_phrase(c, &id))?;
+    Ok(OkAck { ok: true })
+}
+
+#[tauri::command]
+pub fn reorder_phrases(
+    state: State<'_, AppState>,
+    scene_id: String,
+    sub_stage_id: Option<String>,
+    ordered_ids: Vec<String>,
+) -> AppResult<OkAck> {
+    with_write_conn(&state, |c| {
+        repo_write::reorder_phrases(c, &scene_id, sub_stage_id.as_deref(), &ordered_ids)
     })?;
     Ok(OkAck { ok: true })
 }
