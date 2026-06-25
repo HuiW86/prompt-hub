@@ -1,13 +1,13 @@
 ---
 type: product-spec
 project: prompt-hub
-version: v0.9
+version: v0.10
 created: 2026-05-18
-last_modified: 2026-06-22
-status: draft  # 🤝 共创，v0.9 待 omar 人审（Composition/Modifier 主仪表盘移除）；前序 v0.8 已 ratified
+last_modified: 2026-06-25
+status: draft  # 🤝 共创，v0.10 涟漪 ADR-018 Promptscape 吸收待 omar 人审；前序 v0.8 已 ratified
 author: co  # 🤝 人机共创（CLAUDE §5.2）
-related: [[01-spec]], [[05-design-spec]], [[06-prd]], [[012-lock-visual-quality-anchor]], [[013-alignment-phrases-tab-inclusion]], [[015-expose-mcp-write-pipeline]]
-description: 手动 AI 编程仪表盘的 UI 契约——双形态架构/布局/点击路径/交互频率/状态反馈/引导/用户旅程/主形态 UI 草案；v0.9 移除主仪表盘的 Composition/Modifier 编辑面板（UI 减负·选项 2），Tab cycle 8 → 6，资产类型保留在数据层；v0.7 涟漪 ADR-015 草稿收件箱 tab + 待审 badge
+related: [[01-spec]], [[05-design-spec]], [[06-prd]], [[012-lock-visual-quality-anchor]], [[013-alignment-phrases-tab-inclusion]], [[015-expose-mcp-write-pipeline]], [[017-enable-auto-update]], [[018-absorb-promptscape-design]]
+description: 手动 AI 编程仪表盘的 UI 契约——双形态架构/布局/点击路径/交互频率/状态反馈/引导/用户旅程/主形态 UI 草案；v0.9 移除主仪表盘的 Composition/Modifier 编辑面板（UI 减负·选项 2），Tab cycle 8 → 6，资产类型保留在数据层；v0.10 涟漪 ADR-018 Promptscape 吸收：§13.2 加 Header 区域0 + 协议层 band + 任务层 3→2 列 + 设置弹窗区域9；v0.7 涟漪 ADR-015 草稿收件箱 tab + 待审 badge
 ---
 
 # Product Spec: prompt-hub（UI 契约）
@@ -567,41 +567,42 @@ sequenceDiagram
 
 ```mermaid
 graph TD
-    subgraph 顶部["顶部 · 入口层"]
-        S["搜索区 §5.0<br/>居中 60% 宽 · 浅灰背景<br/>⌘K 聚焦 · 兜底而非主入口"]
-        BADGE["待审 badge §10.3<br/>搜索区同行右端 · 仅 N>0 显示<br/>纯文本 '📥 N 条待审' · 无红点<br/>点击跳 Scene 📥 草稿 tab · v0.7 起"]
+    subgraph 顶栏["顶栏 · Header（v0.11）"]
+        H["Header 区域0 §13.3<br/>slim 行 · logo(中性强调) + 标题 + 内嵌搜索 + gear<br/>SearchBar 内嵌中段（含待审 badge §10.3，仅 N>0）<br/>gear 点击开设置(⌘,) · 去账号头像 · 涟漪 ADR-018"]
+    end
+
+    subgraph 协议带["协议层 band · ProtocolBand（v0.11 inset 容器）"]
         P["相位带 §5.1<br/>8 个 Phase 横排 · 当前高亮<br/>⌘1-8 直切 · 哲学七视觉落地"]
         AP["对齐话术 chip 行<br/>相位带下方 · 独立 region<br/>当前 Phase 话术 · 点击即复制<br/>v0.6 起 / 追认 ADR-013"]
     end
 
-    subgraph 中部["中部 · 主工作区"]
-        M["Macro 区 §5.2<br/>左侧 60% 宽 · 卡片墙<br/>按热度排序 · 视觉主战场"]
-        SC["Scene 区 §5.3<br/>右侧 40% 宽 · Tab 切换<br/>当前 Scene 展开 SubStage + Phrase<br/>含 📥 草稿 tab（Tab 行最左 · v0.7 起）"]
-    end
-
-    subgraph 底部["底部 · 辅助信息层"]
-        R["最近使用 §5.5<br/>左侧 50% · 5 条历史<br/>点击再次复制"]
-        SOP["SOP 进度 §5.6<br/>右侧 50% · 进度条 + 下一步<br/>未激活时折叠"]
+    subgraph 全景["全景 · 任务层 2 列（v0.11，user-resizable）"]
+        subgraph 任务列["task 列（≈68%）"]
+            M["Macro 区 §5.2<br/>顶部紧凑横条 · auto-fill 卡片<br/>封顶 184px 后滚动 · 按热度排序"]
+            SC["Scene 区 §5.3<br/>填充其余 · Tab 切换<br/>子阶段多列全景 + Phrase 卡<br/>含 📥 草稿 tab（Tab 行最左 · v0.7 起）"]
+        end
+        subgraph 辅列["aside 列（≈32%）"]
+            R["最近使用 §5.5<br/>5 条历史 · 点击再次复制"]
+            SOP["SOP 进度 §5.6<br/>进度条 + 下一步 · 未激活折叠"]
+        end
     end
 
     subgraph 最底["最底 · 状态栏"]
-        ST["状态栏 §5.7<br/>今日复制次数 · 当前相位 · 草稿待沉淀<br/>右侧持续提示快捷键"]
+        ST["状态栏 §5.7<br/>今日复制次数 · 当前相位 · 草稿待沉淀<br/>右侧持续提示快捷键（含 ⌘,）"]
     end
 
-    S -.-> BADGE
-    S --> P
+    SET["设置弹窗 §13.3 区域9（v0.11）<br/>居中 overlay · 外观(主题三态+强调色) / 更新<br/>⌘, 或 gear 唤起 · Esc/遮罩关闭"]
+
+    H --> P
     P --> AP
     AP --> M
-    AP --> SC
-    M --> R
+    M --> SC
     SC --> R
-    M --> SOP
-    SC --> SOP
-    R --> ST
+    R --> SOP
     SOP --> ST
+    H -.⌘,.-> SET
 
-    style S fill:#F1EFE8,stroke:#888780,stroke-width:1px
-    style BADGE fill:#F1EFE8,stroke:#888780,stroke-width:1px
+    style H fill:#F1EFE8,stroke:#888780,stroke-width:1px
     style P fill:#EEEDFE,stroke:#534AB7,stroke-width:2px
     style AP fill:#EEEDFE,stroke:#534AB7,stroke-width:1px
     style M fill:#E1F5EE,stroke:#178561,stroke-width:1px
@@ -609,20 +610,29 @@ graph TD
     style R fill:#F1EFE8,stroke:#888780,stroke-width:1px
     style SOP fill:#F1EFE8,stroke:#888780,stroke-width:1px
     style ST fill:#F1EFE8,stroke:#888780,stroke-width:1px
+    style SET fill:#F1EFE8,stroke:#888780,stroke-width:1px
 ```
 
 颜色编码说明（详见 [[05-design-spec#2.4-颜色编码]]）：
-- **紫色（相位带）**：协议层，视觉权重最高
-- **绿色（Macro 区 / Scene 区）**：任务层主战场
-- **灰色（搜索框 / 最近使用 / SOP 进度 / 状态栏）**：辅助信息层，视觉权重较低
+- **紫色（相位带 / 对齐话术）**：协议层，视觉权重最高（v0.11 起由 ProtocolBand 暗色 band 容器包裹）
+- **绿色（Macro 区 / Scene 区）**：任务层主战场（v0.11 起为 2 列全景：Macro 顶部横条 + Scene 填充）
+- **灰色（Header / 最近使用 / SOP 进度 / 状态栏 / 设置弹窗）**：辅助 / chrome 层，视觉权重较低；Header logo 与设置弹窗强调件用中性强调色 `--accent`（非 ontology，[[05-design-spec#13.1]]）
 
 ### 13.3 文字描述版（按区域）
 
+#### 区域 0：Header（v0.11 新增 · 涟漪 [[018-absorb-promptscape-design]]）
+
+- **位置**：最顶部 slim 行（UpdaterBanner 之下、协议层 band 之上）
+- **内容**：logo 方块（中性强调 `--accent`，lucide `Layers`）+ 标题「prompt-hub」+ 副标「提示词资产 · 全景仪表盘」+ 内嵌 `SearchBar`（flex-1，含区域 8 待审 badge）+ gear 按钮
+- **行为**：gear 点击 / `⌘,` → 打开设置弹窗（区域 9）；搜索行为见区域 1
+- **设计取舍**：吸收 Promptscape slim header，但**去掉设计稿账号头像**（spec §8.2 单用户无账号）、**保留 prompt-hub 名**（不改名 Promptscape）
+- **视觉权重**：chrome 中性；logo 是唯一中性强调面（不染 ontology，守 [[02-constitution#B2]]）
+
 #### 区域 1：搜索区（[[06-prd#5.0-搜索区]]）
 
-- **位置**：最顶部，居中
-- **尺寸**：约 60% 宽度，单行高度（约 40px）
-- **样式**：浅灰背景、占位文字"搜索 Macro / Phrase / SOP / 对齐话术..."、右侧"兜底"小标签
+- **位置**：v0.11 起**内嵌于 Header 行中段**（原为顶部独立居中行）
+- **尺寸**：flex-1 占据 Header 中段，圆角内联字段（行 chrome 上移到 Header）
+- **样式**：`--surface` 内联字段、占位文字"搜索 Macro / Phrase / SOP / 对齐话术..."、右侧 `⌘K` Kbd
 - **快捷键**：⌘K 聚焦
 - **行为**：输入关键字 → 整个面板被搜索结果覆盖 → ↑↓ 选 → ⏎ 复制并隐藏 → ESC 退出搜索回到全景
 - **视觉权重**：刻意压低，不抢相位带的视觉重心
@@ -659,9 +669,9 @@ graph TD
 
 #### 区域 3：Macro 区（[[06-prd#5.2-Macro-快捷区]]）
 
-- **位置**：中部左侧
-- **尺寸**：占整宽 60%
-- **布局**：2 列 × N 行的卡片墙（自适应卡片数量）
+- **位置**：v0.11 起为**任务列（task 列）顶部紧凑横条**（原「中部左侧 60%」；涟漪 [[018-absorb-promptscape-design]] 任务层 3→2 列）
+- **尺寸**：auto-fill 网格（最小列 `--col-min-macro` 200px），高度封顶 `--h-macro-strip` 184px，超出滚动
+- **布局**：响应式 auto-fill 卡片横条（「高频一键入口」），Scene 区在其下方填充任务列剩余空间
 - **排序**：按 usage_count 自动降序，顶部 2-4 张为"热门 Macro"（边框加粗、火焰图标）
 - **每张卡片显示**：
   - 标题（14px 加粗）
@@ -674,8 +684,8 @@ graph TD
 
 #### 区域 4：Scene 区（[[06-prd#5.3-Scene-全景区]]）
 
-- **位置**：中部右侧
-- **尺寸**：占整宽 40%
+- **位置**：v0.11 起为**任务列 Macro 横条下方**，填充任务列剩余高度（原「中部右侧 40%」；涟漪 [[018-absorb-promptscape-design]]）
+- **尺寸**：占任务列剩余空间；视图态子阶段以 auto-fill 多列全景呈现（最小列 `--col-min-substage` 184px），每子阶段一列、Phrase 堆为 border 卡；编辑态保留纵向行
 - **顶部 Tab**：7-10 个 Scene 横排小标签（pill 样式，约 24px 高）
   - 当前激活 Tab：**绿色**（Scene 属任务层，selected 态按层取色 `--task-16` fill + `--task` border，见 [[05-design-spec#10.1]] / [[05-design-spec#13.1]]）——v0.7 修订：原「紫色」措辞早于 design-spec v0.7 ontology 系统，紫属协议层、用于 Scene = 跨层污染（[[05-design-spec#13.2]] / [[02-constitution#B2]]），故纠正为绿
   - 未激活 Tab：浅灰背景 + 灰色文字
@@ -733,12 +743,24 @@ graph TD
 
 > v0.7 新增——涟漪 [[015-expose-mcp-write-pipeline]] MCP write pipeline，承接 [[06-prd#10]] 接口契约专章。视觉细节（token / 字号 / 间距）留 [[05-design-spec]] v0.8 定。
 
-- **位置**：搜索区（区域 1）同行**右端**——主形态唤起即「一屏全景」(§4.1)，badge 落在视线第一落点（顶部），而非最底状态栏
+- **位置**：搜索区（区域 1）同行**右端**——v0.11 起搜索区内嵌于 Header，故 badge 实际落在 **Header 行**右段、`⌘K` Kbd 左侧（仍是视线第一落点顶部，语义不变）
 - **显示条件**：**仅 pending>0 时出现**；N=0 时完全不渲染（不占位、无空态）
-- **内容**：纯文本 `📥 N 条待审`——**无红点 / 无角标 / 无动画**，刻意低调，不制造焦虑（手动挡阶段 promote 是从容动作，非待办催促）
+- **内容**：lucide `Inbox` + `N 条待审`——**无红点 / 无角标 / 无动画**，刻意低调，不制造焦虑（手动挡阶段 promote 是从容动作，非待办催促）
 - **数据源**：[[06-prd#10.3]] `count_pending_drafts`（性能预算 ≤ 1ms，守 [[02-constitution#C1]] 200ms 唤起；破预算则降级 lazy load）
 - **行为**：单击 → 跳转 Scene 区（区域 4）的「📥 草稿」tab → 进入收件箱视图审阅
 - **形态差异**：主形态与辅形态都呈现；辅形态副屏常驻时 badge 持续可见，余光感知「有多少外部写入待处理」
+
+#### 区域 9：设置弹窗（v0.11 新增 · 涟漪 [[018-absorb-promptscape-design]]）
+
+- **位置**：居中 overlay 模态（`--scrim` 遮罩覆盖全屏），非常驻区域
+- **唤起**：Header gear 点击 / `⌘,`
+- **关闭**：Esc / 点击遮罩 / 右上角 X
+- **结构**：左导航（外观 / 更新）+ 右内容
+  - **外观页**：主题模式三态分段控件（浅色 / 深色 / 跟随系统）+ 强调色 5 色 swatch（中性 / 蓝 / 绿 / 紫 / 琥珀）；偏好 persist localStorage（[[02-constitution#A2]] 不出站）
+  - **更新页**：opt-in 总开关（[[017-enable-auto-update]] §5.3 出站豁免）+ 状态行 +「检查更新」/「下载并安装」，复用 `updaterStore` 状态机
+- **B2 合规**：强调色只染中性面（导航焦点环 / swatch / 开关 on 态），**不染 protocol/task 语义层**（[[02-constitution#B2]] / [[05-design-spec#13.1]]）
+- **不进 Tab cycle 总数**：模态弹窗有自己的焦点域，不计入 §13.4 区域级 6-tab 全景循环
+- **与设置语义的历史校正**：v0.5「⌘, 唤起配置面板（编辑 Scene/Phase/Modifier）」的旧措辞已被本区域取代——⌘, 现打开本设置弹窗（外观 + 更新），资产编辑走各区域就地编辑态
 
 ### 13.4 关键交互快捷键总览
 
@@ -750,9 +772,9 @@ graph TD
 | `⌘K` | 焦点跳到搜索框 | 唤起即已默认聚焦 |
 | `⌘1` - `⌘8` | 直接切换到第 N 个相位 + 复制对齐话术 | 哲学七的极速通道 |
 | `⌘N` | 唤起 Composition 工作台子窗口 | 现场组装 |
-| `⌘,` | 唤起配置面板 | 编辑 Scene/Phase/Modifier |
+| `⌘,` | 打开设置弹窗（外观 + 更新，区域 9）| v0.11 起经 Header gear / `⌘,`（原「配置面板编辑 Scene/Phase/Modifier」措辞已废，资产编辑走各区就地编辑态）|
 | `↑` `↓` `←` `→` | 在卡片间移动焦点 | 键盘党的扫视路径 |
-| `Tab` | 在区域间切换焦点（相位带 / 对齐话术 / Macro / Scene / 最近 / SOP） | 区域级导航（6 tab-reachable，v0.9 起——Composition/Modifier 编辑面板移出主仪表盘；8 时代谱系见下方 v0.8 修订记录与 [[013-alignment-phrases-tab-inclusion]]）|
+| `Tab` | 在区域间切换焦点（相位带 / 对齐话术 / Macro / Scene / 最近 / SOP） | 区域级导航（6 tab-reachable；Header 与设置弹窗为 chrome / 模态，不计入区域级循环；8 时代谱系见下方 v0.8 修订记录与 [[013-alignment-phrases-tab-inclusion]]）|
 
 > **v0.7 草稿收件箱键盘入口**：待审 badge（区域 8）是**纯状态指示器，不进 Tab cycle**（避免 badge 条件渲染导致 tab 数跳变；v0.7 时 6 tab-reachable，v0.8 升 8，v0.9 移除两编辑面板后回落 6）。草稿收件箱的键盘路径 = Tab 到 **Scene region** → `←`/`→` 到最左「📥 草稿」tab → 方向键选草稿卡 + 动作键 promote/discard。badge 的点击跳转是鼠标快捷增强，非唯一动作路径。**promote 不绑定单 `⏎` 误触**——须显式动作键确认，守 [[06-prd#8.2]] N3 / [[02-constitution#D1]] 从容闸门。
 
@@ -781,6 +803,22 @@ graph TD
 ---
 
 ## 修订记录
+
+### v0.10（2026-06-25）— ADR-018 涟漪：Promptscape 设计吸收（Header + 协议层 band + 任务层 2 列 + 设置弹窗）
+
+涟漪 [[018-absorb-promptscape-design]]（组合 A1+B1+C1+D+E）。把 Claude Design「Promptscape 全景仪表盘」按「改造现有组件」方式吸收进主仪表盘 UI 契约。🤖 AI 主笔起草，待 omar 人审。
+
+| 章节 | 改动 |
+|------|------|
+| §13.2 结构图 | 加「区域0 Header」顶栏 + 协议层内容由 ProtocolBand 暗色 band 包裹 + 中部改任务层 2 列全景（task: Macro 横条 + Scene 填充 / aside: 最近 + SOP）+ 设置弹窗 overlay 节点；修正边/样式 |
+| §13.3 区域0（新增）| Header slim 行（logo 中性强调 + 标题 + 内嵌搜索 + gear），去账号头像、保留 prompt-hub 名 |
+| §13.3 区域1 | 搜索区内嵌于 Header 中段（原顶部独立行）|
+| §13.3 区域3/4 | Macro 改任务列顶部紧凑横条；Scene 改子阶段多列全景（视图态）|
+| §13.3 区域8 | 待审 badge 落点改 Header 行右段（搜索区内嵌后）|
+| §13.3 区域9（新增）| 设置弹窗（外观主题三态 + 强调色 / 更新 opt-in，复用 updaterStore）+ B2 合规说明 |
+| §13.4 快捷键 | `⌘,` 改为「打开设置弹窗」（废旧「配置面板编辑 Scene/Phase/Modifier」措辞）；Tab note 注明 Header/设置弹窗为 chrome/模态不计入区域级循环 |
+
+**三处与设计稿偏离**：去账号头像（spec §8.2）/ 不引 Modifier 右栏（[[02-constitution#B1]]）/ 省略全局「新建」按钮（避免死按钮）。**Tab cycle 仍 6**（Header 是 chrome、设置弹窗是模态，均不进区域级循环）。
 
 ### v0.9（2026-06-22）— UI 减负：主仪表盘移除 Composition/Modifier 编辑面板（Tab cycle 8 → 6）
 

@@ -1,0 +1,30 @@
+/* Protocol-layer band — a single inset card grouping PhaseBar + AlignmentPhrases.
+ * Surface lift (surface-1) + hairline + rounded frame give the "distinct layer"
+ * read from the Promptscape design, translated to the project's dark palette
+ * (no light oklch band). The children render transparent so this surface shows. */
+
+.band {
+  margin: var(--s-3) var(--s-3) 0;
+  background: var(--surface-1);
+  border: var(--hairline) solid var(--border-1);
+  border-radius: var(--r-frame);
+  overflow: hidden;
+}
+
+.head {
+  padding: var(--s-2) var(--s-3_5) 0;
+}
+
+/* "协议层" tag uses the protocol semantic color (it labels that layer), not the
+ * neutral accent — B2-safe. */
+.pill {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--s-1);
+  padding: var(--s-0_5) var(--s-2);
+  border-radius: var(--r-2);
+  background: var(--protocol-16);
+  color: var(--protocol);
+  font: var(--w-600) var(--t-11) / 1 var(--font-sans);
+  letter-spacing: var(--tr-meta);
+}

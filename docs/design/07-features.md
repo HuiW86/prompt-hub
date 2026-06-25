@@ -1,9 +1,9 @@
 ---
 type: features
 project: prompt-hub
-version: v1.4
+version: v1.5
 created: 2026-05-19
-last_modified: 2026-06-23
+last_modified: 2026-06-25
 status: in-progress  # S1 主形态 MVP 5 模块 + 跨模块 P0 多项 done（ADR-012 Phase 1-5 全 done）；M-X 全收口——数据层 + workspace + MCP server + UI 收件箱（草稿 tab + 待审 badge + 5 IPC + schema recheck）done；M0-4 签名公证链路 done（M0 四项全绿）；ADR-017 自动更新客户端 + CI 出包链路 done（dry-run 端到端验证）；design-spec v0.10 UI 一致性治理 A 阶段 primitives 迁移 done（真机验证待补）；v1.3 UI 减负移除 Composition/Modifier 编辑面板（Tab cycle 8→6，数据层保留）
 author: ai  # 🤖 AI 主笔 + 人审（CLAUDE §5.2）
 audience: [human, ai]
@@ -18,6 +18,8 @@ related:
   - mcp-write-pipeline
   - asset-editing-and-adaptive-layout
   - 016-choose-dnd-and-resizable-layout
+  - 017-enable-auto-update
+  - 018-absorb-promptscape-design
 ---
 
 # Features: prompt-hub
@@ -189,6 +191,21 @@ related:
 | surface/control 迁移（ScenePanel flash + focus / DraftInbox+DraftCard → neutral CardSurface + ghost Button）| P1 | `done` | v1.1 | 110 前端 / 真机验证待补 | omar | [[05-design-spec#10.4.3]] |
 | CSS 裸值 gate（`token-gate.test.ts` 扫 px/hex/ms，仅 tokens.css 豁免）+ SearchBar `outline-offset`→`var(--hairline)` | P1 | `done` | v1.1 | token-gate 18 file scan | omar | [[05-design-spec#10.2.2]] |
 
+### 3.11 Promptscape 设计吸收（ADR-018 / A1+B1+C1+D+E）
+
+> 来源 [[018-absorb-promptscape-design]] Accepted（2026-06-25）。以「改造现有组件」吸收 Claude Design「Promptscape 全景仪表盘」约 90% 视觉收益，组合锁定 A1（保留项目语义色）+B1（不引入 Modifier 右栏）+C1（改造现有组件）+D（接既有 store）+E（保留 prompt-hub 名 + 去头像）。三处放大决策：任务层 3→2 列 / 新增 slim Header / 省略全局「新建」按钮。
+>
+> B2 复检（[[02-constitution#B2]]）：新增「中性强调色」只染品牌标记 / 主操作 / 焦点环，绝不重染 protocol（紫）/ task（绿）层；accent token 经 `:root.accent-*` 物理隔离。settingsStore 外观偏好 persist localStorage，A2 不出站。
+
+| 功能 | 优先级 | 状态 | 目标版本 | 测试覆盖 | 责任人 | 引用 |
+|---|---|---|---|---|---|---|
+| 主题三态外观系统（settingsStore `themeMode` light/dark/system + `applyAppearance` root class，onRehydrate 应用无首启闪烁）| P1 | `done` | v1.5 | 97 前端 / 真机验证待补 | omar | [[05-design-spec#2.5]] |
+| 中性强调色（5 色 swatch neutral/blue/green/violet/amber，只染中性强调面，B2 物理隔离）| P1 | `done` | v1.5 | 97 前端 / token-gate（accent token 落 tokens.css）| omar | [[05-design-spec#2.4.4]] |
+| 设置弹窗（`SettingsModal` 外观页 + 更新页两 pane，⌘/Ctrl , 唤起 + ESC/遮罩关闭，更新页复用 updaterStore opt-in 总开关）| P1 | `done` | v1.5 | 97 前端 / 真机验证待补 | omar | [[05-design-spec#10.8.3]] |
+| slim Header（logo + 标题 + 内嵌 SearchBar + gear，去头像保留 prompt-hub 名，待审 badge 内嵌）| P1 | `done` | v1.5 | 97 前端 / 真机验证待补 | omar | [[05-design-spec#10.8.1]] |
+| ProtocolBand 协议层暗色 band（AlignmentPhrase + Phase 收为顶部暗色带）| P1 | `done` | v1.5 | 97 前端 / 真机验证待补 | omar | [[05-design-spec#10.8.2]] |
+| 任务层 3→2 列全景重构（resizable group id `panorama-2col` 丢弃旧三列缓存；Macro 收为顶部紧凑横条 / aside 承载 Recent + SOP）| P1 | `done` | v1.5 | 97 前端 / 真机验证待补 | omar | [[016-choose-dnd-and-resizable-layout#补遗]] |
+
 ---
 
 ## §4 阶段交付节奏
@@ -201,10 +218,11 @@ related:
 | AE 资产编辑 + 自适应布局 | v1.1 | 3 功能 | `done`（3/3 在用：Macro/AlignmentPhrase 编辑+排序 + 可拖列布局；Modifier/Composition 编辑 v1.3 `withdrawn` 移出主仪表盘）|
 | ADR-017 自动更新 | v1.1 | 5 功能 | `done`（4/5：客户端 + CI 出包 done / 真机验收 planned）|
 | UI 一致性治理（design-spec v0.10 A 阶段）| v1.1 | 4 功能 | `done`（4/4 实装 + 测试零回归；真机验证待补）|
+| Promptscape 设计吸收（ADR-018）| v1.5 | 6 功能 | `done`（6/6 实装：主题三态 + 强调色 + 设置弹窗 + Header + ProtocolBand + 2 列全景；真机验证待补）|
 | S3 SOP 导航 | v1.2 | 3 功能 | `planned` |
 | S4 配置个性化 | v1.3 | 4 功能 | `planned` |
 | S5 辅形态副屏 | v2.0 | 3 功能 | `planned` |
-| **合计** | — | **59 项** | — |
+| **合计** | — | **65 项** | — |
 
 **注**：版本号语义为 prompt-hub 自身版本，与 prd / spec / methodology 各自独立。v1.0 = 第一阶段 MVP 可发布；v2.0 = 辅形态加入（双形态完整）。
 
@@ -243,6 +261,7 @@ related:
 | 2026-06-21 | v1.2 bump：§3.10 A 阶段实装收口（primitives 基础层 + 9 组件迁移 + surface/control 迁移 + CSS 裸值 gate，4 功能 → `done`，110 前端零回归）；§4 节奏表加 UI 一致性治理行，合计 56→60 项 | design-spec v0.10 A 阶段 primitives 迁移落地涟漪 |
 | 2026-06-22 | v1.3 bump：UI 减负——主仪表盘移除 Composition/Modifier 编辑面板（删 ModifierGrid/CompositionWorkbench 组件 + 测试，Tab cycle 8→6）。§3.8 Modifier/Composition 编辑 → `withdrawn`；§3.10 editor 簇迁移行删两组件、测试 110→94；§4 AE 行 4→3 功能，合计 60→59。**不改 [[02-constitution#B1]]**：资产类型/数据层/promote 分支保留（选项 2「保本体·收 UX」）。涟漪 [[03-product-spec]] v0.9 | 资产分类复盘（外部最佳实践 + 内部立意调研收敛）→ 选项 2 执行 |
 | 2026-06-23 | v1.4 bump：§3.8 新增「Scene 话术（Phrase）编辑」→ `done`——镜像 AlignmentPhrase 编辑模式，补 forward-only migration（schema 8→9）加 per-(scene,sub_stage) `order_index`，repo-write `phrases.rs` 4 写函数 + 12 测试，4 IPC，ScenePanel 编辑态（每 SubStage 组独立 DnD + 子阶段下拉）。后端 55 测试 / 前端 94 测试全绿。涟漪 [[03-product-spec]] §13.3 区域 4 行为 | [[scene-phrase-editing]] M1+M2 收口涟漪 |
+| 2026-06-25 | v1.5 bump：新增 §3.11 Promptscape 设计吸收区（6 功能 → `done`：主题三态外观系统 / 中性强调色 / 设置弹窗 / slim Header / ProtocolBand / 任务层 3→2 列全景）；§4 节奏表加 Promptscape 行，合计 59→65 项。B2 复检通过（accent 只染中性强调面，`:root.accent-*` 物理隔离）；A2 不出站（外观偏好 persist localStorage）。涟漪 [[03-product-spec]] v0.10 / [[05-design-spec]] v0.11 / [[016-choose-dnd-and-resizable-layout]] 补遗 | [[018-absorb-promptscape-design]] 吸收落地涟漪 |
 
 ---
 

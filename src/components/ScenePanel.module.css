@@ -104,9 +104,18 @@
   background: var(--border-2);
 }
 
+/* Sub-stages flow as a responsive multi-column grid (Promptscape Scene 全景):
+ * each group is a column, its phrases stack as bordered cards beneath the
+ * sub-stage header. View mode only — edit mode keeps the vertical list below. */
 .phrases {
-  display: flex;
-  flex-direction: column;
+  display: grid;
+  grid-template-columns: repeat(
+    auto-fill,
+    minmax(var(--col-min-substage), 1fr)
+  );
+  gap: var(--s-4);
+  padding: var(--s-3_5);
+  align-content: start;
   min-height: 0;
   overflow-y: auto;
 }
@@ -114,11 +123,13 @@
 .group {
   display: flex;
   flex-direction: column;
+  gap: var(--s-2);
+  min-width: 0;
 }
 
 .subStage {
-  padding: var(--s-2) var(--s-3_5) var(--s-1);
-  font: var(--w-500) var(--t-11) / 1 var(--font-mono);
+  padding: 0 0 var(--s-1_5);
+  font: var(--w-600) var(--t-11) / 1 var(--font-mono);
   color: var(--fg-3);
   text-transform: uppercase;
   letter-spacing: var(--tr-meta);
@@ -129,21 +140,24 @@
   display: flex;
   flex-direction: column;
   gap: var(--s-1);
-  padding: var(--s-2) var(--s-3_5);
-  background: transparent;
-  border: 0;
-  border-bottom: var(--hairline) solid var(--border-1);
+  padding: var(--s-2_5);
+  background: var(--surface-1);
+  border: var(--hairline) solid var(--border-1);
+  border-radius: var(--r-3);
   color: inherit;
   text-align: left;
   appearance: none;
   font: inherit;
   cursor: pointer;
   user-select: none;
-  transition: background-color var(--d-fast) var(--ease);
+  transition:
+    background-color var(--d-fast) var(--ease),
+    border-color var(--d-fast) var(--ease);
 }
 
 .phrase:hover {
-  background: var(--surface-1);
+  background: var(--surface-2);
+  border-color: var(--border-2);
 }
 
 .phrase:active {

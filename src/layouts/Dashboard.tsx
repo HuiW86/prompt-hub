@@ -5,13 +5,13 @@ import {
   useDefaultLayout,
 } from "react-resizable-panels";
 
-import { AlignmentPhrases } from "../components/AlignmentPhrases";
+import { Header } from "../components/Header";
 import { MacroGrid } from "../components/MacroGrid";
-import { PhaseBar } from "../components/PhaseBar";
+import { ProtocolBand } from "../components/ProtocolBand";
 import { RecentList } from "../components/RecentList";
 import { ScenePanel } from "../components/ScenePanel";
-import { SearchBar } from "../components/SearchBar";
 import { SearchOverlay } from "../components/SearchOverlay";
+import { SettingsModal } from "../components/SettingsModal";
 import { SopProgress } from "../components/SopProgress";
 import { StatusBar } from "../components/StatusBar";
 import { Toast } from "../components/Toast";
@@ -27,8 +27,10 @@ export function Dashboard() {
   // Column widths are a local UI preference: persisted to localStorage (never
   // SQLite, never uploaded — constitution A2). useDefaultLayout restores the
   // saved layout on mount and onLayoutChanged writes back after a drag settles.
+  // The id is bumped (-2col) so the prior 3-column layout in localStorage is
+  // discarded after the Promptscape task-layer absorption.
   const { defaultLayout, onLayoutChanged } = useDefaultLayout({
-    id: "panorama-cols",
+    id: "panorama-2col",
     storage: localStorage,
   });
 
@@ -41,51 +43,45 @@ export function Dashboard() {
 
   return (
     // role="main" (not "application") so VoiceOver / NVDA keep their landmark
-    // and heading rotors (VO+U / H / K). The dashboard is composed of standard
-    // landmarks (search, nav, sections, contentinfo); switching the whole shell
-    // into application mode would suppress that AT navigation, defeating the
-    // five Tab-reachable regions added in B5-5. See review C-P1-1.
+    // and heading rotors. The dashboard is composed of standard landmarks
+    // (search, nav, sections, contentinfo); see review C-P1-1.
     <div
       className={styles.dashboard}
       role="main"
       aria-label="prompt-hub dashboard"
     >
       <UpdaterBanner />
-      <SearchBar />
-      <PhaseBar />
-      <AlignmentPhrases />
+      <Header />
+      <ProtocolBand />
       <div className={styles.panorama}>
         <Group
-          id="panorama-cols"
+          id="panorama-2col"
           className={styles.panoramaGroup}
           defaultLayout={defaultLayout}
           onLayoutChanged={onLayoutChanged}
         >
           <Panel
-            id="macro"
+            id="task"
             className={styles.panel}
-            defaultSize="42%"
-            minSize="22%"
+            defaultSize="68%"
+            minSize="42%"
           >
-            <MacroGrid />
+            {/* Task column: Macro strip pinned on top, Scene panorama fills. */}
+            <div className={styles.taskCol}>
+              <div className={styles.macroSlot}>
+                <MacroGrid />
+              </div>
+              <ScenePanel />
+            </div>
           </Panel>
           <Separator className={styles.separator} />
           <Panel
-            id="scene"
+            id="aside"
             className={styles.panel}
-            defaultSize="30%"
-            minSize="18%"
+            defaultSize="32%"
+            minSize="20%"
           >
-            <ScenePanel />
-          </Panel>
-          <Separator className={styles.separator} />
-          <Panel
-            id="col3"
-            className={styles.panel}
-            defaultSize="28%"
-            minSize="18%"
-          >
-            <div className={styles.col3}>
+            <div className={styles.aside}>
               <RecentList />
               <SopProgress />
             </div>
@@ -95,6 +91,7 @@ export function Dashboard() {
       </div>
       <StatusBar />
       <Toast />
+      <SettingsModal />
     </div>
   );
 }

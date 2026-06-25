@@ -60,6 +60,9 @@
 
   --skeleton: #1f1f23;
   --skeleton-hi: #26262b;
+
+  /* Modal backdrop scrim (overlay dialogs only). */
+  --scrim: rgba(0, 0, 0, 0.45);
 }
 
 /* ============================================================
@@ -100,6 +103,46 @@
   --fg-4: #a5a5a8;
   --skeleton: #e8e8e5;
   --skeleton-hi: #dededb;
+}
+
+/* ============================================================
+   1b. Neutral accent — NEUTRAL emphasis ONLY (B2 hard boundary)
+   Painted on: brand mark, primary action button, focus rings.
+   NEVER on protocol (selected phase) / task (active scene tab)
+   surfaces — those keep --protocol / --task. The accent token is
+   physically separate so a swatch switch can never recolor a
+   semantic layer (constitution B2). Default is high-contrast
+   neutral (inverted fg). Swatch overrides ride a root class set
+   by settingsStore.setAccent.
+   ============================================================ */
+:root {
+  /* Swatch palette — globally available so the settings color picker can
+     preview every option regardless of the active selection. */
+  --accent-swatch-neutral: var(--fg-1);
+  --accent-swatch-blue: #4c8dff;
+  --accent-swatch-green: #2f9e6e;
+  --accent-swatch-violet: #8b7bff;
+  --accent-swatch-amber: #e0962f;
+
+  --accent: var(--accent-swatch-neutral);
+  --accent-fg: var(--canvas);
+}
+
+:root.accent-blue {
+  --accent: var(--accent-swatch-blue);
+  --accent-fg: #ffffff;
+}
+:root.accent-green {
+  --accent: var(--accent-swatch-green);
+  --accent-fg: #ffffff;
+}
+:root.accent-violet {
+  --accent: var(--accent-swatch-violet);
+  --accent-fg: #ffffff;
+}
+:root.accent-amber {
+  --accent: var(--accent-swatch-amber);
+  --accent-fg: #ffffff;
 }
 
 /* ============================================================
@@ -186,6 +229,17 @@
   --h-quickfind: 36px;
   --h-scene-row: 32px;
   --h-region-header: 40px;
+
+  /* Task-layer absorption (Promptscape 2-col): Macro renders as a compact
+     auto-fill strip capped to a couple of rows; Scene sub-stages flow as a
+     responsive multi-column grid. */
+  --h-macro-strip: 184px;
+  --col-min-macro: 200px;
+  --col-min-substage: 184px;
+
+  /* Settings overlay dialog — off-primary surface, larger than the 32px cap. */
+  --w-settings-modal: 560px;
+  --w-settings-nav: 140px;
 }
 
 /* ============================================================

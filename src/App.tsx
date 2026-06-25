@@ -31,6 +31,20 @@ function App() {
     if (enabled && optInDecided) void check();
   }, []);
 
+  // ⌘/Ctrl , opens the settings dialog (absorbed from the Promptscape design).
+  // Off the wake hot path; toggles transient settingsStore.settingsOpen only.
+  useEffect(() => {
+    function onKey(e: KeyboardEvent) {
+      if (!isPrimaryModifier(e) || e.shiftKey || e.altKey || e.key !== ",") {
+        return;
+      }
+      e.preventDefault();
+      useSettingsStore.getState().openSettings();
+    }
+    document.addEventListener("keydown", onKey);
+    return () => document.removeEventListener("keydown", onKey);
+  }, []);
+
   useEffect(() => {
     function onKey(e: KeyboardEvent) {
       if (e.key !== "Escape") return;

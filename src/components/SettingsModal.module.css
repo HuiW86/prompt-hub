@@ -1,0 +1,362 @@
+/* SettingsModal — centered overlay dialog absorbed from the Promptscape design.
+ * Two-pane: left nav (外观 / 更新) + right content. Tokens only; the swatch
+ * previews ride the global --accent-swatch-* tokens so no naked hex lands here. */
+
+.overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 10;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: var(--s-6);
+  background: var(--scrim);
+}
+
+.modal {
+  display: flex;
+  width: 100%;
+  max-width: var(--w-settings-modal);
+  max-height: 80vh;
+  overflow: hidden;
+  background: var(--surface-1);
+  border: var(--hairline) solid var(--border-2);
+  border-radius: var(--r-frame);
+}
+
+/* ── Left nav ──────────────────────────────────────────────────────────────── */
+.nav {
+  display: flex;
+  flex-direction: column;
+  gap: var(--s-1);
+  flex: 0 0 auto;
+  width: var(--w-settings-nav);
+  padding: var(--s-3);
+  background: var(--canvas);
+  border-right: var(--hairline) solid var(--border-1);
+}
+
+.navHead {
+  padding: var(--s-1) var(--s-2);
+  font: var(--w-600) var(--t-11) / 1 var(--font-mono);
+  color: var(--fg-3);
+  text-transform: uppercase;
+  letter-spacing: var(--tr-meta);
+}
+
+.navItem {
+  display: flex;
+  align-items: center;
+  gap: var(--s-2);
+  padding: var(--s-1_5) var(--s-2);
+  border: var(--hairline) solid transparent;
+  border-radius: var(--r-3);
+  background: transparent;
+  color: var(--fg-2);
+  font: var(--w-500) var(--t-13) / 1 var(--font-sans);
+  text-align: left;
+  cursor: pointer;
+  appearance: none;
+  transition:
+    background-color var(--d-fast) var(--ease),
+    color var(--d-fast) var(--ease);
+}
+
+.navItem:hover {
+  background: var(--surface-2);
+  color: var(--fg-1);
+}
+
+.navItem.active {
+  background: var(--surface-2);
+  border-color: var(--border-2);
+  color: var(--fg-1);
+}
+
+.navItem:focus-visible {
+  outline: var(--border-thick) solid var(--accent);
+  outline-offset: 0;
+}
+
+/* ── Right content ──────────────────────────────────────────────────────────── */
+.content {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  overflow-y: auto;
+}
+
+.contentHead {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: var(--s-3) var(--s-4);
+  border-bottom: var(--hairline) solid var(--border-1);
+}
+
+.contentTitle {
+  font: var(--w-600) var(--t-16) / var(--lh-tight) var(--font-sans);
+  letter-spacing: var(--tr-tight);
+  color: var(--fg-1);
+}
+
+.close {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: var(--h-chip);
+  height: var(--h-chip);
+  border: var(--hairline) solid transparent;
+  border-radius: var(--r-3);
+  background: transparent;
+  color: var(--fg-3);
+  cursor: pointer;
+  appearance: none;
+  transition:
+    background-color var(--d-fast) var(--ease),
+    color var(--d-fast) var(--ease);
+}
+
+.close:hover {
+  background: var(--surface-2);
+  color: var(--fg-1);
+}
+
+.close:focus-visible {
+  outline: var(--border-thick) solid var(--accent);
+  outline-offset: 0;
+}
+
+.body {
+  display: flex;
+  flex-direction: column;
+  gap: var(--s-5);
+  padding: var(--s-4);
+}
+
+.field {
+  display: flex;
+  flex-direction: column;
+  gap: var(--s-2_5);
+}
+
+.fieldLabel {
+  font: var(--w-600) var(--t-12) / 1 var(--font-sans);
+  color: var(--fg-2);
+}
+
+.fieldHint {
+  font: var(--w-400) var(--t-11) / var(--lh-body) var(--font-sans);
+  color: var(--fg-3);
+}
+
+/* ── Theme-mode segmented control ───────────────────────────────────────────── */
+.segment {
+  display: flex;
+  gap: var(--s-1_5);
+}
+
+.segItem {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--s-1_5);
+  height: var(--h-chip);
+  padding: 0 var(--s-2_5);
+  border: var(--hairline) solid var(--border-1);
+  border-radius: var(--r-3);
+  background: var(--surface-1);
+  color: var(--fg-2);
+  font: var(--w-500) var(--t-12) / 1 var(--font-sans);
+  cursor: pointer;
+  appearance: none;
+  transition:
+    background-color var(--d-fast) var(--ease),
+    border-color var(--d-fast) var(--ease),
+    color var(--d-fast) var(--ease);
+}
+
+.segItem:hover {
+  border-color: var(--border-2);
+  color: var(--fg-1);
+}
+
+.segItem.active {
+  border-color: var(--accent);
+  color: var(--fg-1);
+}
+
+.segItem:focus-visible {
+  outline: var(--border-thick) solid var(--accent);
+  outline-offset: 0;
+}
+
+/* ── Accent swatches ────────────────────────────────────────────────────────── */
+.swatches {
+  display: flex;
+  gap: var(--s-2);
+}
+
+.swatch {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: var(--h-chip);
+  height: var(--h-chip);
+  border: var(--border-thick) solid transparent;
+  border-radius: var(--r-4);
+  background: var(--surface-2);
+  cursor: pointer;
+  appearance: none;
+  transition: border-color var(--d-fast) var(--ease);
+}
+
+.swatch.active {
+  border-color: var(--fg-1);
+}
+
+.swatch:focus-visible {
+  outline: var(--border-thick) solid var(--accent);
+  outline-offset: var(--s-0_5);
+}
+
+.dot {
+  width: var(--s-4);
+  height: var(--s-4);
+  border-radius: var(--r-4);
+}
+
+.dotNeutral {
+  background: var(--accent-swatch-neutral);
+}
+.dotBlue {
+  background: var(--accent-swatch-blue);
+}
+.dotGreen {
+  background: var(--accent-swatch-green);
+}
+.dotViolet {
+  background: var(--accent-swatch-violet);
+}
+.dotAmber {
+  background: var(--accent-swatch-amber);
+}
+
+.check {
+  position: absolute;
+  color: var(--accent-fg);
+}
+
+/* ── Update tab ─────────────────────────────────────────────────────────────── */
+.toggleRow {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: var(--s-3);
+}
+
+.toggleText {
+  display: flex;
+  flex-direction: column;
+  gap: var(--s-1);
+  min-width: 0;
+}
+
+.toggle {
+  flex: 0 0 auto;
+  width: var(--s-10);
+  height: var(--h-chip);
+  padding: var(--s-0_5);
+  border: var(--hairline) solid var(--border-2);
+  border-radius: var(--r-frame);
+  background: var(--surface-3);
+  cursor: pointer;
+  appearance: none;
+  transition: background-color var(--d-fast) var(--ease);
+}
+
+.toggle.on {
+  background: var(--accent);
+  border-color: var(--accent);
+}
+
+.toggle:focus-visible {
+  outline: var(--border-thick) solid var(--accent);
+  outline-offset: var(--hairline);
+}
+
+.knob {
+  display: block;
+  width: var(--s-4);
+  height: var(--s-4);
+  border-radius: var(--r-4);
+  background: var(--fg-1);
+  transition: transform var(--d-fast) var(--ease);
+}
+
+.toggle.on .knob {
+  background: var(--accent-fg);
+  transform: translateX(var(--s-4));
+}
+
+.statusRow {
+  display: flex;
+  align-items: center;
+  gap: var(--s-2);
+  font: var(--w-400) var(--t-12) / 1 var(--font-mono);
+  color: var(--fg-2);
+}
+
+.statusError {
+  color: var(--task);
+}
+
+.actions {
+  display: flex;
+  gap: var(--s-2);
+}
+
+.actionBtn {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--s-1_5);
+  height: var(--h-chip);
+  padding: 0 var(--s-3);
+  border: var(--hairline) solid var(--border-1);
+  border-radius: var(--r-3);
+  background: var(--surface-1);
+  color: var(--fg-1);
+  font: var(--w-500) var(--t-12) / 1 var(--font-sans);
+  cursor: pointer;
+  appearance: none;
+  transition:
+    background-color var(--d-fast) var(--ease),
+    border-color var(--d-fast) var(--ease);
+}
+
+.actionBtn:hover:not(:disabled) {
+  border-color: var(--border-2);
+  background: var(--surface-2);
+}
+
+.actionBtn:disabled {
+  opacity: var(--op-dim);
+  cursor: not-allowed;
+}
+
+.actionBtn:focus-visible {
+  outline: var(--border-thick) solid var(--accent);
+  outline-offset: 0;
+}
+
+.actionPrimary {
+  background: var(--accent);
+  border-color: var(--accent);
+  color: var(--accent-fg);
+}
+
+.actionPrimary:hover:not(:disabled) {
+  background: var(--accent);
+  border-color: var(--accent);
+}

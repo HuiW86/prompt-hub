@@ -1,14 +1,14 @@
-/* Dashboard — overlay-frame layout per Claude Design bundle App.jsx (ADR-012).
- * 5 rows: SearchBar / PhaseBar / AlignmentPhrases / panorama(3 col) / StatusBar.
- * Overlay sits 12px inset on a transparent root so the OS desktop shows behind
- * the frame; canvas + hairline border + r-frame round give the floating card
- * aesthetic described in [[01-spec]] §8 (主形态半透明覆盖). */
+/* Dashboard — overlay-frame layout absorbing the Promptscape panorama (ADR-012).
+ * Flex column: UpdaterBanner / Header / ProtocolBand / panorama(2 col) / StatusBar.
+ * Flex (not grid) so the conditional UpdaterBanner can prepend without breaking
+ * the panorama's flex:1 sizing. Overlay sits inset on a transparent root so the
+ * OS desktop shows behind the frame ([[01-spec]] §8 主形态半透明覆盖). */
 
 .dashboard {
   position: fixed;
   inset: var(--s-3);
-  display: grid;
-  grid-template-rows: auto auto auto 1fr auto;
+  display: flex;
+  flex-direction: column;
   background: var(--canvas);
   border: var(--hairline) solid var(--border-2);
   border-radius: var(--r-frame);
@@ -21,6 +21,30 @@
 
 .panorama {
   position: relative;
+  flex: 1;
+  min-height: 0;
+}
+
+/* Task column: Macro strip (natural height, capped) atop the Scene panorama
+ * (fills the rest). The 2-column split (task | aside) stays user-resizable. */
+.taskCol {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  min-height: 0;
+}
+
+.macroSlot {
+  flex: 0 0 auto;
+  min-height: 0;
+  border-bottom: var(--hairline) solid var(--border-1);
+}
+
+.aside {
+  display: flex;
+  flex-direction: column;
+  gap: var(--s-3);
+  height: 100%;
   min-height: 0;
 }
 
@@ -49,17 +73,6 @@
 .separator:hover,
 .separator:active {
   background: var(--border-3);
-}
-
-/* Stack the two aux blocks from the top: a short recent list keeps its natural
- * height instead of stretching and pushing SopProgress to the column floor.
- * RecentList (default flex 0 1 auto + its own .list overflow) still scrolls
- * when long; SopProgress is flex-shrink:0 so it never collapses. */
-.col3 {
-  display: flex;
-  flex-direction: column;
-  gap: var(--s-3);
-  min-height: 0;
 }
 
 .loading,

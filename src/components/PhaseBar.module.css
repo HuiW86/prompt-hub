@@ -1,12 +1,14 @@
 /* PhaseBar — protocol-layer segmented bar (5+ phases equal-flex).
    Visual per Claude Design bundle styles.css §76-119 (ADR-012). */
 
+/* Transparent inside ProtocolBand — the band owns the surface; the bottom
+ * hairline stays as the divider between the phase row and the phrase row. */
 .phaseBar {
   display: flex;
   align-items: stretch;
   height: var(--h-phasebar);
   border-bottom: var(--hairline) solid var(--border-1);
-  background: var(--canvas);
+  background: transparent;
 }
 
 /* B5-5: region-level Tab landing (03-product-spec §13.4). */

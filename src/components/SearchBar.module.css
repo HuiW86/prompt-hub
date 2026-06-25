@@ -2,15 +2,20 @@
    Bundle .quickfind vocabulary, adapted from modal to always-on (ADR-012).
    §4.1 / §13.3 区域 1 mark this entry as visually muted with "兜底" tag. */
 
+/* Rounded inline field nested inside Header (was a full-width bottom-bordered
+ * row before the Promptscape header absorption). Header owns the row chrome;
+ * SearchBar is now a flex-1 muted field that matches the design's quick-find. */
 .searchBar {
   display: flex;
   align-items: center;
   gap: var(--s-2_5);
-  width: 100%;
+  flex: 1;
+  min-width: 0;
   height: var(--h-quickfind);
-  padding: 0 var(--s-3_5);
+  padding: 0 var(--s-3);
   background: var(--surface-1);
-  border-bottom: var(--hairline) solid var(--border-1);
+  border: var(--hairline) solid var(--border-1);
+  border-radius: var(--r-4);
 }
 
 .icon {

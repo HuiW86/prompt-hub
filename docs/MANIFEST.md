@@ -1,10 +1,10 @@
 ---
 type: manifest
 project: prompt-hub
-version: v1.5
+version: v1.6
 status: active
 created: 2026-05-24
-last_modified: 2026-06-19
+last_modified: 2026-06-25
 audience: [human, ai]
 description: prompt-hub 项目前期准备文件总清单——按方法论 v1.3 六层架构（L0 宪法 / L1 产品契约 / L2 工程规格 / L3 实施规格 / L4 索引 / L5 协作契约）+ ADR + 实施方案 + 视觉原型 + AI 上下文。AI 进项目读完 CLAUDE.md 后接读本文件能 1 分钟拿全貌；不写行数（参考性强但易过期）
 related:
@@ -29,7 +29,7 @@ related:
 | 🤝 共创 | 6 | 6/6 ratified（2026-06-01 product-spec v0.7 / design-spec v0.8 omar 审定升 ratified）|
 | 🤖 AI 主笔（人审） | 6 | 4/6 ratified + prd pre-code + features in-progress |
 | 🤖 AI 派生人审（L5） | 2 | 2/2 active |
-| ADR 决策记录 | 16 | 15 Accepted + 1 Proposed（+ 011 Reserved）|
+| ADR 决策记录 | 17 | 16 Accepted + 1 Proposed（+ 011 Reserved）|
 | 实施方案 | 1 | active |
 | 视觉原型 | 1 | v1 已归档至 archive/（2026-05-25）|
 | 项目 AI 上下文 | 2 | active |
@@ -50,9 +50,9 @@ related:
 
 | 路径 | 内容 | 状态 |
 |---|---|---|
-| `docs/design/03-product-spec.md` | UI 契约（双形态 / 布局 / 交互） | ratified v0.8（2026-06-11 AE P2.4 涟漪：Tab cycle 6 → 8，Modifier 四象限 + 拼装工作台入 cycle；前 v0.7 草稿 tab + 待审 badge）|
+| `docs/design/03-product-spec.md` | UI 契约（双形态 / 布局 / 交互） | ratified v0.10（2026-06-25 ADR-018 涟漪：§13 区域结构 +Header +设置弹窗 +任务层 2 列；前 v0.9 UI 减负 / v0.8 Tab cycle 6→8）|
 | `docs/design/04-user-flows.md` | 用户流（边缘 / 异常 / 跨形态） | ratified |
-| `docs/design/05-design-spec.md` | 视觉/动效 token 体系 | ratified v0.8（2026-06-01 M-X.0 涟漪：PendingBadge/DraftInbox/DraftCard 视觉契约 + lucide Inbox；omar 审定轮清理草稿 tab 激活态 + 删 badge focused 态）|
+| `docs/design/05-design-spec.md` | 视觉/动效 token 体系 | ratified v0.11（2026-06-25 ADR-018 涟漪：§2.4.4 中性强调色 + scrim / §2.5 主题三态 / §10.8 三吸收组件契约；前 v0.10 UI 一致性治理）|
 
 ---
 
@@ -61,7 +61,7 @@ related:
 | 路径 | 内容 | 状态 |
 |---|---|---|
 | `docs/design/06-prd.md` | 数据契约 / API / 状态机 / 错误码 | pre-code v0.10（2026-06-17 ADR-017 C3：§8.3 L2 updater 例外指针）|
-| `docs/design/07-features.md` | 56 功能矩阵 S1–S5 + AE + 自动更新 | in-progress v1.1（2026-06-19 ADR-017 涟漪：§3.9 自动更新区 5 功能）|
+| `docs/design/07-features.md` | 65 功能矩阵 S1–S5 + AE + 自动更新 + Promptscape 吸收 | in-progress v1.5（2026-06-25 ADR-018 涟漪：§3.11 Promptscape 吸收区 6 功能；前 v1.4 Scene 话术编辑 / v1.3 UI 减负 / v1.1 自动更新）|
 | `docs/design/08-sitemap.md` | 资产对象树 + 视图导航图 | ratified |
 
 ---
@@ -104,7 +104,7 @@ related:
 
 ---
 
-## §8 ADR 决策记录（16 份）
+## §8 ADR 决策记录（17 份）
 
 | 编号 | 标题 | 状态 |
 |---|---|---|
@@ -124,8 +124,9 @@ related:
 | 013 | alignment-phrases-tab-inclusion（AlignmentPhrases 独立 region + Tab cycle 6 tab-reachable，追认 ADR-012 Phase 3） | Accepted（2026-05-25） |
 | 014 | nspanel-isa-swizzle（NSPanel 子类 override canBecomeKeyWindow + isa-swizzle 取得 borderless key-window 资格，下位于 ADR-008） | Accepted（2026-06-03） |
 | 015 | expose-mcp-write-pipeline（暴露 MCP server 给外部 AI 入库，14 tool + workspace 物理拆 4 crate + drafts staging） | Accepted（2026-05-27） |
-| 016 | choose-dnd-and-resizable-layout（@dnd-kit/react 0.4 区域内拖排 + react-resizable-panels v4 可拖列布局） | Accepted（2026-06-04） |
+| 016 | choose-dnd-and-resizable-layout（@dnd-kit/react 0.4 区域内拖排 + react-resizable-panels v4 可拖列布局；补遺 2026-06-25 任务层 3→2 列 + group id `panorama-2col`，见 ADR-018） | Accepted（2026-06-04） |
 | 017 | enable-auto-update（tauri-plugin-updater + GitHub Releases + Actions 出包，mac 先行；A2 唯一出站豁免边界） | Accepted（2026-06-17） |
+| 018 | absorb-promptscape-design（吸收 Promptscape 设计稿，组合 A1+B1+C1+D+E：保语义色 + 不引 Modifier 右栏 + 改造现有组件 + 接既有 store + 保 prompt-hub 名去头像；三放大决策 3→2 列 / +Header / 省略全局新建） | Accepted（2026-06-25） |
 
 ---
 

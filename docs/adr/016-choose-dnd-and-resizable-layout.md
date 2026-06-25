@@ -205,3 +205,15 @@ related:
 - **被本决策影响的文档**：[[09-tech-stack#§3]]（Accepted 后 +3 依赖）/ [[asset-editing-and-adaptive-layout]] §0 Q7（px 假设校正回流）/ [[05-design-spec]]（px↔% 关系说明）
 - **相关 ADR**：前置 [[002-choose-frontend-framework]]（React 19.2）/ [[009-choose-styling]]（CSS Modules token）/ [[014-nspanel-isa-swizzle]]（key-window 前置）
 - **调研存档**：`docs/research/2026-06-04-resizable-panels.md`
+
+---
+
+## 补遗（2026-06-25，ADR-018 Promptscape 吸收）
+
+> 不改本 ADR 原决策（仍用 react-resizable-panels v4），仅记录列数变更。
+
+[[018-absorb-promptscape-design]] 把任务层从**三列**降为**两列**全景（task | aside）。影响本 ADR 的 resizable group 配置：
+
+- **group id 变更**：`3col` → **`panorama-2col`**。bump id 是为丢弃旧三列布局的 localStorage 缓存（旧比例对两列无意义），用户回落默认两列布局，无损。
+- **列内容重分配**：原三列各自承载内容重排——Macro 收为顶部紧凑横条（脱离 resizable 列）/ aside 列承载 Recent + SOP。
+- **决策归属**：列数 3→2 由 ADR-018 §5「三处放大决策 D1」拍板，以本补遗记录，不另开 ADR、不改本 ADR §4–§6 原文。库选型（v4）与 §2 Status 不变。

@@ -1,0 +1,78 @@
+/* Header — top row of the overlay. Owns the row chrome (bg + bottom hairline +
+ * padding); SearchBar nests as a flex-1 field. Absorbed from the Promptscape
+ * design, translated to project tokens (dark default, no light oklch). */
+
+.header {
+  display: flex;
+  align-items: center;
+  gap: var(--s-3);
+  padding: var(--s-2) var(--s-3_5);
+  background: var(--surface-1);
+  border-bottom: var(--hairline) solid var(--border-1);
+}
+
+.brand {
+  display: flex;
+  align-items: center;
+  gap: var(--s-2_5);
+  flex: 0 0 auto;
+}
+
+/* Brand mark carries the NEUTRAL accent (B2: emphasis surface, not a semantic
+ * layer). --accent / --accent-fg swap with the appearance swatch. */
+.logo {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: var(--s-8);
+  height: var(--s-8);
+  border-radius: var(--r-4);
+  background: var(--accent);
+  color: var(--accent-fg);
+  flex: 0 0 auto;
+}
+
+.titles {
+  display: flex;
+  flex-direction: column;
+  gap: var(--s-0_5);
+}
+
+.title {
+  font: var(--w-600) var(--t-14) / var(--lh-tight) var(--font-sans);
+  letter-spacing: var(--tr-tight);
+  color: var(--fg-1);
+}
+
+.subtitle {
+  font: var(--w-400) var(--t-11) / var(--lh-tight) var(--font-sans);
+  color: var(--fg-3);
+}
+
+.gear {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: var(--h-quickfind);
+  height: var(--h-quickfind);
+  flex: 0 0 auto;
+  border-radius: var(--r-4);
+  border: var(--hairline) solid var(--border-1);
+  background: transparent;
+  color: var(--fg-3);
+  cursor: pointer;
+  appearance: none;
+  transition:
+    background-color var(--d-fast) var(--ease),
+    color var(--d-fast) var(--ease);
+}
+
+.gear:hover {
+  background: var(--surface-2);
+  color: var(--fg-1);
+}
+
+.gear:focus-visible {
+  outline: var(--border-thick) solid var(--protocol);
+  outline-offset: var(--hairline);
+}
