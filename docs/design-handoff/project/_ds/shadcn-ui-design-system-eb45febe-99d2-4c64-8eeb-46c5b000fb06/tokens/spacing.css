@@ -1,0 +1,20 @@
+/* ──────────────────────────────────────────────────────────────────────────
+   Spacing — Tailwind v4 base unit (0.25rem). Multiply by step.
+   e.g. gap of 4 = calc(var(--spacing) * 4) = 1rem.
+   ────────────────────────────────────────────────────────────────────────── */
+
+:root {
+  --spacing: 0.25rem;
+
+  --space-0: 0px;
+  --space-1: calc(var(--spacing) * 1);   /* 4px  */
+  --space-2: calc(var(--spacing) * 2);   /* 8px  */
+  --space-3: calc(var(--spacing) * 3);   /* 12px */
+  --space-4: calc(var(--spacing) * 4);   /* 16px */
+  --space-5: calc(var(--spacing) * 5);   /* 20px */
+  --space-6: calc(var(--spacing) * 6);   /* 24px */
+  --space-8: calc(var(--spacing) * 8);   /* 32px */
+  --space-10: calc(var(--spacing) * 10); /* 40px */
+  --space-12: calc(var(--spacing) * 12); /* 48px */
+  --space-16: calc(var(--spacing) * 16); /* 64px */
+}

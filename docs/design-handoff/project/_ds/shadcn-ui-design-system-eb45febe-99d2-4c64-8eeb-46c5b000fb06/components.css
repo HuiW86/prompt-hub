@@ -1,0 +1,325 @@
+/* ──────────────────────────────────────────────────────────────────────────
+   Component styles — shadcn/ui (new-york) recreated as plain CSS over tokens.
+   No Tailwind required by consumers. Classes are prefixed `ui-`.
+   ────────────────────────────────────────────────────────────────────────── */
+
+/* ============================ Button ============================ */
+.ui-btn {
+  display: inline-flex;
+  flex-shrink: 0;
+  align-items: center;
+  justify-content: center;
+  gap: var(--space-2);
+  white-space: nowrap;
+  border-radius: var(--radius-md);
+  border: 1px solid transparent;
+  font-family: var(--font-sans);
+  font-size: var(--text-sm);
+  line-height: var(--text-sm--line-height);
+  font-weight: var(--font-weight-medium);
+  height: 2.25rem;            /* h-9 */
+  padding: 0 var(--space-4);  /* px-4 */
+  cursor: pointer;
+  outline: none;
+  transition: background-color .15s, color .15s, border-color .15s, box-shadow .15s, opacity .15s;
+  user-select: none;
+}
+.ui-btn:focus-visible {
+  border-color: var(--ring);
+  box-shadow: 0 0 0 3px color-mix(in oklab, var(--ring) 50%, transparent);
+}
+.ui-btn:disabled { pointer-events: none; opacity: .5; }
+.ui-btn > svg { width: 1rem; height: 1rem; flex-shrink: 0; pointer-events: none; }
+
+/* variants */
+.ui-btn--default { background: var(--primary); color: var(--primary-foreground); }
+.ui-btn--default:hover { background: color-mix(in oklab, var(--primary) 90%, transparent); }
+
+.ui-btn--destructive { background: var(--destructive); color: #fff; }
+.ui-btn--destructive:hover { background: color-mix(in oklab, var(--destructive) 90%, transparent); }
+
+.ui-btn--outline {
+  background: var(--background);
+  border-color: var(--border);
+  color: var(--foreground);
+  box-shadow: var(--shadow-xs);
+}
+.ui-btn--outline:hover { background: var(--accent); color: var(--accent-foreground); }
+
+.ui-btn--secondary { background: var(--secondary); color: var(--secondary-foreground); }
+.ui-btn--secondary:hover { background: color-mix(in oklab, var(--secondary) 80%, transparent); }
+
+.ui-btn--ghost { background: transparent; color: var(--foreground); }
+.ui-btn--ghost:hover { background: var(--accent); color: var(--accent-foreground); }
+
+.ui-btn--link { background: transparent; color: var(--primary); text-underline-offset: 4px; }
+.ui-btn--link:hover { text-decoration: underline; }
+
+/* sizes */
+.ui-btn--xs  { height: 1.5rem;  gap: var(--space-1); padding: 0 var(--space-2); font-size: var(--text-xs); }
+.ui-btn--xs > svg { width: .75rem; height: .75rem; }
+.ui-btn--sm  { height: 2rem;    gap: 6px;            padding: 0 var(--space-3); }
+.ui-btn--lg  { height: 2.5rem;  padding: 0 var(--space-6); }
+.ui-btn--icon    { width: 2.25rem; height: 2.25rem; padding: 0; }
+.ui-btn--icon-sm { width: 2rem;    height: 2rem;    padding: 0; }
+.ui-btn--icon-lg { width: 2.5rem;  height: 2.5rem;  padding: 0; }
+
+/* ============================ Badge ============================ */
+.ui-badge {
+  display: inline-flex;
+  width: fit-content;
+  flex-shrink: 0;
+  align-items: center;
+  justify-content: center;
+  gap: var(--space-1);
+  overflow: hidden;
+  white-space: nowrap;
+  border: 1px solid transparent;
+  border-radius: var(--radius-full);
+  padding: 2px var(--space-2);
+  font-family: var(--font-sans);
+  font-size: var(--text-xs);
+  line-height: var(--text-xs--line-height);
+  font-weight: var(--font-weight-medium);
+}
+.ui-badge > svg { width: .75rem; height: .75rem; }
+.ui-badge--default     { background: var(--primary); color: var(--primary-foreground); }
+.ui-badge--secondary   { background: var(--secondary); color: var(--secondary-foreground); }
+.ui-badge--destructive { background: var(--destructive); color: #fff; }
+.ui-badge--outline     { border-color: var(--border); color: var(--foreground); }
+
+/* ============================ Input / Textarea ============================ */
+.ui-input,
+.ui-textarea {
+  display: block;
+  width: 100%;
+  min-width: 0;
+  border: 1px solid var(--input);
+  border-radius: var(--radius-md);
+  background: transparent;
+  font-family: var(--font-sans);
+  font-size: var(--text-sm);
+  line-height: var(--text-sm--line-height);
+  color: var(--foreground);
+  box-shadow: var(--shadow-xs);
+  outline: none;
+  transition: color .15s, box-shadow .15s, border-color .15s;
+}
+.ui-input { height: 2.25rem; padding: var(--space-1) var(--space-3); }
+.ui-textarea { min-height: 4rem; padding: var(--space-2) var(--space-3); resize: vertical; }
+.ui-input::placeholder,
+.ui-textarea::placeholder { color: var(--muted-foreground); }
+.ui-input:focus-visible,
+.ui-textarea:focus-visible {
+  border-color: var(--ring);
+  box-shadow: 0 0 0 3px color-mix(in oklab, var(--ring) 50%, transparent);
+}
+.ui-input:disabled,
+.ui-textarea:disabled { pointer-events: none; cursor: not-allowed; opacity: .5; }
+.ui-input[aria-invalid="true"],
+.ui-textarea[aria-invalid="true"] {
+  border-color: var(--destructive);
+  box-shadow: 0 0 0 3px color-mix(in oklab, var(--destructive) 20%, transparent);
+}
+
+/* ============================ Label ============================ */
+.ui-label {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-2);
+  font-family: var(--font-sans);
+  font-size: var(--text-sm);
+  line-height: 1;
+  font-weight: var(--font-weight-medium);
+  color: var(--foreground);
+  user-select: none;
+}
+
+/* ============================ Checkbox ============================ */
+.ui-checkbox {
+  appearance: none;
+  -webkit-appearance: none;
+  flex-shrink: 0;
+  width: 1rem;
+  height: 1rem;
+  border: 1px solid var(--input);
+  border-radius: 4px;
+  background: transparent;
+  box-shadow: var(--shadow-xs);
+  cursor: pointer;
+  outline: none;
+  position: relative;
+  transition: background-color .15s, border-color .15s, box-shadow .15s;
+}
+.ui-checkbox:focus-visible {
+  border-color: var(--ring);
+  box-shadow: 0 0 0 3px color-mix(in oklab, var(--ring) 50%, transparent);
+}
+.ui-checkbox:checked {
+  background: var(--primary);
+  border-color: var(--primary);
+}
+.ui-checkbox:checked::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background: var(--primary-foreground);
+  -webkit-mask: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23000' stroke-width='3.5' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M20 6 9 17l-5-5'/%3E%3C/svg%3E") center / 70% no-repeat;
+          mask: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23000' stroke-width='3.5' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M20 6 9 17l-5-5'/%3E%3C/svg%3E") center / 70% no-repeat;
+}
+.ui-checkbox:disabled { cursor: not-allowed; opacity: .5; }
+
+/* ============================ Switch ============================ */
+.ui-switch {
+  appearance: none;
+  -webkit-appearance: none;
+  position: relative;
+  flex-shrink: 0;
+  display: inline-flex;
+  align-items: center;
+  width: 2rem;            /* w-8 */
+  height: 1.15rem;
+  border: 1px solid transparent;
+  border-radius: var(--radius-full);
+  background: var(--input);
+  box-shadow: var(--shadow-xs);
+  cursor: pointer;
+  outline: none;
+  transition: background-color .15s, box-shadow .15s;
+}
+.ui-switch::after {
+  content: "";
+  position: absolute;
+  left: 2px;
+  width: 1rem;
+  height: 1rem;
+  border-radius: var(--radius-full);
+  background: var(--background);
+  transition: transform .15s;
+}
+.ui-switch:checked { background: var(--primary); }
+.ui-switch:checked::after { transform: translateX(calc(2rem - 1rem - 4px)); }
+.ui-switch:focus-visible {
+  border-color: var(--ring);
+  box-shadow: 0 0 0 3px color-mix(in oklab, var(--ring) 50%, transparent);
+}
+.ui-switch:disabled { cursor: not-allowed; opacity: .5; }
+
+/* ============================ Card ============================ */
+.ui-card {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-6);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-xl);
+  background: var(--card);
+  color: var(--card-foreground);
+  padding: var(--space-6) 0;
+  box-shadow: var(--shadow-sm);
+}
+.ui-card__header { display: grid; gap: var(--space-2); padding: 0 var(--space-6); }
+.ui-card__title { font-weight: var(--font-weight-semibold); line-height: 1; }
+.ui-card__description { font-size: var(--text-sm); color: var(--muted-foreground); }
+.ui-card__content { padding: 0 var(--space-6); }
+.ui-card__footer { display: flex; align-items: center; padding: 0 var(--space-6); }
+
+/* ============================ Avatar ============================ */
+.ui-avatar {
+  position: relative;
+  display: inline-flex;
+  flex-shrink: 0;
+  width: 2rem;
+  height: 2rem;
+  overflow: hidden;
+  border-radius: var(--radius-full);
+  user-select: none;
+}
+.ui-avatar--sm { width: 1.5rem; height: 1.5rem; }
+.ui-avatar--lg { width: 2.5rem; height: 2.5rem; }
+.ui-avatar img { width: 100%; height: 100%; object-fit: cover; aspect-ratio: 1; }
+.ui-avatar__fallback {
+  display: flex;
+  width: 100%;
+  height: 100%;
+  align-items: center;
+  justify-content: center;
+  background: var(--muted);
+  color: var(--muted-foreground);
+  font-size: var(--text-sm);
+}
+
+/* ============================ Alert ============================ */
+.ui-alert {
+  position: relative;
+  display: grid;
+  grid-template-columns: 0 1fr;
+  width: 100%;
+  gap: 2px 0;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-lg);
+  background: var(--card);
+  color: var(--card-foreground);
+  padding: var(--space-3) var(--space-4);
+  font-size: var(--text-sm);
+}
+.ui-alert:has(> svg) { grid-template-columns: calc(var(--spacing) * 4) 1fr; column-gap: var(--space-3); }
+.ui-alert > svg { width: 1rem; height: 1rem; transform: translateY(2px); color: currentColor; }
+.ui-alert__title { grid-column-start: 2; min-height: 1rem; font-weight: var(--font-weight-medium); letter-spacing: var(--tracking-tight); }
+.ui-alert__description { grid-column-start: 2; font-size: var(--text-sm); color: var(--muted-foreground); }
+.ui-alert--destructive { color: var(--destructive); }
+.ui-alert--destructive .ui-alert__description { color: color-mix(in oklab, var(--destructive) 90%, transparent); }
+
+/* ============================ Separator ============================ */
+.ui-separator { flex-shrink: 0; background: var(--border); border: none; }
+.ui-separator--horizontal { width: 100%; height: 1px; }
+.ui-separator--vertical { width: 1px; height: 100%; align-self: stretch; }
+
+/* ============================ Tabs ============================ */
+.ui-tabs { display: flex; flex-direction: column; gap: var(--space-2); }
+.ui-tabs__list {
+  display: inline-flex;
+  width: fit-content;
+  align-items: center;
+  justify-content: center;
+  height: 2.25rem;
+  padding: 3px;
+  border-radius: var(--radius-lg);
+  background: var(--muted);
+  color: var(--muted-foreground);
+}
+.ui-tabs__trigger {
+  display: inline-flex;
+  flex: 1;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  height: calc(100% - 1px);
+  padding: var(--space-1) var(--space-2);
+  border: 1px solid transparent;
+  border-radius: var(--radius-md);
+  background: transparent;
+  font-family: var(--font-sans);
+  font-size: var(--text-sm);
+  font-weight: var(--font-weight-medium);
+  color: color-mix(in oklab, var(--foreground) 60%, transparent);
+  white-space: nowrap;
+  cursor: pointer;
+  outline: none;
+  transition: color .15s, background-color .15s, box-shadow .15s;
+}
+.ui-tabs__trigger:hover { color: var(--foreground); }
+.ui-tabs__trigger[data-state="active"],
+.ui-tabs__trigger[aria-selected="true"] {
+  background: var(--background);
+  color: var(--foreground);
+  box-shadow: var(--shadow-sm);
+}
+.ui-tabs__trigger > svg { width: 1rem; height: 1rem; }
+
+/* ============================ Skeleton ============================ */
+.ui-skeleton {
+  background: var(--accent);
+  border-radius: var(--radius-md);
+  animation: ui-pulse 1.5s ease-in-out infinite;
+}
+@keyframes ui-pulse { 50% { opacity: .5; } }

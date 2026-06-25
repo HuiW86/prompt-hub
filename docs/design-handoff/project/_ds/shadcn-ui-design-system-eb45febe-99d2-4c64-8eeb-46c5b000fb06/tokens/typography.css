@@ -1,0 +1,36 @@
+/* ──────────────────────────────────────────────────────────────────────────
+   Typography — Geist sans, Geist Mono. Tailwind v4 type scale.
+   ────────────────────────────────────────────────────────────────────────── */
+
+:root {
+  /* Font families */
+  --font-sans: "Geist", ui-sans-serif, system-ui, -apple-system, "Segoe UI",
+    Roboto, Helvetica, Arial, sans-serif;
+  --font-heading: var(--font-sans);
+  --font-mono: "Geist Mono", ui-monospace, SFMono-Regular, Menlo, Monaco,
+    Consolas, "Liberation Mono", monospace;
+
+  /* Size scale (size / line-height) */
+  --text-xs: 0.75rem;     --text-xs--line-height: 1rem;
+  --text-sm: 0.875rem;    --text-sm--line-height: 1.25rem;
+  --text-base: 1rem;      --text-base--line-height: 1.5rem;
+  --text-lg: 1.125rem;    --text-lg--line-height: 1.75rem;
+  --text-xl: 1.25rem;     --text-xl--line-height: 1.75rem;
+  --text-2xl: 1.5rem;     --text-2xl--line-height: 2rem;
+  --text-3xl: 1.875rem;   --text-3xl--line-height: 2.25rem;
+  --text-4xl: 2.25rem;    --text-4xl--line-height: 2.5rem;
+  --text-5xl: 3rem;       --text-5xl--line-height: 1;
+  --text-6xl: 3.75rem;    --text-6xl--line-height: 1;
+
+  /* Weights */
+  --font-weight-normal: 400;
+  --font-weight-medium: 500;
+  --font-weight-semibold: 600;
+  --font-weight-bold: 700;
+
+  /* Tracking */
+  --tracking-tighter: -0.05em;
+  --tracking-tight: -0.025em;
+  --tracking-normal: 0em;
+  --tracking-wide: 0.025em;
+}

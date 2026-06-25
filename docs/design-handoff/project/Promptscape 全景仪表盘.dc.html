@@ -1,0 +1,782 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+  <link rel="stylesheet" href="_ds/shadcn-ui-design-system-eb45febe-99d2-4c64-8eeb-46c5b000fb06/fonts/fonts.css">
+  <link rel="stylesheet" href="_ds/shadcn-ui-design-system-eb45febe-99d2-4c64-8eeb-46c5b000fb06/tokens/colors.css">
+  <link rel="stylesheet" href="_ds/shadcn-ui-design-system-eb45febe-99d2-4c64-8eeb-46c5b000fb06/tokens/typography.css">
+  <link rel="stylesheet" href="_ds/shadcn-ui-design-system-eb45febe-99d2-4c64-8eeb-46c5b000fb06/tokens/spacing.css">
+  <link rel="stylesheet" href="_ds/shadcn-ui-design-system-eb45febe-99d2-4c64-8eeb-46c5b000fb06/tokens/radius.css">
+  <link rel="stylesheet" href="_ds/shadcn-ui-design-system-eb45febe-99d2-4c64-8eeb-46c5b000fb06/tokens/shadows.css">
+  <link rel="stylesheet" href="_ds/shadcn-ui-design-system-eb45febe-99d2-4c64-8eeb-46c5b000fb06/components.css">
+  <link rel="stylesheet" href="_ds/shadcn-ui-design-system-eb45febe-99d2-4c64-8eeb-46c5b000fb06/styles.css">
+  <script src="_ds/shadcn-ui-design-system-eb45febe-99d2-4c64-8eeb-46c5b000fb06/_ds_bundle.js"></script>
+  <style>
+    *{box-sizing:border-box;}
+    body{margin:0;background:oklch(0.97 0 0);}
+    button{font-family:inherit;}
+    ::-webkit-scrollbar{width:8px;height:8px;}
+    ::-webkit-scrollbar-thumb{background:oklch(0.85 0 0);border-radius:4px;}
+    @keyframes toastIn{from{opacity:0;transform:translateX(-50%) translateY(8px);}to{opacity:1;transform:translateX(-50%) translateY(0);}}
+    @keyframes spin{to{transform:rotate(360deg);}}
+  </style>
+</helmet>
+
+<div ref="{{ rootRef }}" style="--accent:oklch(0.205 0 0);--brand:oklch(0.205 0 0);width:1440px;height:940px;position:relative;background:var(--muted);font-family:var(--font-sans);color:var(--foreground);-webkit-font-smoothing:antialiased;overflow:hidden;display:flex;flex-direction:column;">
+
+  <!-- ════ 搜索区 / 顶栏 ════ -->
+  <header style="display:flex;align-items:center;gap:20px;padding:11px 22px;background:#fff;border-bottom:1px solid var(--border);flex:none;">
+    <div style="display:flex;align-items:center;gap:11px;flex:none;">
+      <div style="width:32px;height:32px;border-radius:9px;background:var(--brand);color:#fff;display:flex;align-items:center;justify-content:center;">{{ logoIcon }}</div>
+      <div>
+        <div style="font-size:15px;font-weight:600;letter-spacing:-0.01em;line-height:1.15;">Promptscape</div>
+        <div style="font-size:11px;color:var(--muted-foreground);line-height:1.3;">提示词资产 · 全景仪表盘</div>
+      </div>
+    </div>
+    <div style="flex:1;display:flex;align-items:center;gap:10px;height:38px;padding:0 12px;background:var(--muted);border:1px solid var(--border);border-radius:10px;color:var(--muted-foreground);cursor:text;">
+      <span style="display:inline-flex;">{{ searchIcon }}</span>
+      <span style="flex:1;font-size:13px;">搜索全部资产 — Modifier、Composition、Macro、对齐话术…</span>
+      <kbd style="display:inline-flex;align-items:center;height:20px;padding:0 6px;border-radius:5px;border:1px solid var(--border);background:#fff;font-size:11px;font-family:var(--font-mono);color:var(--muted-foreground);">⌘K</kbd>
+    </div>
+    <div style="display:flex;align-items:center;gap:10px;flex:none;">
+      <button onClick="{{ openSettings }}" title="设置 (⌘,)" style="width:36px;height:36px;border-radius:9px;background:transparent;border:1px solid var(--border);color:var(--muted-foreground);display:flex;align-items:center;justify-content:center;cursor:pointer;transition:all .12s;" style-hover="background:var(--muted);color:var(--foreground);">{{ gearIcon }}</button>
+      <button style="display:flex;align-items:center;gap:6px;height:36px;padding:0 14px;border-radius:9px;background:var(--accent);color:#fff;border:none;font-size:13px;font-weight:500;cursor:pointer;transition:opacity .12s;" style-hover="opacity:0.9">{{ plusIcon }} 新建</button>
+      <div style="width:34px;height:34px;border-radius:999px;background:var(--muted);border:1px solid var(--border);display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:600;color:var(--muted-foreground);">ZH</div>
+    </div>
+  </header>
+
+  <!-- ════ 协议层:相位带 + 对齐话术 ════ -->
+  <section style="margin:14px 22px 0;background:oklch(0.165 0 0);border-radius:14px;padding:14px 18px 16px;color:oklch(0.985 0 0);flex:none;">
+    <div style="display:flex;align-items:center;gap:14px;margin-bottom:13px;">
+      <span style="display:inline-flex;align-items:center;gap:6px;padding:4px 11px;border-radius:999px;background:oklch(1 0 0 / 0.1);font-size:11px;font-weight:600;letter-spacing:0.02em;flex:none;">{{ protoIcon }} 协议层</span>
+      <div style="width:1px;height:18px;background:oklch(1 0 0 / 0.14);flex:none;"></div>
+      <div style="display:flex;gap:7px;flex-wrap:wrap;flex:1;">
+        {{ phaseBand }}
+      </div>
+    </div>
+
+    <sc-if value="{{ hasPhrases }}" hint-placeholder-val="{{ true }}">
+      <div style="display:flex;gap:9px;flex-wrap:wrap;">
+        <sc-for list="{{ alignPhrases }}" as="ph" hint-placeholder-count="3">
+          <button onClick="{{ ph.onCopy }}" style="display:flex;align-items:center;gap:9px;padding:9px 14px;border-radius:9px;background:oklch(1 0 0 / 0.05);border:1px solid oklch(1 0 0 / 0.14);color:oklch(0.92 0 0);font-size:13px;cursor:pointer;text-align:left;transition:all .12s;" style-hover="background:oklch(1 0 0 / 0.12);border-color:oklch(1 0 0 / 0.32);">
+            <span style="opacity:0.45;display:inline-flex;flex:none;">{{ copyIconSm }}</span>
+            {{ ph.text }}
+          </button>
+        </sc-for>
+      </div>
+    </sc-if>
+    <sc-if value="{{ isEmpty }}" hint-placeholder-val="{{ false }}">
+      <div style="display:flex;align-items:center;gap:10px;padding:13px;border:1px dashed oklch(1 0 0 / 0.18);border-radius:10px;color:oklch(0.6 0 0);font-size:13px;">
+        <span style="display:inline-flex;opacity:0.7;">{{ plusIconLt }}</span> 这个相位下还没有对齐话术 — 添加一条来设定协作模式
+      </div>
+    </sc-if>
+  </section>
+
+  <!-- ════ 任务层 ════ -->
+  <div style="flex:1;min-height:0;display:flex;gap:16px;padding:14px 22px;">
+
+    <!-- 左列 -->
+    <div style="flex:1;min-width:0;display:flex;flex-direction:column;gap:13px;">
+
+      <div style="display:flex;align-items:center;gap:10px;flex:none;">
+        <span style="display:inline-flex;align-items:center;gap:6px;padding:4px 11px;border-radius:999px;background:oklch(0.205 0 0);color:#fff;font-size:11px;font-weight:600;letter-spacing:0.02em;">{{ taskIcon }} 任务层</span>
+      </div>
+
+      <!-- Macro 快捷区(紧凑工具条) -->
+      <section style="flex:none;">
+        <div style="margin-bottom:9px;">
+          <span style="font-size:13px;font-weight:600;">Macro · 高频一键入口</span>
+        </div>
+        <sc-if value="{{ notEmpty }}" hint-placeholder-val="{{ true }}">
+          <div style="display:flex;gap:9px;">
+            <sc-for list="{{ macros }}" as="m" hint-placeholder-count="5">
+              <button onClick="{{ m.onClick }}" title="{{ m.chainText }}" style="flex:1;min-width:0;display:flex;align-items:center;gap:9px;height:44px;padding:0 12px;text-align:left;background:#fff;border:1px solid var(--border);border-radius:10px;cursor:pointer;box-shadow:0 1px 2px rgba(0,0,0,0.04);transition:all .12s;" style-hover="border-color:oklch(0.7 0 0);box-shadow:0 3px 9px rgba(0,0,0,0.08);transform:translateY(-1px);">
+                <span style="width:26px;height:26px;border-radius:7px;background:var(--brand);color:#fff;display:flex;align-items:center;justify-content:center;flex:none;">{{ m.icon }}</span>
+                <span style="flex:1;min-width:0;font-size:13px;font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">{{ m.name }}</span>
+                <span style="font-size:11px;color:var(--muted-foreground);font-family:var(--font-mono);flex:none;">{{ m.uses }}</span>
+              </button>
+            </sc-for>
+          </div>
+        </sc-if>
+        <sc-if value="{{ isEmpty }}" hint-placeholder-val="{{ false }}">
+          <div style="background:#fff;border:1px dashed var(--border);border-radius:10px;padding:13px 16px;display:flex;align-items:center;gap:14px;">
+            <div style="width:34px;height:34px;border-radius:9px;background:var(--muted);border:1px solid var(--border);display:flex;align-items:center;justify-content:center;color:oklch(0.45 0 0);flex:none;">{{ zapBig }}</div>
+            <div style="flex:1;">
+              <div style="font-size:13px;font-weight:600;">还没有 Macro</div>
+              <div style="font-size:12px;color:var(--muted-foreground);margin-top:1px;">把高频 Composition 固化成一键入口,常用动作一步直达</div>
+            </div>
+            <button style="display:flex;align-items:center;gap:6px;height:34px;padding:0 13px;border-radius:9px;background:#fff;border:1px solid var(--border);font-size:13px;font-weight:500;cursor:pointer;color:var(--foreground);flex:none;" style-hover="background:var(--muted);">{{ plusIcon }} 新建 Macro</button>
+          </div>
+        </sc-if>
+      </section>
+
+      <!-- Scene 全景区(Tab) -->
+      <section style="flex:1;min-height:0;display:flex;flex-direction:column;">
+        <div style="margin-bottom:9px;flex:none;">
+          <span style="font-size:13px;font-weight:600;">Scene · 场景全景</span>
+        </div>
+
+        <sc-if value="{{ notEmpty }}" hint-placeholder-val="{{ true }}">
+          <div style="display:flex;gap:3px;background:var(--muted);border:1px solid var(--border);border-radius:11px;padding:3px;flex:none;margin-bottom:11px;">
+            {{ sceneTabsEl }}
+          </div>
+        </sc-if>
+
+        <div style="flex:1;min-height:0;position:relative;">
+          <sc-if value="{{ notEmpty }}" hint-placeholder-val="{{ true }}">
+            <div style="position:absolute;inset:0;background:#fff;border:1px solid var(--border);border-radius:14px;box-shadow:0 1px 2px rgba(0,0,0,0.04);display:flex;flex-direction:column;overflow:hidden;">
+              <div style="display:flex;align-items:center;gap:12px;padding:13px 18px;border-bottom:1px solid var(--border);background:var(--muted);flex:none;">
+                <div style="width:38px;height:38px;border-radius:10px;background:#fff;border:1px solid var(--border);display:flex;align-items:center;justify-content:center;color:oklch(0.25 0 0);flex:none;">{{ activeScene.icon }}</div>
+                <div style="flex:1;min-width:0;">
+                  <div style="font-size:16px;font-weight:600;letter-spacing:-0.01em;">{{ activeScene.name }}</div>
+                  <div style="font-size:12px;color:var(--muted-foreground);margin-top:1px;">{{ activeScene.desc }} · {{ activeScene.count }} 个 Composition</div>
+                </div>
+                <span style="display:inline-flex;align-items:center;gap:5px;font-size:11px;color:var(--muted-foreground);flex:none;">{{ layersMini }} {{ activeScene.subCount }} 个子阶段</span>
+              </div>
+              <div style="flex:1;min-height:0;overflow:auto;padding:16px 18px;display:grid;grid-template-columns:repeat(4,1fr);gap:16px;align-content:start;">
+                <sc-for list="{{ activeScene.sub }}" as="g" hint-placeholder-count="4">
+                  <div style="display:flex;flex-direction:column;gap:9px;">
+                    <div style="display:flex;align-items:center;gap:8px;padding-bottom:8px;border-bottom:1px solid var(--border);">
+                      <span style="font-size:11px;font-weight:600;font-family:var(--font-mono);color:var(--muted-foreground);">{{ g.idx }}</span>
+                      <span style="font-size:13px;font-weight:600;">{{ g.name }}</span>
+                    </div>
+                    <sc-for list="{{ g.scripts }}" as="s" hint-placeholder-count="2">
+                      <button onClick="{{ s.onCopy }}" style="text-align:left;background:var(--muted);border:1px solid var(--border);border-radius:9px;padding:10px;font-size:12px;line-height:1.5;color:var(--foreground);cursor:pointer;display:flex;gap:7px;transition:all .12s;" style-hover="background:#fff;border-color:oklch(0.7 0 0);box-shadow:0 2px 8px rgba(0,0,0,0.06);">
+                        <span style="opacity:0.4;flex:none;margin-top:1px;">{{ copyIconSm }}</span>
+                        <span>{{ s.text }}</span>
+                      </button>
+                    </sc-for>
+                  </div>
+                </sc-for>
+              </div>
+            </div>
+          </sc-if>
+
+          <sc-if value="{{ isEmpty }}" hint-placeholder-val="{{ false }}">
+            <div style="position:absolute;inset:0;background:#fff;border:1px dashed var(--border);border-radius:14px;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:13px;text-align:center;">
+              <div style="width:54px;height:54px;border-radius:14px;background:var(--muted);border:1px solid var(--border);display:flex;align-items:center;justify-content:center;color:oklch(0.45 0 0);">{{ folderBig }}</div>
+              <div>
+                <div style="font-size:16px;font-weight:600;">还没有场景分类</div>
+                <div style="font-size:13px;color:var(--muted-foreground);margin-top:4px;max-width:380px;">创建正交的场景分类,把子阶段与场景话术组织成可切换的标签全景</div>
+              </div>
+              <button style="display:flex;align-items:center;gap:6px;height:38px;padding:0 16px;border-radius:9px;background:var(--accent);color:#fff;border:none;font-size:13px;font-weight:500;cursor:pointer;" style-hover="opacity:0.9">{{ plusIcon }} 创建第一个场景</button>
+            </div>
+          </sc-if>
+        </div>
+      </section>
+    </div>
+
+    <!-- 右列 -->
+    <aside style="width:342px;flex:none;display:flex;flex-direction:column;gap:13px;min-height:0;">
+
+      <!-- Modifier 原子库 -->
+      <section style="flex:none;">
+        <div style="margin-bottom:9px;">
+          <span style="font-size:13px;font-weight:600;">Modifier · 原子方法论</span>
+        </div>
+        <sc-if value="{{ notEmpty }}" hint-placeholder-val="{{ true }}">
+          <div style="background:#fff;border:1px solid var(--border);border-radius:13px;box-shadow:0 1px 2px rgba(0,0,0,0.04);padding:13px;display:flex;flex-direction:column;gap:11px;">
+            <sc-for list="{{ modifierGroups }}" as="grp" hint-placeholder-count="4">
+              <div>
+                <div style="display:flex;align-items:center;gap:6px;margin-bottom:7px;">
+                  <span style="width:5px;height:5px;border-radius:999px;background:oklch(0.3 0 0);flex:none;"></span>
+                  <span style="font-size:11px;font-weight:600;color:oklch(0.35 0 0);letter-spacing:0.02em;">{{ grp.name }}</span>
+                  <span style="font-size:10px;color:var(--muted-foreground);font-family:var(--font-mono);">{{ grp.count }}</span>
+                </div>
+                <div style="display:flex;flex-wrap:wrap;gap:6px;">
+                  <sc-for list="{{ grp.items }}" as="it" hint-placeholder-count="3">
+                    <button onClick="{{ it.onCopy }}" style="font-size:12px;padding:5px 10px;border-radius:7px;background:var(--muted);border:1px solid var(--border);color:var(--foreground);cursor:pointer;transition:all .12s;" style-hover="background:#fff;border-color:oklch(0.7 0 0);box-shadow:0 2px 6px rgba(0,0,0,0.06);">{{ it.name }}</button>
+                  </sc-for>
+                </div>
+              </div>
+            </sc-for>
+          </div>
+        </sc-if>
+        <sc-if value="{{ isEmpty }}" hint-placeholder-val="{{ false }}">
+          <div style="background:#fff;border:1px dashed var(--border);border-radius:13px;padding:20px;text-align:center;color:var(--muted-foreground);font-size:13px;">
+            还没有 Modifier — 原子方法论动作会按 4 组在这里展开
+          </div>
+        </sc-if>
+      </section>
+
+      <!-- 最近使用区 -->
+      <section style="flex:1;min-height:0;display:flex;flex-direction:column;">
+        <div style="margin-bottom:9px;flex:none;">
+          <span style="font-size:13px;font-weight:600;">最近使用</span>
+        </div>
+        <div style="flex:1;min-height:0;position:relative;">
+          <sc-if value="{{ notEmpty }}" hint-placeholder-val="{{ true }}">
+            <div style="position:absolute;inset:0;background:#fff;border:1px solid var(--border);border-radius:13px;box-shadow:0 1px 2px rgba(0,0,0,0.04);overflow:auto;">
+              <sc-for list="{{ recents }}" as="r" hint-placeholder-count="6">
+                <button onClick="{{ r.onCopy }}" style="width:100%;text-align:left;display:flex;align-items:center;gap:10px;padding:11px 14px;border:none;border-bottom:1px solid var(--border);background:#fff;cursor:pointer;transition:background .12s;" style-hover="background:var(--muted);">
+                  <sc-if value="{{ r.isProtocol }}" hint-placeholder-val="{{ false }}">
+                    <span style="display:inline-flex;align-items:center;padding:3px 7px;border-radius:6px;font-size:10px;font-weight:600;flex:none;font-family:var(--font-mono);background:oklch(0.205 0 0);color:#fff;">{{ r.type }}</span>
+                  </sc-if>
+                  <sc-if value="{{ r.isTask }}" hint-placeholder-val="{{ true }}">
+                    <span style="display:inline-flex;align-items:center;padding:3px 7px;border-radius:6px;font-size:10px;font-weight:600;flex:none;font-family:var(--font-mono);background:var(--muted);color:var(--muted-foreground);border:1px solid var(--border);">{{ r.type }}</span>
+                  </sc-if>
+                  <span style="flex:1;min-width:0;font-size:13px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">{{ r.name }}</span>
+                  <span style="font-size:11px;color:var(--muted-foreground);flex:none;">{{ r.time }}</span>
+                </button>
+              </sc-for>
+            </div>
+          </sc-if>
+          <sc-if value="{{ isEmpty }}" hint-placeholder-val="{{ false }}">
+            <div style="position:absolute;inset:0;background:#fff;border:1px dashed var(--border);border-radius:13px;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:8px;color:var(--muted-foreground);font-size:13px;">
+              <span style="opacity:0.6;">{{ clockIcon }}</span>
+              用过的资产会按频率在这里浮现
+            </div>
+          </sc-if>
+        </div>
+      </section>
+    </aside>
+  </div>
+
+  <!-- ════ 底栏:操作提示 + 演示切换 ════ -->
+  <footer style="flex:none;height:46px;border-top:1px solid var(--border);background:#fff;display:flex;align-items:center;justify-content:space-between;padding:0 22px;">
+    <div style="display:flex;align-items:center;gap:8px;font-size:12px;color:var(--muted-foreground);">
+      <span style="display:inline-flex;opacity:0.6;">{{ copyIconSm }}</span>
+      点击任意资产即复制
+    </div>
+    <div style="display:flex;align-items:center;gap:9px;">
+      <span style="font-size:11px;color:var(--muted-foreground);font-weight:600;letter-spacing:0.04em;">演示状态</span>
+      <div style="display:flex;align-items:center;gap:3px;background:var(--muted);border:1px solid var(--border);border-radius:9px;padding:3px;">
+        <sc-if value="{{ demoIsPop }}" hint-placeholder-val="{{ true }}">
+          <button style="padding:5px 12px;border-radius:6px;font-size:13px;font-weight:600;cursor:pointer;background:#fff;color:var(--foreground);border:none;box-shadow:0 1px 2px rgba(0,0,0,0.08);">已填充</button>
+        </sc-if>
+        <sc-if value="{{ demoNotPop }}" hint-placeholder-val="{{ false }}">
+          <button onClick="{{ demoPop }}" style="padding:5px 12px;border-radius:6px;font-size:13px;font-weight:500;cursor:pointer;background:transparent;color:var(--muted-foreground);border:none;">已填充</button>
+        </sc-if>
+        <sc-if value="{{ demoIsEmpty }}" hint-placeholder-val="{{ false }}">
+          <button style="padding:5px 12px;border-radius:6px;font-size:13px;font-weight:600;cursor:pointer;background:#fff;color:var(--foreground);border:none;box-shadow:0 1px 2px rgba(0,0,0,0.08);">空状态</button>
+        </sc-if>
+        <sc-if value="{{ demoNotEmpty }}" hint-placeholder-val="{{ true }}">
+          <button onClick="{{ demoEmpty }}" style="padding:5px 12px;border-radius:6px;font-size:13px;font-weight:500;cursor:pointer;background:transparent;color:var(--muted-foreground);border:none;">空状态</button>
+        </sc-if>
+      </div>
+    </div>
+  </footer>
+
+  <!-- ════ 设置 / 更新 弹窗 ════ -->
+  <sc-if value="{{ settingsOpen }}" hint-placeholder-val="{{ false }}">
+    <div style="position:absolute;inset:0;z-index:50;display:flex;align-items:center;justify-content:center;">
+      <div onClick="{{ closeSettings }}" style="position:absolute;inset:0;background:oklch(0 0 0 / 0.5);"></div>
+      <div style="position:relative;width:640px;height:566px;max-height:90%;background:#fff;border:1px solid var(--border);border-radius:16px;box-shadow:0 24px 70px rgba(0,0,0,0.35);display:flex;flex-direction:column;overflow:hidden;">
+        <div style="display:flex;align-items:center;justify-content:space-between;padding:15px 20px;border-bottom:1px solid var(--border);flex:none;">
+          <div style="font-size:16px;font-weight:600;letter-spacing:-0.01em;">设置</div>
+          <button onClick="{{ closeSettings }}" style="width:30px;height:30px;border-radius:8px;background:transparent;border:none;color:var(--muted-foreground);display:flex;align-items:center;justify-content:center;cursor:pointer;transition:all .12s;" style-hover="background:var(--muted);color:var(--foreground);">{{ xIcon }}</button>
+        </div>
+        <div style="flex:1;min-height:0;display:flex;">
+          <div style="width:158px;flex:none;border-right:1px solid var(--border);background:var(--muted);padding:12px;display:flex;flex-direction:column;gap:3px;">
+            {{ settingsNavEl }}
+          </div>
+          <div style="flex:1;min-width:0;overflow:auto;padding:22px 24px;">
+
+            <sc-if value="{{ showAppearance }}" hint-placeholder-val="{{ true }}">
+              <div style="display:flex;flex-direction:column;gap:26px;">
+                <div>
+                  <div style="font-size:13px;font-weight:600;margin-bottom:2px;">主题模式</div>
+                  <div style="font-size:12px;color:var(--muted-foreground);margin-bottom:13px;">选择界面的明暗外观</div>
+                  <div style="display:flex;gap:10px;">
+                    {{ themeModesEl }}
+                  </div>
+                </div>
+                <div>
+                  <div style="font-size:13px;font-weight:600;margin-bottom:2px;">强调色</div>
+                  <div style="font-size:12px;color:var(--muted-foreground);margin-bottom:13px;">用于选中态:当前相位、激活的场景标签、品牌标识与主操作按钮</div>
+                  <div style="display:flex;gap:14px;align-items:center;">
+                    {{ accentSwatchesEl }}
+                  </div>
+                </div>
+              </div>
+            </sc-if>
+
+            <sc-if value="{{ showUpdates }}" hint-placeholder-val="{{ false }}">
+              <div style="display:flex;flex-direction:column;gap:20px;">
+                <div style="display:flex;align-items:center;gap:13px;">
+                  <div style="width:46px;height:46px;border-radius:12px;background:var(--brand);color:#fff;display:flex;align-items:center;justify-content:center;flex:none;">{{ logoBig }}</div>
+                  <div style="flex:1;min-width:0;">
+                    <div style="font-size:15px;font-weight:600;">Promptscape</div>
+                    <div style="font-size:12px;color:var(--muted-foreground);">当前版本 {{ currentVer }}</div>
+                  </div>
+                </div>
+
+                <div style="border:1px solid var(--border);border-radius:12px;padding:16px;">
+                  <sc-if value="{{ upLatest }}" hint-placeholder-val="{{ false }}">
+                    <div style="display:flex;align-items:center;gap:12px;">
+                      <span style="color:oklch(0.55 0.13 155);display:inline-flex;flex:none;">{{ checkCircle }}</span>
+                      <div style="flex:1;min-width:0;">
+                        <div style="font-size:13px;font-weight:600;">已是最新版本</div>
+                        <div style="font-size:12px;color:var(--muted-foreground);margin-top:1px;">上次检查:{{ lastChecked }}</div>
+                      </div>
+                      <button onClick="{{ checkUpdate }}" style="display:flex;align-items:center;gap:6px;height:34px;padding:0 13px;border-radius:8px;background:#fff;border:1px solid var(--border);font-size:13px;font-weight:500;color:var(--foreground);cursor:pointer;flex:none;" style-hover="background:var(--muted);">{{ refreshIcon }} 检查更新</button>
+                    </div>
+                  </sc-if>
+                  <sc-if value="{{ upChecking }}" hint-placeholder-val="{{ false }}">
+                    <div style="display:flex;align-items:center;gap:12px;">
+                      <span style="display:inline-flex;flex:none;color:var(--muted-foreground);animation:spin 0.9s linear infinite;">{{ refreshIcon }}</span>
+                      <div style="font-size:13px;font-weight:500;">正在检查更新…</div>
+                    </div>
+                  </sc-if>
+                  <sc-if value="{{ upAvailable }}" hint-placeholder-val="{{ true }}">
+                    <div>
+                      <div style="display:flex;align-items:flex-start;gap:12px;">
+                        <span style="display:inline-flex;flex:none;margin-top:1px;color:var(--foreground);">{{ downloadIcon }}</span>
+                        <div style="flex:1;min-width:0;">
+                          <div style="font-size:13px;font-weight:600;">发现新版本 {{ newVer }}</div>
+                          <div style="font-size:12px;color:var(--muted-foreground);margin-top:1px;">{{ newVer }} · 约 48 MB · {{ channelLabel }}</div>
+                        </div>
+                        <button onClick="{{ installUpdate }}" style="display:flex;align-items:center;gap:6px;height:34px;padding:0 13px;border-radius:8px;background:var(--accent);color:#fff;border:none;font-size:13px;font-weight:500;cursor:pointer;flex:none;transition:opacity .12s;" style-hover="opacity:0.9">{{ downloadIcon }} 下载并安装</button>
+                      </div>
+                      <div style="margin-top:14px;padding-top:13px;border-top:1px solid var(--border);">
+                        <div style="font-size:11px;font-weight:600;color:var(--muted-foreground);letter-spacing:0.02em;margin-bottom:9px;">更新内容</div>
+                        <div style="display:flex;flex-direction:column;gap:7px;">
+                          <sc-for list="{{ changelog }}" as="cl" hint-placeholder-count="3">
+                            <div style="display:flex;gap:8px;font-size:12px;color:var(--foreground);line-height:1.4;"><span style="color:var(--muted-foreground);flex:none;">·</span><span>{{ cl }}</span></div>
+                          </sc-for>
+                        </div>
+                      </div>
+                    </div>
+                  </sc-if>
+                  <sc-if value="{{ upInstalling }}" hint-placeholder-val="{{ false }}">
+                    <div style="display:flex;align-items:center;gap:12px;">
+                      <span style="display:inline-flex;flex:none;color:var(--muted-foreground);animation:spin 0.9s linear infinite;">{{ refreshIcon }}</span>
+                      <div style="font-size:13px;font-weight:500;">正在下载并安装 {{ newVer }}…</div>
+                    </div>
+                  </sc-if>
+                </div>
+
+                <div style="display:flex;align-items:center;justify-content:space-between;padding:14px 16px;border:1px solid var(--border);border-radius:11px;">
+                  <div>
+                    <div style="font-size:13px;font-weight:500;">自动下载更新</div>
+                    <div style="font-size:12px;color:var(--muted-foreground);margin-top:1px;">有新版本时在后台自动下载</div>
+                  </div>
+                  <button onClick="{{ toggleAuto }}" style="{{ autoSwitch }}"><span style="{{ autoKnob }}"></span></button>
+                </div>
+
+                <div>
+                  <div style="font-size:13px;font-weight:600;margin-bottom:10px;">更新渠道</div>
+                  <div style="display:flex;gap:3px;background:var(--muted);border:1px solid var(--border);border-radius:9px;padding:3px;width:fit-content;">
+                    {{ channelsEl }}
+                  </div>
+                </div>
+              </div>
+            </sc-if>
+
+          </div>
+        </div>
+      </div>
+    </div>
+  </sc-if>
+
+  <!-- ════ 复制 toast ════ -->
+  <sc-if value="{{ hasToast }}" hint-placeholder-val="{{ false }}">
+    <div style="position:absolute;left:50%;bottom:64px;transform:translateX(-50%);z-index:60;display:flex;align-items:center;gap:8px;background:oklch(0.205 0 0);color:#fff;padding:10px 16px;border-radius:10px;font-size:13px;box-shadow:0 8px 30px rgba(0,0,0,0.3);animation:toastIn .18s ease;">
+      <span style="display:inline-flex;">{{ checkIcon }}</span> {{ toast }}
+    </div>
+  </sc-if>
+
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script>
+class Component extends DCLogic {
+  constructor(props){
+    super(props);
+    this.state = { demo:'populated', phase:1, activeScene:'research', toast:null,
+      settingsOpen:false, settingsTab:'appearance', themeMode:'light', accent:'neutral',
+      autoUpdate:true, channel:'stable', updateStatus:'available', hasUpdate:true, lastChecked:'今天 09:12' };
+    this._t = null;
+    var self = this;
+    this.rootRef = function(el){ self.rootEl = el; self.applyAccent(); };
+    this._onKey = function(e){
+      if((e.metaKey||e.ctrlKey) && e.key===','){ e.preventDefault(); self.setState({settingsOpen:true}); }
+      else if(e.key==='Escape' && self.state.settingsOpen){ self.setState({settingsOpen:false}); }
+    };
+  }
+
+  componentDidMount(){ this.applyAccent(); document.addEventListener('keydown', this._onKey); }
+  componentDidUpdate(){ this.applyAccent(); }
+  componentWillUnmount(){ document.removeEventListener('keydown', this._onKey); if(this._t) clearTimeout(this._t); }
+
+  ICONS = {
+    layers:'<path d="M12.83 2.18a2 2 0 0 0-1.66 0L2.6 6.08a1 1 0 0 0 0 1.83l8.58 3.91a2 2 0 0 0 1.66 0l8.58-3.9a1 1 0 0 0 0-1.83z"/><path d="M2 12a1 1 0 0 0 .58.91l8.6 3.91a2 2 0 0 0 1.65 0l8.58-3.9A1 1 0 0 0 22 12"/><path d="M2 17a1 1 0 0 0 .58.91l8.6 3.91a2 2 0 0 0 1.65 0l8.58-3.9A1 1 0 0 0 22 17"/>',
+    search:'<circle cx="11" cy="11" r="8"/><path d="m21 21-4.3-4.3"/>',
+    plus:'<path d="M5 12h14"/><path d="M12 5v14"/>',
+    zap:'<path d="M4 14a1 1 0 0 1-.78-1.63l9.9-10.2a.5.5 0 0 1 .86.46l-1.92 6.02A1 1 0 0 0 13 10h7a1 1 0 0 1 .78 1.63l-9.9 10.2a.5.5 0 0 1-.86-.46l1.92-6.02A1 1 0 0 0 11 14z"/>',
+    copy:'<rect width="14" height="14" x="8" y="8" rx="2" ry="2"/><path d="M4 16c-1.1 0-2-.9-2-2V4c0-1.1.9-2 2-2h10c1.1 0 2 .9 2 2"/>',
+    check:'<path d="M20 6 9 17l-5-5"/>',
+    chevR:'<path d="m9 18 6-6-6-6"/>',
+    chevUp:'<path d="m18 15-6-6-6 6"/>',
+    clock:'<circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/>',
+    folder:'<path d="M12 10v6"/><path d="M9 13h6"/><path d="M20 20a2 2 0 0 0 2-2V8a2 2 0 0 0-2-2h-7.9a2 2 0 0 1-1.69-.9L9.6 3.9A2 2 0 0 0 7.93 3H4a2 2 0 0 0-2 2v13a2 2 0 0 0 2 2Z"/>',
+    route:'<circle cx="6" cy="19" r="3"/><path d="M9 19h8.5a3.5 3.5 0 0 0 0-7h-11a3.5 3.5 0 0 1 0-7H15"/><circle cx="18" cy="5" r="3"/>',
+    box:'<path d="M21 8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16Z"/><path d="m3.3 7 8.7 5 8.7-5"/><path d="M12 22V12"/>',
+    microscope:'<path d="M6 18h8"/><path d="M3 22h18"/><path d="M14 22a7 7 0 1 0 0-14h-1"/><path d="M9 14h2"/><path d="M9 12a2 2 0 0 1-2-2V6h6v4a2 2 0 0 1-2 2Z"/><path d="M12 6V3a1 1 0 0 0-1-1H9a1 1 0 0 0-1 1v3"/>',
+    pen:'<path d="M15.707 21.293a1 1 0 0 1-1.414 0l-1.586-1.586a1 1 0 0 1 0-1.414l5.586-5.586a1 1 0 0 1 1.414 0l1.586 1.586a1 1 0 0 1 0 1.414z"/><path d="m18 13-1.375-6.874a1 1 0 0 0-.746-.776L3.235 2.028a1 1 0 0 0-1.207 1.207L5.35 15.879a1 1 0 0 0 .776.746L13 18"/><path d="m2.3 2.3 7.286 7.286"/><circle cx="11" cy="11" r="2"/>',
+    code:'<path d="m16 18 6-6-6-6"/><path d="m8 6-6 6 6 6"/>',
+    window:'<rect x="2" y="4" width="20" height="16" rx="2"/><path d="M10 4v4"/><path d="M2 8h20"/><path d="M6 4v4"/>',
+    trend:'<path d="M16 7h6v6"/><path d="m22 7-8.5 8.5-5-5L2 17"/>',
+    bars:'<line x1="12" x2="12" y1="20" y2="10"/><line x1="18" x2="18" y1="20" y2="4"/><line x1="6" x2="6" y1="20" y2="16"/>',
+    settings:'<path d="M12.22 2h-.44a2 2 0 0 0-2 2v.18a2 2 0 0 1-1 1.73l-.43.25a2 2 0 0 1-2 0l-.15-.08a2 2 0 0 0-2.73.73l-.22.38a2 2 0 0 0 .73 2.73l.15.1a2 2 0 0 1 1 1.72v.51a2 2 0 0 1-1 1.74l-.15.09a2 2 0 0 0-.73 2.73l.22.38a2 2 0 0 0 2.73.73l.15-.08a2 2 0 0 1 2 0l.43.25a2 2 0 0 1 1 1.73V20a2 2 0 0 0 2 2h.44a2 2 0 0 0 2-2v-.18a2 2 0 0 1 1-1.73l.43-.25a2 2 0 0 1 2 0l.15.08a2 2 0 0 0 2.73-.73l.22-.39a2 2 0 0 0-.73-2.73l-.15-.08a2 2 0 0 1-1-1.74v-.5a2 2 0 0 1 1-1.74l.15-.09a2 2 0 0 0 .73-2.73l-.22-.38a2 2 0 0 0-2.73-.73l-.15.08a2 2 0 0 1-2 0l-.43-.25a2 2 0 0 1-1-1.73V4a2 2 0 0 0-2-2z"/><circle cx="12" cy="12" r="3"/>',
+    x:'<path d="M18 6 6 18"/><path d="m6 6 12 12"/>',
+    sun:'<circle cx="12" cy="12" r="4"/><path d="M12 2v2"/><path d="M12 20v2"/><path d="m4.93 4.93 1.41 1.41"/><path d="m17.66 17.66 1.41 1.41"/><path d="M2 12h2"/><path d="M20 12h2"/><path d="m6.34 17.66-1.41 1.41"/><path d="m19.07 4.93-1.41 1.41"/>',
+    moon:'<path d="M12 3a6 6 0 0 0 9 9 9 9 0 1 1-9-9Z"/>',
+    monitor:'<rect width="20" height="14" x="2" y="3" rx="2"/><line x1="8" x2="16" y1="21" y2="21"/><line x1="12" x2="12" y1="17" y2="21"/>',
+    refresh:'<path d="M3 12a9 9 0 0 1 9-9 9.75 9.75 0 0 1 6.74 2.74L21 8"/><path d="M21 3v5h-5"/><path d="M21 12a9 9 0 0 1-9 9 9.75 9.75 0 0 1-6.74-2.74L3 16"/><path d="M8 16H3v5"/>',
+    circleCheck:'<circle cx="12" cy="12" r="10"/><path d="m9 12 2 2 4-4"/>',
+    download:'<path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><path d="m7 10 5 5 5-5"/><path d="M12 15V3"/>'
+  };
+
+  PHASES = [
+    {n:'发散',phrases:['先别收敛,把所有可能性都摊开来','用三个不相干领域的类比扩展这个想法','刻意提出几个反直觉的方向']},
+    {n:'理解',phrases:['复述我的真实意图,再指出我没说清的地方','列出你对这个需求所做的全部假设','把这个问题换三个角度重新表述一遍']},
+    {n:'规划',phrases:['先给整体结构,再往里填细节','把任务拆成可以独立验证的步骤','标出关键路径和最大的风险点']},
+    {n:'生成',phrases:['先给一版粗糙草稿,允许不完美','一次只产出一个方案,并讲清取舍','严格按我给的结构来填充内容']},
+    {n:'执行',phrases:['按计划逐步执行,不要跳步','每完成一步就停下等我确认','遇到歧义先问清楚再继续']},
+    {n:'收敛',phrases:['从多个方案里选一个,并说明理由','删掉所有非必要的内容','给出最终结论和一句话理由']},
+    {n:'沉淀',phrases:['把这次的结论提炼成可复用模板','总结这次用到的方法论','记下这次踩过、下次要避开的坑']},
+    {n:'迭代',phrases:['基于我的反馈,只改动必要的部分','和上一版逐条对比,列出差异','再提三个可以继续优化的方向']}
+  ];
+
+  MODIFIERS = [
+    {g:'认知前置',items:[
+      {n:'先假设无知',p:'先假设你对此一无所知,从第一性原理重新推导。'},
+      {n:'列出未知项',p:'先列出所有你不确定、需要澄清的未知项。'},
+      {n:'拆解前提',p:'拆解这个问题背后隐含的前提假设。'}
+    ]},
+    {g:'动作策略',items:[
+      {n:'逐步推理',p:'一步一步推理,展示中间过程。'},
+      {n:'多方案对比',p:'给出至少三个方案并列表对比取舍。'},
+      {n:'反证检验',p:'用反例和边界情况检验上述结论。'}
+    ]},
+    {g:'产出形态',items:[
+      {n:'结构化输出',p:'用分层、分点的结构化格式输出。'},
+      {n:'表格化',p:'用表格组织信息,便于横向对比。'},
+      {n:'分级摘要',p:'给出三档摘要:一句话 / 一段话 / 要点列表。'}
+    ]},
+    {g:'通用约束',items:[
+      {n:'引用来源',p:'每个关键结论都标注来源或依据。'},
+      {n:'限定字数',p:'控制在指定字数内,删繁就简。'},
+      {n:'禁止臆测',p:'不确定就说不知道,不要编造。'}
+    ]}
+  ];
+
+  MACROS = [
+    {name:'竞品速查',chain:['拆解前提','多方案对比','结构化输出','引用来源'],uses:142},
+    {name:'周报生成',chain:['分级摘要','表格化','限定字数'],uses:98},
+    {name:'需求拆解',chain:['列出未知项','逐步推理','结构化输出'],uses:76},
+    {name:'代码评审',chain:['反证检验','逐步推理','引用来源'],uses:64},
+    {name:'会议纪要',chain:['分级摘要','结构化输出'],uses:53}
+  ];
+
+  SCENES = [
+    {id:'research',name:'研究分析',icon:'microscope',desc:'从立题到结论的调研链路',count:8,sub:[
+      {name:'立题',scripts:['把这个模糊问题收敛成一个可被证伪的研究问题','列出回答它需要的三类证据']},
+      {name:'搜集',scripts:['给出检索关键词矩阵和信息源优先级','每条材料附上可信度评估']},
+      {name:'综述',scripts:['把材料按观点分组并标出冲突点','用一张表对比各方立场']},
+      {name:'结论',scripts:['给出结论与置信度,并说明不确定性来源']}
+    ]},
+    {id:'content',name:'内容创作',icon:'pen',desc:'选题、大纲、初稿、润色',count:6,sub:[
+      {name:'选题',scripts:['结合受众与目标给五个有张力的选题角度']},
+      {name:'大纲',scripts:['把选题拆成有递进关系的大纲']},
+      {name:'初稿',scripts:['按大纲写初稿,先写全信息不追求文笔']},
+      {name:'润色',scripts:['不改变信息的前提下让表达更利落']}
+    ]},
+    {id:'dev',name:'编程开发',icon:'code',desc:'设计、实现、调试、重构',count:9,sub:[
+      {name:'设计',scripts:['先给接口与数据结构,再讨论实现']},
+      {name:'实现',scripts:['分小步实现,每步给可运行的最小代码']},
+      {name:'调试',scripts:['根据报错列出三种最可能原因并排查']},
+      {name:'重构',scripts:['指出坏味道,给小步安全的重构方案']}
+    ]},
+    {id:'product',name:'产品设计',icon:'window',desc:'洞察、定义、方案、验证',count:7,sub:[
+      {name:'洞察',scripts:['从这些反馈里归纳出真实痛点']},
+      {name:'定义',scripts:['把模糊需求写成一句清晰的问题陈述']},
+      {name:'方案',scripts:['给三个不同取向的方案并标注取舍']},
+      {name:'验证',scripts:['设计一个最小可验证实验来检验假设']}
+    ]},
+    {id:'growth',name:'运营增长',icon:'trend',desc:'拉新、转化、留存、复盘',count:5,sub:[
+      {name:'拉新',scripts:['针对这个渠道给三种获客钩子']},
+      {name:'转化',scripts:['找出漏斗里最该优化的一环并给方案']},
+      {name:'留存',scripts:['设计一套召回流失用户的触达节奏']},
+      {name:'复盘',scripts:['用结构化方式复盘这次活动得失']}
+    ]},
+    {id:'data',name:'数据洞察',icon:'bars',desc:'提问、取数、分析、归因',count:4,sub:[
+      {name:'提问',scripts:['把业务问题翻译成可量化的分析问题']},
+      {name:'取数',scripts:['列出需要的指标口径与数据来源']},
+      {name:'分析',scripts:['给出分析思路,先看分布再看关系']},
+      {name:'归因',scripts:['区分相关与因果,给归因结论与边界']}
+    ]}
+  ];
+
+  RECENTS = [
+    {type:'Macro',name:'竞品速查',time:'12 分钟前'},
+    {type:'Composition',name:'深度调研模板',time:'1 小时前'},
+    {type:'Modifier',name:'结构化输出',time:'今天 14:20'},
+    {type:'对齐话术',name:'复述我的真实意图,再指出我没说清的地方',time:'今天 11:05'},
+    {type:'Macro',name:'周报生成',time:'昨天'},
+    {type:'Composition',name:'反证检验链',time:'2 天前'},
+    {type:'Modifier',name:'多方案对比',time:'2 天前'},
+    {type:'对齐话术',name:'把任务拆成可以独立验证的步骤',time:'3 天前'}
+  ];
+
+  ACCENTS = [
+    {key:'neutral',name:'中性',color:'oklch(0.205 0 0)'},
+    {key:'blue',name:'蓝',color:'oklch(0.52 0.17 256)'},
+    {key:'green',name:'绿',color:'oklch(0.52 0.12 158)'},
+    {key:'violet',name:'紫',color:'oklch(0.52 0.2 292)'},
+    {key:'amber',name:'橙',color:'oklch(0.6 0.16 52)'}
+  ];
+
+  icon(name,size,color){
+    size = size || 18;
+    var inner = this.ICONS[name] || '';
+    var html = '<svg xmlns="http://www.w3.org/2000/svg" width="'+size+'" height="'+size+'" viewBox="0 0 24 24" fill="none" stroke="'+(color||'currentColor')+'" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">'+inner+'</svg>';
+    return React.createElement('span',{style:{display:'inline-flex',alignItems:'center',justifyContent:'center'},dangerouslySetInnerHTML:{__html:html}});
+  }
+
+  accentColor(){
+    var key=this.state.accent, found=null;
+    this.ACCENTS.forEach(function(x){ if(x.key===key) found=x; });
+    return found?found.color:'oklch(0.205 0 0)';
+  }
+
+  applyAccent(){
+    if(!this.rootEl) return;
+    var c=this.accentColor();
+    this.rootEl.style.setProperty('--accent', c);
+    this.rootEl.style.setProperty('--brand', this.state.accent==='neutral' ? 'oklch(0.205 0 0)' : c);
+  }
+
+  trunc(t){ return t.length>24 ? t.slice(0,24)+'…' : t; }
+
+  setToast(msg){
+    this.setState({toast:msg});
+    var self=this;
+    if(this._t) clearTimeout(this._t);
+    this._t = setTimeout(function(){ self.setState({toast:null}); },1900);
+  }
+
+  copy(label,text){
+    try{ if(navigator.clipboard) navigator.clipboard.writeText(text||label); }catch(e){}
+    this.setToast('已复制「'+label+'」');
+  }
+
+  setDemo(v){ this.setState({ demo:(v==='empty'?'empty':'populated') }); }
+
+  switchStyles(on){
+    var ac=this.accentColor();
+    return {
+      track:'position:relative;width:40px;height:23px;border-radius:999px;border:none;cursor:pointer;flex:none;transition:background .15s;background:'+(on?ac:'oklch(0.8 0 0)')+';',
+      knob:'position:absolute;top:2px;left:2px;width:19px;height:19px;border-radius:999px;background:#fff;box-shadow:0 1px 2px rgba(0,0,0,0.25);transition:transform .15s;transform:translateX('+(on?'17px':'0px')+');'
+    };
+  }
+
+  checkUpdate(){
+    var self=this;
+    this.setState({updateStatus:'checking'});
+    setTimeout(function(){ self.setState(function(s){ return { updateStatus:(s.hasUpdate?'available':'latest'), lastChecked:'刚刚' }; }); },1500);
+  }
+
+  installUpdate(){
+    var self=this;
+    this.setState({updateStatus:'installing'});
+    setTimeout(function(){ self.setState({updateStatus:'latest', hasUpdate:false, lastChecked:'刚刚'}); self.setToast('已更新到 v2.5.0'); },1800);
+  }
+
+  k(elm, key){ return React.cloneElement(elm, {key:key}); }
+
+  renderPhaseBand(){
+    var self=this, R=React.createElement, ac=this.accentColor(), cur=this.state.phase;
+    return this.PHASES.map(function(p,i){
+      var on=(i===cur);
+      var s = on
+        ? {padding:'6px 13px',borderRadius:'8px',fontSize:'13px',fontWeight:600,cursor:'pointer',whiteSpace:'nowrap',background:'oklch(0.985 0 0)',color:ac,border:'1px solid transparent'}
+        : {padding:'6px 13px',borderRadius:'8px',fontSize:'13px',fontWeight:500,cursor:'pointer',whiteSpace:'nowrap',background:'transparent',color:'oklch(0.72 0 0)',border:'1px solid oklch(1 0 0 / 0.14)'};
+      return R('button',{key:i,onClick:function(){ self.setState({phase:i}); },style:s}, p.n);
+    });
+  }
+
+  renderSceneTabs(){
+    var self=this, R=React.createElement, ac=this.accentColor(), cur=this.state.activeScene;
+    return this.SCENES.map(function(sc){
+      var on=(sc.id===cur);
+      var base={flex:'1',minWidth:0,display:'flex',alignItems:'center',justifyContent:'center',gap:'6px',height:'38px',padding:'0 8px',borderRadius:'9px',fontSize:'13px',cursor:'pointer',border:'none'};
+      var s = on
+        ? Object.assign({},base,{fontWeight:600,background:'#fff',color:ac,boxShadow:'0 1px 2px rgba(0,0,0,0.08)'})
+        : Object.assign({},base,{fontWeight:500,background:'transparent',color:'var(--muted-foreground)'});
+      return R('button',{key:sc.id,onClick:function(){ self.setState({activeScene:sc.id}); },style:s},[
+        self.k(self.icon(sc.icon,14,'currentColor'),'i'),
+        R('span',{key:'n',style:{whiteSpace:'nowrap'}},sc.name),
+        R('span',{key:'c',style:{fontSize:'11px',fontFamily:'var(--font-mono)',opacity:0.7,flex:'none'}},sc.count)
+      ]);
+    });
+  }
+
+  renderSettingsNav(){
+    var self=this, R=React.createElement, cur=this.state.settingsTab;
+    var data=[{key:'appearance',name:'外观',icon:'palette'},{key:'updates',name:'更新',icon:'download'}];
+    return data.map(function(n){
+      var on=(cur===n.key);
+      var base={display:'flex',alignItems:'center',gap:'9px',width:'100%',textAlign:'left',padding:'8px 11px',borderRadius:'8px',border:'none',fontSize:'13px',cursor:'pointer'};
+      var s = on
+        ? Object.assign({},base,{background:'#fff',color:'var(--foreground)',fontWeight:600,boxShadow:'0 1px 2px rgba(0,0,0,0.06)'})
+        : Object.assign({},base,{background:'transparent',color:'var(--muted-foreground)',fontWeight:500});
+      return R('button',{key:n.key,onClick:function(){ self.setState({settingsTab:n.key}); },style:s},[
+        self.k(self.icon(n.icon,15,'currentColor'),'i'),
+        R('span',{key:'t'},n.name)
+      ]);
+    });
+  }
+
+  renderThemeModes(){
+    var self=this, R=React.createElement, ac=this.accentColor(), cur=this.state.themeMode;
+    var data=[{key:'light',name:'浅色',icon:'sun'},{key:'dark',name:'深色',icon:'moon'},{key:'system',name:'跟随系统',icon:'monitor'}];
+    return data.map(function(t){
+      var on=(cur===t.key);
+      var base={flex:'1',display:'flex',flexDirection:'column',alignItems:'center',gap:'8px',padding:'15px 8px',borderRadius:'11px',cursor:'pointer'};
+      var s = on
+        ? Object.assign({},base,{border:'2px solid '+ac,background:'var(--muted)',color:'var(--foreground)'})
+        : Object.assign({},base,{border:'2px solid var(--border)',background:'#fff',color:'var(--muted-foreground)'});
+      return R('button',{key:t.key,onClick:function(){ self.setState({themeMode:t.key}); },style:s},[
+        self.k(self.icon(t.icon,18,'currentColor'),'i'),
+        R('span',{key:'t',style:{fontSize:'12px',fontWeight:500}},t.name)
+      ]);
+    });
+  }
+
+  renderAccentSwatches(){
+    var self=this, R=React.createElement, cur=this.state.accent;
+    return this.ACCENTS.map(function(a){
+      var on=(cur===a.key);
+      var s = on
+        ? {position:'relative',width:'32px',height:'32px',borderRadius:'999px',border:'none',cursor:'pointer',background:a.color,boxShadow:'0 0 0 2px #fff, 0 0 0 4px '+a.color,display:'flex',alignItems:'center',justifyContent:'center'}
+        : {width:'32px',height:'32px',borderRadius:'999px',border:'none',cursor:'pointer',background:a.color,boxShadow:'0 0 0 1px var(--border)'};
+      return R('button',{key:a.key,title:a.name,onClick:function(){ self.setState({accent:a.key}); },style:s}, on?self.k(self.icon('check',13,'#ffffff'),'c'):null);
+    });
+  }
+
+  renderChannels(){
+    var self=this, R=React.createElement, cur=this.state.channel;
+    var data=[{key:'stable',name:'稳定版'},{key:'beta',name:'预览版'}];
+    return data.map(function(c){
+      var on=(cur===c.key);
+      var base={padding:'5px 12px',borderRadius:'6px',fontSize:'13px',cursor:'pointer',border:'none'};
+      var s = on
+        ? Object.assign({},base,{fontWeight:600,background:'#fff',color:'var(--foreground)',boxShadow:'0 1px 2px rgba(0,0,0,0.08)'})
+        : Object.assign({},base,{fontWeight:500,background:'transparent',color:'var(--muted-foreground)'});
+      return R('button',{key:c.key,onClick:function(){ self.setState({channel:c.key}); },style:s},c.name);
+    });
+  }
+
+  renderVals(){
+    var self = this;
+    var st = this.state;
+    var isEmpty = st.demo === 'empty';
+    var notEmpty = !isEmpty;
+
+    var alignPhrases = isEmpty ? [] : this.PHASES[st.phase].phrases.map(function(t){
+      return { text:t, onCopy:function(){ self.copy(self.trunc(t), t); } };
+    });
+
+    var modifierGroups = isEmpty ? [] : this.MODIFIERS.map(function(grp){
+      return { name:grp.g, count:grp.items.length, items:grp.items.map(function(it){
+        return { name:it.n, onCopy:function(){ self.copy(it.n, it.p); } };
+      }) };
+    });
+
+    var macros = isEmpty ? [] : this.MACROS.map(function(m){
+      return {
+        name:m.name, uses:m.uses, chainText:m.chain.join(' → '),
+        icon:self.icon('zap',14,'#ffffff'),
+        onClick:function(){ self.copy(m.name, '【'+m.name+'】请依次运用:'+m.chain.join(' → ')+',完成本次任务。'); }
+      };
+    });
+
+    var actObj = this.SCENES.filter(function(s){ return s.id===st.activeScene; })[0] || this.SCENES[0];
+    var activeScene = isEmpty ? null : {
+      name:actObj.name, desc:actObj.desc, count:actObj.count, subCount:actObj.sub.length,
+      icon:self.icon(actObj.icon,19,'currentColor'),
+      sub:actObj.sub.map(function(g,gi){
+        return {
+          name:g.name, idx:(gi<9?'0':'')+(gi+1),
+          scripts:g.scripts.map(function(t){ return { text:t, onCopy:function(){ self.copy(self.trunc(t), t); } }; })
+        };
+      })
+    };
+
+    var recents = isEmpty ? [] : this.RECENTS.map(function(r){
+      var isProto = r.type==='对齐话术';
+      return { type:r.type, name:r.name, time:r.time, isProtocol:isProto, isTask:!isProto,
+        onCopy:function(){ self.copy(self.trunc(r.name), r.name); } };
+    });
+
+    var autoSw=this.switchStyles(st.autoUpdate);
+    var us=st.updateStatus;
+    var currentVer=st.hasUpdate?'v2.4.1':'v2.5.0';
+    var channelLabel=(st.channel==='stable'?'稳定版':'预览版');
+
+    return {
+      rootRef:this.rootRef,
+      logoIcon:this.icon('layers',17,'#ffffff'),
+      searchIcon:this.icon('search',16,'currentColor'),
+      plusIcon:this.icon('plus',15,'currentColor'),
+      plusIconLt:this.icon('plus',15,'currentColor'),
+      protoIcon:this.icon('route',13,'currentColor'),
+      taskIcon:this.icon('box',13,'#ffffff'),
+      copyIconSm:this.icon('copy',13,'currentColor'),
+      layersMini:this.icon('layers',12,'currentColor'),
+      zapBig:this.icon('zap',18,'currentColor'),
+      folderBig:this.icon('folder',25,'currentColor'),
+      clockIcon:this.icon('clock',20,'currentColor'),
+      checkIcon:this.icon('check',15,'#ffffff'),
+
+      phaseBand:this.renderPhaseBand(), alignPhrases:alignPhrases, modifierGroups:modifierGroups,
+      macros:macros, sceneTabsEl:this.renderSceneTabs(), activeScene:activeScene, recents:recents,
+
+      isEmpty:isEmpty, notEmpty:notEmpty,
+      hasPhrases:(alignPhrases.length>0),
+
+      toast:st.toast, hasToast:(!!st.toast),
+
+      demoIsPop:(st.demo==='populated'), demoNotPop:(st.demo!=='populated'),
+      demoIsEmpty:(st.demo==='empty'), demoNotEmpty:(st.demo!=='empty'),
+      demoPop:function(){ self.setDemo('populated'); },
+      demoEmpty:function(){ self.setDemo('empty'); },
+
+      gearIcon:this.icon('settings',17,'currentColor'),
+      xIcon:this.icon('x',17,'currentColor'),
+      checkSm:this.icon('check',13,'#ffffff'),
+      logoBig:this.icon('layers',22,'#ffffff'),
+      refreshIcon:this.icon('refresh',15,'currentColor'),
+      checkCircle:this.icon('circleCheck',18,'currentColor'),
+      downloadIcon:this.icon('download',16,'currentColor'),
+
+      settingsOpen:st.settingsOpen,
+      openSettings:function(){ self.setState({settingsOpen:true}); },
+      closeSettings:function(){ self.setState({settingsOpen:false}); },
+      showAppearance:(st.settingsTab==='appearance'),
+      showUpdates:(st.settingsTab==='updates'),
+      settingsNavEl:this.renderSettingsNav(), themeModesEl:this.renderThemeModes(), accentSwatchesEl:this.renderAccentSwatches(), channelsEl:this.renderChannels(),
+
+      autoUpdate:st.autoUpdate,
+      toggleAuto:function(){ self.setState(function(s){ return { autoUpdate:!s.autoUpdate }; }); },
+      autoSwitch:autoSw.track, autoKnob:autoSw.knob,
+
+      currentVer:currentVer, newVer:'v2.5.0', channelLabel:channelLabel,
+      changelog:['新增 ⌘K 跨资产模糊搜索','对齐话术支持按相位收藏','修复 Macro 链在长名称下的截断'],
+      upChecking:(us==='checking'), upAvailable:(us==='available'), upInstalling:(us==='installing'), upLatest:(us==='latest'),
+      lastChecked:st.lastChecked,
+      checkUpdate:function(){ self.checkUpdate(); },
+      installUpdate:function(){ self.installUpdate(); }
+    };
+  }
+}
+</script>
+</body>
+</html>

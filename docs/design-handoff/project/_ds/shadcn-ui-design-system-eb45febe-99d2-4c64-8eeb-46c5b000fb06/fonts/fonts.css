@@ -1,0 +1,5 @@
+/* shadcn/ui default fonts: Geist (sans) + Geist Mono.
+   Loaded from Google Fonts CDN. The @font-face declarations below mirror the
+   variable-font axes shipped by Google so consumers get the real metrics. */
+
+@import url("https://fonts.googleapis.com/css2?family=Geist:wght@100..900&family=Geist+Mono:wght@100..900&display=swap");

@@ -1,0 +1,14 @@
+/* ──────────────────────────────────────────────────────────────────────────
+   Radius — base 0.625rem (10px). Scale derived as in source @theme.
+   ────────────────────────────────────────────────────────────────────────── */
+
+:root {
+  --radius: 0.625rem;
+  --radius-sm: calc(var(--radius) * 0.6);  /* 6px   */
+  --radius-md: calc(var(--radius) * 0.8);  /* 8px   */
+  --radius-lg: var(--radius);              /* 10px  */
+  --radius-xl: calc(var(--radius) * 1.4);  /* 14px  */
+  --radius-2xl: calc(var(--radius) * 1.8); /* 18px  */
+  --radius-3xl: calc(var(--radius) * 2.2); /* 22px  */
+  --radius-full: 9999px;
+}
