@@ -5,6 +5,7 @@ import styles from "./primitives.module.css";
 
 interface RegionHeaderProps {
   title: string;
+  subtitle?: string;
   count?: ReactNode;
   hint?: string;
   hotkey?: string;
@@ -13,6 +14,7 @@ interface RegionHeaderProps {
 
 export function RegionHeader({
   title,
+  subtitle,
   count,
   hint,
   hotkey,
@@ -22,6 +24,9 @@ export function RegionHeader({
     <div className={styles.regionHeader}>
       <div className={styles.regionHeaderLeft}>
         <span className={styles.regionHeaderTitle}>{title}</span>
+        {subtitle && (
+          <span className={styles.regionHeaderSubtitle}>· {subtitle}</span>
+        )}
         {count != null && (
           <span className={styles.regionHeaderCount}>{count}</span>
         )}

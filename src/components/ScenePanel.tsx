@@ -1,7 +1,15 @@
 import { DragDropProvider } from "@dnd-kit/react";
 import { useSortable } from "@dnd-kit/react/sortable";
 import { move } from "@dnd-kit/helpers";
-import { GripVertical, Inbox, Pencil, Plus, Trash2 } from "lucide-react";
+import {
+  Copy,
+  GripVertical,
+  Inbox,
+  Layers,
+  Pencil,
+  Plus,
+  Trash2,
+} from "lucide-react";
 import { useEffect, useRef, useState } from "react";
 
 import { useCopy } from "../hooks/useCopy";
@@ -105,7 +113,7 @@ export function ScenePanel() {
         data-region="scene-panel"
         tabIndex={0}
       >
-        <RegionHeader title="Scene" count={0} />
+        <RegionHeader title="Scene" subtitle="场景全景" count={0} />
         <EmptyState>
           <span id="scene-panel-empty-msg">暂无 Scene</span>
         </EmptyState>
@@ -122,7 +130,7 @@ export function ScenePanel() {
       data-region="scene-panel"
       tabIndex={0}
     >
-      <RegionHeader title="Scene" count={scenes.length} />
+      <RegionHeader title="Scene" subtitle="场景全景" count={scenes.length} />
       <nav className={styles.tabs} aria-label="Scene tabs">
         {draftsAvailable && (
           <>
@@ -163,7 +171,8 @@ export function ScenePanel() {
                   {sc.scene.icon}
                 </span>
               )}
-              {sc.scene.name}
+              <span className={styles.tabName}>{sc.scene.name}</span>
+              <span className={styles.tabCount}>{sc.phrases.length}</span>
             </button>
           );
         })}
@@ -181,10 +190,13 @@ export function ScenePanel() {
             <div className={styles.sceneIdentity}>
               <div className={styles.sceneName}>{current.scene.name}</div>
               <div className={styles.sceneMeta}>
-                {current.subStages.length} 个子阶段 · {current.phrases.length}{" "}
-                条话术
+                {current.phrases.length} 条话术
               </div>
             </div>
+            <span className={styles.sceneSubCount}>
+              <Layers size={12} aria-hidden strokeWidth={2} />
+              {current.subStages.length} 个子阶段
+            </span>
             <div className={styles.sceneHeadActions}>
               {editMode ? (
                 <>
@@ -261,7 +273,9 @@ export function ScenePanel() {
                       <span className={styles.subStageIdx}>
                         {String(gi + 1).padStart(2, "0")}
                       </span>
-                      {g.subStage.name}
+                      <span className={styles.subStageName}>
+                        {g.subStage.name}
+                      </span>
                     </div>
                   )}
                   {g.phrases.map((p) => {
@@ -288,8 +302,16 @@ export function ScenePanel() {
                         }
                         aria-label={p.name}
                       >
-                        <h4 className={styles.phraseTitle}>{p.name}</h4>
-                        <p className={styles.phraseContent}>{p.content}</p>
+                        <Copy
+                          size={13}
+                          className={styles.phraseIcon}
+                          aria-hidden
+                          strokeWidth={2}
+                        />
+                        <span className={styles.phraseBody}>
+                          <h4 className={styles.phraseTitle}>{p.name}</h4>
+                          <p className={styles.phraseContent}>{p.content}</p>
+                        </span>
                       </button>
                     );
                   })}
@@ -336,7 +358,11 @@ function EditablePhraseGroup({
 
   return (
     <div className={styles.group}>
-      {subStageName && <div className={styles.subStage}>{subStageName}</div>}
+      {subStageName && (
+        <div className={styles.subStage}>
+          <span className={styles.subStageName}>{subStageName}</span>
+        </div>
+      )}
       <DragDropProvider
         onDragOver={(event) => setItems((prev) => move(prev, event))}
         onDragEnd={(event) => {

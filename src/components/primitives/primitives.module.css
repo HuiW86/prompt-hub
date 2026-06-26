@@ -59,6 +59,16 @@
   color: var(--fg-1);
 }
 
+/* Region descriptor (Promptscape "主名 · 副述") — a muted suffix to the title. */
+.regionHeaderSubtitle {
+  font-family: var(--font-sans);
+  font-size: var(--t-13);
+  font-weight: var(--w-400);
+  line-height: 1;
+  color: var(--fg-3);
+  white-space: nowrap;
+}
+
 .regionHeaderCount {
   font-family: var(--font-mono);
   font-size: var(--t-11);

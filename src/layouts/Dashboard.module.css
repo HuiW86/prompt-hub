@@ -34,6 +34,25 @@
   min-height: 0;
 }
 
+/* "任务层" layer marker atop the task column, mirroring ProtocolBand's 协议层
+ * pill. Uses the task semantic color to label the layer (B2-safe). */
+.taskLayerHead {
+  flex: 0 0 auto;
+  padding: var(--s-2) var(--s-3_5) 0;
+}
+
+.taskPill {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--s-1);
+  padding: var(--s-0_5) var(--s-2);
+  border-radius: var(--r-2);
+  background: var(--task-16);
+  color: var(--task);
+  font: var(--w-600) var(--t-11) / 1 var(--font-sans);
+  letter-spacing: var(--tr-meta);
+}
+
 .macroSlot {
   flex: 0 0 auto;
   min-height: 0;

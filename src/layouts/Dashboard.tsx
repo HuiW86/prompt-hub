@@ -1,3 +1,4 @@
+import { Box } from "lucide-react";
 import {
   Group,
   Panel,
@@ -67,8 +68,14 @@ export function Dashboard() {
             defaultSize="68%"
             minSize="42%"
           >
-            {/* Task column: Macro strip pinned on top, Scene panorama fills. */}
+            {/* Task column: 任务层 marker, Macro strip, then Scene panorama. */}
             <div className={styles.taskCol}>
+              <div className={styles.taskLayerHead}>
+                <span className={styles.taskPill}>
+                  <Box size={12} strokeWidth={2} aria-hidden />
+                  任务层
+                </span>
+              </div>
               <div className={styles.macroSlot}>
                 <MacroGrid />
               </div>

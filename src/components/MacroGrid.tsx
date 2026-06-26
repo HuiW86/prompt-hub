@@ -74,6 +74,7 @@ export function MacroGrid() {
     >
       <RegionHeader
         title="Macro"
+        subtitle="高频一键入口"
         count={`${macros.length} 张`}
         right={
           <Button

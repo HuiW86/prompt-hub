@@ -61,6 +61,27 @@
   cursor: not-allowed;
 }
 
+.badge {
+  flex: none;
+  display: inline-flex;
+  align-items: center;
+  padding: var(--s-0_5) var(--s-1_5);
+  border-radius: var(--r-2);
+  font: var(--w-600) var(--t-10) / 1.6 var(--font-mono);
+  white-space: nowrap;
+}
+
+.badgeProtocol {
+  background: var(--protocol);
+  color: var(--protocol-fg);
+}
+
+.badgeTask {
+  background: var(--surface-2);
+  color: var(--fg-3);
+  border: var(--hairline) solid var(--border-1);
+}
+
 .itemName {
   flex: 1;
   min-width: 0;

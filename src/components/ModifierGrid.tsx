@@ -52,7 +52,11 @@ export function ModifierGrid() {
 
   return (
     <section className={styles.region} aria-label="Modifier 原子库">
-      <RegionHeader title="Modifier" count={modifiers.length} />
+      <RegionHeader
+        title="Modifier"
+        subtitle="原子方法论"
+        count={modifiers.length}
+      />
       {groups.length === 0 ? (
         <EmptyState>暂无 Modifier · 原子方法论会在这里按四组展开</EmptyState>
       ) : (

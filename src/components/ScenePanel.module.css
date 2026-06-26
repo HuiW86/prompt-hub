@@ -15,15 +15,21 @@
   outline-offset: calc(-1 * var(--border-thick));
 }
 
+/* Scene tabs as a segmented control (Promptscape): a recessed muted track holds
+ * equal-width segments; the active segment lifts to the primary surface and
+ * carries the task color (constitution B2 — Scene is a task-layer asset). */
 .tabs {
   display: flex;
   align-items: center;
-  gap: var(--s-2);
-  padding: var(--s-2) var(--s-3_5);
+  gap: var(--s-1);
+  margin: var(--s-3) var(--s-3_5) 0;
+  padding: var(--s-1);
   flex-wrap: nowrap;
   overflow-x: auto;
   scrollbar-width: none;
-  border-bottom: var(--hairline) solid var(--border-1);
+  background: var(--surface-2);
+  border: var(--hairline) solid var(--border-1);
+  border-radius: var(--r-4);
 }
 
 .tabs::-webkit-scrollbar {
@@ -31,27 +37,30 @@
 }
 
 .tab {
+  flex: 1;
+  min-width: 0;
   display: inline-flex;
   align-items: center;
+  justify-content: center;
   gap: var(--s-1_5);
-  height: var(--h-chip);
-  padding: 0 var(--s-2_25);
-  border: var(--hairline) solid var(--border-1);
-  border-radius: var(--r-2);
-  background: var(--surface-1);
-  color: var(--fg-1);
+  height: var(--h-scene-row);
+  padding: 0 var(--s-2);
+  border: none;
+  border-radius: var(--r-3);
+  background: transparent;
+  color: var(--fg-3);
   font: var(--w-500) var(--t-12) / 1 var(--font-sans);
   cursor: pointer;
   user-select: none;
   white-space: nowrap;
   appearance: none;
   transition:
-    border-color var(--d-fast) var(--ease),
+    color var(--d-fast) var(--ease),
     background-color var(--d-fast) var(--ease);
 }
 
 .tab:hover {
-  border-color: var(--border-2);
+  color: var(--fg-1);
 }
 
 .tab:focus-visible {
@@ -60,24 +69,41 @@
 }
 
 .tab.active {
-  background: var(--task-8);
-  border-color: var(--task);
+  background: var(--surface-1);
+  color: var(--task);
+  font-weight: var(--w-600);
 }
 
 .icon {
   font-size: var(--t-13);
   line-height: 1;
+  flex: none;
+}
+
+.tabName {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.tabCount {
+  flex: none;
+  font: var(--w-500) var(--t-11) / 1 var(--font-mono);
+  font-variant-numeric: tabular-nums;
+  opacity: var(--op-icon);
 }
 
 /* 📥 草稿 tab — leftmost, aux-toned, set off from Scene tabs by a divider.
    It is the MCP inbox entry, not a Scene (03-product-spec §13.3 区域 4). */
 .draftTab {
+  flex: none;
   color: var(--fg-2);
 }
 
 .draftTab.active {
-  background: var(--surface-2);
-  border-color: var(--border-3);
+  background: var(--surface-1);
+  color: var(--fg-1);
 }
 
 .draftIcon {
@@ -165,6 +191,16 @@
   color: var(--fg-3);
 }
 
+/* Sub-stage count badge, docked right of the identity block (Promptscape). */
+.sceneSubCount {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--s-1_5);
+  flex: none;
+  font: var(--w-400) var(--t-12) / 1 var(--font-sans);
+  color: var(--fg-3);
+}
+
 .sceneHeadActions {
   display: flex;
   align-items: center;
@@ -177,16 +213,14 @@
   padding: var(--s-2_5) var(--s-3_5) 0;
 }
 
-/* Sub-stages flow as a responsive multi-column grid (Promptscape Scene 全景):
- * each group is a column, its phrases stack as bordered cards beneath the
- * sub-stage header. View mode only — edit mode keeps the vertical list below. */
+/* Sub-stages flow as a fixed 4-column grid (Promptscape Scene 全景): each group
+ * is a column, its phrases stack as cards beneath the sub-stage header. Columns
+ * < 4 left-align; > 4 wrap to the next row. View mode only — edit mode keeps the
+ * vertical list below. */
 .phrases {
   flex: 1;
   display: grid;
-  grid-template-columns: repeat(
-    auto-fill,
-    minmax(var(--col-min-substage), 1fr)
-  );
+  grid-template-columns: repeat(4, minmax(0, 1fr));
   gap: var(--s-4);
   padding: var(--s-3_5);
   align-content: start;
@@ -204,27 +238,37 @@
 .subStage {
   display: flex;
   align-items: center;
-  gap: var(--s-1_5);
-  padding: 0 0 var(--s-1_5);
-  font: var(--w-600) var(--t-11) / 1 var(--font-mono);
-  color: var(--fg-3);
-  text-transform: uppercase;
-  letter-spacing: var(--tr-meta);
+  gap: var(--s-2);
+  padding: 0 0 var(--s-2);
   border-bottom: var(--hairline) solid var(--border-1);
 }
 
 /* Sub-stage sequence number (Promptscape 01/02… index per column). */
 .subStageIdx {
-  color: var(--fg-4);
+  flex: none;
+  font: var(--w-600) var(--t-11) / 1 var(--font-mono);
+  color: var(--fg-3);
   font-variant-numeric: tabular-nums;
 }
 
+/* Sub-stage name — normal-case sans, set apart from the mono index. */
+.subStageName {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  font: var(--w-600) var(--t-13) / 1 var(--font-sans);
+  color: var(--fg-1);
+}
+
+/* Phrase card (Promptscape script chip): a muted card at rest that lifts to the
+ * primary surface on hover, with a faint copy glyph cueing click-to-copy. */
 .phrase {
   display: flex;
-  flex-direction: column;
-  gap: var(--s-1);
+  align-items: flex-start;
+  gap: var(--s-2);
   padding: var(--s-2_5);
-  background: var(--surface-1);
+  background: var(--surface-2);
   border: var(--hairline) solid var(--border-1);
   border-radius: var(--r-3);
   color: inherit;
@@ -239,8 +283,22 @@
 }
 
 .phrase:hover {
-  background: var(--surface-2);
+  background: var(--surface-1);
   border-color: var(--border-2);
+}
+
+.phraseIcon {
+  flex: none;
+  margin-top: var(--s-0_5);
+  color: var(--fg-3);
+  opacity: var(--op-dim);
+}
+
+.phraseBody {
+  display: flex;
+  flex-direction: column;
+  gap: var(--s-1);
+  min-width: 0;
 }
 
 .phrase:active {
