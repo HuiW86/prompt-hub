@@ -1,6 +1,7 @@
-/* MacroGrid — task-layer macro cards (3-column grid). Visual shell comes from
-   primitives (CardSurface / Button / ActionCluster / Editor*); this module
-   only carries domain layout (grid, copy surface, title/body/meta). */
+/* MacroGrid — task-layer macros as a compact horizontal strip (Promptscape
+   "高频一键入口"). Visual shell comes from primitives (CardSurface / Button /
+   ActionCluster / Editor*); this module flattens the card into a one-line bar
+   (icon chip + name + uses) and carries the strip/wrap layout. */
 
 .region {
   display: flex;
@@ -15,11 +16,12 @@
   outline-offset: calc(-1 * var(--border-thick));
 }
 
-/* Compact strip at the top of the task column: responsive auto-fill cards
- * capped to a couple of rows (Promptscape "高频一键入口"); scrolls past that. */
+/* Compact strip at the top of the task column: macros flow as horizontal
+ * one-line buttons (Promptscape "高频一键入口" — icon chip + name + uses),
+ * wrapping into a couple of rows and scrolling past that. */
 .grid {
-  display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(var(--col-min-macro), 1fr));
+  display: flex;
+  flex-wrap: wrap;
   gap: var(--s-2_5);
   padding: var(--s-3_5);
   overflow-y: auto;
@@ -27,11 +29,23 @@
   max-height: var(--h-macro-strip);
 }
 
-/* Main click-to-copy surface fills the card; action controls overlay it. */
+/* Override CardSurface's vertical card shell into a compact horizontal bar. */
+.macroCard {
+  flex: 1 1 var(--col-min-macro);
+  flex-direction: row;
+  align-items: center;
+  gap: var(--s-2_5);
+  min-height: var(--h-phasebar);
+  padding: 0 var(--s-3);
+}
+
+/* Main click-to-copy surface fills the bar; action controls overlay the right. */
 .copyArea {
   display: flex;
-  flex-direction: column;
-  gap: var(--s-2);
+  flex-direction: row;
+  align-items: center;
+  gap: var(--s-2_5);
+  flex: 1;
   text-align: left;
   appearance: none;
   background: none;
@@ -47,53 +61,56 @@
   border-radius: var(--r-2);
 }
 
-/* Card action overlay (ActionCluster / ConfirmInline) — domain placement. */
-.cardActions {
-  position: absolute;
-  top: var(--s-2);
-  right: var(--s-2);
-}
-
-/* Central edit panel inset within the region (panel visuals from EditorPanel). */
-.editor {
-  margin: var(--s-2_5) var(--s-3_5) 0;
-}
-
-.title {
+/* Leading icon chip; filled task-color for the hot (high-usage) macros so the
+ * "frequent" signal survives the move to user-controlled order. */
+.iconChip {
   display: flex;
   align-items: center;
-  gap: var(--s-1);
-  min-width: 0;
-  word-break: break-word;
-  font: var(--w-500) var(--t-14) / var(--lh-tight) var(--font-sans);
-  color: var(--fg-1);
-}
-
-.hotIc {
-  color: var(--task);
+  justify-content: center;
+  width: var(--s-6);
+  height: var(--s-6);
+  border-radius: var(--r-3);
+  background: var(--surface-2);
+  border: var(--hairline) solid var(--border-1);
+  color: var(--fg-3);
   flex-shrink: 0;
 }
 
-.body {
-  margin: 0;
-  font: var(--w-400) var(--t-13) / var(--lh-body) var(--font-sans);
-  color: var(--fg-2);
-  display: -webkit-box;
-  -webkit-line-clamp: 2;
-  line-clamp: 2;
-  -webkit-box-orient: vertical;
-  overflow: hidden;
+.iconChipHot {
+  background: var(--task);
+  border-color: var(--task);
+  color: var(--task-fg);
 }
 
-.meta {
-  display: flex;
-  align-items: center;
-  gap: var(--s-2);
+.name {
+  flex: 1;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  font: var(--w-600) var(--t-13) / var(--lh-tight) var(--font-sans);
+  color: var(--fg-1);
+}
+
+.uses {
+  flex-shrink: 0;
   font: var(--w-400) var(--t-11) / 1 var(--font-mono);
   color: var(--aux);
   font-variant-numeric: tabular-nums;
 }
 
-.sep {
-  color: var(--border-2);
+/* Card action overlay (ActionCluster / ConfirmInline) — domain placement.
+ * Vertically centered on the compact bar; revealed on hover, overlapping the
+ * uses count which is non-essential while editing. */
+.cardActions {
+  position: absolute;
+  top: 50%;
+  right: var(--s-2);
+  transform: translateY(-50%);
+  background: var(--surface-1);
+}
+
+/* Central edit panel inset within the region (panel visuals from EditorPanel). */
+.editor {
+  margin: var(--s-2_5) var(--s-3_5) 0;
 }

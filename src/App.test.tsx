@@ -239,7 +239,12 @@ describe("Dashboard end-to-end render", () => {
     await waitFor(() =>
       expect(screen.getByText("借力最优解")).toBeInTheDocument(),
     );
-    expect(screen.getByText("调研外部成熟方案。")).toBeInTheDocument();
+    // The compact macro strip drops the inline body — content moves to the
+    // copy button's title tooltip (Promptscape "高频一键入口" form).
+    expect(screen.getByRole("button", { name: "借力最优解" })).toHaveAttribute(
+      "title",
+      "调研外部成熟方案。",
+    );
     expect(screen.getByText("7 次")).toBeInTheDocument();
   });
 

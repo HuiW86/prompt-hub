@@ -104,10 +104,84 @@
   background: var(--border-2);
 }
 
+/* Contained panorama card (Promptscape Scene 全景): a bordered surface holding
+ * the scene-identity header bar atop the sub-stage grid. */
+.sceneCard {
+  flex: 1;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+  margin: var(--s-3) var(--s-3_5) var(--s-3_5);
+  background: var(--surface-1);
+  border: var(--hairline) solid var(--border-1);
+  border-radius: var(--r-4);
+  overflow: hidden;
+}
+
+/* Scene-identity header: icon box + name + sub-stage / phrase counts, with the
+ * manage / edit controls docked to the right. Neutral surfaces only — the
+ * active scene tab carries the task color, this bar must not (constitution B2). */
+.sceneHead {
+  display: flex;
+  align-items: center;
+  gap: var(--s-3);
+  flex: none;
+  padding: var(--s-2_5) var(--s-3_5);
+  background: var(--surface-2);
+  border-bottom: var(--hairline) solid var(--border-1);
+}
+
+.sceneIcon {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: var(--s-8);
+  height: var(--s-8);
+  flex: none;
+  border-radius: var(--r-3);
+  background: var(--surface-1);
+  border: var(--hairline) solid var(--border-1);
+  font-size: var(--t-16);
+  line-height: 1;
+}
+
+.sceneIdentity {
+  flex: 1;
+  min-width: 0;
+}
+
+.sceneName {
+  font: var(--w-600) var(--t-16) / var(--lh-tight) var(--font-sans);
+  letter-spacing: var(--tr-tight);
+  color: var(--fg-1);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.sceneMeta {
+  margin-top: var(--s-0_5);
+  font: var(--w-400) var(--t-12) / 1 var(--font-sans);
+  color: var(--fg-3);
+}
+
+.sceneHeadActions {
+  display: flex;
+  align-items: center;
+  gap: var(--s-2);
+  flex: none;
+}
+
+/* Inline editor inset within the card, above the phrase grid. */
+.editorSlot {
+  padding: var(--s-2_5) var(--s-3_5) 0;
+}
+
 /* Sub-stages flow as a responsive multi-column grid (Promptscape Scene 全景):
  * each group is a column, its phrases stack as bordered cards beneath the
  * sub-stage header. View mode only — edit mode keeps the vertical list below. */
 .phrases {
+  flex: 1;
   display: grid;
   grid-template-columns: repeat(
     auto-fill,
@@ -186,20 +260,7 @@
   overflow: hidden;
 }
 
-/* ── Edit mode: manage toolbar + sortable phrase rows ─────────────────────── */
-.toolbar {
-  display: flex;
-  align-items: center;
-  gap: var(--s-2);
-  padding: var(--s-2) var(--s-3_5);
-  border-bottom: var(--hairline) solid var(--border-1);
-}
-
-/* Pencil toggle pushed to the right edge when not editing. */
-.manageBtn {
-  margin-left: auto;
-}
-
+/* ── Edit mode: sortable phrase rows ──────────────────────────────────────── */
 .list {
   display: flex;
   flex-direction: column;

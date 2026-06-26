@@ -2,13 +2,12 @@ import { useEffect, useMemo, useRef, useState } from "react";
 import { DragDropProvider } from "@dnd-kit/react";
 import { useSortable } from "@dnd-kit/react/sortable";
 import { move } from "@dnd-kit/helpers";
-import { Flame, GripVertical, Pencil, Plus, Trash2 } from "lucide-react";
+import { GripVertical, Pencil, Plus, Trash2, Zap } from "lucide-react";
 
 import { useCopy } from "../hooks/useCopy";
 import { usePromptStore } from "../stores/promptStore";
 import { useToastStore } from "../stores/toastStore";
 import type { Macro } from "../ipc/types";
-import { relativeTime } from "../utils/time";
 
 import {
   ActionCluster,
@@ -164,6 +163,7 @@ function SortableMacroCard({
     <CardSurface
       layer="task"
       ref={ref}
+      className={styles.macroCard}
       flash={flashId === macro.id}
       dragging={isDragging}
       data-macro-id={macro.id}
@@ -172,6 +172,7 @@ function SortableMacroCard({
         type="button"
         className={styles.copyArea}
         aria-label={macro.name}
+        title={macro.content}
         onClick={() =>
           void copy(
             macro.content,
@@ -188,23 +189,14 @@ function SortableMacroCard({
           )
         }
       >
-        <h3 className={styles.title}>
-          {isHot && (
-            <Flame
-              size={12}
-              className={styles.hotIc}
-              aria-hidden
-              strokeWidth={2}
-            />
-          )}
-          <span>{macro.name}</span>
-        </h3>
-        <p className={styles.body}>{macro.content}</p>
-        <div className={styles.meta}>
-          <span>{macro.usageCount} 次</span>
-          <span className={styles.sep}>·</span>
-          <span>{relativeTime(macro.lastUsedAt)}</span>
-        </div>
+        <span
+          className={`${styles.iconChip} ${isHot ? styles.iconChipHot : ""}`}
+          aria-hidden
+        >
+          <Zap size={14} strokeWidth={2} />
+        </span>
+        <span className={styles.name}>{macro.name}</span>
+        <span className={styles.uses}>{macro.usageCount} 次</span>
       </button>
 
       {isConfirming ? (

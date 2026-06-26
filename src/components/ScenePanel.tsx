@@ -173,46 +173,59 @@ export function ScenePanel() {
           <DraftInbox />
         </div>
       ) : (
-        <>
-          <div className={styles.toolbar}>
-            {editMode ? (
-              <>
-                <Button
-                  layer="task"
-                  aria-label="新增话术"
-                  onClick={() => setEditing({ mode: "create" })}
+        <div className={styles.sceneCard}>
+          <div className={styles.sceneHead}>
+            <span className={styles.sceneIcon} aria-hidden>
+              {current.scene.icon ?? "📁"}
+            </span>
+            <div className={styles.sceneIdentity}>
+              <div className={styles.sceneName}>{current.scene.name}</div>
+              <div className={styles.sceneMeta}>
+                {current.subStages.length} 个子阶段 · {current.phrases.length}{" "}
+                条话术
+              </div>
+            </div>
+            <div className={styles.sceneHeadActions}>
+              {editMode ? (
+                <>
+                  <Button
+                    layer="task"
+                    aria-label="新增话术"
+                    onClick={() => setEditing({ mode: "create" })}
+                  >
+                    <Plus size={14} aria-hidden strokeWidth={2} />
+                    <span>新增</span>
+                  </Button>
+                  <Button
+                    onClick={() => {
+                      setEditMode(false);
+                      setEditing(null);
+                    }}
+                  >
+                    完成
+                  </Button>
+                </>
+              ) : (
+                <IconButton
+                  aria-label="管理话术"
+                  onClick={() => setEditMode(true)}
                 >
-                  <Plus size={14} aria-hidden strokeWidth={2} />
-                  <span>新增</span>
-                </Button>
-                <Button
-                  onClick={() => {
-                    setEditMode(false);
-                    setEditing(null);
-                  }}
-                >
-                  完成
-                </Button>
-              </>
-            ) : (
-              <IconButton
-                className={styles.manageBtn}
-                aria-label="管理话术"
-                onClick={() => setEditMode(true)}
-              >
-                <Pencil size={12} aria-hidden strokeWidth={2} />
-              </IconButton>
-            )}
+                  <Pencil size={12} aria-hidden strokeWidth={2} />
+                </IconButton>
+              )}
+            </div>
           </div>
 
           {editMode && editing && (
-            <PhraseEditor
-              target={editing}
-              sceneId={current.scene.id}
-              subStages={current.subStages}
-              onClose={() => setEditing(null)}
-              onError={(msg) => showToast(msg)}
-            />
+            <div className={styles.editorSlot}>
+              <PhraseEditor
+                target={editing}
+                sceneId={current.scene.id}
+                subStages={current.subStages}
+                onClose={() => setEditing(null)}
+                onError={(msg) => showToast(msg)}
+              />
+            </div>
           )}
 
           <div className={styles.phrases}>
@@ -279,7 +292,7 @@ export function ScenePanel() {
               ))
             )}
           </div>
-        </>
+        </div>
       )}
     </section>
   );
