@@ -38,7 +38,9 @@ export const useSettingsStore = create<SettingsState>()(
     (set, get) => ({
       globalHotkey: "Alt+Space",
       hiddenPhaseIds: [],
-      themeMode: "system",
+      // Default light to match the Promptscape design (ADR-018 补遗): the
+      // light palette is the reference look; dark stays a user-selectable mode.
+      themeMode: "light",
       accent: "neutral",
       settingsOpen: false,
       setGlobalHotkey: (globalHotkey) => set({ globalHotkey }),

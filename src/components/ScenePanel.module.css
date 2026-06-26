@@ -202,12 +202,21 @@
 }
 
 .subStage {
+  display: flex;
+  align-items: center;
+  gap: var(--s-1_5);
   padding: 0 0 var(--s-1_5);
   font: var(--w-600) var(--t-11) / 1 var(--font-mono);
   color: var(--fg-3);
   text-transform: uppercase;
   letter-spacing: var(--tr-meta);
   border-bottom: var(--hairline) solid var(--border-1);
+}
+
+/* Sub-stage sequence number (Promptscape 01/02… index per column). */
+.subStageIdx {
+  color: var(--fg-4);
+  font-variant-numeric: tabular-nums;
 }
 
 .phrase {

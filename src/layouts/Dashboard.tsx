@@ -7,6 +7,7 @@ import {
 
 import { Header } from "../components/Header";
 import { MacroGrid } from "../components/MacroGrid";
+import { ModifierGrid } from "../components/ModifierGrid";
 import { ProtocolBand } from "../components/ProtocolBand";
 import { RecentList } from "../components/RecentList";
 import { ScenePanel } from "../components/ScenePanel";
@@ -82,6 +83,7 @@ export function Dashboard() {
             minSize="20%"
           >
             <div className={styles.aside}>
+              <ModifierGrid />
               <RecentList />
               <SopProgress />
             </div>

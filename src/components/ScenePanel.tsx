@@ -251,13 +251,18 @@ export function ScenePanel() {
                 />
               ))
             ) : (
-              groups.map((g) => (
+              groups.map((g, gi) => (
                 <div
                   key={g.subStage?.id ?? "__ungrouped__"}
                   className={styles.group}
                 >
                   {g.subStage && (
-                    <div className={styles.subStage}>{g.subStage.name}</div>
+                    <div className={styles.subStage}>
+                      <span className={styles.subStageIdx}>
+                        {String(gi + 1).padStart(2, "0")}
+                      </span>
+                      {g.subStage.name}
+                    </div>
                   )}
                   {g.phrases.map((p) => {
                     const cls = `${styles.phrase} ${flashId === p.id ? `${primitiveStyles.task} ${primitiveStyles.flash}` : ""}`;

@@ -116,6 +116,22 @@ Claude Design（claude.ai/design）产出「Promptscape 全景仪表盘」设计
 - ✅ Consequences 含未来反悔成本 + 三处偏离显式记录
 - ✅ 触及 ADR-016 不就地改其原文，以本 ADR 补遗 + ADR-016 加指回备注
 
+## 补遗-1（2026-06-25，omar 指示 · 三项提高保真度，待人审）
+
+> **状态**：代码已落地全绿（`pnpm test` 98/98 ✓ / `build` ✓ / `lint` ✓ / `prettier` ✓，后端 Rust 未动）。本补遗为 AI 起草，**反转本 ADR §5/§6 的两项原决策**，须 omar 人审追认后方可视为 ratified。
+
+omar 复审设计稿后指示「Scene 区和右栏 aside、配色都调整一致」，三项落地：
+
+- **R1 默认配色 暗 → 浅**：`settingsStore.themeMode` 默认 `system` → `light`，以浅色为参考外观（暗色仍为用户可选模式）。**反转**原「暗色 token 为基础」基调（§6 正向后果第 1 项 + design-spec v0.11 §2.5）。现有 light token 偏暖灰，与设计稿纯中性灰存在细微色相差，**未**重绘 token（保留既有 light 调色板），如需精确对齐 shadcn 中性灰另议。
+- **R2 补回 Modifier 右栏（aside 原子库）**：新增 `ModifierGrid`（紧凑 chip 卡，按 4 象限 groupKind 分组，click-to-copy），插入 aside 顶部。**反转**本 ADR Option 乙的 E「不引入 Modifier 右栏」+ §6 反向后果第 1 项。
+  - **B2 复检通过**：Modifier 按 tokens.css 本就属 `--protocol` 色系，chip 用 `layer="protocol"`；不染 task 面，不与 AlignmentPhrase/SOP 混置（仅展示 Modifier 自身），不违反物理分离。
+  - **B1 复检通过**：未引入第 4 层资产，Modifier 仍是三层资产之一，仅新增其展示位。
+  - **取舍**：该块为「展示型」区块，**不进 §13.4 Tab 工作区循环**（无 `data-region` / 无 region `tabIndex`），故不改 product-spec §13.4 区域序列、不破 App.test.tsx 8 区断言；chip 本身是 button 仍可逐个 Tab 到。
+  - **数据模型约束**：`UsageSource` 无 `modifier` 值，Modifier 复制走 clipboard 直拷、**不记 usage**（不进 Recent / 不累加 usageCount）。加 `modifier` source 属后端改动，未授权不做——属忠实适配（同 Scene 无 desc 字段）。
+- **R3 Scene 子阶段补 idx 编号**：Scene 只读视图每列子阶段头补 `01/02…` 序号（mono），贴近设计稿。Scene 区本就是多列 grid（auto-fill），**未**改为固定 4 列（窄列下 auto-fill 更稳健）。属纯布局，不触铁律。
+
+**待人审决策点**：R1（默认翻浅）+ R2（补 Modifier 右栏）实质反转本 ADR 原决策，omar 追认后应回流 design-spec（§2.5 默认模式 + §10.8 新增 ModifierGrid 行）/ product-spec（§13.3 aside 区域补 Modifier 块）/ features，并校正本 ADR §6 正反向后果。
+
 ## 相关链接
 
 - **触发本决策的文档**：[[CLAUDE-DESIGN]]（Promptscape 设计稿来源）/ [[CLAUDE#§6]] 忌讳清单（B1/B2 自检）
