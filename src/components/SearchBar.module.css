@@ -48,13 +48,13 @@
 }
 
 .input:focus-visible {
-  outline: var(--border-thick) solid var(--protocol);
+  outline: var(--border-thick) solid var(--accent);
   outline-offset: var(--hairline);
   border-radius: var(--r-1);
 }
 
 .field:focus-within .icon {
-  color: var(--protocol);
+  color: var(--accent);
   opacity: 1;
 }
 
@@ -81,7 +81,7 @@
 }
 
 .badge:focus-visible {
-  outline: var(--border-thick) solid var(--protocol);
+  outline: var(--border-thick) solid var(--accent);
   outline-offset: 0;
   border-radius: var(--r-1);
 }

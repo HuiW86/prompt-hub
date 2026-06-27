@@ -6,7 +6,7 @@ created: 2026-05-18
 last_modified: 2026-06-25
 status: draft  # 🤝 共创，v0.10 涟漪 ADR-018 Promptscape 吸收待 omar 人审；前序 v0.8 已 ratified
 author: co  # 🤝 人机共创（CLAUDE §5.2）
-related: [[01-spec]], [[05-design-spec]], [[06-prd]], [[012-lock-visual-quality-anchor]], [[013-alignment-phrases-tab-inclusion]], [[015-expose-mcp-write-pipeline]], [[017-enable-auto-update]], [[018-absorb-promptscape-design]]
+related: [[01-spec]], [[05-design-spec]], [[06-prd]], [[012-lock-visual-quality-anchor]], [[019-supersede-flat-visual-anchor]], [[013-alignment-phrases-tab-inclusion]], [[015-expose-mcp-write-pipeline]], [[017-enable-auto-update]], [[018-absorb-promptscape-design]]
 description: 手动 AI 编程仪表盘的 UI 契约——双形态架构/布局/点击路径/交互频率/状态反馈/引导/用户旅程/主形态 UI 草案；v0.9 移除主仪表盘的 Composition/Modifier 编辑面板（UI 减负·选项 2），Tab cycle 8 → 6，资产类型保留在数据层；v0.10 涟漪 ADR-018 Promptscape 吸收：§13.2 加 Header 区域0 + 协议层 band + 任务层 3→2 列 + 设置弹窗区域9；v0.7 涟漪 ADR-015 草稿收件箱 tab + 待审 badge
 ---
 
@@ -796,7 +796,8 @@ graph TD
 - [[01-spec]] — 项目定位与哲学
 - [[05-design-spec]] — 视觉规范
 - [[06-prd]] — 工程契约（数据模型 / 模块字段 / NFR / Boundaries）
-- [[012-lock-visual-quality-anchor]] — 视觉锚点 ADR（Linear-class polish）
+- [[012-lock-visual-quality-anchor]] — 视觉锚点 ADR（Linear-class polish，**Superseded by ADR-019**）
+- [[019-supersede-flat-visual-anchor]] — 推翻 flat 锚点 ADR（subtle elevation + 放弃颜色本体论）
 - [[013-alignment-phrases-tab-inclusion]] — AlignmentPhrases 独立 region 追认 ADR
 - [[prompt-hub-mvp]] — 五阶段实施任务清单
 

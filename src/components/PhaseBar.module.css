@@ -13,7 +13,7 @@
 
 /* B5-5: region-level Tab landing (03-product-spec §13.4). */
 .phaseBar:focus-visible {
-  outline: var(--border-thick) solid var(--protocol);
+  outline: var(--border-thick) solid var(--accent);
   outline-offset: calc(-1 * var(--border-thick));
 }
 
@@ -46,12 +46,12 @@
 }
 
 .phase:focus-visible {
-  outline: var(--border-thick) solid var(--protocol);
+  outline: var(--border-thick) solid var(--accent);
   outline-offset: calc(-1 * var(--border-thick));
 }
 
 .phase.active {
-  background: var(--protocol-8);
+  background: var(--surface-2);
   color: var(--fg-1);
 }
 
@@ -62,7 +62,7 @@
   right: 0;
   bottom: calc(-1 * var(--hairline));
   height: var(--border-thick);
-  background: var(--protocol);
+  background: var(--accent);
 }
 
 .num {
@@ -78,9 +78,9 @@
 }
 
 .phase.active .num {
-  border-color: var(--protocol);
+  border-color: var(--accent);
   color: var(--fg-1);
-  background: var(--protocol-16);
+  background: var(--surface-3);
 }
 
 .label {
@@ -95,7 +95,7 @@
 }
 
 .phase.active .shortcut {
-  color: var(--protocol);
+  color: var(--fg-2);
 }
 
 /* Copy flash uses the single shared ph-flash keyframe (§11); injected by

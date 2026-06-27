@@ -15,16 +15,16 @@
   padding: var(--s-2) var(--s-3_5) 0;
 }
 
-/* "协议层" tag uses the protocol semantic color (it labels that layer), not the
- * neutral accent — B2-safe. */
+/* "协议层" tag — neutral chrome label (ADR-019: colour no longer marks layer).
+ * The layer identity is carried by this band's position + inset surface, not hue. */
 .pill {
   display: inline-flex;
   align-items: center;
   gap: var(--s-1);
   padding: var(--s-0_5) var(--s-2);
   border-radius: var(--r-2);
-  background: var(--protocol-16);
-  color: var(--protocol);
+  background: var(--surface-2);
+  color: var(--fg-2);
   font: var(--w-600) var(--t-11) / 1 var(--font-sans);
   letter-spacing: var(--tr-meta);
 }

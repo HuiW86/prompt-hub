@@ -30,8 +30,12 @@
    Cool-neutral grays, slight blue lift. No pure black / pure white.
    ============================================================ */
 :root {
-  /* Ontology — carry MEANING. Use ONLY on the surfaces of their layer. */
-  --protocol: #534ab7; /* Modifier, AlignmentPhrase, PhaseBar */
+  /* Ontology accents — OPTIONAL emphasis (ADR-019 Option A: colour ontology
+     downgraded from hard-rule to visual-choice). No longer bound to a layer;
+     new components default to neutral --accent. Kept for existing components
+     that opt to retain a purple/green accent. Protocol/task separation is now
+     carried by position + shape (design-spec §2.4.1 / §5 / §13). */
+  --protocol: #534ab7; /* legacy protocol accent (optional) */
   --protocol-fg: #ffffff;
   --protocol-8: rgba(83, 74, 183, 0.08); /* active press fill */
   --protocol-16: rgba(83, 74, 183, 0.16); /* selected fill */
@@ -63,6 +67,13 @@
 
   /* Modal backdrop scrim (overlay dialogs only). */
   --scrim: rgba(0, 0, 0, 0.45);
+
+  /* Elevation — subtle drop-shadow (ADR-019, design-spec §8.2.1).
+     Apply ONLY on floating surfaces (card/banner/overlay/popover) hover &
+     raised states. Dark canvas needs deeper alpha to read against #0e0e10.
+     No glow / no inset / no colored / no multi-layer shadow. */
+  --shadow-1: 0 1px 2px rgba(0, 0, 0, 0.4); /* card / banner hover lift */
+  --shadow-2: 0 4px 12px rgba(0, 0, 0, 0.5); /* overlay / popover */
 }
 
 /* ============================================================
@@ -86,6 +97,10 @@
 
     --skeleton: #e8e8e5;
     --skeleton-hi: #dededb;
+
+    /* Lighter alpha on light canvas — same elevation, softer shadow. */
+    --shadow-1: 0 1px 2px rgba(0, 0, 0, 0.08);
+    --shadow-2: 0 4px 12px rgba(0, 0, 0, 0.12);
   }
 }
 
@@ -103,17 +118,18 @@
   --fg-4: #a5a5a8;
   --skeleton: #e8e8e5;
   --skeleton-hi: #dededb;
+  --shadow-1: 0 1px 2px rgba(0, 0, 0, 0.08);
+  --shadow-2: 0 4px 12px rgba(0, 0, 0, 0.12);
 }
 
 /* ============================================================
-   1b. Neutral accent — NEUTRAL emphasis ONLY (B2 hard boundary)
+   1b. Neutral accent — brand / primary-action / focus emphasis.
    Painted on: brand mark, primary action button, focus rings.
-   NEVER on protocol (selected phase) / task (active scene tab)
-   surfaces — those keep --protocol / --task. The accent token is
-   physically separate so a swatch switch can never recolor a
-   semantic layer (constitution B2). Default is high-contrast
-   neutral (inverted fg). Swatch overrides ride a root class set
-   by settingsStore.setAccent.
+   Physically separate from the optional --protocol / --task accents.
+   Since v0.12 (ADR-019) colour no longer carries ontology, --accent is
+   the DEFAULT emphasis for new components; ontology accents are legacy
+   opt-ins. Default is high-contrast neutral (inverted fg). Swatch
+   overrides ride a root class set by settingsStore.setAccent.
    ============================================================ */
 :root {
   /* Swatch palette — globally available so the settings color picker can

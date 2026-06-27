@@ -113,26 +113,15 @@
 /* ============================================================
    v0.10 surface / control / editor primitives (design-spec §10.2.2)
 
-   Ontology layer is expressed by a single modifier class that sets
-   local --layer-* vars; surfaces/controls reference those vars so a
-   variant never duplicates the base rule. Layer fill follows §13.2:
-   a task surface only ever shows task fill, protocol only protocol.
+   Layer modifier classes set local --layer-* vars; surfaces/controls
+   reference those vars so a variant never duplicates the base rule.
+   Since v0.12 (ADR-019 Option A) colour no longer carries ontology —
+   .task / .protocol are kept as legacy aliases that now resolve to the
+   same neutral surface-lift as .neutral. Protocol/task identity is
+   carried by position + shape (design-spec §2.4.1 / §13), not fill.
    ============================================================ */
-.task {
-  --layer: var(--task);
-  --layer-fg: var(--task-fg);
-  --layer-8: var(--task-8);
-  --layer-16: var(--task-16);
-}
-
-.protocol {
-  --layer: var(--protocol);
-  --layer-fg: var(--protocol-fg);
-  --layer-8: var(--protocol-8);
-  --layer-16: var(--protocol-16);
-}
-
-/* Neutral: no ontology fill — selected/active lift via surface only. */
+.task,
+.protocol,
 .neutral {
   --layer: var(--border-3);
   --layer-fg: var(--fg-1);
@@ -272,7 +261,7 @@
 
 /* shape=square handled by .iconBtn; .btn focus shares unified outline */
 .btn:focus-visible {
-  outline: var(--border-thick) solid var(--protocol);
+  outline: var(--border-thick) solid var(--accent);
   outline-offset: var(--hairline);
 }
 
@@ -306,7 +295,7 @@
 }
 
 .iconBtn:focus-visible {
-  outline: var(--border-thick) solid var(--protocol);
+  outline: var(--border-thick) solid var(--accent);
   outline-offset: 0;
 }
 
@@ -340,9 +329,9 @@
 
 .input:focus-visible,
 .editorInput:focus-visible {
-  outline: var(--border-thick) solid var(--protocol);
+  outline: var(--border-thick) solid var(--accent);
   outline-offset: var(--hairline);
-  border-color: var(--protocol);
+  border-color: var(--accent);
 }
 
 /* ── EditorPanel — inline edit shell (§10.2.2) ───────────────────────── */
@@ -397,9 +386,9 @@
 }
 
 .chip:focus-visible {
-  outline: var(--border-thick) solid var(--protocol);
+  outline: var(--border-thick) solid var(--accent);
   outline-offset: 0;
-  border-color: var(--protocol);
+  border-color: var(--accent);
 }
 
 /* ── ActionCluster — hover/focus card action group (§10.2.2). Positioning

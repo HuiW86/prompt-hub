@@ -73,6 +73,6 @@
 }
 
 .gear:focus-visible {
-  outline: var(--border-thick) solid var(--protocol);
+  outline: var(--border-thick) solid var(--accent);
   outline-offset: var(--hairline);
 }

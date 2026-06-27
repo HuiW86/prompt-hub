@@ -1,15 +1,16 @@
 /* Floating "已复制" indicator anchored top-right of the dashboard.
  * Visible window is bounded by toastStore.VISIBLE_MS; CSS animates fade-in only.
- * Bundle palette: task-8 fill + task border (semantic 8% active fill). */
+ * Neutral surface + elevation (ADR-019: floating feedback, no task-green). */
 .toast {
   position: fixed;
   top: var(--s-6);
   right: var(--s-8);
   z-index: 100;
   padding: var(--s-2) var(--s-3);
-  background: var(--task-8);
-  border: var(--hairline) solid var(--task);
+  background: var(--surface-2);
+  border: var(--hairline) solid var(--border-3);
   border-radius: var(--r-3);
+  box-shadow: var(--shadow-2);
   color: var(--fg-1);
   font: var(--w-500) var(--t-13) / 1 var(--font-sans);
   animation: fadeIn var(--d-slow) var(--ease);

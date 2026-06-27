@@ -90,8 +90,8 @@
   cursor: default;
 }
 
-/* Modifier-only four-quadrant picker — Modifier is protocol ontology, so it
-   carries the protocol accent (decision iii: omar classifies at promote time). */
+/* Modifier-only four-quadrant picker — neutral chips (ADR-019: Modifier's layer
+   identity is set at promote time via decision iii, not carried by chip colour). */
 .quad {
   display: flex;
   flex-wrap: wrap;
@@ -104,10 +104,10 @@
   min-width: 0;
   height: var(--h-chip);
   padding: 0 var(--s-2);
-  border: var(--hairline) solid var(--protocol);
+  border: var(--hairline) solid var(--border-2);
   border-radius: var(--r-2);
-  background: var(--protocol-8);
-  color: var(--protocol);
+  background: var(--surface-1);
+  color: var(--fg-1);
   font: var(--w-500) var(--t-12) / 1 var(--font-sans);
   cursor: pointer;
   user-select: none;
@@ -116,10 +116,11 @@
 }
 
 .quadBtn:hover {
-  background: var(--protocol-16);
+  background: var(--surface-2);
+  border-color: var(--border-3);
 }
 
 .quadBtn:focus-visible {
-  outline: var(--border-thick) solid var(--protocol);
+  outline: var(--border-thick) solid var(--accent);
   outline-offset: 0;
 }

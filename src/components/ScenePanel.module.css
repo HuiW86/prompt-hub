@@ -11,13 +11,13 @@
 
 /* B5-5: region-level Tab landing (03-product-spec §13.4). */
 .region:focus-visible {
-  outline: var(--border-thick) solid var(--protocol);
+  outline: var(--border-thick) solid var(--accent);
   outline-offset: calc(-1 * var(--border-thick));
 }
 
 /* Scene tabs as a segmented control (Promptscape): a recessed muted track holds
- * equal-width segments; the active segment lifts to the primary surface and
- * carries the task color (constitution B2 — Scene is a task-layer asset). */
+ * equal-width segments; the active segment lifts to the primary surface.
+ * Scene's task-layer identity is carried by position, not colour (ADR-019). */
 .tabs {
   display: flex;
   align-items: center;
@@ -64,13 +64,13 @@
 }
 
 .tab:focus-visible {
-  outline: var(--border-thick) solid var(--protocol);
+  outline: var(--border-thick) solid var(--accent);
   outline-offset: 0;
 }
 
 .tab.active {
   background: var(--surface-1);
-  color: var(--task);
+  color: var(--fg-1);
   font-weight: var(--w-600);
 }
 
@@ -302,11 +302,11 @@
 }
 
 .phrase:active {
-  background: var(--task-8);
+  background: var(--surface-2);
 }
 
 .phrase:focus-visible {
-  outline: var(--border-thick) solid var(--protocol);
+  outline: var(--border-thick) solid var(--accent);
   outline-offset: calc(-1 * var(--border-thick));
 }
 
@@ -350,7 +350,7 @@
 
 .row.dragging {
   opacity: var(--op-dim);
-  border-color: var(--task);
+  border-color: var(--accent);
 }
 
 .rowName {
@@ -379,7 +379,7 @@
 }
 
 .subStageSelect:focus-visible {
-  outline: var(--border-thick) solid var(--task);
+  outline: var(--border-thick) solid var(--accent);
   outline-offset: 0;
 }
 

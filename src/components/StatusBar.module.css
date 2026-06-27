@@ -35,11 +35,11 @@
 }
 
 .dotOk {
-  background: var(--task);
+  background: var(--accent);
 }
 
 .dotProto {
-  background: var(--protocol);
+  background: var(--fg-2);
 }
 
 .dotIdle {

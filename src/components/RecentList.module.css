@@ -11,7 +11,7 @@
 
 /* B5-5: region-level Tab landing (03-product-spec §13.4). */
 .region:focus-visible {
-  outline: var(--border-thick) solid var(--protocol);
+  outline: var(--border-thick) solid var(--accent);
   outline-offset: calc(-1 * var(--border-thick));
 }
 
@@ -48,11 +48,11 @@
 }
 
 .item:active:not(:disabled) {
-  background: var(--task-8);
+  background: var(--surface-2);
 }
 
 .item:focus-visible {
-  outline: var(--border-thick) solid var(--protocol);
+  outline: var(--border-thick) solid var(--accent);
   outline-offset: calc(-1 * var(--border-thick));
 }
 
@@ -72,8 +72,8 @@
 }
 
 .badgeProtocol {
-  background: var(--protocol);
-  color: var(--protocol-fg);
+  background: var(--accent);
+  color: var(--accent-fg);
 }
 
 .badgeTask {

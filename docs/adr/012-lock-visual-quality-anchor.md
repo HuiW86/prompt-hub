@@ -26,7 +26,9 @@ related:
 
 ## 2. Status
 
-`Accepted`（2026-05-24，omar 拍板 Option A）
+`Superseded by ADR-019`（2026-06-26）——原 `Accepted`（2026-05-24，omar 拍板 Linear-class 锚定 Option A）。[[019-supersede-flat-visual-anchor]] 推翻本 ADR 的「反 polish / Bloomberg-flat」视觉锚点（启用本 ADR §4 当年明示排除的 Option E），引入 elevation 并放弃颜色本体论。
+
+> 校正备注：本 ADR §4 Option E / §6 相关链接曾把「推翻反 polish」门槛挂到 [[02-constitution]] 与 [[01-spec]]；ADR-019 核对原文后澄清——颜色本体论与反阴影底线实际住 [[05-design-spec#§2.4.1]]/[[05-design-spec#§8.2]]（🤝 AI 可起草层），constitution B2 只管结构分离不管颜色，推翻无须人主笔改宪法。
 
 ## 3. Context
 

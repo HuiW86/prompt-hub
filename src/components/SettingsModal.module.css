@@ -22,6 +22,7 @@
   background: var(--surface-1);
   border: var(--hairline) solid var(--border-2);
   border-radius: var(--r-frame);
+  box-shadow: var(--shadow-2);
 }
 
 /* ── Left nav ──────────────────────────────────────────────────────────────── */
@@ -308,8 +309,10 @@
   color: var(--fg-2);
 }
 
+/* No --danger token in the palette; surface errors as high-contrast neutral
+   (ADR-019 dropped the --task-green reuse here). A dedicated --danger is TODO. */
 .statusError {
-  color: var(--task);
+  color: var(--fg-1);
 }
 
 .actions {

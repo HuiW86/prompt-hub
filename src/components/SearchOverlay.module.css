@@ -12,6 +12,7 @@
   background: var(--canvas);
   border: var(--hairline) solid var(--border-1);
   border-radius: var(--r-3);
+  box-shadow: var(--shadow-2);
   overflow-y: auto;
   z-index: 1;
 }
@@ -90,18 +91,18 @@
 }
 
 .item:focus-visible {
-  outline: var(--border-thick) solid var(--protocol);
+  outline: var(--border-thick) solid var(--accent);
   outline-offset: calc(-1 * var(--border-thick));
 }
 
 .selected {
-  background: var(--protocol-8);
-  border-color: var(--protocol);
+  background: var(--surface-2);
+  border-color: var(--accent);
   border-radius: var(--r-2);
 }
 
 .selected:hover {
-  background: var(--protocol-16);
+  background: var(--surface-3);
 }
 
 .itemName {

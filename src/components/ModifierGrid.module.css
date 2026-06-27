@@ -41,7 +41,7 @@
   height: var(--s-1_5);
   flex: none;
   border-radius: var(--r-1);
-  background: var(--protocol);
+  background: var(--accent);
 }
 
 .groupName {

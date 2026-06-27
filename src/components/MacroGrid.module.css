@@ -12,7 +12,7 @@
 
 /* B5-5: region-level Tab landing (03-product-spec §13.4). */
 .region:focus-visible {
-  outline: var(--border-thick) solid var(--protocol);
+  outline: var(--border-thick) solid var(--accent);
   outline-offset: calc(-1 * var(--border-thick));
 }
 
@@ -37,6 +37,12 @@
   gap: var(--s-2_5);
   min-height: var(--h-phasebar);
   padding: 0 var(--s-3);
+  transition: box-shadow var(--d-fast) var(--ease);
+}
+
+/* Subtle elevation on hover — floating-surface lift (design-spec §8.2.1). */
+.macroCard:hover {
+  box-shadow: var(--shadow-1);
 }
 
 /* Main click-to-copy surface fills the bar; action controls overlay the right. */
@@ -56,13 +62,14 @@
 }
 
 .copyArea:focus-visible {
-  outline: var(--border-thick) solid var(--protocol);
+  outline: var(--border-thick) solid var(--accent);
   outline-offset: var(--s-1);
   border-radius: var(--r-2);
 }
 
-/* Leading icon chip; filled task-color for the hot (high-usage) macros so the
- * "frequent" signal survives the move to user-controlled order. */
+/* Leading icon chip; filled neutral accent for the hot (high-usage) macros so
+ * the "frequent" signal survives the move to user-controlled order (ADR-019:
+ * emphasis via accent, not task-green ontology). */
 .iconChip {
   display: flex;
   align-items: center;
@@ -77,9 +84,9 @@
 }
 
 .iconChipHot {
-  background: var(--task);
-  border-color: var(--task);
-  color: var(--task-fg);
+  background: var(--accent);
+  border-color: var(--accent);
+  color: var(--accent-fg);
 }
 
 .name {

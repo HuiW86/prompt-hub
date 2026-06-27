@@ -1,12 +1,14 @@
-/* Transient top banner for the updater flow (ADR-017). Protocol palette so it
- * reads as a system-level prompt, distinct from the task-green Toast. */
+/* Transient top banner for the updater flow (ADR-017). Neutral chrome + subtle
+ * elevation so it reads as a system-level prompt floating above the dashboard
+ * (ADR-019: no ontology palette; lift via --shadow, not colour). */
 .banner {
   display: flex;
   align-items: center;
   gap: var(--s-3);
   padding: var(--s-2) var(--s-3_5);
-  background: var(--protocol-8);
+  background: var(--surface-2);
   border-bottom: var(--hairline) solid var(--border-2);
+  box-shadow: var(--shadow-1);
   color: var(--fg-1);
   font: var(--w-400) var(--t-13) / var(--lh-body) var(--font-sans);
 }
@@ -33,13 +35,13 @@
 }
 
 .primary {
-  background: var(--protocol);
-  color: var(--protocol-fg);
-  border: var(--hairline) solid var(--protocol);
+  background: var(--accent);
+  color: var(--accent-fg);
+  border: var(--hairline) solid var(--accent);
 }
 
 .primary:hover {
-  background: var(--protocol-16);
+  box-shadow: var(--shadow-1);
 }
 
 .ghost {
