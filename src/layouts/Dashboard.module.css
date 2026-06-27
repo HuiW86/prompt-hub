@@ -35,7 +35,8 @@
 }
 
 /* "任务层" layer marker atop the task column, mirroring ProtocolBand's 协议层
- * pill. Uses the task semantic color to label the layer (B2-safe). */
+ * pill — neutral chrome label (ADR-019: colour no longer marks layer). The layer
+ * identity is carried by column position + the Macro/Scene structure, not hue. */
 .taskLayerHead {
   flex: 0 0 auto;
   padding: var(--s-2) var(--s-3_5) 0;
@@ -47,8 +48,8 @@
   gap: var(--s-1);
   padding: var(--s-0_5) var(--s-2);
   border-radius: var(--r-2);
-  background: var(--task-16);
-  color: var(--task);
+  background: var(--surface-2);
+  color: var(--fg-2);
   font: var(--w-600) var(--t-11) / 1 var(--font-sans);
   letter-spacing: var(--tr-meta);
 }
@@ -104,6 +105,8 @@
   font: var(--w-500) var(--t-16) / var(--lh-tight) var(--font-sans);
 }
 
+/* Neutral high-contrast error text (ADR-019: colour no longer carries
+ * semantics — error read via copy, not hue). TODO: --danger once it lands. */
 .error {
-  color: var(--task);
+  color: var(--fg-1);
 }

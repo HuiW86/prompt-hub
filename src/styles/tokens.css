@@ -305,5 +305,5 @@ textarea {
 }
 
 ::selection {
-  background: var(--protocol-16);
+  background: var(--surface-3);
 }
