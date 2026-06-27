@@ -809,6 +809,11 @@ bundle 派生的 3 个跨组件 chrome primitive：
 - 用户内容图标承载**用户表达**而非 chrome 视觉规范——强制 lucide 会剥夺用户语义自由（emoji 通常更直观）
 - chrome 图标受 §12.1-§12.3 约束以保证系统视觉一致；用户内容图标形态自由，仅守 §13 颜色用法约束（v0.12 后默认中性、不作装饰，非「禁跨层」）
 
+**渲染与 seed 默认**（对齐 Promptscape 设计稿，ADR-018 已涵盖，不另开 ADR）：
+- 渲染层（`ScenePanel` `SceneIcon`）按 `scenes.icon` 字符串解释：命中 lucide name（kebab-case，经显式小映射）→ 渲染 lucide 组件（`currentColor`，对齐设计稿）；否则 fallback 当文本吐出（emoji / 单字仍生效）。
+- 显式小映射（非全量 lucide 注册表）守 §12 bundle 克制——新增 seed/内置 Scene 用到的 lucide 名需同步登记进 `SCENE_LUCIDE`。
+- **seed 默认走 lucide 名**：`0002_seed.sql` 三 Scene 自 `📐/🔍/🔧` 改 `drafting-compass`/`microscope`/`wrench`，与设计稿 lucide 风格一致；emoji 仅作用户自建时的 fallback 形态。
+
 **当前 v1.0 实测**（`src-tauri/migrations/0002_seed.sql`）：
 - `scene-plan`: `📐` 方案设计
 - `scene-research`: `🔍` 调研

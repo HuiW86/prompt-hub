@@ -33,9 +33,9 @@ UPDATE phases SET default_alignment_phrase_id = 'ap-distill-default'    WHERE id
 UPDATE phases SET default_alignment_phrase_id = 'ap-iterate-default'    WHERE id = 'phase-iterate';
 
 INSERT INTO scenes (id, name, icon, order_index, role_presets) VALUES
-    ('scene-plan',     '方案设计', '📐', 0, '["架构师","技术 leader"]'),
-    ('scene-research', '调研',     '🔍', 1, '["调研员","技术分析师"]'),
-    ('scene-debug',    '排查',     '🔧', 2, '["SRE","值班工程师"]');
+    ('scene-plan',     '方案设计', 'drafting-compass', 0, '["架构师","技术 leader"]'),
+    ('scene-research', '调研',     'microscope',       1, '["调研员","技术分析师"]'),
+    ('scene-debug',    '排查',     'wrench',           2, '["SRE","值班工程师"]');
 
 INSERT INTO phrases (id, scene_id, name, content, created_at) VALUES
     ('phrase-plan-export',       'scene-plan',     '设计导出模块',     '为 [项目名] 设计数据导出模块,包含格式选择、字段映射、权限校验,先给方案再写代码。', '2026-05-23T00:00:00Z'),

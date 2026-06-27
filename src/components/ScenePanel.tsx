@@ -2,13 +2,20 @@ import { DragDropProvider } from "@dnd-kit/react";
 import { useSortable } from "@dnd-kit/react/sortable";
 import { move } from "@dnd-kit/helpers";
 import {
+  Bug,
+  Code,
   Copy,
+  DraftingCompass,
   GripVertical,
   Inbox,
   Layers,
+  type LucideIcon,
+  Microscope,
+  Pen,
   Pencil,
   Plus,
   Trash2,
+  Wrench,
 } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
 
@@ -33,6 +40,41 @@ import {
 } from "./primitives";
 import primitiveStyles from "./primitives/primitives.module.css";
 import styles from "./ScenePanel.module.css";
+
+// Scene icons are user content (design-spec §12.4): a lucide name string renders
+// as a lucide glyph (matching the Promptscape design稿), anything else falls back
+// to raw text so emoji / single-char icons keep working. Explicit map (not the
+// full lucide registry) keeps the bundle lean per §12 icon restraint.
+const SCENE_LUCIDE: Record<string, LucideIcon> = {
+  "drafting-compass": DraftingCompass,
+  microscope: Microscope,
+  wrench: Wrench,
+  pen: Pen,
+  code: Code,
+  bug: Bug,
+};
+
+function SceneIcon({
+  name,
+  size,
+  className,
+}: {
+  name: string | null;
+  size: number;
+  className?: string;
+}) {
+  if (!name) return null;
+  const Lucide = SCENE_LUCIDE[name];
+  if (Lucide)
+    return (
+      <Lucide size={size} className={className} aria-hidden strokeWidth={2} />
+    );
+  return (
+    <span className={className} aria-hidden>
+      {name}
+    </span>
+  );
+}
 
 type EditTarget = { mode: "create" } | { mode: "edit"; phrase: Phrase } | null;
 
@@ -166,11 +208,11 @@ export function ScenePanel() {
               }}
               aria-current={isActive ? "page" : undefined}
             >
-              {sc.scene.icon && (
-                <span className={styles.icon} aria-hidden>
-                  {sc.scene.icon}
-                </span>
-              )}
+              <SceneIcon
+                name={sc.scene.icon}
+                size={14}
+                className={styles.icon}
+              />
               <span className={styles.tabName}>{sc.scene.name}</span>
               <span className={styles.tabCount}>{sc.phrases.length}</span>
             </button>
@@ -185,7 +227,7 @@ export function ScenePanel() {
         <div className={styles.sceneCard}>
           <div className={styles.sceneHead}>
             <span className={styles.sceneIcon} aria-hidden>
-              {current.scene.icon ?? "📁"}
+              <SceneIcon name={current.scene.icon ?? "📁"} size={18} />
             </span>
             <div className={styles.sceneIdentity}>
               <div className={styles.sceneName}>{current.scene.name}</div>
