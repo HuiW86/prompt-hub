@@ -1,10 +1,10 @@
 ---
 type: manifest
 project: prompt-hub
-version: v1.6
+version: v1.7
 status: active
 created: 2026-05-24
-last_modified: 2026-06-25
+last_modified: 2026-06-27
 audience: [human, ai]
 description: prompt-hub 项目前期准备文件总清单——按方法论 v1.3 六层架构（L0 宪法 / L1 产品契约 / L2 工程规格 / L3 实施规格 / L4 索引 / L5 协作契约）+ ADR + 实施方案 + 视觉原型 + AI 上下文。AI 进项目读完 CLAUDE.md 后接读本文件能 1 分钟拿全貌；不写行数（参考性强但易过期）
 related:
@@ -50,7 +50,7 @@ related:
 
 | 路径 | 内容 | 状态 |
 |---|---|---|
-| `docs/design/03-product-spec.md` | UI 契约（双形态 / 布局 / 交互） | ratified v0.10（2026-06-25 ADR-018 涟漪：§13 区域结构 +Header +设置弹窗 +任务层 2 列；前 v0.9 UI 减负 / v0.8 Tab cycle 6→8）|
+| `docs/design/03-product-spec.md` | UI 契约（双形态 / 布局 / 交互） | ratified v0.11（2026-06-27 scene-substage-editing 涟漪：§13.3 区域 4 +管理结构编辑器；前 v0.10 ADR-018 §13 +Header +设置弹窗 +任务层 2 列 / v0.8 Tab cycle 6→8）|
 | `docs/design/04-user-flows.md` | 用户流（边缘 / 异常 / 跨形态） | ratified |
 | `docs/design/05-design-spec.md` | 视觉/动效 token 体系 | ratified v0.12（2026-06-26 ⚠️ ADR-019 涟漪：推翻 flat 锚点——§8.2 撤 box-shadow + §8.2.1 elevation / §2.4.1 颜色本体论降视觉选择级转中性 / §13 重定向；前 v0.11 ADR-018 中性强调色 + 主题三态）|
 
@@ -60,8 +60,8 @@ related:
 
 | 路径 | 内容 | 状态 |
 |---|---|---|
-| `docs/design/06-prd.md` | 数据契约 / API / 状态机 / 错误码 | pre-code v0.10（2026-06-17 ADR-017 C3：§8.3 L2 updater 例外指针）|
-| `docs/design/07-features.md` | 65 功能矩阵 S1–S5 + AE + 自动更新 + Promptscape 吸收 | in-progress v1.5（2026-06-26 ADR-019 涟漪：物理分离条视觉载体改位置+形状；前 2026-06-25 ADR-018 §3.11 Promptscape 吸收区 / v1.4 Scene 话术编辑 / v1.3 UI 减负）|
+| `docs/design/06-prd.md` | 数据契约 / API / 状态机 / 错误码 | pre-code v0.11（2026-06-27 scene-substage-editing 涟漪：§6.4 +写入口归属指派；前 v0.10 ADR-017 C3 §8.3 updater 例外）|
+| `docs/design/07-features.md` | 66 功能矩阵 S1–S5 + AE + 自动更新 + Promptscape 吸收 + 结构编辑 | in-progress v1.6（2026-06-27 scene-substage-editing：§3.8 Scene/SubStage 结构编辑 done，合计 65→66；前 2026-06-26 ADR-019 / 2026-06-25 ADR-018 Promptscape / v1.4 Scene 话术编辑）|
 | `docs/design/08-sitemap.md` | 资产对象树 + 视图导航图 | ratified |
 
 ---

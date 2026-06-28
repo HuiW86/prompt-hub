@@ -1,9 +1,9 @@
 ---
 type: prd
 project: prompt-hub
-version: v0.10
+version: v0.11
 created: 2026-05-18
-last_modified: 2026-06-17
+last_modified: 2026-06-27
 status: pre-code
 author: ai  # 🤖 AI 主笔 + 人审（CLAUDE §5.2）
 related: [[01-spec]], [[03-product-spec]], [[prompt-hub-mvp]], [[015-expose-mcp-write-pipeline]], [[mcp-write-pipeline]]
@@ -559,6 +559,10 @@ Scene 节包含 3 个相关模型：**Scene**（场景容器）、**Phrase**（S
 #### 删除策略
 
 > Scene 删除 → 应先迁移或归档其下所有 Phrase 与 SubStage，否则应阻止（应用层校验）。Phrase 不允许 hard delete，沿用 `deprecated = true` 策略。SubStage 删除时，其下 Phrase.sub_stage_id 置为 null（解除归属，Phrase 本体保留在 Scene 内）。
+
+#### 写入口归属（创建入口指派）
+
+> **Scene 容器与 SubStage 子阶段的增/改/删/排序由 UI 编辑态承载（Tauri-only，不经 MCP）**——与 Phrase 编辑入口一致（[[scene-phrase-editing#13]] repo-write 不被 MCP binary 依赖），外部 AI 无写面。此前 [[scene-phrase-editing]] 有意只做 Phrase 编辑、把 Scene/SubStage 结构编辑 defer，导致 `sub_stages` 表有 schema + 读路径但无写命令、SubStage 成死维度（永远 `[]`）；本指派由 [[scene-substage-editing]] 补齐，明确创建入口=UI 编辑态。删除语义同上「删除策略」：删非空 Scene 被阻止，删 SubStage 解绑其下 Phrase。
 
 #### 字段设计理由
 
@@ -1349,6 +1353,12 @@ PRD 不复刻风险表，避免双源真理漂移；实施侧风险/缓解以 pl
 ---
 
 ## 修订记录
+
+### v0.11（2026-06-27）— scene-substage-editing 涟漪：§6.4 补「写入口归属」指派
+
+**触发**：产品走查（2026-06-27）发现 `sub_stages` 表有 schema + 读路径 + FK 但无任何写命令、无种子——SubStage 是「死维度」，Scene 容器也不可编辑。根因 [[scene-phrase-editing]] 有意只做 Phrase 编辑、defer 结构编辑，留下 UI 死端。[[scene-substage-editing]] 收尾补齐。
+
+**改动**：§6.4 加「写入口归属（创建入口指派）」小节——明确 **Scene 容器 + SubStage 子阶段的增/改/删/排序由 UI 编辑态承载（Tauri-only，不经 MCP）**，与 Phrase 编辑入口一致。删除语义沿用既有「删除策略」（删非空 Scene 阻止 / 删 SubStage 解绑其下 Phrase）。契约层既有字段/FK/删除语义未变，仅补创建入口归属。不开新 ADR。后端 74 / 前端 109 全绿，真机 CRUD 落盘待验。
 
 ### v0.8（2026-06-03）— M-X.1 promote 收口：Modifier/Macro field-mapping + 两处文档/代码对齐
 

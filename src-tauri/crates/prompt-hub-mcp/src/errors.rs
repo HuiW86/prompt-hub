@@ -64,6 +64,12 @@ pub fn repo_error(err: RepoError) -> CallToolResult {
             "Alignment phrase '{id}' is its phase's protocol default and can't be \
              deleted. This only happens in the desktop app."
         ),
+        // Tauri-only delete guard (D4); the MCP server has no delete path, so this
+        // is unreachable here but kept exhaustive for the shared error enum.
+        RepoError::SceneNotEmpty { scene_id } => format!(
+            "Scene '{scene_id}' still has phrases or sub-stages and can't be \
+             deleted. This only happens in the desktop app."
+        ),
         RepoError::Other(msg) => msg,
     };
     CallToolResult::error(vec![Content::text(text)])

@@ -20,7 +20,7 @@ import {
 import { useEffect, useRef, useState } from "react";
 
 import { useCopy } from "../hooks/useCopy";
-import type { Phrase, SubStage } from "../ipc/types";
+import type { Phrase, Scene, SubStage } from "../ipc/types";
 import { useAppStore } from "../stores/appStore";
 import { usePromptStore } from "../stores/promptStore";
 import { useToastStore } from "../stores/toastStore";
@@ -80,7 +80,14 @@ type EditTarget = { mode: "create" } | { mode: "edit"; phrase: Phrase } | null;
 
 type Grouped = Array<{ subStage: SubStage | null; phrases: Phrase[] }>;
 
-function groupBySubStage(phrases: Phrase[], subStages: SubStage[]): Grouped {
+// View mode drops empty sub-stages (no phrases = nothing to show). Edit mode
+// keeps them (includeEmpty) so they render as visible, droppable partitions —
+// otherwise a freshly-created sub-stage would be invisible until it has phrases.
+function groupBySubStage(
+  phrases: Phrase[],
+  subStages: SubStage[],
+  includeEmpty = false,
+): Grouped {
   const ordered = [...subStages].sort((a, b) => a.orderIndex - b.orderIndex);
   const groups: Grouped = ordered.map((s) => ({ subStage: s, phrases: [] }));
   const ungrouped: Phrase[] = [];
@@ -94,7 +101,7 @@ function groupBySubStage(phrases: Phrase[], subStages: SubStage[]): Grouped {
     else ungrouped.push(p);
   }
   if (ungrouped.length > 0) groups.push({ subStage: null, phrases: ungrouped });
-  return groups.filter((g) => g.phrases.length > 0);
+  return includeEmpty ? groups : groups.filter((g) => g.phrases.length > 0);
 }
 
 export function ScenePanel() {
@@ -102,6 +109,8 @@ export function ScenePanel() {
   const pendingDraftCount = usePromptStore((s) => s.pendingDraftCount);
   const draftsViewRequestId = useAppStore((s) => s.draftsViewRequestId);
   const deletePhrase = usePromptStore((s) => s.deletePhrase);
+  const createScene = usePromptStore((s) => s.createScene);
+  const deleteScene = usePromptStore((s) => s.deleteScene);
   const copy = useCopy();
   const flashId = useToastStore((s) => s.flashTargetId);
   const showToast = useToastStore((s) => s.show);
@@ -146,6 +155,30 @@ export function ScenePanel() {
     }
   };
 
+  // New scenes append to the global order, so the fresh one lands at the current
+  // length — jump to it (still in edit mode) so the user can rename it inline.
+  const handleCreateScene = async () => {
+    const nextIdx = scenes.length;
+    try {
+      await createScene({ name: "新场景", rolePresets: [] });
+      setActiveIdx(nextIdx);
+    } catch (err) {
+      showToast(err instanceof Error ? err.message : "新建场景失败");
+    }
+  };
+
+  // Backend refuses a non-empty Scene (RepoError::SceneNotEmpty) — surface that
+  // message rather than swallowing it. On success clamp back to the first tab.
+  const handleDeleteScene = async (id: string) => {
+    try {
+      await deleteScene(id);
+      showToast("已删除场景");
+      setActiveIdx(0);
+    } catch (err) {
+      showToast(err instanceof Error ? err.message : "删除场景失败");
+    }
+  };
+
   if (!current) {
     return (
       <section
@@ -163,7 +196,7 @@ export function ScenePanel() {
     );
   }
 
-  const groups = groupBySubStage(current.phrases, current.subStages);
+  const groups = groupBySubStage(current.phrases, current.subStages, editMode);
 
   return (
     <section
@@ -270,6 +303,16 @@ export function ScenePanel() {
             </div>
           </div>
 
+          {editMode && (
+            <SceneStructureEditor
+              scene={current.scene}
+              subStages={current.subStages}
+              onError={(msg) => showToast(msg)}
+              onCreateScene={() => void handleCreateScene()}
+              onDeleteScene={() => void handleDeleteScene(current.scene.id)}
+            />
+          )}
+
           {editMode && editing && (
             <div className={styles.editorSlot}>
               <PhraseEditor
@@ -364,6 +407,292 @@ export function ScenePanel() {
         </div>
       )}
     </section>
+  );
+}
+
+interface StructureEditorProps {
+  scene: Scene;
+  subStages: SubStage[];
+  onError: (msg: string) => void;
+  onCreateScene: () => void;
+  onDeleteScene: () => void;
+}
+
+type SubDraft = { kind: "create" } | { kind: "rename"; id: string } | null;
+
+// Edit-mode structure editor: rename / delete the current Scene, create a new
+// Scene, and CRUD its sub-stages. Scene reorder is a backend capability but has
+// no UI here (plan scene-substage-editing §5 scopes the UI to 增改名删).
+function SceneStructureEditor({
+  scene,
+  subStages,
+  onError,
+  onCreateScene,
+  onDeleteScene,
+}: StructureEditorProps) {
+  const updateScene = usePromptStore((s) => s.updateScene);
+  const createSubStage = usePromptStore((s) => s.createSubStage);
+  const updateSubStage = usePromptStore((s) => s.updateSubStage);
+  const deleteSubStage = usePromptStore((s) => s.deleteSubStage);
+
+  const [renamingScene, setRenamingScene] = useState(false);
+  const [sceneName, setSceneName] = useState(scene.name);
+  const [confirmDeleteScene, setConfirmDeleteScene] = useState(false);
+  const [subDraft, setSubDraft] = useState<SubDraft>(null);
+  const [subName, setSubName] = useState("");
+  const [confirmSubId, setConfirmSubId] = useState<string | null>(null);
+
+  const ordered = [...subStages].sort((a, b) => a.orderIndex - b.orderIndex);
+
+  const cancelSceneRename = () => {
+    setRenamingScene(false);
+    setSceneName(scene.name);
+  };
+
+  const saveSceneName = async () => {
+    const name = sceneName.trim();
+    if (!name) return;
+    try {
+      await updateScene({
+        id: scene.id,
+        name,
+        icon: scene.icon ?? undefined,
+        rolePresets: scene.rolePresets,
+        color: scene.color ?? undefined,
+      });
+      setRenamingScene(false);
+    } catch (err) {
+      onError(err instanceof Error ? err.message : "重命名失败");
+    }
+  };
+
+  const cancelSub = () => {
+    setSubDraft(null);
+    setSubName("");
+  };
+
+  const saveSub = async () => {
+    const name = subName.trim();
+    if (!name || !subDraft) return;
+    try {
+      if (subDraft.kind === "create") {
+        await createSubStage({ sceneId: scene.id, name });
+      } else {
+        await updateSubStage({ id: subDraft.id, name });
+      }
+      cancelSub();
+    } catch (err) {
+      onError(err instanceof Error ? err.message : "保存失败");
+    }
+  };
+
+  const removeSub = async (id: string) => {
+    setConfirmSubId(null);
+    try {
+      await deleteSubStage(id);
+    } catch (err) {
+      onError(err instanceof Error ? err.message : "删除失败");
+    }
+  };
+
+  return (
+    <div className={styles.structureEditor}>
+      <div className={styles.structureRow}>
+        {renamingScene ? (
+          <Input
+            autoFocus
+            aria-label="场景名称"
+            value={sceneName}
+            onChange={(e) => setSceneName(e.target.value)}
+            onKeyDown={(e) => {
+              if (e.key === "Escape") cancelSceneRename();
+              if (e.key === "Enter") {
+                e.preventDefault();
+                void saveSceneName();
+              }
+            }}
+          />
+        ) : (
+          <span className={styles.structureLabel}>场景 · {scene.name}</span>
+        )}
+        {renamingScene ? (
+          <ActionCluster>
+            <Button intent="subtle" onClick={cancelSceneRename}>
+              取消
+            </Button>
+            <Button
+              layer="task"
+              intent="primary"
+              onClick={() => void saveSceneName()}
+              disabled={sceneName.trim().length === 0}
+            >
+              保存
+            </Button>
+          </ActionCluster>
+        ) : confirmDeleteScene ? (
+          <ConfirmInline
+            text="删除场景？"
+            confirmLabel="确认删除场景"
+            cancelLabel="取消删除"
+            onConfirm={() => {
+              setConfirmDeleteScene(false);
+              onDeleteScene();
+            }}
+            onCancel={() => setConfirmDeleteScene(false)}
+          />
+        ) : (
+          <ActionCluster>
+            <IconButton
+              aria-label="重命名场景"
+              onClick={() => {
+                setSceneName(scene.name);
+                setRenamingScene(true);
+              }}
+            >
+              <Pencil size={13} aria-hidden strokeWidth={2} />
+            </IconButton>
+            <IconButton
+              aria-label="删除场景"
+              onClick={() => setConfirmDeleteScene(true)}
+            >
+              <Trash2 size={13} aria-hidden strokeWidth={2} />
+            </IconButton>
+            <Button layer="task" aria-label="新建场景" onClick={onCreateScene}>
+              <Plus size={14} aria-hidden strokeWidth={2} />
+              <span>新建场景</span>
+            </Button>
+          </ActionCluster>
+        )}
+      </div>
+
+      <div className={styles.subStageManager}>
+        <div className={styles.subStageManagerHead}>
+          <span className={styles.structureLabel}>
+            <Layers size={12} aria-hidden strokeWidth={2} />
+            子阶段
+          </span>
+          {subDraft?.kind !== "create" && (
+            <Button
+              layer="task"
+              aria-label="新增子阶段"
+              onClick={() => {
+                setSubName("");
+                setSubDraft({ kind: "create" });
+              }}
+            >
+              <Plus size={14} aria-hidden strokeWidth={2} />
+              <span>新增子阶段</span>
+            </Button>
+          )}
+        </div>
+
+        {subDraft?.kind === "create" && (
+          <SubStageInlineEditor
+            value={subName}
+            onChange={setSubName}
+            onCancel={cancelSub}
+            onSave={() => void saveSub()}
+          />
+        )}
+
+        {ordered.length === 0 && subDraft?.kind !== "create" ? (
+          <p className={styles.subStageEmpty}>暂无子阶段</p>
+        ) : (
+          <ul className={styles.subStageList}>
+            {ordered.map((s) => (
+              <li key={s.id} className={styles.subStageItem}>
+                {subDraft?.kind === "rename" && subDraft.id === s.id ? (
+                  <SubStageInlineEditor
+                    value={subName}
+                    onChange={setSubName}
+                    onCancel={cancelSub}
+                    onSave={() => void saveSub()}
+                  />
+                ) : confirmSubId === s.id ? (
+                  <>
+                    <span className={styles.subStageItemName}>{s.name}</span>
+                    <ConfirmInline
+                      text="删除子阶段？话术将解除归属"
+                      confirmLabel="确认删除子阶段"
+                      cancelLabel="取消删除"
+                      onConfirm={() => void removeSub(s.id)}
+                      onCancel={() => setConfirmSubId(null)}
+                    />
+                  </>
+                ) : (
+                  <>
+                    <span className={styles.subStageItemName}>{s.name}</span>
+                    <ActionCluster>
+                      <IconButton
+                        aria-label={`重命名 ${s.name}`}
+                        onClick={() => {
+                          setSubName(s.name);
+                          setSubDraft({ kind: "rename", id: s.id });
+                        }}
+                      >
+                        <Pencil size={13} aria-hidden strokeWidth={2} />
+                      </IconButton>
+                      <IconButton
+                        aria-label={`删除 ${s.name}`}
+                        onClick={() => setConfirmSubId(s.id)}
+                      >
+                        <Trash2 size={13} aria-hidden strokeWidth={2} />
+                      </IconButton>
+                    </ActionCluster>
+                  </>
+                )}
+              </li>
+            ))}
+          </ul>
+        )}
+      </div>
+    </div>
+  );
+}
+
+interface SubStageInlineEditorProps {
+  value: string;
+  onChange: (next: string) => void;
+  onCancel: () => void;
+  onSave: () => void;
+}
+
+function SubStageInlineEditor({
+  value,
+  onChange,
+  onCancel,
+  onSave,
+}: SubStageInlineEditorProps) {
+  return (
+    <div className={styles.subStageInline}>
+      <Input
+        autoFocus
+        aria-label="子阶段名称"
+        placeholder="子阶段名称"
+        value={value}
+        onChange={(e) => onChange(e.target.value)}
+        onKeyDown={(e) => {
+          if (e.key === "Escape") onCancel();
+          if (e.key === "Enter") {
+            e.preventDefault();
+            onSave();
+          }
+        }}
+      />
+      <ActionCluster>
+        <Button intent="subtle" onClick={onCancel}>
+          取消
+        </Button>
+        <Button
+          layer="task"
+          intent="primary"
+          onClick={onSave}
+          disabled={value.trim().length === 0}
+        >
+          保存
+        </Button>
+      </ActionCluster>
+    </div>
   );
 }
 

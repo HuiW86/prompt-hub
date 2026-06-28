@@ -219,7 +219,10 @@ mod tests {
     fn update_missing_errors() {
         let (_dir, conn) = migrated_conn();
         let err = update_alignment_phrase(&conn, "nope", "x", "y").expect_err("missing");
-        assert!(matches!(err, RepoError::TargetNotFound { .. }), "got {err:?}");
+        assert!(
+            matches!(err, RepoError::TargetNotFound { .. }),
+            "got {err:?}"
+        );
     }
 
     #[test]
@@ -236,7 +239,10 @@ mod tests {
             "deleted phrase must not be listed"
         );
         let err = delete_alignment_phrase(&conn, &created.id).expect_err("second delete");
-        assert!(matches!(err, RepoError::TargetNotFound { .. }), "got {err:?}");
+        assert!(
+            matches!(err, RepoError::TargetNotFound { .. }),
+            "got {err:?}"
+        );
     }
 
     #[test]
@@ -284,7 +290,10 @@ mod tests {
         let (_dir, conn) = migrated_conn();
         let err = reorder_alignment_phrases(&conn, "phase-diverge", &["ghost".to_string()])
             .expect_err("unknown id");
-        assert!(matches!(err, RepoError::TargetNotFound { .. }), "got {err:?}");
+        assert!(
+            matches!(err, RepoError::TargetNotFound { .. }),
+            "got {err:?}"
+        );
     }
 
     #[test]
@@ -292,8 +301,12 @@ mod tests {
         let (_dir, conn) = migrated_conn();
         let div = create_alignment_phrase(&conn, "phase-diverge", "div", "b").expect("div");
         // Reordering the understand phase must not accept a diverge id.
-        let err = reorder_alignment_phrases(&conn, "phase-understand", std::slice::from_ref(&div.id))
-            .expect_err("cross-phase id");
-        assert!(matches!(err, RepoError::TargetNotFound { .. }), "got {err:?}");
+        let err =
+            reorder_alignment_phrases(&conn, "phase-understand", std::slice::from_ref(&div.id))
+                .expect_err("cross-phase id");
+        assert!(
+            matches!(err, RepoError::TargetNotFound { .. }),
+            "got {err:?}"
+        );
     }
 }

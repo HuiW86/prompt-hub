@@ -16,7 +16,9 @@ import type {
   PromoteResult,
   RecentUsageEntry,
   RecordUsageInput,
+  Scene,
   SceneWithChildren,
+  SubStage,
   UpdateAck,
   UsageRecord,
 } from "./types";
@@ -194,6 +196,53 @@ export const ipc = {
     subStageId: string | null,
     orderedIds: string[],
   ) => invoke<OkAck>("reorder_phrases", { sceneId, subStageId, orderedIds }),
+
+  // ── Scene container direct editing (plan scene-substage-editing) —
+  // Tauri-only. reorder is a single global order; delete refuses a non-empty
+  // Scene (has phrases or sub-stages) at the backend.
+  createScene: (args: {
+    name: string;
+    icon?: string;
+    rolePresets: string[];
+    color?: string;
+  }) =>
+    invoke<Scene>("create_scene", {
+      name: args.name,
+      icon: args.icon,
+      rolePresets: args.rolePresets,
+      color: args.color,
+    }),
+  updateScene: (args: {
+    id: string;
+    name: string;
+    icon?: string;
+    rolePresets: string[];
+    color?: string;
+  }) =>
+    invoke<OkAck>("update_scene", {
+      id: args.id,
+      name: args.name,
+      icon: args.icon,
+      rolePresets: args.rolePresets,
+      color: args.color,
+    }),
+  deleteScene: (id: string) => invoke<OkAck>("delete_scene", { id }),
+  reorderScenes: (orderedIds: string[]) =>
+    invoke<OkAck>("reorder_scenes", { orderedIds }),
+
+  // ── SubStage direct editing (plan scene-substage-editing) — Tauri-only. A
+  // sub-stage is bound to a scene; reorder is scoped to one scene; delete
+  // unbinds its phrases (sub_stage_id → NULL) and keeps them.
+  createSubStage: (args: { sceneId: string; name: string }) =>
+    invoke<SubStage>("create_sub_stage", {
+      sceneId: args.sceneId,
+      name: args.name,
+    }),
+  updateSubStage: (args: { id: string; name: string }) =>
+    invoke<OkAck>("update_sub_stage", { id: args.id, name: args.name }),
+  deleteSubStage: (id: string) => invoke<OkAck>("delete_sub_stage", { id }),
+  reorderSubStages: (sceneId: string, orderedIds: string[]) =>
+    invoke<OkAck>("reorder_sub_stages", { sceneId, orderedIds }),
 };
 
 export type Ipc = typeof ipc;

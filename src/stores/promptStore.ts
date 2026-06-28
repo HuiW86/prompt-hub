@@ -136,6 +136,30 @@ interface PromptState {
     subStageId: string | null,
     orderedIds: string[],
   ) => Promise<void>;
+
+  // Direct scene + sub-stage structure editing (plan scene-substage-editing).
+  // Same nested `scenes` tree as phrases, so each mutation re-pulls
+  // listScenesWithChildren. deleteScene rejects a non-empty Scene at the
+  // backend (error propagates); deleteSubStage unbinds its phrases server-side.
+  createScene: (args: {
+    name: string;
+    icon?: string;
+    rolePresets: string[];
+    color?: string;
+  }) => Promise<void>;
+  updateScene: (args: {
+    id: string;
+    name: string;
+    icon?: string;
+    rolePresets: string[];
+    color?: string;
+  }) => Promise<void>;
+  deleteScene: (id: string) => Promise<void>;
+  reorderScenes: (orderedIds: string[]) => Promise<void>;
+  createSubStage: (args: { sceneId: string; name: string }) => Promise<void>;
+  updateSubStage: (args: { id: string; name: string }) => Promise<void>;
+  deleteSubStage: (id: string) => Promise<void>;
+  reorderSubStages: (sceneId: string, orderedIds: string[]) => Promise<void>;
 }
 
 const RECENT_LIMIT = 5;
@@ -568,6 +592,50 @@ export const usePromptStore = create<PromptState>()((set, get) => ({
 
   reorderPhrases: async (sceneId, subStageId, orderedIds) => {
     await ipc.reorderPhrases(sceneId, subStageId, orderedIds);
+    set({ scenes: await ipc.listScenesWithChildren() });
+  },
+
+  // Scene + sub-stage structure mutations share the phrase re-pull path: the
+  // `scenes` tree is deeply nested (scene → sub_stages + phrases), so a full
+  // re-pull is simpler and cheaper than patching in place. deleteScene lets the
+  // backend's SceneNotEmpty error propagate so the UI can surface it.
+  createScene: async ({ name, icon, rolePresets, color }) => {
+    await ipc.createScene({ name, icon, rolePresets, color });
+    set({ scenes: await ipc.listScenesWithChildren() });
+  },
+
+  updateScene: async ({ id, name, icon, rolePresets, color }) => {
+    await ipc.updateScene({ id, name, icon, rolePresets, color });
+    set({ scenes: await ipc.listScenesWithChildren() });
+  },
+
+  deleteScene: async (id) => {
+    await ipc.deleteScene(id);
+    set({ scenes: await ipc.listScenesWithChildren() });
+  },
+
+  reorderScenes: async (orderedIds) => {
+    await ipc.reorderScenes(orderedIds);
+    set({ scenes: await ipc.listScenesWithChildren() });
+  },
+
+  createSubStage: async ({ sceneId, name }) => {
+    await ipc.createSubStage({ sceneId, name });
+    set({ scenes: await ipc.listScenesWithChildren() });
+  },
+
+  updateSubStage: async ({ id, name }) => {
+    await ipc.updateSubStage({ id, name });
+    set({ scenes: await ipc.listScenesWithChildren() });
+  },
+
+  deleteSubStage: async (id) => {
+    await ipc.deleteSubStage(id);
+    set({ scenes: await ipc.listScenesWithChildren() });
+  },
+
+  reorderSubStages: async (sceneId, orderedIds) => {
+    await ipc.reorderSubStages(sceneId, orderedIds);
     set({ scenes: await ipc.listScenesWithChildren() });
   },
 }));

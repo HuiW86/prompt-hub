@@ -209,8 +209,11 @@ mod tests {
     #[test]
     fn backfill_orders_ungrouped_partition_contiguously() {
         let (_dir, conn) = migrated_conn();
-        // scene-plan has 2 seeded phrases, both ungrouped (sub_stage_id NULL).
-        let rows = partition(&conn, "scene-plan", None);
+        // scene-plan's 2 seeded phrases were bound into ss-plan-generate by the
+        // 0011 seed, so they form a contiguous partition there (and the ungrouped
+        // partition is now empty).
+        assert!(partition(&conn, "scene-plan", None).is_empty());
+        let rows = partition(&conn, "scene-plan", Some("ss-plan-generate"));
         assert_eq!(rows.len(), 2);
         assert_eq!(rows[0].order_index, 0);
         assert_eq!(rows[1].order_index, 1);
@@ -242,7 +245,8 @@ mod tests {
     #[test]
     fn create_rejects_unknown_scene() {
         let (_dir, conn) = migrated_conn();
-        let err = create_phrase(&conn, "scene-bogus", "X", "body", None).expect_err("unknown scene");
+        let err =
+            create_phrase(&conn, "scene-bogus", "X", "body", None).expect_err("unknown scene");
         assert!(matches!(err, RepoError::Sqlite(_)), "got {err:?}");
     }
 
@@ -273,7 +277,10 @@ mod tests {
         update_phrase(&conn, &moving.id, "M", "m", Some("ss-b")).expect("move");
 
         let target = partition(&conn, "scene-plan", Some("ss-b"));
-        let moved = target.iter().find(|p| p.id == moving.id).expect("moved row");
+        let moved = target
+            .iter()
+            .find(|p| p.id == moving.id)
+            .expect("moved row");
         assert_eq!(moved.order_index, 2, "appended at end of target partition");
         assert_eq!(moved.sub_stage_id.as_deref(), Some("ss-b"));
         // Source partition no longer contains it.
@@ -301,7 +308,10 @@ mod tests {
     fn update_missing_errors() {
         let (_dir, conn) = migrated_conn();
         let err = update_phrase(&conn, "nope", "x", "y", None).expect_err("missing");
-        assert!(matches!(err, RepoError::TargetNotFound { .. }), "got {err:?}");
+        assert!(
+            matches!(err, RepoError::TargetNotFound { .. }),
+            "got {err:?}"
+        );
     }
 
     #[test]
@@ -313,7 +323,10 @@ mod tests {
             .iter()
             .all(|p| p.id != created.id));
         let err = delete_phrase(&conn, &created.id).expect_err("second delete");
-        assert!(matches!(err, RepoError::TargetNotFound { .. }), "got {err:?}");
+        assert!(
+            matches!(err, RepoError::TargetNotFound { .. }),
+            "got {err:?}"
+        );
     }
 
     #[test]
@@ -363,7 +376,10 @@ mod tests {
         let (_dir, conn) = migrated_conn();
         let err = reorder_phrases(&conn, "scene-plan", None, &["ghost".to_string()])
             .expect_err("unknown id");
-        assert!(matches!(err, RepoError::TargetNotFound { .. }), "got {err:?}");
+        assert!(
+            matches!(err, RepoError::TargetNotFound { .. }),
+            "got {err:?}"
+        );
     }
 
     #[test]
@@ -374,6 +390,9 @@ mod tests {
         let grouped = create_phrase(&conn, "scene-plan", "g", "b", Some("ss-p")).expect("grouped");
         let err = reorder_phrases(&conn, "scene-plan", None, std::slice::from_ref(&grouped.id))
             .expect_err("cross-partition id");
-        assert!(matches!(err, RepoError::TargetNotFound { .. }), "got {err:?}");
+        assert!(
+            matches!(err, RepoError::TargetNotFound { .. }),
+            "got {err:?}"
+        );
     }
 }

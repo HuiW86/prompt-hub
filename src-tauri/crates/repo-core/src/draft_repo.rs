@@ -395,7 +395,10 @@ mod tests {
         assert!(matches!(err, RepoError::PayloadTooLarge { .. }));
 
         let got = conn.get_draft(&id).expect("get").expect("present");
-        assert_eq!(got.payload, payload, "row must be unchanged after rejection");
+        assert_eq!(
+            got.payload, payload,
+            "row must be unchanged after rejection"
+        );
     }
 
     #[test]

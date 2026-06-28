@@ -1,10 +1,10 @@
 ---
 type: product-spec
 project: prompt-hub
-version: v0.10
+version: v0.11
 created: 2026-05-18
-last_modified: 2026-06-25
-status: draft  # 🤝 共创，v0.10 涟漪 ADR-018 Promptscape 吸收待 omar 人审；前序 v0.8 已 ratified
+last_modified: 2026-06-27
+status: draft  # 🤝 共创，v0.11 涟漪 scene-substage-editing 结构编辑契约 + v0.10 ADR-018 Promptscape 吸收待 omar 人审；前序 v0.8 已 ratified
 author: co  # 🤝 人机共创（CLAUDE §5.2）
 related: [[01-spec]], [[05-design-spec]], [[06-prd]], [[012-lock-visual-quality-anchor]], [[019-supersede-flat-visual-anchor]], [[013-alignment-phrases-tab-inclusion]], [[015-expose-mcp-write-pipeline]], [[017-enable-auto-update]], [[018-absorb-promptscape-design]]
 description: 手动 AI 编程仪表盘的 UI 契约——双形态架构/布局/点击路径/交互频率/状态反馈/引导/用户旅程/主形态 UI 草案；v0.9 移除主仪表盘的 Composition/Modifier 编辑面板（UI 减负·选项 2），Tab cycle 8 → 6，资产类型保留在数据层；v0.10 涟漪 ADR-018 Promptscape 吸收：§13.2 加 Header 区域0 + 协议层 band + 任务层 3→2 列 + 设置弹窗区域9；v0.7 涟漪 ADR-015 草稿收件箱 tab + 待审 badge
@@ -703,7 +703,11 @@ graph TD
   - 点击 Tab → 切换 Scene；点击 📥 草稿 tab → 进入收件箱视图
   - 点击 Phrase → 复制 → 自动隐藏窗口
   - 长按 Phrase → 升级为 Macro / 添加到 Composition 队列
-  - **管理话术（编辑模式，[[scene-phrase-editing]]）**：Scene tab 行右侧铅笔切换编辑态；编辑态下每条 Phrase 行内可改名/改内容/删（行内二次确认）+ 拖拽排序（**每个 SubStage 组独立 DnD，不跨组**，order_index 按 (scene, sub_stage) 分区）；「新增」弹编辑器，子阶段下拉含「无分组」。镜像对齐话术编辑模式（[[013-alignment-phrases-tab-inclusion]]），仅作用于已有 Scene/SubStage，不新建结构
+  - **管理话术（编辑模式，[[scene-phrase-editing]]）**：Scene tab 行右侧铅笔切换编辑态；编辑态下每条 Phrase 行内可改名/改内容/删（行内二次确认）+ 拖拽排序（**每个 SubStage 组独立 DnD，不跨组**，order_index 按 (scene, sub_stage) 分区）；「新增」弹编辑器，子阶段下拉含「无分组」。镜像对齐话术编辑模式（[[013-alignment-phrases-tab-inclusion]]）
+  - **管理结构（编辑模式，[[scene-substage-editing]]）**：补齐 [[scene-phrase-editing]] 当初 defer 的结构编辑，与上「管理话术」同处编辑态（同一铅笔切换），在 Scene 头部下方插入「结构编辑器」inset，作用对象是 Scene 容器与 SubStage 本体（Tauri-only，不经 MCP）——
+    - **Scene 容器可改名/删 + 新建**：结构编辑器首行「场景 · {名称}」配铅笔（行内改名）/ 垃圾桶（删除，二次确认）/「新建场景」按钮（新建后跳到新 tab 续编辑）；删除时**若该 Scene 非空（其下有 Phrase 或 SubStage）则后端阻止（`RepoError::SceneNotEmpty`）并 toast 提示**（应用层校验，[[06-prd#6.4]] 删除策略）
+    - **SubStage 子阶段可增/改名/删**：结构编辑器「子阶段」区列出当前 Scene 全部子阶段（**含空子阶段**——编辑态不再像展示态那样隐藏空分组），每条配行内改名/删 + 顶部「新增子阶段」；**删除 SubStage 时其下 Phrase 的 sub_stage_id 解绑为「无分组」**（Phrase 本体保留在 Scene 内，[[06-prd#6.4]] 删除策略）
+    - 排序：Scene 全局单序、SubStage per-scene 单序，order_index 重写镜像 Phrase 排序分区（后端能力已具备，编辑态暂未提供拖拽 UI）
   - **草稿卡片 promote 须 omar 显式点击**——无自动 promote 路径（守 [[06-prd#8.2]] N3 / [[02-constitution#D1]]）。promote / discard 是 omar 主导动作，外部 AI 不可触达（IPC 不经 MCP 暴露，[[06-prd#10.3]] 边界）
 
 #### 区域 5：最近使用区（[[06-prd#5.5-最近使用区]]）
@@ -804,6 +808,10 @@ graph TD
 ---
 
 ## 修订记录
+
+### v0.11（2026-06-27）— scene-substage-editing 涟漪：Scene/SubStage 结构编辑契约
+
+涟漪 [[scene-substage-editing]]。补齐 [[scene-phrase-editing]] 当初 defer 的另一半——§13.3 区域 4 加「管理结构（编辑模式）」契约：编辑态 Scene 头部下方插入「结构编辑器」inset，承 Scene 容器改名/删/新建 + SubStage 增改名删（含空子阶段可见），删非空 Scene 后端阻止、删 SubStage 解绑其下 Phrase。Tauri-only，不经 MCP。🤖 AI 主笔起草，待 omar 人审。后端 74 / 前端 109 全绿，真机 CRUD 落盘待验。
 
 ### v0.10（2026-06-25）— ADR-018 涟漪：Promptscape 设计吸收（Header + 协议层 band + 任务层 2 列 + 设置弹窗）
 

@@ -169,6 +169,14 @@ pub fn run() {
             commands::update_phrase,
             commands::delete_phrase,
             commands::reorder_phrases,
+            commands::create_scene,
+            commands::update_scene,
+            commands::delete_scene,
+            commands::reorder_scenes,
+            commands::create_sub_stage,
+            commands::update_sub_stage,
+            commands::delete_sub_stage,
+            commands::reorder_sub_stages,
         ])
         .build(tauri::generate_context!())
         .expect("error while building tauri application");

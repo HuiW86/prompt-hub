@@ -197,7 +197,10 @@ mod tests {
     fn update_missing_modifier_errors() {
         let (_dir, conn) = migrated_conn();
         let err = update_modifier(&conn, "nope", "x", "y").expect_err("missing");
-        assert!(matches!(err, RepoError::TargetNotFound { .. }), "got {err:?}");
+        assert!(
+            matches!(err, RepoError::TargetNotFound { .. }),
+            "got {err:?}"
+        );
     }
 
     #[test]
@@ -213,7 +216,10 @@ mod tests {
             "deleted modifier must not be listed"
         );
         let err = delete_modifier(&conn, &created.id).expect_err("second delete");
-        assert!(matches!(err, RepoError::TargetNotFound { .. }), "got {err:?}");
+        assert!(
+            matches!(err, RepoError::TargetNotFound { .. }),
+            "got {err:?}"
+        );
     }
 
     #[test]
@@ -238,9 +244,12 @@ mod tests {
     #[test]
     fn reorder_rejects_unknown_id() {
         let (_dir, conn) = migrated_conn();
-        let err = reorder_modifiers(&conn, "cognition", &["ghost".to_string()])
-            .expect_err("unknown id");
-        assert!(matches!(err, RepoError::TargetNotFound { .. }), "got {err:?}");
+        let err =
+            reorder_modifiers(&conn, "cognition", &["ghost".to_string()]).expect_err("unknown id");
+        assert!(
+            matches!(err, RepoError::TargetNotFound { .. }),
+            "got {err:?}"
+        );
     }
 
     #[test]
@@ -250,6 +259,9 @@ mod tests {
         // Reordering the action quadrant must not accept a cognition id.
         let err = reorder_modifiers(&conn, "action", std::slice::from_ref(&cog.id))
             .expect_err("cross-quadrant id");
-        assert!(matches!(err, RepoError::TargetNotFound { .. }), "got {err:?}");
+        assert!(
+            matches!(err, RepoError::TargetNotFound { .. }),
+            "got {err:?}"
+        );
     }
 }

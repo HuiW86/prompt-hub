@@ -19,7 +19,8 @@ const RECENT_USAGE_LIMIT_MAX: i64 = 100;
 use crate::error::{AppError, AppResult};
 use repo_core::models::{
     AlignmentPhrase, Composition, DraftPayload, DraftStatus, DraftSummary, DraftTargetType, Macro,
-    Modifier, Phase, Phrase, RecentUsageEntry, RecordUsageInput, SceneWithChildren, UsageRecord,
+    Modifier, Phase, Phrase, RecentUsageEntry, RecordUsageInput, Scene, SceneWithChildren,
+    SubStage, UsageRecord,
 };
 use repo_core::{repo, DraftRepo, RepoError};
 use repo_write::promote::PromoteOptions;
@@ -505,6 +506,94 @@ pub fn reorder_phrases(
 ) -> AppResult<OkAck> {
     with_write_conn(&state, |c| {
         repo_write::reorder_phrases(c, &scene_id, sub_stage_id.as_deref(), &ordered_ids)
+    })?;
+    Ok(OkAck { ok: true })
+}
+
+// ── Scene / SubStage structural editing (plan scene-substage-editing) ─────────
+// omar-driven create / update / delete / reorder of Scene containers and their
+// SubStage groups. Tauri-only (no MCP write face). Scenes order globally; sub-
+// stages order per-scene. delete_scene refuses a non-empty scene (D4); delete of
+// a sub-stage unbinds its child phrases to NULL rather than cascade-deleting them.
+
+#[tauri::command]
+pub fn create_scene(
+    state: State<'_, AppState>,
+    name: String,
+    icon: Option<String>,
+    role_presets: Vec<String>,
+    color: Option<String>,
+) -> AppResult<Scene> {
+    with_write_conn(&state, |c| {
+        repo_write::create_scene(c, &name, icon.as_deref(), &role_presets, color.as_deref())
+    })
+}
+
+#[tauri::command]
+pub fn update_scene(
+    state: State<'_, AppState>,
+    id: String,
+    name: String,
+    icon: Option<String>,
+    role_presets: Vec<String>,
+    color: Option<String>,
+) -> AppResult<OkAck> {
+    with_write_conn(&state, |c| {
+        repo_write::update_scene(
+            c,
+            &id,
+            &name,
+            icon.as_deref(),
+            &role_presets,
+            color.as_deref(),
+        )
+    })?;
+    Ok(OkAck { ok: true })
+}
+
+#[tauri::command]
+pub fn delete_scene(state: State<'_, AppState>, id: String) -> AppResult<OkAck> {
+    with_write_conn(&state, |c| repo_write::delete_scene(c, &id))?;
+    Ok(OkAck { ok: true })
+}
+
+#[tauri::command]
+pub fn reorder_scenes(state: State<'_, AppState>, ordered_ids: Vec<String>) -> AppResult<OkAck> {
+    with_write_conn(&state, |c| repo_write::reorder_scenes(c, &ordered_ids))?;
+    Ok(OkAck { ok: true })
+}
+
+#[tauri::command]
+pub fn create_sub_stage(
+    state: State<'_, AppState>,
+    scene_id: String,
+    name: String,
+) -> AppResult<SubStage> {
+    with_write_conn(&state, |c| {
+        repo_write::create_sub_stage(c, &scene_id, &name)
+    })
+}
+
+#[tauri::command]
+pub fn update_sub_stage(state: State<'_, AppState>, id: String, name: String) -> AppResult<OkAck> {
+    with_write_conn(&state, |c| repo_write::update_sub_stage(c, &id, &name))?;
+    Ok(OkAck { ok: true })
+}
+
+#[tauri::command]
+pub fn delete_sub_stage(state: State<'_, AppState>, id: String) -> AppResult<OkAck> {
+    with_write_conn(&state, |c| repo_write::delete_sub_stage(c, &id))?;
+    Ok(OkAck { ok: true })
+}
+
+#[tauri::command]
+pub fn reorder_sub_stages(
+    state: State<'_, AppState>,
+    scene_id: String,
+    ordered_ids: Vec<String>,
+) -> AppResult<OkAck> {
+    with_write_conn(&state, |c| {
+        repo_write::reorder_sub_stages(c, &scene_id, &ordered_ids)
     })?;
     Ok(OkAck { ok: true })
 }

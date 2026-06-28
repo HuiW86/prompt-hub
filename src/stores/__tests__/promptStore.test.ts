@@ -830,4 +830,134 @@ describe("promptStore", () => {
     ).rejects.toThrow("reorder rejected");
     expect(usePromptStore.getState().compositionsByPhase).toEqual(before);
   });
+
+  // ── Scene + sub-stage structure editing (plan scene-substage-editing) ──
+  // These re-pull listScenesWithChildren (no optimistic update), so each test
+  // asserts both the write command args AND that state.scenes reflects the pull.
+  it("createScene sends name + rolePresets and re-pulls scenes", async () => {
+    mockListAll();
+    await usePromptStore.getState().refreshAll();
+
+    const pulled: SceneWithChildren[] = [
+      ...fakeScenes,
+      {
+        scene: {
+          id: "scene-new",
+          name: "新场景",
+          icon: null,
+          orderIndex: 1,
+          visible: true,
+          rolePresets: [],
+          color: null,
+        },
+        subStages: [],
+        phrases: [],
+      },
+    ];
+    invokeMock.mockImplementation((cmd: string) => {
+      if (cmd === "create_scene") return Promise.resolve(pulled[1].scene);
+      if (cmd === "list_scenes_with_children") return Promise.resolve(pulled);
+      return Promise.reject(new Error(`unexpected ${cmd}`));
+    });
+
+    await usePromptStore
+      .getState()
+      .createScene({ name: "新场景", rolePresets: [] });
+
+    const createCall = invokeMock.mock.calls.find(
+      (c) => c[0] === "create_scene",
+    );
+    expect(createCall?.[1]).toMatchObject({ name: "新场景", rolePresets: [] });
+    expect(usePromptStore.getState().scenes).toEqual(pulled);
+  });
+
+  it("updateScene preserves icon/color/rolePresets and re-pulls", async () => {
+    mockListAll();
+    await usePromptStore.getState().refreshAll();
+
+    invokeMock.mockImplementation((cmd: string) => {
+      if (cmd === "update_scene") return Promise.resolve({ ok: true });
+      if (cmd === "list_scenes_with_children")
+        return Promise.resolve(fakeScenes);
+      return Promise.reject(new Error(`unexpected ${cmd}`));
+    });
+
+    await usePromptStore.getState().updateScene({
+      id: "scene-plan",
+      name: "方案",
+      icon: "📐",
+      rolePresets: ["架构师"],
+      color: undefined,
+    });
+    const call = invokeMock.mock.calls.find((c) => c[0] === "update_scene");
+    expect(call?.[1]).toMatchObject({
+      id: "scene-plan",
+      name: "方案",
+      icon: "📐",
+      rolePresets: ["架构师"],
+    });
+  });
+
+  it("deleteScene propagates the SceneNotEmpty error", async () => {
+    mockListAll();
+    await usePromptStore.getState().refreshAll();
+
+    invokeMock.mockRejectedValue(
+      new Error(
+        "scene `scene-plan` is not empty (has phrases or sub-stages) and cannot be deleted",
+      ),
+    );
+    await expect(
+      usePromptStore.getState().deleteScene("scene-plan"),
+    ).rejects.toThrow("not empty");
+  });
+
+  it("createSubStage sends sceneId + name and re-pulls scenes", async () => {
+    mockListAll();
+    await usePromptStore.getState().refreshAll();
+
+    const withSub: SceneWithChildren[] = [
+      {
+        ...fakeScenes[0],
+        subStages: [
+          {
+            id: "ss-new",
+            sceneId: "scene-plan",
+            name: "生成",
+            orderIndex: 0,
+          },
+        ],
+      },
+    ];
+    invokeMock.mockImplementation((cmd: string) => {
+      if (cmd === "create_sub_stage")
+        return Promise.resolve(withSub[0].subStages[0]);
+      if (cmd === "list_scenes_with_children") return Promise.resolve(withSub);
+      return Promise.reject(new Error(`unexpected ${cmd}`));
+    });
+
+    await usePromptStore
+      .getState()
+      .createSubStage({ sceneId: "scene-plan", name: "生成" });
+    const call = invokeMock.mock.calls.find((c) => c[0] === "create_sub_stage");
+    expect(call?.[1]).toMatchObject({ sceneId: "scene-plan", name: "生成" });
+    expect(usePromptStore.getState().scenes[0].subStages).toHaveLength(1);
+  });
+
+  it("deleteSubStage re-pulls scenes after unbinding", async () => {
+    mockListAll();
+    await usePromptStore.getState().refreshAll();
+
+    invokeMock.mockImplementation((cmd: string) => {
+      if (cmd === "delete_sub_stage") return Promise.resolve({ ok: true });
+      if (cmd === "list_scenes_with_children")
+        return Promise.resolve(fakeScenes);
+      return Promise.reject(new Error(`unexpected ${cmd}`));
+    });
+
+    await usePromptStore.getState().deleteSubStage("ss-old");
+    const call = invokeMock.mock.calls.find((c) => c[0] === "delete_sub_stage");
+    expect(call?.[1]).toMatchObject({ id: "ss-old" });
+    expect(usePromptStore.getState().scenes).toEqual(fakeScenes);
+  });
 });

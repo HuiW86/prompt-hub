@@ -213,6 +213,101 @@
   padding: var(--s-2_5) var(--s-3_5) 0;
 }
 
+/* ── Edit mode: Scene + sub-stage structure editor ───────────────────────────
+   A bordered inset below the header (edit mode only) that hosts scene rename /
+   delete / new-scene controls and the sub-stage CRUD list. Neutral surfaces
+   only (constitution B2 — Scene's task colour lives on the tab, not here). */
+.structureEditor {
+  display: flex;
+  flex-direction: column;
+  gap: var(--s-3);
+  flex: none;
+  margin: var(--s-2_5) var(--s-3_5) 0;
+  padding: var(--s-3);
+  background: var(--surface-2);
+  border: var(--hairline) solid var(--border-1);
+  border-radius: var(--r-3);
+}
+
+.structureRow {
+  display: flex;
+  align-items: center;
+  gap: var(--s-2);
+  min-width: 0;
+}
+
+.structureLabel {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--s-1_5);
+  flex: 1;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  font: var(--w-600) var(--t-13) / 1 var(--font-sans);
+  color: var(--fg-1);
+}
+
+.subStageManager {
+  display: flex;
+  flex-direction: column;
+  gap: var(--s-2);
+  padding-top: var(--s-3);
+  border-top: var(--hairline) solid var(--border-1);
+}
+
+.subStageManagerHead {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--s-2);
+}
+
+.subStageEmpty {
+  margin: 0;
+  font: var(--w-400) var(--t-12) / 1 var(--font-sans);
+  color: var(--fg-3);
+}
+
+.subStageList {
+  display: flex;
+  flex-direction: column;
+  gap: var(--s-1_5);
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.subStageItem {
+  display: flex;
+  align-items: center;
+  gap: var(--s-2);
+  padding: var(--s-1_5) var(--s-2);
+  background: var(--surface-1);
+  border: var(--hairline) solid var(--border-1);
+  border-radius: var(--r-2);
+  min-width: 0;
+}
+
+.subStageItemName {
+  flex: 1;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  font: var(--w-500) var(--t-12) / 1 var(--font-sans);
+  color: var(--fg-1);
+}
+
+.subStageInline {
+  display: flex;
+  align-items: center;
+  gap: var(--s-2);
+  flex: 1;
+  min-width: 0;
+}
+
 /* Sub-stages flow as a fixed 4-column grid (Promptscape Scene 全景): each group
  * is a column, its phrases stack as cards beneath the sub-stage header. Columns
  * < 4 left-align; > 4 wrap to the next row. View mode only — edit mode keeps the

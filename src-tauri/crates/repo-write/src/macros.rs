@@ -151,7 +151,10 @@ mod tests {
     fn update_missing_macro_errors() {
         let (_dir, conn) = migrated_conn();
         let err = update_macro(&conn, "nope", "x", "y").expect_err("missing");
-        assert!(matches!(err, RepoError::TargetNotFound { .. }), "got {err:?}");
+        assert!(
+            matches!(err, RepoError::TargetNotFound { .. }),
+            "got {err:?}"
+        );
     }
 
     #[test]
@@ -167,7 +170,10 @@ mod tests {
             "deleted macro must not be listed"
         );
         let err = delete_macro(&conn, &created.id).expect_err("second delete");
-        assert!(matches!(err, RepoError::TargetNotFound { .. }), "got {err:?}");
+        assert!(
+            matches!(err, RepoError::TargetNotFound { .. }),
+            "got {err:?}"
+        );
     }
 
     #[test]
@@ -196,6 +202,9 @@ mod tests {
     fn reorder_rejects_unknown_id() {
         let (_dir, conn) = migrated_conn();
         let err = reorder_macros(&conn, &["ghost".to_string()]).expect_err("unknown id");
-        assert!(matches!(err, RepoError::TargetNotFound { .. }), "got {err:?}");
+        assert!(
+            matches!(err, RepoError::TargetNotFound { .. }),
+            "got {err:?}"
+        );
     }
 }

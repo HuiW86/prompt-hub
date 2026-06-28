@@ -1,9 +1,9 @@
 ---
 type: features
 project: prompt-hub
-version: v1.5
+version: v1.6
 created: 2026-05-19
-last_modified: 2026-06-26
+last_modified: 2026-06-27
 status: in-progress  # S1 主形态 MVP 5 模块 + 跨模块 P0 多项 done（ADR-012 Phase 1-5 全 done）；M-X 全收口——数据层 + workspace + MCP server + UI 收件箱（草稿 tab + 待审 badge + 5 IPC + schema recheck）done；M0-4 签名公证链路 done（M0 四项全绿）；ADR-017 自动更新客户端 + CI 出包链路 done（dry-run 端到端验证）；design-spec v0.10 UI 一致性治理 A 阶段 primitives 迁移 done（真机验证待补）；v1.3 UI 减负移除 Composition/Modifier 编辑面板（Tab cycle 8→6，数据层保留）
 author: ai  # 🤖 AI 主笔 + 人审（CLAUDE §5.2）
 audience: [human, ai]
@@ -161,6 +161,7 @@ related:
 | Macro 编辑（增删改名/改内容）+ dnd-kit 拖动排序（`order_index` 持久化）| P1 | `done` | v1.1 | 73 前端 / repo-write reorder | omar | [[asset-editing-and-adaptive-layout#P1]] |
 | AlignmentPhrase 编辑面板（edit-mode toggle + dnd 排序，per-phase `order_index`）| P1 | `done` | v1.1 | 73 前端 | omar | [[asset-editing-and-adaptive-layout#P2]] |
 | Scene 话术（Phrase）编辑（edit-mode toggle + 增删改名/改内容/改子阶段 + dnd 排序，per-(scene,sub_stage) `order_index`，schema 8→9）| P1 | `done` | v1.4 | 94 前端 / repo-write phrases 12 测试 | omar | [[scene-phrase-editing]] |
+| Scene/SubStage 结构编辑（D1 Scene+SubStage CRUD 一起做 / D2 seed `0011` 灌示范 SubStage / D3 Tauri-only 不上 MCP / D4 删非空 Scene 阻止 · 删 SubStage 解绑 Phrase；Scene 全局序 + SubStage per-scene 序）| P1 | `done` | v1.6 | 后端 74（repo-write scenes/sub_stages 19 单测）/ 前端 109（store 5 + ScenePanel 组件 6）；真机 CRUD 落盘待验 | omar | [[scene-substage-editing]] |
 | Modifier / Composition 编辑（增删改名/改内容/排序）| P1 | `withdrawn` | v1.3 | ~~ModifierGrid 6 + CompositionWorkbench 6 + composition-b2 gate~~（v1.3 移除）| omar | [[asset-editing-and-adaptive-layout#P2]] |
 | └ v1.3 UI 减负：两编辑面板移出主仪表盘（[[03-product-spec#修订记录]] v0.9）。资产类型、数据层、DraftInbox promote 分支保留（「只进不显」），随时可重挂或落地 ⌘N 子窗口；未改 [[02-constitution#B1]] | — | — | — | — | — | — |
 | Dashboard 可拖列布局（react-resizable-panels v4 `Group`/`Panel`/`Separator` + localStorage 持久化）| P1 | `done` | v1.1 | 73 前端 / 手测 拖拽+持久化 ✓（键盘 focus 待补）| omar | [[asset-editing-and-adaptive-layout#P4]] |
@@ -220,10 +221,11 @@ related:
 | ADR-017 自动更新 | v1.1 | 5 功能 | `done`（4/5：客户端 + CI 出包 done / 真机验收 planned）|
 | UI 一致性治理（design-spec v0.10 A 阶段）| v1.1 | 4 功能 | `done`（4/4 实装 + 测试零回归；真机验证待补）|
 | Promptscape 设计吸收（ADR-018）| v1.5 | 6 功能 | `done`（6/6 实装：主题三态 + 强调色 + 设置弹窗 + Header + ProtocolBand + 2 列全景；真机验证待补）|
+| Scene/SubStage 结构编辑（scene-substage-editing）| v1.6 | 1 功能 | `done`（后端 74 / 前端 109 全绿；补 [[scene-phrase-editing]] 当初 defer 的 Scene 容器 + SubStage CRUD；真机 CRUD 落盘待验）|
 | S3 SOP 导航 | v1.2 | 3 功能 | `planned` |
 | S4 配置个性化 | v1.3 | 4 功能 | `planned` |
 | S5 辅形态副屏 | v2.0 | 3 功能 | `planned` |
-| **合计** | — | **65 项** | — |
+| **合计** | — | **66 项** | — |
 
 **注**：版本号语义为 prompt-hub 自身版本，与 prd / spec / methodology 各自独立。v1.0 = 第一阶段 MVP 可发布；v2.0 = 辅形态加入（双形态完整）。
 
@@ -264,6 +266,7 @@ related:
 | 2026-06-23 | v1.4 bump：§3.8 新增「Scene 话术（Phrase）编辑」→ `done`——镜像 AlignmentPhrase 编辑模式，补 forward-only migration（schema 8→9）加 per-(scene,sub_stage) `order_index`，repo-write `phrases.rs` 4 写函数 + 12 测试，4 IPC，ScenePanel 编辑态（每 SubStage 组独立 DnD + 子阶段下拉）。后端 55 测试 / 前端 94 测试全绿。涟漪 [[03-product-spec]] §13.3 区域 4 行为 | [[scene-phrase-editing]] M1+M2 收口涟漪 |
 | 2026-06-25 | v1.5 bump：新增 §3.11 Promptscape 设计吸收区（6 功能 → `done`：主题三态外观系统 / 中性强调色 / 设置弹窗 / slim Header / ProtocolBand / 任务层 3→2 列全景）；§4 节奏表加 Promptscape 行，合计 59→65 项。B2 复检通过（accent 只染中性强调面，`:root.accent-*` 物理隔离）；A2 不出站（外观偏好 persist localStorage）。涟漪 [[03-product-spec]] v0.10 / [[05-design-spec]] v0.11 / [[016-choose-dnd-and-resizable-layout]] 补遗 | [[018-absorb-promptscape-design]] 吸收落地涟漪 |
 | 2026-06-26 | 文档涟漪（**非功能矩阵新增**）：ADR-019 推翻 flat 视觉锚点（omar 拍板 Option A——引入 subtle elevation + 放弃颜色本体论）。「协议层与任务层物理分离」条备注更新（视觉区分改靠位置+形状，B2 仍为纯结构铁律，状态不变）；ADR-012 标 Superseded。design-spec v0.11→v0.12 / CLAUDE-DESIGN v0.1→v0.2（待重传）/ tokens.css 加 `--shadow-*`。组件 CSS 改造另行落地。合计仍 65 项 | [[019-supersede-flat-visual-anchor]] Option A 落地涟漪 |
+| 2026-06-27 | v1.6 bump：§3.8 新增「Scene/SubStage 结构编辑」→ `done`，补齐 [[scene-phrase-editing]] 当初 defer 的另一半（D1 Scene+SubStage CRUD / D2 seed `0011` 灌示范 SubStage / D3 Tauri-only / D4 删非空 Scene 阻止 · 删 SubStage 解绑 Phrase）。无 schema migration（表已存于 `0001`，唯一 migration 是纯 seed `0011`，user_version 10→11）；repo-write `scenes.rs`/`sub_stages.rs` 各 CRUD+reorder + 19 单测，8 IPC，ScenePanel 编辑态加 Scene 增改名删 + SubStage 增改名删 + 空子阶段可见。后端 74 测试 / 前端 109 测试全绿（clippy/fmt/lint/prettier clean）；**真机 CRUD 落盘待验**。契约现成（[[06-prd#6.4]] 已定 Scene/SubStage 字段+FK+删除语义，本次补「写入口=UI 编辑态」指派 + product-spec §13.3 结构编辑契约），不开新 ADR。§4 节奏表加结构编辑行，合计 65→66 项 | [[scene-substage-editing]] 收口涟漪 |
 
 ---
 

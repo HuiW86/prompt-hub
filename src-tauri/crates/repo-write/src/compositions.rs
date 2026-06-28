@@ -155,8 +155,7 @@ mod tests {
         assert_eq!(a.modifier_ids, vec!["m1".to_string()]);
         assert_eq!(a.order_index, before_max + 1);
 
-        let b =
-            create_composition(&conn, "phase-diverge", "B", &[], None).expect("create b");
+        let b = create_composition(&conn, "phase-diverge", "B", &[], None).expect("create b");
         assert_eq!(b.order_index, a.order_index + 1);
     }
 
@@ -183,8 +182,8 @@ mod tests {
     #[test]
     fn create_rejects_unknown_phase() {
         let (_dir, conn) = migrated_conn();
-        let err = create_composition(&conn, "phase-bogus", "X", &[], None)
-            .expect_err("unknown phase");
+        let err =
+            create_composition(&conn, "phase-bogus", "X", &[], None).expect_err("unknown phase");
         // Surfaced as a rusqlite FK violation wrapped in RepoError.
         assert!(matches!(err, RepoError::Sqlite(_)), "got {err:?}");
     }
@@ -194,8 +193,13 @@ mod tests {
         let (_dir, conn) = migrated_conn();
         let created = create_composition(&conn, "phase-diverge", "Old", &["m1".to_string()], None)
             .expect("create");
-        update_composition(&conn, &created.id, "Renamed", &["m2".to_string(), "m3".to_string()])
-            .expect("update");
+        update_composition(
+            &conn,
+            &created.id,
+            "Renamed",
+            &["m2".to_string(), "m3".to_string()],
+        )
+        .expect("update");
 
         let found = repo::list_compositions(&conn)
             .expect("list")
@@ -212,7 +216,10 @@ mod tests {
     fn update_missing_errors() {
         let (_dir, conn) = migrated_conn();
         let err = update_composition(&conn, "nope", "x", &[]).expect_err("missing");
-        assert!(matches!(err, RepoError::TargetNotFound { .. }), "got {err:?}");
+        assert!(
+            matches!(err, RepoError::TargetNotFound { .. }),
+            "got {err:?}"
+        );
     }
 
     #[test]
@@ -229,7 +236,10 @@ mod tests {
             "deleted composition must not be listed"
         );
         let err = delete_composition(&conn, &created.id).expect_err("second delete");
-        assert!(matches!(err, RepoError::TargetNotFound { .. }), "got {err:?}");
+        assert!(
+            matches!(err, RepoError::TargetNotFound { .. }),
+            "got {err:?}"
+        );
     }
 
     #[test]
@@ -254,16 +264,21 @@ mod tests {
         let (_dir, conn) = migrated_conn();
         let err = reorder_compositions(&conn, "phase-diverge", &["ghost".to_string()])
             .expect_err("unknown id");
-        assert!(matches!(err, RepoError::TargetNotFound { .. }), "got {err:?}");
+        assert!(
+            matches!(err, RepoError::TargetNotFound { .. }),
+            "got {err:?}"
+        );
     }
 
     #[test]
     fn reorder_rejects_id_from_other_phase() {
         let (_dir, conn) = migrated_conn();
         let div = create_composition(&conn, "phase-diverge", "div", &[], None).expect("div");
-        let err =
-            reorder_compositions(&conn, "phase-understand", std::slice::from_ref(&div.id))
-                .expect_err("cross-phase id");
-        assert!(matches!(err, RepoError::TargetNotFound { .. }), "got {err:?}");
+        let err = reorder_compositions(&conn, "phase-understand", std::slice::from_ref(&div.id))
+            .expect_err("cross-phase id");
+        assert!(
+            matches!(err, RepoError::TargetNotFound { .. }),
+            "got {err:?}"
+        );
     }
 }
