@@ -44,6 +44,11 @@ pub enum RepoError {
     // tell the user to empty the scene first.
     #[error("scene `{scene_id}` is not empty (has phrases or sub-stages) and cannot be deleted")]
     SceneNotEmpty { scene_id: String },
+    // Import (PRD §7.5 / §7.7): the backup file's data schema_version is a major
+    // version this build can't safely restore. Major bumps are breaking by
+    // contract (§7.7.1), so refuse rather than partially apply an unknown shape.
+    #[error("import schema version `{found}` is unsupported — this build restores major version {expected_major}.x backups")]
+    ImportSchemaUnsupported { found: String, expected_major: u32 },
     // PRD §10.1.1: drafts.payload_json is capped at 64KB. Enforced at the repo
     // layer so every single-write path (MCP create/update, Tauri IPC) shares it.
     #[error("payload is {size_bytes} bytes, over the {limit_bytes}-byte limit")]

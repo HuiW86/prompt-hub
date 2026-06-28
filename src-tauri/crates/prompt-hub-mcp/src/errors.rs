@@ -70,6 +70,15 @@ pub fn repo_error(err: RepoError) -> CallToolResult {
             "Scene '{scene_id}' still has phrases or sub-stages and can't be \
              deleted. This only happens in the desktop app."
         ),
+        // Tauri-only import path (PRD §7.5); the MCP server never restores
+        // backups, so this is unreachable here but kept exhaustive.
+        RepoError::ImportSchemaUnsupported {
+            found,
+            expected_major,
+        } => format!(
+            "Backup schema version '{found}' is unsupported (this build restores \
+             v{expected_major}.x). Importing only happens in the desktop app."
+        ),
         RepoError::Other(msg) => msg,
     };
     CallToolResult::error(vec![Content::text(text)])

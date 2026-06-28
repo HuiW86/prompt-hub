@@ -44,6 +44,8 @@ pub fn run() {
         // check runs in JS off the ⌥Space wake hot path, never threatening C1.
         .plugin(tauri_plugin_updater::Builder::new().build())
         .plugin(tauri_plugin_process::init())
+        // Native save/open dialogs for data export/import (PRD §7.5).
+        .plugin(tauri_plugin_dialog::init())
         .setup(|app| {
             let data_dir = app.path().app_data_dir().expect("resolve app_data_dir");
             let db_path = data_dir.join("prompt-hub.db");
@@ -177,6 +179,8 @@ pub fn run() {
             commands::update_sub_stage,
             commands::delete_sub_stage,
             commands::reorder_sub_stages,
+            commands::export_data,
+            commands::import_data,
         ])
         .build(tauri::generate_context!())
         .expect("error while building tauri application");

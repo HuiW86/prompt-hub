@@ -8,6 +8,7 @@ import type {
   DraftSummary,
   DraftTargetType,
   GroupKind,
+  ImportSummary,
   Macro,
   Modifier,
   OkAck,
@@ -243,6 +244,12 @@ export const ipc = {
   deleteSubStage: (id: string) => invoke<OkAck>("delete_sub_stage", { id }),
   reorderSubStages: (sceneId: string, orderedIds: string[]) =>
     invoke<OkAck>("reorder_sub_stages", { sceneId, orderedIds }),
+
+  // ── Data export/import (PRD §6.9/§7.5) — Tauri-only. The frontend picks a
+  // path via the native dialog; Rust does the actual file read/write. Import is
+  // full-replace (wipe-and-restore); usage_records are not exported (D2).
+  exportData: (path: string) => invoke<void>("export_data", { path }),
+  importData: (path: string) => invoke<ImportSummary>("import_data", { path }),
 };
 
 export type Ipc = typeof ipc;

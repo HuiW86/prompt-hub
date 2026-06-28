@@ -1,10 +1,10 @@
 ---
 type: product-spec
 project: prompt-hub
-version: v0.11
+version: v0.12
 created: 2026-05-18
-last_modified: 2026-06-27
-status: draft  # 🤝 共创，v0.11 涟漪 scene-substage-editing 结构编辑契约 + v0.10 ADR-018 Promptscape 吸收待 omar 人审；前序 v0.8 已 ratified
+last_modified: 2026-06-28
+status: draft  # 🤝 共创，v0.12 涟漪数据导入导出设置页 + v0.11 scene-substage-editing 结构编辑契约 + v0.10 ADR-018 Promptscape 吸收待 omar 人审；前序 v0.8 已 ratified
 author: co  # 🤝 人机共创（CLAUDE §5.2）
 related: [[01-spec]], [[05-design-spec]], [[06-prd]], [[012-lock-visual-quality-anchor]], [[019-supersede-flat-visual-anchor]], [[013-alignment-phrases-tab-inclusion]], [[015-expose-mcp-write-pipeline]], [[017-enable-auto-update]], [[018-absorb-promptscape-design]]
 description: 手动 AI 编程仪表盘的 UI 契约——双形态架构/布局/点击路径/交互频率/状态反馈/引导/用户旅程/主形态 UI 草案；v0.9 移除主仪表盘的 Composition/Modifier 编辑面板（UI 减负·选项 2），Tab cycle 8 → 6，资产类型保留在数据层；v0.10 涟漪 ADR-018 Promptscape 吸收：§13.2 加 Header 区域0 + 协议层 band + 任务层 3→2 列 + 设置弹窗区域9；v0.7 涟漪 ADR-015 草稿收件箱 tab + 待审 badge
@@ -759,10 +759,11 @@ graph TD
 - **位置**：居中 overlay 模态（`--scrim` 遮罩覆盖全屏），非常驻区域
 - **唤起**：Header gear 点击 / `⌘,`
 - **关闭**：Esc / 点击遮罩 / 右上角 X
-- **结构**：左导航（外观 / 更新）+ 右内容
+- **结构**：左导航（外观 / 更新 / 数据）+ 右内容
   - **外观页**：主题模式三态分段控件（浅色 / 深色 / 跟随系统）+ 强调色 5 色 swatch（中性 / 蓝 / 绿 / 紫 / 琥珀）；偏好 persist localStorage（[[02-constitution#A2]] 不出站）
   - **更新页**：opt-in 总开关（[[017-enable-auto-update]] §5.3 出站豁免）+ 状态行 +「检查更新」/「下载并安装」，复用 `updaterStore` 状态机
-- **B2 合规**：强调色只染中性面（导航焦点环 / swatch / 开关 on 态），**不染 protocol/task 语义层**（[[02-constitution#B2]] / [[05-design-spec#13.1]]）
+  - **数据页（v0.11 新增 · [[06-prd#6.9]]/§7.5）**：「导出备份…」（save dialog 选本地路径 → 全保真 JSON，默认名 `prompt-hub-backup-YYYY-MM-DD.json`）+「导入备份…」（open dialog 选 JSON → **整库替换确认弹窗** → 导入后 `refreshAll` 重载全部 store）；文件仅写用户选定本地路径（[[02-constitution#A2]] 不出站），导入为**清空 + 整库替换**不可撤销（决策 D1），导出**不含使用记录**（决策 D2）
+- **B2 合规**：强调色只染中性面（导航焦点环 / swatch / 开关 on 态），**不染 protocol/task 语义层**（[[02-constitution#B2]] / [[05-design-spec#13.1]]）；数据页导出/导入按表整搬，不混协议层与任务层
 - **不进 Tab cycle 总数**：模态弹窗有自己的焦点域，不计入 §13.4 区域级 6-tab 全景循环
 - **与设置语义的历史校正**：v0.5「⌘, 唤起配置面板（编辑 Scene/Phase/Modifier）」的旧措辞已被本区域取代——⌘, 现打开本设置弹窗（外观 + 更新），资产编辑走各区域就地编辑态
 
@@ -808,6 +809,10 @@ graph TD
 ---
 
 ## 修订记录
+
+### v0.12（2026-06-28）— 数据导入导出涟漪：设置弹窗新增「数据」页
+
+涟漪 [[06-prd#6.9]]/§7.5。§13.3 区域 9 设置弹窗左导航加第三页「数据」：导出备份（save dialog → 全保真 JSON）+ 导入备份（open dialog → 整库替换确认弹窗 → `refreshAll` 重载）。导入为清空 + 整库替换不可撤销（决策 D1），导出不含使用记录（决策 D2），文件仅写本地路径（[[02-constitution#A2]] 不出站）。🤖 AI 主笔起草，待 omar 人审。后端 export 3 + import 5 单测 / 前端 109 全绿，真机导入导出待验。
 
 ### v0.11（2026-06-27）— scene-substage-editing 涟漪：Scene/SubStage 结构编辑契约
 

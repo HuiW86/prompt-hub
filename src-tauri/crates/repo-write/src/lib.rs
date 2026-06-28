@@ -1,6 +1,7 @@
 pub mod alignment_phrases;
 pub mod asset_repo;
 pub mod compositions;
+pub mod import;
 pub mod macros;
 pub mod modifiers;
 pub mod phrases;
@@ -16,6 +17,7 @@ pub use asset_repo::AssetRepo;
 pub use compositions::{
     create_composition, delete_composition, reorder_compositions, update_composition,
 };
+pub use import::{import_json, ImportSummary};
 pub use macros::{create_macro, delete_macro, reorder_macros, update_macro};
 pub use modifiers::{create_modifier, delete_modifier, reorder_modifiers, update_modifier};
 pub use phrases::{create_phrase, delete_phrase, reorder_phrases, update_phrase};

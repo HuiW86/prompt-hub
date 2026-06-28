@@ -598,6 +598,29 @@ pub fn reorder_sub_stages(
     Ok(OkAck { ok: true })
 }
 
+// ── Data import / export (PRD §6.9 / §7.5) ────────────────────────────────────
+// Full-fidelity local JSON backup + restore. The frontend uses the dialog plugin
+// to pick a path; the file read/write itself happens here in Rust (std::fs) so we
+// need no fs-plugin scope grant. export is a read; import is a wipe-and-restore
+// write (strategy D1=A) and pays the schema-drift guard like every write path.
+// Both stay entirely on-disk — no network (A2).
+
+#[tauri::command]
+pub fn export_data(state: State<'_, AppState>, path: String) -> AppResult<()> {
+    let json = with_conn(&state, repo_core::export_json)?;
+    std::fs::write(&path, json).map_err(repo_core::RepoError::from)?;
+    Ok(())
+}
+
+#[tauri::command]
+pub fn import_data(
+    state: State<'_, AppState>,
+    path: String,
+) -> AppResult<repo_write::ImportSummary> {
+    let json = std::fs::read_to_string(&path).map_err(repo_core::RepoError::from)?;
+    with_write_conn(&state, |c| repo_write::import_json(c, &json))
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;

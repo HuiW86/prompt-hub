@@ -1,5 +1,13 @@
+// Alias open/confirm: their bare names collide with the window.open / window.confirm
+// globals, which shadows the plugin imports in some bundler/test transforms.
+import {
+  confirm as confirmDialog,
+  open as openDialog,
+  save as saveDialog,
+} from "@tauri-apps/plugin-dialog";
 import {
   Check,
+  Database,
   Download,
   Monitor,
   Moon,
@@ -7,21 +15,40 @@ import {
   RefreshCw,
   RotateCw,
   Sun,
+  Upload,
   X,
 } from "lucide-react";
 import { useEffect, useState } from "react";
 
+import { ipc } from "../ipc";
 import {
   type Accent,
   type ThemeMode,
   useSettingsStore,
 } from "../stores/settingsStore";
+import { usePromptStore } from "../stores/promptStore";
+import { useToastStore } from "../stores/toastStore";
 import { useUpdaterStore } from "../stores/updaterStore";
 
 import { cx } from "./primitives/cx";
 import styles from "./SettingsModal.module.css";
 
-type Tab = "appearance" | "update";
+type Tab = "appearance" | "update" | "data";
+
+const TAB_TITLES: Record<Tab, string> = {
+  appearance: "外观",
+  update: "更新",
+  data: "数据",
+};
+
+// Default backup file name: prompt-hub-backup-YYYY-MM-DD.json.
+function defaultBackupName(): string {
+  const d = new Date();
+  const pad = (n: number) => String(n).padStart(2, "0");
+  return `prompt-hub-backup-${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(
+    d.getDate(),
+  )}.json`;
+}
 
 const THEME_OPTIONS: { value: ThemeMode; label: string; icon: typeof Sun }[] = [
   { value: "light", label: "浅色", icon: Sun },
@@ -66,7 +93,71 @@ export function SettingsModal() {
   const check = useUpdaterStore((s) => s.check);
   const downloadAndInstall = useUpdaterStore((s) => s.downloadAndInstall);
 
+  const refreshAll = usePromptStore((s) => s.refreshAll);
+  const showToast = useToastStore((s) => s.show);
+
   const [tab, setTab] = useState<Tab>("appearance");
+  // Guards the export/import buttons against re-entry while a dialog or the
+  // file I/O is in flight, and carries the last data-tab status line.
+  const [dataBusy, setDataBusy] = useState(false);
+  const [dataStatus, setDataStatus] = useState<string | null>(null);
+
+  const handleExport = async () => {
+    if (dataBusy) return;
+    setDataBusy(true);
+    setDataStatus(null);
+    try {
+      const path = await saveDialog({
+        defaultPath: defaultBackupName(),
+        filters: [{ name: "JSON", extensions: ["json"] }],
+      });
+      if (!path) return; // user cancelled
+      await ipc.exportData(path);
+      setDataStatus("已导出备份");
+      showToast("已导出备份");
+    } catch (err) {
+      setDataStatus(err instanceof Error ? err.message : String(err));
+    } finally {
+      setDataBusy(false);
+    }
+  };
+
+  const handleImport = async () => {
+    if (dataBusy) return;
+    setDataBusy(true);
+    setDataStatus(null);
+    try {
+      const selected = await openDialog({
+        multiple: false,
+        directory: false,
+        filters: [{ name: "JSON", extensions: ["json"] }],
+      });
+      const path = Array.isArray(selected) ? selected[0] : selected;
+      if (!path) return; // user cancelled
+      const ok = await confirmDialog(
+        "导入会清空当前全部资产数据并以备份内容整库替换，此操作不可撤销。确定继续？",
+        { title: "导入备份", kind: "warning" },
+      );
+      if (!ok) return;
+      const summary = await ipc.importData(path);
+      const total =
+        summary.modifiers +
+        summary.macros +
+        summary.scenes +
+        summary.subStages +
+        summary.phrases +
+        summary.phases +
+        summary.alignmentPhrases +
+        summary.compositions;
+      await refreshAll();
+      setDataStatus(`已导入 ${total} 条记录`);
+      showToast("已导入备份");
+    } catch (err) {
+      setDataStatus(err instanceof Error ? err.message : String(err));
+    } finally {
+      setDataBusy(false);
+    }
+  };
 
   useEffect(() => {
     if (!open) return;
@@ -121,13 +212,20 @@ export function SettingsModal() {
             <Download size={14} strokeWidth={2} aria-hidden />
             更新
           </button>
+          <button
+            type="button"
+            className={cx(styles.navItem, tab === "data" && styles.active)}
+            aria-current={tab === "data"}
+            onClick={() => setTab("data")}
+          >
+            <Database size={14} strokeWidth={2} aria-hidden />
+            数据
+          </button>
         </nav>
 
         <div className={styles.content}>
           <div className={styles.contentHead}>
-            <span className={styles.contentTitle}>
-              {tab === "appearance" ? "外观" : "更新"}
-            </span>
+            <span className={styles.contentTitle}>{TAB_TITLES[tab]}</span>
             <button
               type="button"
               className={styles.close}
@@ -203,7 +301,7 @@ export function SettingsModal() {
                 </div>
               </div>
             </div>
-          ) : (
+          ) : tab === "update" ? (
             <div className={styles.body}>
               <div className={styles.field}>
                 <div className={styles.toggleRow}>
@@ -267,6 +365,51 @@ export function SettingsModal() {
                     </button>
                   )}
                 </div>
+              </div>
+            </div>
+          ) : (
+            <div className={styles.body}>
+              <div className={styles.field}>
+                <span className={styles.fieldLabel}>导出备份</span>
+                <span className={styles.fieldHint}>
+                  将全部提示词资产导出为单个 JSON
+                  文件（不含使用记录）。文件仅写入你选择的本地路径，不上传任何服务。
+                </span>
+                <div className={styles.actions}>
+                  <button
+                    type="button"
+                    className={styles.actionBtn}
+                    disabled={dataBusy}
+                    onClick={() => void handleExport()}
+                  >
+                    <Download size={13} strokeWidth={2} aria-hidden />
+                    导出备份…
+                  </button>
+                </div>
+              </div>
+
+              <div className={styles.field}>
+                <span className={styles.fieldLabel}>导入备份</span>
+                <span className={styles.fieldHint}>
+                  从 JSON
+                  备份整库替换：导入会清空当前全部资产并以备份内容覆盖，操作不可撤销。
+                </span>
+                <div className={styles.actions}>
+                  <button
+                    type="button"
+                    className={styles.actionBtn}
+                    disabled={dataBusy}
+                    onClick={() => void handleImport()}
+                  >
+                    <Upload size={13} strokeWidth={2} aria-hidden />
+                    导入备份…
+                  </button>
+                </div>
+                {dataStatus ? (
+                  <div className={styles.statusRow}>
+                    <span>{dataStatus}</span>
+                  </div>
+                ) : null}
               </div>
             </div>
           )}

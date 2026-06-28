@@ -248,3 +248,15 @@ export interface UpdateAck {
 export interface OkAck {
   ok: boolean;
 }
+
+// Per-table row counts restored by a wipe-and-restore import (PRD §7.5).
+export interface ImportSummary {
+  modifiers: number;
+  macros: number;
+  scenes: number;
+  subStages: number;
+  phrases: number;
+  phases: number;
+  alignmentPhrases: number;
+  compositions: number;
+}
