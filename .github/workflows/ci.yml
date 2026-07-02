@@ -1,0 +1,65 @@
+# Test + lint CI (frontend + Rust). Runs on every push to main and on all PRs.
+#
+# Style mirrors release.yml:
+#   - macos-14 runner (project targets macOS only; depends on macos-private-api).
+#   - Third-party actions pinned to commit SHA (not tags); shared actions reuse
+#     the exact SHAs already pinned in release.yml.
+#   - `permissions` minimized to contents:read (nothing here writes back).
+#   - pnpm version resolves from package.json's `packageManager` field via
+#     pnpm/action-setup (same as release.yml — no version hardcoded here).
+
+name: ci
+
+on:
+  push:
+    branches:
+      - main
+  pull_request:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ci-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  # ── Job 1: frontend — lint, format check, unit tests, production build. ─────
+  frontend:
+    runs-on: macos-14
+    steps:
+      - uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5 # v4
+      - uses: pnpm/action-setup@f40ffcd9367d9f12939873eb1018b921a783ffaa # v4
+      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4
+        with:
+          node-version: 22
+          cache: pnpm
+
+      - run: pnpm install --frozen-lockfile
+      - run: pnpm lint
+      - run: pnpm exec prettier --check .
+      - run: pnpm test
+      - run: pnpm build
+
+  # ── Job 2: rust — fmt, clippy (deny warnings), workspace tests. ─────────────
+  rust:
+    runs-on: macos-14
+    steps:
+      - uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5 # v4
+      - uses: dtolnay/rust-toolchain@29eef336d9b2848a0b548edc03f92a220660cdb8 # stable
+        with:
+          components: rustfmt, clippy
+      - uses: Swatinem/rust-cache@f13886b937689c021905a6b90929199931d60db1 # v2.8.1
+        with:
+          workspaces: src-tauri
+
+      # dist/ is gitignored, so a fresh checkout has no frontendDist (../dist).
+      # Debug builds (no `custom-protocol` feature) compile without it — verified
+      # locally — but stub it anyway so tauri codegen never trips on a missing
+      # asset path if feature flags or tauri-build behavior change.
+      - name: Stub frontend dist for tauri codegen
+        run: mkdir -p dist && touch dist/index.html
+
+      - run: cargo fmt --manifest-path src-tauri/Cargo.toml --check
+      - run: cargo clippy --workspace --all-targets --manifest-path src-tauri/Cargo.toml -- -D warnings
+      - run: cargo test --workspace --manifest-path src-tauri/Cargo.toml
