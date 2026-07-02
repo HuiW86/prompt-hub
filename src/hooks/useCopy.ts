@@ -8,7 +8,9 @@ import { writeClipboard } from "./useClipboard";
 
 // Single entry point used by every clickable asset. Order matters:
 //   1. write clipboard first so the user gets the literal value even if the
-//      record_usage IPC fails;
+//      record_usage IPC fails; if the clipboard write itself fails, surface an
+//      error toast and abort — recording usage for a copy that never happened
+//      would corrupt recents/today-count;
 //   2. show flash + toast immediately so the feedback overlaps with the
 //      200ms server-side delay before window.hide();
 //   3. record_usage runs last; failure surfaces in console but does not block.
@@ -25,7 +27,14 @@ export function useCopy() {
       input: RecordUsageInput,
       flashId?: string,
     ): Promise<void> {
-      await writeClipboard(content);
+      try {
+        await writeClipboard(content);
+      } catch (err) {
+        console.error("writeClipboard failed", err);
+        // No flash target on failure — the card flash signals success only.
+        showToast("复制失败", undefined, "error");
+        return;
+      }
       showToast("已复制", flashId);
       try {
         await recordCopy(input);

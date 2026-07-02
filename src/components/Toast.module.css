@@ -17,6 +17,16 @@
   pointer-events: none;
 }
 
+/* Error intent (e.g. clipboard write failed). The palette has no red token;
+ * amber is the existing alert-leaning hue (design-spec token set), so the
+ * error state borrows --accent-swatch-amber for border + text and bumps the
+ * weight — visually distinct from the neutral success flash. */
+.error {
+  border-color: var(--accent-swatch-amber);
+  color: var(--accent-swatch-amber);
+  font-weight: var(--w-600);
+}
+
 @keyframes fadeIn {
   from {
     opacity: 0;
