@@ -34,6 +34,14 @@
   transition: background var(--d-fast) var(--ease);
 }
 
+/* Keyboard focus ring — design-spec §10.1 focused row, same accent outline as
+ * the shared primitives Button (primitives.module.css .btn:focus-visible). */
+.primary:focus-visible,
+.ghost:focus-visible {
+  outline: var(--border-thick) solid var(--accent);
+  outline-offset: var(--hairline);
+}
+
 .primary {
   background: var(--accent);
   color: var(--accent-fg);

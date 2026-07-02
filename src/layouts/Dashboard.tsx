@@ -18,6 +18,7 @@ import { SopProgress } from "../components/SopProgress";
 import { StatusBar } from "../components/StatusBar";
 import { Toast } from "../components/Toast";
 import { UpdaterBanner } from "../components/UpdaterBanner";
+import { Button } from "../components/primitives";
 import { usePromptStore } from "../stores/promptStore";
 
 import styles from "./Dashboard.module.css";
@@ -25,6 +26,7 @@ import styles from "./Dashboard.module.css";
 export function Dashboard() {
   const loadState = usePromptStore((s) => s.loadState);
   const loadError = usePromptStore((s) => s.loadError);
+  const refreshAll = usePromptStore((s) => s.refreshAll);
 
   // Column widths are a local UI preference: persisted to localStorage (never
   // SQLite, never uploaded — constitution A2). useDefaultLayout restores the
@@ -40,7 +42,16 @@ export function Dashboard() {
     return <div className={styles.loading}>加载中…</div>;
   }
   if (loadState === "error") {
-    return <div className={styles.error}>加载失败：{loadError}</div>;
+    // Not a dead end: 重试 re-runs the full initial load (refreshAll) without
+    // requiring an app restart, e.g. after a transient IPC/SQLite hiccup.
+    return (
+      <div className={styles.error} role="alert">
+        <span>加载失败：{loadError}</span>
+        <Button intent="ghost" onClick={() => void refreshAll()}>
+          重试
+        </Button>
+      </div>
+    );
   }
 
   return (

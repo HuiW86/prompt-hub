@@ -106,7 +106,10 @@
 }
 
 /* Neutral high-contrast error text (ADR-019: colour no longer carries
- * semantics — error read via copy, not hue). TODO: --danger once it lands. */
+ * semantics — error read via copy, not hue). TODO: --danger once it lands.
+ * Column layout: message on top, 重试 (primitives Button) below. */
 .error {
+  flex-direction: column;
+  gap: var(--s-3);
   color: var(--fg-1);
 }

@@ -24,8 +24,10 @@ function App() {
   // — when disabled, check() short-circuits before any network egress (§5.3).
   useEffect(() => {
     // Dev builds have no signed release endpoint, so an auto check() always
-    // fails and leaves a stuck "更新失败" banner. Gate the startup check on
-    // PROD; the manual "检查更新" button still exercises the failure path.
+    // fails — pointless work at startup. Gate on PROD; the manual "检查更新"
+    // button still exercises the failure path. Auto-check failures are silent
+    // by design (updaterStore keeps status off "error" for non-manual checks)
+    // so an offline release launch never grows a persistent failure banner.
     if (!import.meta.env.PROD) return;
     const { enabled, optInDecided, check } = useUpdaterStore.getState();
     if (enabled && optInDecided) void check();

@@ -47,7 +47,9 @@ export const useUpdaterStore = create<UpdaterState>()(
 
       acceptOptIn: () => {
         set({ enabled: true, optInDecided: true });
-        void get().check();
+        // The opt-in button is an explicit user gesture — treat the kicked-off
+        // check as manual so a failure right after enabling is not silent.
+        void get().check(true);
       },
       declineOptIn: () => set({ enabled: false, optInDecided: true }),
       reopenOptIn: () => set({ optInDecided: false }),
@@ -76,8 +78,21 @@ export const useUpdaterStore = create<UpdaterState>()(
             if (manual) useToastStore.getState().show("已是最新版本");
           }
         } catch (e) {
-          set({ status: "error", error: String(e) });
-          if (manual) useToastStore.getState().show("检查更新失败");
+          if (manual) {
+            // Manual trigger (设置页「检查更新」/ opt-in accept): surface the
+            // failure — error status drives the banner + settings status line.
+            set({ status: "error", error: String(e) });
+            useToastStore.getState().showError("检查更新失败");
+          } else {
+            // Auto startup check: auto-check failures are intentionally
+            // silent (console.warn only) — a persistent "更新失败" banner
+            // pushing the whole dashboard down on every offline launch is
+            // worse than a missed update; the user never asked for this
+            // check at that moment. Manual checks surface errors via
+            // status="error".
+            console.warn("[updater] auto check failed:", e);
+            set({ status: "idle", error: null });
+          }
         }
       },
 
@@ -93,7 +108,7 @@ export const useUpdaterStore = create<UpdaterState>()(
           await relaunch();
         } catch (e) {
           set({ status: "error", error: String(e) });
-          useToastStore.getState().show("更新安装失败");
+          useToastStore.getState().showError("更新安装失败");
         }
       },
     }),
