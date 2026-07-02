@@ -9,3 +9,7 @@ pnpm-lock.yaml
 # Docs are governed by the doc methodology, not prettier
 docs
 *.md
+
+# Vendored doc-governance component (upstream: ai-dev-lifecycle content-os) — do not reformat here
+scripts/doc-governance/index.mjs
+scripts/doc-governance/checks.mjs
