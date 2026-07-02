@@ -2,6 +2,7 @@ use std::sync::atomic::{AtomicU64, Ordering};
 use std::sync::Mutex;
 
 use tauri::{Manager, PhysicalPosition, PhysicalSize, RunEvent};
+use tauri_plugin_dialog::{DialogExt, MessageDialogKind};
 use tauri_plugin_global_shortcut::{Code, GlobalShortcutExt, Modifiers, Shortcut, ShortcutState};
 
 #[cfg(feature = "bench")]
@@ -35,6 +36,52 @@ fn fit_to_active_monitor(window: &tauri::WebviewWindow) {
     }
 }
 
+// Fatal-startup handler: surface `message` in a native error dialog, then
+// exit(1) once the user dismisses it. Called from setup() when the DB path
+// cannot be resolved or the DB cannot be opened/migrated — a bare panic there
+// happens before anything is visible, so a double-clicked .app just vanishes.
+//
+// Constraints that shape this implementation (verified against tauri 2.11 /
+// tauri-plugin-dialog 2.7 / rfd 0.16 sources):
+// - Returning Err from the setup hook is no better than panicking: tauri runs
+//   setup at RunEvent::Ready and maps Err to `panic!("Failed to setup app")`,
+//   equally invisible to the user. So the failure arm returns Ok(()) to keep
+//   the event loop alive and lets this handler exit the app.
+// - setup runs on the main thread with NSApp already running, so rfd renders
+//   the dialog as a window sheet whose completion handler is delivered over
+//   the main run loop. Calling blocking_show() on the main thread would park
+//   that run loop and deadlock with a dialog that never appears — the dialog
+//   must block a worker thread instead.
+// - The sheet attaches to the main window, which is config-hidden
+//   (`visible: false`); show it first so the dialog is actually visible.
+// - The webview still boots and fires IPC while the dialog is up. Manage a
+//   throwaway unmigrated in-memory connection so `State<AppState>` extraction
+//   cannot panic; every command then fails with a recoverable SQL /
+//   SchemaVersionMismatch error instead of writing anywhere real.
+fn fail_startup(app: &tauri::App, message: String) {
+    if let Ok(conn) = rusqlite::Connection::open_in_memory() {
+        app.manage(AppState {
+            conn: Mutex::new(conn),
+            copy_seq: AtomicU64::new(0),
+        });
+    }
+    if let Some(window) = app.get_webview_window("main") {
+        #[cfg(desktop)]
+        fit_to_active_monitor(&window);
+        let _ = window.show();
+    }
+    let handle = app.handle().clone();
+    std::thread::spawn(move || {
+        handle
+            .dialog()
+            .message(message)
+            .title("prompt-hub failed to start")
+            .kind(MessageDialogKind::Error)
+            .blocking_show();
+        handle.exit(1);
+    });
+}
+
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
 pub fn run() {
     let app = tauri::Builder::default()
@@ -47,9 +94,31 @@ pub fn run() {
         // Native save/open dialogs for data export/import (PRD §7.5).
         .plugin(tauri_plugin_dialog::init())
         .setup(|app| {
-            let data_dir = app.path().app_data_dir().expect("resolve app_data_dir");
-            let db_path = data_dir.join("prompt-hub.db");
-            let conn = repo_core::db::open_and_migrate(&db_path).expect("open prompt-hub db");
+            // Resolve the DB path and open+migrate. Both are fallible on a
+            // user machine (missing/read-only home dir, corrupt or
+            // future-schema DB file) — fail loud via dialog, not panic.
+            let db_init = app
+                .path()
+                .app_data_dir()
+                .map_err(|e| format!("Failed to resolve the application data directory: {e}"))
+                .and_then(|data_dir| {
+                    let db_path = data_dir.join("prompt-hub.db");
+                    repo_core::db::open_and_migrate(&db_path).map_err(|e| {
+                        format!(
+                            "Failed to open or migrate the database at\n{}\n\n{e}",
+                            db_path.display()
+                        )
+                    })
+                });
+            let conn = match db_init {
+                Ok(conn) => conn,
+                Err(message) => {
+                    fail_startup(app, message);
+                    // Keep the event loop alive (skip shortcut/panel setup);
+                    // fail_startup exits the app once the dialog is dismissed.
+                    return Ok(());
+                }
+            };
             app.manage(AppState {
                 conn: Mutex::new(conn),
                 copy_seq: AtomicU64::new(0),
@@ -148,6 +217,7 @@ pub fn run() {
             commands::show_window,
             commands::list_drafts,
             commands::count_pending_drafts,
+            commands::get_draft,
             commands::promote_draft,
             commands::update_draft,
             commands::discard_draft,
@@ -163,6 +233,7 @@ pub fn run() {
             commands::update_alignment_phrase,
             commands::delete_alignment_phrase,
             commands::reorder_alignment_phrases,
+            commands::set_default_alignment_phrase,
             commands::create_composition,
             commands::update_composition,
             commands::delete_composition,

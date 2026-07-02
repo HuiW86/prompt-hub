@@ -18,8 +18,8 @@ const RECENT_USAGE_LIMIT_MAX: i64 = 100;
 
 use crate::error::{AppError, AppResult};
 use repo_core::models::{
-    AlignmentPhrase, Composition, DraftPayload, DraftStatus, DraftSummary, DraftTargetType, Macro,
-    Modifier, Phase, Phrase, RecentUsageEntry, RecordUsageInput, Scene, SceneWithChildren,
+    AlignmentPhrase, Composition, Draft, DraftPayload, DraftStatus, DraftSummary, DraftTargetType,
+    Macro, Modifier, Phase, Phrase, RecentUsageEntry, RecordUsageInput, Scene, SceneWithChildren,
     SubStage, UsageRecord,
 };
 use repo_core::{repo, DraftRepo, RepoError};
@@ -217,6 +217,18 @@ pub fn count_pending_drafts(state: State<'_, AppState>) -> AppResult<u32> {
     with_conn(&state, repo_core::count_pending_drafts)
 }
 
+// Full-payload read backing the inbox edit flow (PRD §10.3 update_draft "UI
+// 编辑保存"). list_drafts deliberately ships only a lossy preview, while
+// update_draft is a full-replacement write — so the editor must hydrate the
+// stored payload first or it would truncate content / drop phase_id & scene_id.
+#[tauri::command]
+pub fn get_draft(state: State<'_, AppState>, id: String) -> AppResult<Draft> {
+    with_conn(&state, |c| {
+        c.get_draft(&id)?
+            .ok_or_else(|| RepoError::DraftNotFound(id.clone()))
+    })
+}
+
 #[tauri::command]
 pub fn promote_draft(
     state: State<'_, AppState>,
@@ -326,15 +338,19 @@ pub fn create_modifier(
     })
 }
 
+// `group_kind` is the P3-6 quadrant-move remedy (ADR-015 decision iii picks the
+// quadrant at promote time; this lets omar fix a wrong pick). Omitted = the
+// legacy name/content-only edit.
 #[tauri::command]
 pub fn update_modifier(
     state: State<'_, AppState>,
     id: String,
     name: String,
     content: String,
+    group_kind: Option<String>,
 ) -> AppResult<OkAck> {
     with_write_conn(&state, |c| {
-        repo_write::update_modifier(c, &id, &name, &content)
+        repo_write::update_modifier(c, &id, &name, &content, group_kind.as_deref())
     })?;
     Ok(OkAck { ok: true })
 }
@@ -403,6 +419,20 @@ pub fn reorder_alignment_phrases(
 ) -> AppResult<OkAck> {
     with_write_conn(&state, |c| {
         repo_write::reorder_alignment_phrases(c, &phase_id, &ordered_ids)
+    })?;
+    Ok(OkAck { ok: true })
+}
+
+// P3-6: swap the phase's protocol default (delete refuses the default and create
+// is always non-default, so this is the only way the default can ever change).
+#[tauri::command]
+pub fn set_default_alignment_phrase(
+    state: State<'_, AppState>,
+    phase_id: String,
+    id: String,
+) -> AppResult<OkAck> {
+    with_write_conn(&state, |c| {
+        repo_write::set_default_alignment_phrase(c, &phase_id, &id)
     })?;
     Ok(OkAck { ok: true })
 }

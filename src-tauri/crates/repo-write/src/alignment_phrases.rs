@@ -123,6 +123,43 @@ pub fn reorder_alignment_phrases(
     Ok(())
 }
 
+/// Swap which phrase is a phase's protocol default (P3-6: delete refuses the
+/// default and create is always non-default, so without this the seeded default
+/// would be locked in forever). One transaction: the old default drops to 0, the
+/// target rises to 1 (clear-before-set satisfies the partial unique index of one
+/// is_default=1 per phase), and phases.default_alignment_phrase_id follows so
+/// the denormalized pointer never drifts. An id that is unknown OR belongs to a
+/// different phase is rejected up front (same TargetNotFound contract as
+/// reorder), leaving the current default untouched. Idempotent on the current
+/// default.
+pub fn set_default_alignment_phrase(conn: &Connection, phase_id: &str, id: &str) -> RepoResult<()> {
+    let tx = conn.unchecked_transaction()?;
+    let in_phase: Option<i64> = tx
+        .query_row(
+            "SELECT 1 FROM alignment_phrases WHERE id = ?1 AND phase_id = ?2",
+            params![id, phase_id],
+            |row| row.get(0),
+        )
+        .optional()?;
+    if in_phase.is_none() {
+        return Err(missing_alignment_phrase(id));
+    }
+    tx.execute(
+        "UPDATE alignment_phrases SET is_default = 0 WHERE phase_id = ?1 AND is_default = 1",
+        params![phase_id],
+    )?;
+    tx.execute(
+        "UPDATE alignment_phrases SET is_default = 1 WHERE id = ?1",
+        params![id],
+    )?;
+    tx.execute(
+        "UPDATE phases SET default_alignment_phrase_id = ?2 WHERE id = ?1",
+        params![phase_id, id],
+    )?;
+    tx.commit()?;
+    Ok(())
+}
+
 fn missing_alignment_phrase(id: &str) -> RepoError {
     RepoError::TargetNotFound {
         table: "alignment_phrases".to_string(),
@@ -308,5 +345,100 @@ mod tests {
             matches!(err, RepoError::TargetNotFound { .. }),
             "got {err:?}"
         );
+    }
+
+    fn phase_default_pointer(conn: &Connection, phase_id: &str) -> Option<String> {
+        repo::list_phases(conn)
+            .expect("list phases")
+            .into_iter()
+            .find(|p| p.id == phase_id)
+            .expect("phase present")
+            .default_alignment_phrase_id
+    }
+
+    #[test]
+    fn set_default_swaps_flag_and_phase_pointer_in_one_call() {
+        let (_dir, conn) = migrated_conn();
+        let old_default = phase(&conn, "phase-diverge")
+            .into_iter()
+            .find(|a| a.is_default)
+            .expect("seed default present");
+        let promoted =
+            create_alignment_phrase(&conn, "phase-diverge", "New default", "body").expect("create");
+
+        set_default_alignment_phrase(&conn, "phase-diverge", &promoted.id).expect("set default");
+
+        let after = phase(&conn, "phase-diverge");
+        let defaults: Vec<&AlignmentPhrase> = after.iter().filter(|a| a.is_default).collect();
+        assert_eq!(defaults.len(), 1, "exactly one default per phase");
+        assert_eq!(defaults[0].id, promoted.id);
+        assert!(
+            !after
+                .iter()
+                .find(|a| a.id == old_default.id)
+                .expect("old default still listed")
+                .is_default,
+            "old default must be demoted, not deleted"
+        );
+        assert_eq!(
+            phase_default_pointer(&conn, "phase-diverge"),
+            Some(promoted.id.clone()),
+            "phases.default_alignment_phrase_id must follow the swap"
+        );
+
+        // The demoted phrase is now deletable (delete refuses only the default).
+        delete_alignment_phrase(&conn, &old_default.id).expect("old default deletable after swap");
+    }
+
+    #[test]
+    fn set_default_is_idempotent_on_current_default() {
+        let (_dir, conn) = migrated_conn();
+        let default = phase(&conn, "phase-diverge")
+            .into_iter()
+            .find(|a| a.is_default)
+            .expect("seed default present");
+        set_default_alignment_phrase(&conn, "phase-diverge", &default.id).expect("idempotent");
+        let defaults: Vec<AlignmentPhrase> = phase(&conn, "phase-diverge")
+            .into_iter()
+            .filter(|a| a.is_default)
+            .collect();
+        assert_eq!(defaults.len(), 1);
+        assert_eq!(defaults[0].id, default.id);
+    }
+
+    #[test]
+    fn set_default_missing_id_errors() {
+        let (_dir, conn) = migrated_conn();
+        let err = set_default_alignment_phrase(&conn, "phase-diverge", "ghost")
+            .expect_err("unknown id");
+        assert!(
+            matches!(err, RepoError::TargetNotFound { .. }),
+            "got {err:?}"
+        );
+    }
+
+    #[test]
+    fn set_default_rejects_cross_phase_id_and_keeps_old_default() {
+        let (_dir, conn) = migrated_conn();
+        let div = create_alignment_phrase(&conn, "phase-diverge", "div", "b").expect("div");
+        let und_default = phase(&conn, "phase-understand")
+            .into_iter()
+            .find(|a| a.is_default)
+            .expect("seed default present");
+
+        // Promoting a diverge phrase as the understand default must be rejected…
+        let err = set_default_alignment_phrase(&conn, "phase-understand", &div.id)
+            .expect_err("cross-phase id");
+        assert!(
+            matches!(err, RepoError::TargetNotFound { .. }),
+            "got {err:?}"
+        );
+        // …and the understand phase keeps its current default (tx never started
+        // mutating).
+        let still_default = phase(&conn, "phase-understand")
+            .into_iter()
+            .find(|a| a.is_default)
+            .expect("default survives");
+        assert_eq!(still_default.id, und_default.id);
     }
 }

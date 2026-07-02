@@ -22,6 +22,9 @@ const SRC_TAURI = resolve(REPO, "src-tauri");
 const BINARY = resolve(SRC_TAURI, "target/debug/prompt-hub");
 const BUILD_TIMEOUT_MS = 300_000;
 const RUN_TIMEOUT_MS = 60_000;
+// Constitution C1: 主形态唤起 ≤ 200ms P95. Exceeding it exits non-zero so
+// this script can gate CI / pre-release checks, not just print a verdict.
+const C1_BUDGET_MS = 200;
 
 function build() {
   console.log("cargo build --features bench …");
@@ -110,8 +113,10 @@ async function main() {
   const p50 = percentile(sorted, 50);
   const p95 = percentile(sorted, 95);
   const p99 = percentile(sorted, 99);
-  const verdict =
-    p95 <= 200 ? "✓ within constitution C1 200ms budget" : "✗ OVER BUDGET";
+  const overBudget = p95 > C1_BUDGET_MS;
+  const verdict = overBudget
+    ? "✗ OVER BUDGET"
+    : "✓ within constitution C1 200ms budget";
   console.log("");
   console.log("hotkey-wake results (show()+set_focus() Rust call):");
   console.log(`  n      = ${ms.length}`);
@@ -123,6 +128,12 @@ async function main() {
   console.log(
     "  caveat: excludes OS global-shortcut dispatch (~10ms per M0-3 baseline).",
   );
+  if (overBudget) {
+    console.error(
+      `hotkey-wake P95 ${p95.toFixed(3)} ms exceeds the C1 budget of ${C1_BUDGET_MS} ms`,
+    );
+    process.exit(1);
+  }
 }
 
 main().catch((e) => {

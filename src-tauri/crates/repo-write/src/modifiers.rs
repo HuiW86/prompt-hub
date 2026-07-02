@@ -53,18 +53,44 @@ pub fn create_modifier(
     })
 }
 
-/// Rename / edit the body of an existing modifier. group_kind, order_index and
-/// usage stats are left untouched: moving a modifier between quadrants would
-/// require an order_index recompute and is deferred (P2a.1 keeps parity with the
-/// macro edit path, which only mutates name/content).
-pub fn update_modifier(conn: &Connection, id: &str, name: &str, content: &str) -> RepoResult<()> {
-    let changed = conn.execute(
-        "UPDATE modifiers SET name = ?2, content = ?3 WHERE id = ?1",
-        params![id, name, content],
-    )?;
+/// Rename / edit the body of an existing modifier, optionally moving it to a
+/// different group_kind quadrant (P3-6: the promote-time quadrant pick — ADR-015
+/// decision iii — needs a remedy path when omar picks wrong). `group_kind = None`
+/// keeps the P2a.1 parity behaviour (name/content only, quadrant + order_index
+/// untouched). `Some(kind)` different from the current quadrant re-homes the
+/// modifier at the END of the target quadrant (append semantics, mirroring
+/// create) in one transaction; the schema CHECK rejects an unknown kind. The
+/// vacated quadrant keeps a gap in order_index, which is harmless: ordering only
+/// ever compares relative positions and the next reorder rewrites 0..n anyway.
+pub fn update_modifier(
+    conn: &Connection,
+    id: &str,
+    name: &str,
+    content: &str,
+    group_kind: Option<&str>,
+) -> RepoResult<()> {
+    let tx = conn.unchecked_transaction()?;
+    let changed = match group_kind {
+        None => tx.execute(
+            "UPDATE modifiers SET name = ?2, content = ?3 WHERE id = ?1",
+            params![id, name, content],
+        )?,
+        Some(kind) => tx.execute(
+            // order_index moves to the end of the TARGET quadrant only when the
+            // quadrant actually changes; a same-quadrant update keeps its slot.
+            "UPDATE modifiers SET name = ?2, content = ?3,
+                order_index = CASE WHEN group_kind = ?4 THEN order_index
+                    ELSE (SELECT COALESCE(MAX(order_index) + 1, 0)
+                          FROM modifiers WHERE group_kind = ?4) END,
+                group_kind = ?4
+             WHERE id = ?1",
+            params![id, name, content, kind],
+        )?,
+    };
     if changed == 0 {
         return Err(missing_modifier(id));
     }
+    tx.commit()?;
     Ok(())
 }
 
@@ -180,7 +206,7 @@ mod tests {
     fn update_modifier_edits_name_and_content() {
         let (_dir, conn) = migrated_conn();
         let created = create_modifier(&conn, "Old", "old body", "delivery").expect("create");
-        update_modifier(&conn, &created.id, "Renamed", "new body").expect("update");
+        update_modifier(&conn, &created.id, "Renamed", "new body", None).expect("update");
 
         let found = repo::list_modifiers(&conn)
             .expect("list")
@@ -196,11 +222,71 @@ mod tests {
     #[test]
     fn update_missing_modifier_errors() {
         let (_dir, conn) = migrated_conn();
-        let err = update_modifier(&conn, "nope", "x", "y").expect_err("missing");
+        let err = update_modifier(&conn, "nope", "x", "y", None).expect_err("missing");
         assert!(
             matches!(err, RepoError::TargetNotFound { .. }),
             "got {err:?}"
         );
+    }
+
+    #[test]
+    fn update_modifier_moves_to_end_of_target_quadrant() {
+        let (_dir, conn) = migrated_conn();
+        let moved = create_modifier(&conn, "Mover", "body", "cognition").expect("create mover");
+        let target_max = group(&conn, "action")
+            .iter()
+            .map(|m| m.order_index)
+            .max()
+            .unwrap_or(-1);
+
+        update_modifier(&conn, &moved.id, "Mover", "body", Some("action")).expect("move");
+
+        let found = repo::list_modifiers(&conn)
+            .expect("list")
+            .into_iter()
+            .find(|m| m.id == moved.id)
+            .expect("present");
+        assert_eq!(found.group_kind, "action");
+        assert_eq!(
+            found.order_index,
+            target_max + 1,
+            "moved modifier must append at the end of the target quadrant"
+        );
+    }
+
+    #[test]
+    fn update_modifier_same_quadrant_keeps_order_index() {
+        let (_dir, conn) = migrated_conn();
+        let a = create_modifier(&conn, "A", "body", "constraint").expect("a");
+        let b = create_modifier(&conn, "B", "body", "constraint").expect("b");
+
+        // Explicitly passing the CURRENT quadrant must not shuffle a's slot.
+        update_modifier(&conn, &a.id, "A2", "body2", Some("constraint")).expect("update");
+
+        let found = repo::list_modifiers(&conn)
+            .expect("list")
+            .into_iter()
+            .find(|m| m.id == a.id)
+            .expect("present");
+        assert_eq!(found.order_index, a.order_index);
+        assert!(found.order_index < b.order_index, "relative order preserved");
+    }
+
+    #[test]
+    fn update_modifier_rejects_invalid_target_quadrant() {
+        let (_dir, conn) = migrated_conn();
+        let created = create_modifier(&conn, "X", "body", "cognition").expect("create");
+        let err = update_modifier(&conn, &created.id, "X", "body", Some("bogus"))
+            .expect_err("invalid quadrant");
+        // Surfaced as a rusqlite CHECK violation wrapped in RepoError; the row
+        // must keep its original quadrant (the tx never commits).
+        assert!(matches!(err, RepoError::Sqlite(_)), "got {err:?}");
+        let found = repo::list_modifiers(&conn)
+            .expect("list")
+            .into_iter()
+            .find(|m| m.id == created.id)
+            .expect("present");
+        assert_eq!(found.group_kind, "cognition");
     }
 
     #[test]

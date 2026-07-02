@@ -3,6 +3,7 @@ import { invoke } from "@tauri-apps/api/core";
 import type {
   AlignmentPhrase,
   Composition,
+  Draft,
   DraftPayload,
   DraftStatus,
   DraftSummary,
@@ -53,6 +54,9 @@ export const ipc = {
       limit: args?.limit,
     }),
   countPendingDrafts: () => invoke<number>("count_pending_drafts"),
+  // Full-payload read for the promote 前编辑 flow: update_draft is a
+  // full-replacement write, so the editor hydrates the stored payload first.
+  getDraft: (id: string) => invoke<Draft>("get_draft", { id }),
   promoteDraft: (args: {
     id: string;
     overridePayload?: DraftPayload;
@@ -96,11 +100,19 @@ export const ipc = {
       content: args.content,
       groupKind: args.groupKind,
     }),
-  updateModifier: (args: { id: string; name: string; content: string }) =>
+  // Optional groupKind = P3-6 quadrant-move remedy (fixes a wrong promote-time
+  // pick); omitted = name/content-only edit, quadrant untouched.
+  updateModifier: (args: {
+    id: string;
+    name: string;
+    content: string;
+    groupKind?: GroupKind;
+  }) =>
     invoke<OkAck>("update_modifier", {
       id: args.id,
       name: args.name,
       content: args.content,
+      groupKind: args.groupKind,
     }),
   deleteModifier: (id: string) => invoke<OkAck>("delete_modifier", { id }),
   reorderModifiers: (groupKind: GroupKind, orderedIds: string[]) =>
@@ -133,6 +145,13 @@ export const ipc = {
     invoke<OkAck>("delete_alignment_phrase", { id }),
   reorderAlignmentPhrases: (phaseId: string, orderedIds: string[]) =>
     invoke<OkAck>("reorder_alignment_phrases", { phaseId, orderedIds }),
+  // P3-6: swap the phase's protocol default — the only mutation path for
+  // is_default (create is always non-default, delete refuses the default).
+  setDefaultAlignmentPhrase: (args: { phaseId: string; id: string }) =>
+    invoke<OkAck>("set_default_alignment_phrase", {
+      phaseId: args.phaseId,
+      id: args.id,
+    }),
 
   // ── Composition direct editing (plan asset-editing §0 Q2/Q6, decision A +
   // per-phase) — Tauri-only. The body is a modifierIds array (decision D-b);

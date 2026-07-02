@@ -224,6 +224,23 @@ export interface Provenance {
   confidence: number | null;
 }
 
+// get_draft hydration — the full stored row (payload included), fetched right
+// before the inbox edit flow opens so update_draft's full-replacement write
+// never starts from the lossy list preview. Outer fields are camelCase
+// (`#[serde(rename_all = "camelCase")]` on the Rust Draft struct); the nested
+// payload keeps its own snake_case wire shape (see DraftPayload note above).
+export interface Draft {
+  id: string;
+  targetType: DraftTargetType;
+  schemaVersion: number;
+  payload: DraftPayload;
+  payloadHash: string;
+  provenance: Provenance;
+  status: DraftStatus;
+  createdAt: string;
+  updatedAt: string;
+}
+
 // list_drafts projection — metadata + short preview, never the full payload.
 export interface DraftSummary {
   id: string;

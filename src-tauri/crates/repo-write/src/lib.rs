@@ -11,7 +11,7 @@ pub mod sub_stages;
 
 pub use alignment_phrases::{
     create_alignment_phrase, delete_alignment_phrase, reorder_alignment_phrases,
-    update_alignment_phrase,
+    set_default_alignment_phrase, update_alignment_phrase,
 };
 pub use asset_repo::AssetRepo;
 pub use compositions::{
