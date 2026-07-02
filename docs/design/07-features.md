@@ -1,13 +1,13 @@
 ---
 type: features
 project: prompt-hub
-version: v1.7
+version: v1.8
 created: 2026-05-19
-last_modified: 2026-06-28
-status: in-progress  # S1 主形态 MVP 5 模块 + 跨模块 P0 多项 done（ADR-012 Phase 1-5 全 done）；M-X 全收口——数据层 + workspace + MCP server + UI 收件箱（草稿 tab + 待审 badge + 5 IPC + schema recheck）done；M0-4 签名公证链路 done（M0 四项全绿）；ADR-017 自动更新客户端 + CI 出包链路 done（dry-run 端到端验证）；design-spec v0.10 UI 一致性治理 A 阶段 primitives 迁移 done（真机验证待补）；v1.3 UI 减负移除 Composition/Modifier 编辑面板（Tab cycle 8→6，数据层保留）
+last_modified: 2026-07-01
+status: in-progress  # S1 主形态 MVP 5 模块 + 跨模块 P0 多项 done（ADR-012 Phase 1-5 全 done）；M-X 全收口——数据层 + workspace + MCP server + UI 收件箱（草稿 tab + 待审 badge + 5 IPC + schema recheck）done；M0-4 签名公证链路 done（M0 四项全绿）；ADR-017 自动更新客户端 + CI 出包链路 done（dry-run 端到端验证）；design-spec v0.10 UI 一致性治理 A 阶段 primitives 迁移 done（真机验证待补）；v1.3 UI 减负移除 Composition/Modifier 编辑面板（Tab cycle 8→6，数据层保留）；v1.8 产品走查修缮批次 12 功能 + 7 质量/治理项 done（含 ADR-020 暗 band）
 author: ai  # 🤖 AI 主笔 + 人审（CLAUDE §5.2）
 audience: [human, ai]
-description: prompt-hub 功能清单运营视图——功能 × 状态 × 测试覆盖 × 版本，单一事实源；v1.3 UI 减负移除主仪表盘 Composition/Modifier 编辑面板（Tab cycle 8→6，资产类型保留在数据层），前序 v1.2 §3.10 UI 一致性治理区（design-spec v0.10 A 阶段 primitives 迁移 done）/ v1.1 §3.9 自动更新区（ADR-017 客户端 + CI 出包 done）
+description: prompt-hub 功能清单运营视图——功能 × 状态 × 测试覆盖 × 版本，单一事实源；v1.8 新增 §3.12 产品走查修缮批次（Draft 促升前编辑 / composition promote 暂缓 / Modifier 管理簇 / 设为默认 / Scene·SubStage 排序 UI / Toast 分级 / 更新失败分级 / 启动兜底 / 暗 band ADR-020 / light 重绘 / auto-fit 全景 / 像素对齐包 + CI·B2 gate·IPC gate 等治理项）；v1.3 UI 减负移除主仪表盘 Composition/Modifier 编辑面板（Tab cycle 8→6，资产类型保留在数据层），前序 v1.2 §3.10 UI 一致性治理区 / v1.1 §3.9 自动更新区
 related:
   - 06-prd
   - prompt-hub-mvp
@@ -21,6 +21,7 @@ related:
   - 016-choose-dnd-and-resizable-layout
   - 017-enable-auto-update
   - 018-absorb-promptscape-design
+  - 020-restore-protocol-dark-band
 ---
 
 # Features: prompt-hub
@@ -129,7 +130,7 @@ related:
 | Cargo workspace 4 crate 物理拆分（编译期写入隔离）| P1 | `done` | v1.1 | trybuild compile_fail | omar | [[09-tech-stack#4.3.1]] |
 | Scene 全景区「📥 草稿」tab（promote/discard + Modifier 四象限 popover）| P1 | `done` | v1.1 | promptStore 7 test + App e2e（草稿 tab + DraftInbox 卡片）| omar | [[06-prd#10.3]] |
 | 主形态顶部待审 badge（仅 N>0 显示，跳转收件箱，排除 Tab 循环）| P1 | `done` | v1.1 | App e2e render（badge 条件渲染）| omar | [[06-prd#10.3]] |
-| promote 跨表事务（4 类 arm）+ 5 Tauri IPC（promote/list/count/update/discard）+ mid-session schema recheck | P1 | `done` | v1.1 | repo-write 9 test（4 promote arm）+ commands schema-guard 2 test + count_pending 1 test | omar | [[06-prd#10.2]] |
+| promote 跨表事务（4 类 arm）+ 5 Tauri IPC（promote/list/count/update/discard）+ mid-session schema recheck（v1.8 起 +`get_draft` 共 6 IPC，见 §3.12）| P1 | `done` | v1.1 | repo-write 9 test（4 promote arm）+ commands schema-guard 2 test + count_pending 1 test | omar | [[06-prd#10.2]] |
 
 #### 14 MCP tool（5 CRUD + 3 helpers + 6 read）
 
@@ -208,6 +209,39 @@ related:
 | ProtocolBand 协议层暗色 band（AlignmentPhrase + Phase 收为顶部暗色带）| P1 | `done` | v1.5 | 97 前端 / 真机验证待补 | omar | [[05-design-spec#10.8.2]] |
 | 任务层 3→2 列全景重构（resizable group id `panorama-2col` 丢弃旧三列缓存；Macro 收为顶部紧凑横条 / aside 承载 Recent + SOP）| P1 | `done` | v1.5 | 97 前端 / 真机验证待补 | omar | [[016-choose-dnd-and-resizable-layout#补遗]] |
 
+### 3.12 产品走查修缮批次（2026-07-01 · P0/P2/P3）
+
+> 来源：2026-07-01 产品走查（实体×CRUD 覆盖矩阵反查）收敛的修缮批次。P0 = 可用性/可靠性止血；P3 = 资产生命周期补救 + 设计稿对齐。暗 band 部分开 [[020-restore-protocol-dark-band]]（Accepted 2026-07-01）调和 ADR-018/019 冲突。契约涟漪：design-spec v0.13 / product-spec v0.13 / prd v0.12。
+>
+> 边界 reaffirm：全批零出站（A2）、启动路径只减不加（C1，bench 未回归）、B2 结构分离零触碰（且本批恢复了源码级 gate 持续证伪）。
+
+| 功能 | 优先级 | 状态 | 目标版本 | 测试覆盖 | 责任人 | 引用 |
+|---|---|---|---|---|---|---|
+| Draft 促升前编辑（DraftCard「编辑」：`get_draft` 水合 → `update_draft` 全量保存；隐藏字段保留，四象限仍 promote 时人选）| P1 | `done` | v1.7 | promptStore 2 + DraftInbox 3 前端；cargo 全绿 | omar | [[06-prd#10.3]] |
+| Composition promote 暂缓止血（归档/编辑 disabled +「该类型暂无 UI 承载」，discard 可用；解锁 = Composition 重获 UI 承载）| P0 | `done` | v1.7 | DraftInbox.test 4 断言 | omar | [[03-product-spec#13.3]] |
+| Modifier 最小管理簇（移象限 = `update_modifier` 可选 `group_kind` 入参单事务移位 + 二次确认删除，hover/`:focus-within` 显隐键盘可达）| P1 | `done` | v1.7 | ModifierGrid 2 前端 + repo-write modifiers 3 单测 | omar | [[06-prd#6.1]] |
+| AlignmentPhrase「设为默认」（`set_default_alignment_phrase` 单事务换默认 + 同步 phases 指针，编辑态 Star 入口）| P1 | `done` | v1.7 | repo-write 4 单测 + store 乐观 action | omar | [[06-prd#6.6]] |
+| Scene / SubStage 排序 UI（Scene 编辑态前移/后移按钮接 `reorder_scenes`；SubStage 结构编辑器内 dnd 拖拽；活动场景 id 追踪排序不中断编辑态）| P1 | `done` | v1.7 | ScenePanel 2 + promptStore 2 前端 | omar | [[03-product-spec#13.3]] |
+| 复制失败可见 + Toast intent 分级（useCopy 失败弹 error toast 并中止 record_usage；success 800ms / error 4000ms amber + `role=alert`）| P0 | `done` | v1.7 | useCopy 3 + toastStore 3 前端 | omar | [[05-design-spec#11]] |
+| 更新检查失败 auto/manual 分级（auto 静默降级不挂横幅 / manual error+toast）+ Dashboard 加载失败「重试」（role=alert + refreshAll）| P0 | `done` | v1.7 | updaterStore 3 前端 | omar | [[017-enable-auto-update]] |
+| 启动 DB 失败优雅兜底（app_data_dir/迁移失败 → 阻断式错误对话框含 DB 路径 + `exit(1)`；manage 未迁移 in-memory 连接防 IPC panic）| P0 | `done` | v1.7 | cargo test --workspace 全绿 + `cargo check --features bench` | omar | [[06-prd#7.7]] |
+| 协议层暗色 band 恢复 + 层级编码修缮（`--band-*` token 族 + band 作用域重映射；ModifierGrid「协议层 · 参考」pill；RecentList 徽标中性化）| P1 | `done` | v1.7 | 144 前端全绿（含 token-gate / b2 gate）| omar | [[020-restore-protocol-dark-band]] |
+| light 主题明度重绘 + resting elevation（muted canvas + 纯白抬升卡；4 容器 resting `--shadow-1`）| P1 | `done` | v1.7 | 144 前端全绿（token-gate）| omar | [[05-design-spec#2.4.2]] |
+| Scene 全景 auto-fit 自适应列宽 + 「未分组」列头（窄面板降列不挤压 + 未归组话术 muted 列头）| P1 | `done` | v1.7 | ScenePanel 2 例 | omar | [[05-design-spec#10.3]] |
+| 设计稿像素对齐包（Macro 图标盒全量 accent 填充 + hot Flame 实心；hover `--shadow-1`+`--lift-1` 抬起语言；EmptyState 富空态 icon/title/action/framed/row + Scene 空态 accent CTA + Button intent=accent）| P1 | `done` | v1.7 | 144 前端全绿 | omar | [[05-design-spec#10.7]] |
+
+**质量 / 治理项（不计入功能数，治理性改动惯例同 2026-06-21）**：
+
+| 项 | 状态 | 说明 / 覆盖 |
+|---|---|---|
+| 测试 CI（`.github/workflows/ci.yml`）| `done` | push main + 全部 PR，macos-14 双 job（frontend: lint/prettier/test/build；rust: fmt/clippy/test + rust-cache），action 全部 pin commit SHA；全部命令本地核验通过 |
+| B2 源码级 gate 恢复（`b2-separation.test.ts`）| `done` | 5 例：MacroGrid/ScenePanel/ModifierGrid/SopProgress 零 alignment 引用；DraftInbox scoped 断言（仅放行 `alignment_phrase` 判别符）；SearchOverlay 按 ADR-013 豁免留注 |
+| IPC 三方契约冒烟（`src/ipc/ipc-contract.test.ts`）| `done` | 6 断言：commands.rs `#[tauri::command]` ↔ lib.rs `generate_handler!` ↔ 前端 `invoke("…")` 三方 46 命令双向等价 + 动态命令名守卫 |
+| typography preset 落地 + token 纪律收敛 | `done` | `src/styles/typography.module.css` 7 preset（composes 引用）+ Chip transparent/`--w-chip-max` + focus offset 三取值归一；151 前端全绿 |
+| primary 按钮对比度修复 + token-gate 新规则 | `done` | `.btnPrimary` 文字 `var(--layer)`→`var(--fg-1)`；token-gate 增「裸 color 禁取 var(--layer)」规则（含 fallback 写法）|
+| AlignmentPhrases region / UpdaterBanner 按钮 focus 可见补齐 | `done` | 与其余 region / primitives 同口径 `:focus-visible` accent outline（design-spec §11 focused hard rule 欠账）|
+| bench:hotkey-wake C1 gate（P95 > 200ms → exit 1）| `done` | `bench/hotkey-wake.bench.mjs` 加 `C1_BUDGET_MS` 常量，可作 CI gate；未真跑 bench |
+
 ---
 
 ## §4 阶段交付节奏
@@ -222,10 +256,11 @@ related:
 | UI 一致性治理（design-spec v0.10 A 阶段）| v1.1 | 4 功能 | `done`（4/4 实装 + 测试零回归；真机验证待补）|
 | Promptscape 设计吸收（ADR-018）| v1.5 | 6 功能 | `done`（6/6 实装：主题三态 + 强调色 + 设置弹窗 + Header + ProtocolBand + 2 列全景；真机验证待补）|
 | Scene/SubStage 结构编辑（scene-substage-editing）| v1.6 | 1 功能 | `done`（后端 74 / 前端 109 全绿；补 [[scene-phrase-editing]] 当初 defer 的 Scene 容器 + SubStage CRUD；真机 CRUD 落盘待验）|
+| 产品走查修缮批次（P0/P3 + ADR-020）| v1.7 | 12 功能 | `done`（12/12 实装 + 前端/后端测试全绿；另 7 项质量/治理不计数；真机视觉复核待补）|
 | S3 SOP 导航 | v1.2 | 3 功能 | `planned` |
 | S4 配置个性化 | v1.3 | 4 功能 | `in-progress`（1/4：数据导入导出 JSON `done`，真机待验；配置入口 / Phase 编辑 / 布局可配置仍 `planned`）|
 | S5 辅形态副屏 | v2.0 | 3 功能 | `planned` |
-| **合计** | — | **66 项** | — |
+| **合计** | — | **78 项** | — |
 
 **注**：版本号语义为 prompt-hub 自身版本，与 prd / spec / methodology 各自独立。v1.0 = 第一阶段 MVP 可发布；v2.0 = 辅形态加入（双形态完整）。
 
@@ -267,6 +302,7 @@ related:
 | 2026-06-25 | v1.5 bump：新增 §3.11 Promptscape 设计吸收区（6 功能 → `done`：主题三态外观系统 / 中性强调色 / 设置弹窗 / slim Header / ProtocolBand / 任务层 3→2 列全景）；§4 节奏表加 Promptscape 行，合计 59→65 项。B2 复检通过（accent 只染中性强调面，`:root.accent-*` 物理隔离）；A2 不出站（外观偏好 persist localStorage）。涟漪 [[03-product-spec]] v0.10 / [[05-design-spec]] v0.11 / [[016-choose-dnd-and-resizable-layout]] 补遗 | [[018-absorb-promptscape-design]] 吸收落地涟漪 |
 | 2026-06-26 | 文档涟漪（**非功能矩阵新增**）：ADR-019 推翻 flat 视觉锚点（omar 拍板 Option A——引入 subtle elevation + 放弃颜色本体论）。「协议层与任务层物理分离」条备注更新（视觉区分改靠位置+形状，B2 仍为纯结构铁律，状态不变）；ADR-012 标 Superseded。design-spec v0.11→v0.12 / CLAUDE-DESIGN v0.1→v0.2（待重传）/ tokens.css 加 `--shadow-*`。组件 CSS 改造另行落地。合计仍 65 项 | [[019-supersede-flat-visual-anchor]] Option A 落地涟漪 |
 | 2026-06-27 | v1.6 bump：§3.8 新增「Scene/SubStage 结构编辑」→ `done`，补齐 [[scene-phrase-editing]] 当初 defer 的另一半（D1 Scene+SubStage CRUD / D2 seed `0011` 灌示范 SubStage / D3 Tauri-only / D4 删非空 Scene 阻止 · 删 SubStage 解绑 Phrase）。无 schema migration（表已存于 `0001`，唯一 migration 是纯 seed `0011`，user_version 10→11）；repo-write `scenes.rs`/`sub_stages.rs` 各 CRUD+reorder + 19 单测，8 IPC，ScenePanel 编辑态加 Scene 增改名删 + SubStage 增改名删 + 空子阶段可见。后端 74 测试 / 前端 109 测试全绿（clippy/fmt/lint/prettier clean）；**真机 CRUD 落盘待验**。契约现成（[[06-prd#6.4]] 已定 Scene/SubStage 字段+FK+删除语义，本次补「写入口=UI 编辑态」指派 + product-spec §13.3 结构编辑契约），不开新 ADR。§4 节奏表加结构编辑行，合计 65→66 项 | [[scene-substage-editing]] 收口涟漪 |
+| 2026-07-01 | v1.8 bump：新增 §3.12 产品走查修缮批次（12 功能 → `done`：Draft 促升前编辑 +get_draft IPC / composition promote 暂缓止血 / Modifier 移象限+删除管理簇 / AlignmentPhrase 设为默认 / Scene·SubStage 排序 UI / 复制失败可见+Toast intent 分级 / 更新失败 auto-manual 分级+Dashboard 重试 / 启动 DB 失败兜底对话框 / 暗 band 恢复 ADR-020 / light 明度重绘+resting elevation / Scene auto-fit+未分组列头 / 设计稿像素对齐包；另 7 项质量/治理不计数：测试 CI ci.yml / B2 源码 gate 恢复 / IPC 三方契约 gate / typography preset 落地+token 收敛 / primary 对比度修复+token-gate 新规 / focus 可见补齐 / bench C1 退出码）；§3.7 IPC 行注 5→6（+get_draft）；§4 节奏表加修缮批次行，合计 66→78 项。前端最终 151 测试 / cargo --workspace 全绿。涟漪 [[05-design-spec]] v0.13 / [[03-product-spec]] v0.13 / [[06-prd]] v0.12，暗 band 锚点 [[020-restore-protocol-dark-band]] | 2026-07-01 产品走查修缮批次收口涟漪 |
 | 2026-06-28 | v1.7 bump：§3.4「数据导入导出（JSON）」`planned`→`done`——repo-core `export.rs`（全保真聚合，独立无过滤 SELECT 以纳入弃用/隐藏行，data schema_version `1.1`，**不含 usage_records**=决策 D2）+ repo-write `import.rs`（**整库替换**=决策 D1，`defer_foreign_keys` 破 phases↔alignment_phrases FK 环，按 major 版本拒不兼容备份）；2 path-based Tauri IPC（`export_data`/`import_data`，前端 dialog 选路 + Rust `std::fs` 读写，避开 fs-plugin scope）；接 `tauri-plugin-dialog`（决策 D3）；SettingsModal 新增「数据」页（导出 save dialog / 导入 open dialog + 整库替换确认弹窗 + 完成后 `refreshAll`）。后端 export 3 + import 5 单测，前端 109 测试全绿（clippy/fmt/lint/prettier clean）；**真机导入导出待验**。B2 复检通过（导出/导入按表搬运，不混协议层与任务层）；A2 不出站（仅写用户选定本地路径）。涟漪 [[06-prd#6.9]] | 数据导入导出功能收口涟漪 |
 
 ---

@@ -1,13 +1,13 @@
 ---
 type: product-spec
 project: prompt-hub
-version: v0.12
+version: v0.13
 created: 2026-05-18
-last_modified: 2026-06-28
-status: draft  # 🤝 共创，v0.12 涟漪数据导入导出设置页 + v0.11 scene-substage-editing 结构编辑契约 + v0.10 ADR-018 Promptscape 吸收待 omar 人审；前序 v0.8 已 ratified
+last_modified: 2026-07-01
+status: draft  # 🤝 共创，v0.13 产品走查修缮批次（Draft 编辑态 / Modifier 最小管理口 / 设为默认 / Scene·SubStage 排序 / composition promote 暂缓等）+ v0.12 涟漪数据导入导出设置页 + v0.11 scene-substage-editing 结构编辑契约 + v0.10 ADR-018 Promptscape 吸收待 omar 人审；前序 v0.8 已 ratified
 author: co  # 🤝 人机共创（CLAUDE §5.2）
-related: [[01-spec]], [[05-design-spec]], [[06-prd]], [[012-lock-visual-quality-anchor]], [[019-supersede-flat-visual-anchor]], [[013-alignment-phrases-tab-inclusion]], [[015-expose-mcp-write-pipeline]], [[017-enable-auto-update]], [[018-absorb-promptscape-design]]
-description: 手动 AI 编程仪表盘的 UI 契约——双形态架构/布局/点击路径/交互频率/状态反馈/引导/用户旅程/主形态 UI 草案；v0.9 移除主仪表盘的 Composition/Modifier 编辑面板（UI 减负·选项 2），Tab cycle 8 → 6，资产类型保留在数据层；v0.10 涟漪 ADR-018 Promptscape 吸收：§13.2 加 Header 区域0 + 协议层 band + 任务层 3→2 列 + 设置弹窗区域9；v0.7 涟漪 ADR-015 草稿收件箱 tab + 待审 badge
+related: [[01-spec]], [[05-design-spec]], [[06-prd]], [[012-lock-visual-quality-anchor]], [[019-supersede-flat-visual-anchor]], [[020-restore-protocol-dark-band]], [[013-alignment-phrases-tab-inclusion]], [[015-expose-mcp-write-pipeline]], [[017-enable-auto-update]], [[018-absorb-promptscape-design]]
+description: 手动 AI 编程仪表盘的 UI 契约——双形态架构/布局/点击路径/交互频率/状态反馈/引导/用户旅程/主形态 UI 草案；v0.13 产品走查修缮批次：Draft 促升前编辑 + composition promote 暂缓 / Modifier aside 参考面最小管理口 / 对齐话术「设为默认」/ Scene·SubStage 排序 UI /「未分组」列头 / 更新失败 auto-manual 分级；v0.9 移除主仪表盘的 Composition/Modifier 编辑面板（UI 减负·选项 2），Tab cycle 8 → 6，资产类型保留在数据层；v0.10 涟漪 ADR-018 Promptscape 吸收：§13.2 加 Header 区域0 + 协议层 band + 任务层 3→2 列 + 设置弹窗区域9；v0.7 涟漪 ADR-015 草稿收件箱 tab + 待审 badge
 ---
 
 # Product Spec: prompt-hub（UI 契约）
@@ -582,6 +582,7 @@ graph TD
             SC["Scene 区 §5.3<br/>填充其余 · Tab 切换<br/>子阶段多列全景 + Phrase 卡<br/>含 📥 草稿 tab（Tab 行最左 · v0.7 起）"]
         end
         subgraph 辅列["aside 列（≈32%）"]
+            MOD["Modifier 原子库参考面（v0.13）<br/>四象限分组 chip · 点击复制<br/>hover 管理簇（移象限/删）· 非 Tab region"]
             R["最近使用 §5.5<br/>5 条历史 · 点击再次复制"]
             SOP["SOP 进度 §5.6<br/>进度条 + 下一步 · 未激活折叠"]
         end
@@ -597,7 +598,8 @@ graph TD
     P --> AP
     AP --> M
     M --> SC
-    SC --> R
+    SC --> MOD
+    MOD --> R
     R --> SOP
     SOP --> ST
     H -.⌘,.-> SET
@@ -607,6 +609,7 @@ graph TD
     style AP fill:#EEEDFE,stroke:#534AB7,stroke-width:1px
     style M fill:#E1F5EE,stroke:#178561,stroke-width:1px
     style SC fill:#E1F5EE,stroke:#178561,stroke-width:1px
+    style MOD fill:#EEEDFE,stroke:#534AB7,stroke-width:1px
     style R fill:#F1EFE8,stroke:#888780,stroke-width:1px
     style SOP fill:#F1EFE8,stroke:#888780,stroke-width:1px
     style ST fill:#F1EFE8,stroke:#888780,stroke-width:1px
@@ -614,7 +617,7 @@ graph TD
 ```
 
 颜色编码说明（详见 [[05-design-spec#2.4-颜色编码]]）：
-- **紫色（相位带 / 对齐话术）**：协议层，视觉权重最高（v0.11 起由 ProtocolBand 暗色 band 容器包裹）
+- **紫色（相位带 / 对齐话术 / Modifier 参考面）**：协议层，视觉权重最高（v0.11 起由 ProtocolBand 暗色 band 容器包裹，v0.13 恢复设计稿暗底 [[020-restore-protocol-dark-band]]；aside 的 Modifier 参考面以「协议层 · 参考」pill 标记层身份）
 - **绿色（Macro 区 / Scene 区）**：任务层主战场（v0.11 起为 2 列全景：Macro 顶部横条 + Scene 填充）
 - **灰色（Header / 最近使用 / SOP 进度 / 状态栏 / 设置弹窗）**：辅助 / chrome 层，视觉权重较低；Header logo 与设置弹窗强调件用中性强调色 `--accent`（非 ontology，[[05-design-spec#13.1]]）
 
@@ -666,6 +669,7 @@ graph TD
   - 单击 chip → 复制该 AlignmentPhrase → chip flash `--protocol-16` 一瞬 → 主形态自动隐藏
   - keyboard Tab → 整行作为 1 个 tab stop（不在 chip 内 Tab）
   - 切 Phase 时整行 chip 内容同步刷新
+  - **「设为默认」（v0.13 · P3-6）**：编辑态下每条**非默认**话术行加 Star「设为默认」按钮——单事务切换该 Phase 的默认话术（旧默认置 0 / 新默认置 1，并同步 `phases.default_alignment_phrase_id` 指针，IPC `set_default_alignment_phrase`）。此前默认话术只在 seed 里钉死（删除拒绝默认项、新建恒非默认），这是默认唯一可变更入口；`⌘1-8` 复制的即该默认话术（[[06-prd#6.5]]）
 
 #### 区域 3：Macro 区（[[06-prd#5.2-Macro-快捷区]]）
 
@@ -685,20 +689,21 @@ graph TD
 #### 区域 4：Scene 区（[[06-prd#5.3-Scene-全景区]]）
 
 - **位置**：v0.11 起为**任务列 Macro 横条下方**，填充任务列剩余高度（原「中部右侧 40%」；涟漪 [[018-absorb-promptscape-design]]）
-- **尺寸**：占任务列剩余空间；视图态子阶段以 auto-fill 多列全景呈现（最小列 `--col-min-substage` 184px），每子阶段一列、Phrase 堆为 border 卡；编辑态保留纵向行
+- **尺寸**：占任务列剩余空间；视图态子阶段以 **auto-fit 自适应多列全景**呈现（`repeat(auto-fit, minmax(min(var(--col-min-substage), 100%), 1fr))`，v0.13 · P3-1：窄面板自动降列不挤压、少列拉伸填满不留空轨），每子阶段一列、Phrase 堆为 border 卡；编辑态保留纵向行
 - **顶部 Tab**：7-10 个 Scene 横排小标签（pill 样式，约 24px 高）
   - 当前激活 Tab：**绿色**（Scene 属任务层，selected 态按层取色 `--task-16` fill + `--task` border，见 [[05-design-spec#10.1]] / [[05-design-spec#13.1]]）——v0.7 修订：原「紫色」措辞早于 design-spec v0.7 ontology 系统，紫属协议层、用于 Scene = 跨层污染（[[05-design-spec#13.2]] / [[02-constitution#B2]]），故纠正为绿
   - 未激活 Tab：浅灰背景 + 灰色文字
   - **📥 草稿 tab（v0.7 起）**：Tab 行**最左**，📥 图标 + 一道竖分隔线与 Scene tab 隔开；**仅 pending>0 时出现**（与顶部待审 badge 同生同灭）。它是 MCP 写入的「收件箱入口」，不是一个 Scene，靠图标 + 分隔 + 条件显示三重信号区分（语义边界见 [[06-prd#6.0-资产关系总览]] 暂态-drafts 行——drafts 是收件箱，非第 4 层资产，不违反 [[02-constitution#B1]]）
 - **下方内容**：当前 Scene 展开
-  - 如果 Scene 有 SubStage：按 SubStage 分组显示，每组前显示"▸ 子阶段名"
+  - 如果 Scene 有 SubStage：按 SubStage 分组显示，每组列头「序号 + 子阶段名」；**未归组话术的列头无条件渲染为「未分组」**（v0.13 · P3-1：复用同结构含序号保各列头基线对齐，文案 muted——此前无列头，多列布局下裸卡起排与邻列不齐）
   - 每组下挂 Phrase 卡片（13px，比 Macro 卡片更紧凑）
   - **📥 草稿 tab 激活时**：渲染 pending drafts 列表（数据源 [[06-prd#10.3]] `list_drafts`，按 created_at 倒序）。每张草稿卡片信息架构：
     - 左上：target_type 角标（modifier / composition / macro / alignment_phrase 四类之一）
     - 标题行：draft name
-    - 正文：preview（≤ 100 字截断）
+    - 正文：preview（≤ 80 字符截断——v0.13 校正为代码 `DraftPayload::preview()` 口径，旧文 100 字有误）
     - 底部：provenance「claude-code · {model_hint}」（[[06-prd#10.1.3]]，model 缺失时仅显示来源 app）
-    - 右下双动作：**promote**（→ 归入正式资产表，跨表事务 [[06-prd#10.2]]，IPC `promote_draft`）/ **discard**（软删，IPC `discard_draft`）
+    - 右下动作（v0.13 起三枚）：**promote**（→ 归入正式资产表，跨表事务 [[06-prd#10.2]]，IPC `promote_draft`）/ **编辑**（v0.13 · P3-2：先经 IPC `get_draft` 水合全量 payload——list 只有 80 字有损 preview 而 `update_draft` 是全量替换写——再就地编辑 name+content 保存走 `update_draft`；schema_version/phase_id/scene_id 等隐藏字段原样保留，Modifier 四象限仍由 promote 时人选）/ **discard**（软删，IPC `discard_draft`）
+    - **composition promote 暂缓（v0.13 · P0-5 止血）**：targetType=composition 的草稿「归档」「编辑」按钮 disabled + 卡内可见提示「该类型暂无 UI 承载」（v0.9 移除 Composition 编辑面板后，promote 入库的 Composition 无任何查看/搜索/删除 UI 承载会变孤儿数据）；**discard 保持可用**。解锁条件 = Composition 重新获得 UI 承载（重挂面板或 ⌘N 子窗口落地）
 - **行为**：
   - 点击 Tab → 切换 Scene；点击 📥 草稿 tab → 进入收件箱视图
   - 点击 Phrase → 复制 → 自动隐藏窗口
@@ -707,7 +712,7 @@ graph TD
   - **管理结构（编辑模式，[[scene-substage-editing]]）**：补齐 [[scene-phrase-editing]] 当初 defer 的结构编辑，与上「管理话术」同处编辑态（同一铅笔切换），在 Scene 头部下方插入「结构编辑器」inset，作用对象是 Scene 容器与 SubStage 本体（Tauri-only，不经 MCP）——
     - **Scene 容器可改名/删 + 新建**：结构编辑器首行「场景 · {名称}」配铅笔（行内改名）/ 垃圾桶（删除，二次确认）/「新建场景」按钮（新建后跳到新 tab 续编辑）；删除时**若该 Scene 非空（其下有 Phrase 或 SubStage）则后端阻止（`RepoError::SceneNotEmpty`）并 toast 提示**（应用层校验，[[06-prd#6.4]] 删除策略）
     - **SubStage 子阶段可增/改名/删**：结构编辑器「子阶段」区列出当前 Scene 全部子阶段（**含空子阶段**——编辑态不再像展示态那样隐藏空分组），每条配行内改名/删 + 顶部「新增子阶段」；**删除 SubStage 时其下 Phrase 的 sub_stage_id 解绑为「无分组」**（Phrase 本体保留在 Scene 内，[[06-prd#6.4]] 删除策略）
-    - 排序：Scene 全局单序、SubStage per-scene 单序，order_index 重写镜像 Phrase 排序分区（后端能力已具备，编辑态暂未提供拖拽 UI）
+    - **排序（v0.13 · P3-6 已落地 UI）**：Scene 全局单序、SubStage per-scene 单序，order_index 重写镜像 Phrase 排序分区。**SubStage** 在结构编辑器内拖拽排序（@dnd-kit，复用 Phrase 排序模式，IPC `reorder_sub_stages`）；**Scene** 用编辑态「场景前移 / 后移」按钮（IPC `reorder_scenes`）——tabs 是点击切换按钮且与条件性草稿 tab 同栏，拖拽会冲突，故退按钮方案；活动场景改为按 id 追踪，排序后编辑态不中断
   - **草稿卡片 promote 须 omar 显式点击**——无自动 promote 路径（守 [[06-prd#8.2]] N3 / [[02-constitution#D1]]）。promote / discard 是 omar 主导动作，外部 AI 不可触达（IPC 不经 MCP 暴露，[[06-prd#10.3]] 边界）
 
 #### 区域 5：最近使用区（[[06-prd#5.5-最近使用区]]）
@@ -732,6 +737,18 @@ graph TD
   - 底部：进度描述（12px，"2/5 · 下一步: {步骤名}"）
 - **未激活态**：折叠隐藏，不占位置
 - **行为**：点击进度条某段 → 跳转到对应步骤
+
+#### aside 补充：Modifier 原子库参考面（非编号区域 · v0.13 契约收录）
+
+> 组件随 [[018-absorb-promptscape-design]] 补遗-1 R2 回归（aside 顶部紧凑卡，展示型），当时约定「追认后回流 product-spec」——本节补记，并纳入 v0.13 · P3-4/P3-6 的层标记与最小管理口。**不是 v0.9 移除的 Modifier 编辑面板回潮**。
+
+- **位置**：aside 列顶部（最近使用之上）；**非 §13.4 Tab cycle region**（无 `data-region`/region tabIndex；chip 与管理按钮是真实 focusable，键盘仍可达）
+- **内容**：全部 Modifier 按四象限 groupKind 分组（认知前置 / 动作策略 / 产出形态 / 通用约束），每条一枚 chip（超长名截断 + title 全名）；区头挂「协议层 · 参考」层标记 pill（[[020-restore-protocol-dark-band]] 层级编码；Modifier 属协议层 [[05-design-spec#13.1]]）
+- **行为**：
+  - 单击 chip → 复制该 Modifier 原文（直写剪贴板；`UsageSource` 无 modifier 值，**不记 usage、不进最近使用**）
+  - **最小管理簇（v0.13 · P3-6）**：chip hover / `:focus-within` 显隐两枚图标按钮——**移动象限**（小菜单列其余三象限，走 `update_modifier` 可选 `group_kind` 入参单事务移至目标象限尾部；补救 promote 时象限选错，[[015-expose-mcp-write-pipeline]] 决策 iii 的修正路径）+ **删除**（行内二次确认，硬删）
+  - **无 UI 新建入口**（有意）：Modifier 新增走 MCP 草稿促升路径，空态文案即此说明
+- **边界**：B2 gate（源码级）持续断言本组件零 alignment 引用；管理口是「参考面 + 补救入口」，完整编辑（改名/改内容/排序）仍不在主仪表盘（v0.9 决策不变）
 
 #### 区域 7：状态栏（[[06-prd#5.7-状态仪表区]]）
 
@@ -762,6 +779,7 @@ graph TD
 - **结构**：左导航（外观 / 更新 / 数据）+ 右内容
   - **外观页**：主题模式三态分段控件（浅色 / 深色 / 跟随系统）+ 强调色 5 色 swatch（中性 / 蓝 / 绿 / 紫 / 琥珀）；偏好 persist localStorage（[[02-constitution#A2]] 不出站）
   - **更新页**：opt-in 总开关（[[017-enable-auto-update]] §5.3 出站豁免）+ 状态行 +「检查更新」/「下载并安装」，复用 `updaterStore` 状态机
+    - **检查失败反馈分级（v0.13 · P0-4，触 [[017-enable-auto-update]] 交互记载）**：**auto**（启动自动检查）失败**静默降级**——console.warn + status 回落 idle，不再挂常驻「更新失败」横幅（error 字段仍留存供排查）；**manual**（本页「检查更新」及 opt-in 接受后的首查）失败保留全量反馈——error status + toast。理由：离线/网络抖动是常态，启动失败横幅制造无谓焦虑；用户显式动作则必须有回音
   - **数据页（v0.11 新增 · [[06-prd#6.9]]/§7.5）**：「导出备份…」（save dialog 选本地路径 → 全保真 JSON，默认名 `prompt-hub-backup-YYYY-MM-DD.json`）+「导入备份…」（open dialog 选 JSON → **整库替换确认弹窗** → 导入后 `refreshAll` 重载全部 store）；文件仅写用户选定本地路径（[[02-constitution#A2]] 不出站），导入为**清空 + 整库替换**不可撤销（决策 D1），导出**不含使用记录**（决策 D2）
 - **B2 合规**：强调色只染中性面（导航焦点环 / swatch / 开关 on 态），**不染 protocol/task 语义层**（[[02-constitution#B2]] / [[05-design-spec#13.1]]）；数据页导出/导入按表整搬，不混协议层与任务层
 - **不进 Tab cycle 总数**：模态弹窗有自己的焦点域，不计入 §13.4 区域级 6-tab 全景循环
@@ -809,6 +827,20 @@ graph TD
 ---
 
 ## 修订记录
+
+### v0.13（2026-07-01）— 产品走查修缮批次涟漪（Draft 编辑 / Modifier 管理口 / 设为默认 / 排序 UI / composition 暂缓）
+
+一次性回流 2026-07-01 产品走查修缮批次（P0/P3）的 UI 契约变化。🤝 共创起草，待 omar 人审。
+
+| 章节 | 改动 | 来源 |
+|------|------|------|
+| §13.2 结构图 | aside 列补 `MOD` Modifier 原子库参考面节点（协议层紫描边）；颜色编码说明补暗 band（ADR-020）与「协议层 · 参考」pill | P3-4 / ADR-020 |
+| §13.3 区域 2-bis | 编辑态非默认行加 Star「设为默认」（IPC `set_default_alignment_phrase` 单事务换默认，`⌘1-8` 复制目标随之切换）| P3-6 |
+| §13.3 区域 4 | 视图态网格改 auto-fit 自适应列宽 + 未归组话术列头「未分组」无条件渲染；草稿卡动作 2→3（补「编辑」：`get_draft` 水合 → `update_draft` 全量保存）；**composition promote/编辑暂缓止血**（disabled + 「该类型暂无 UI 承载」，discard 可用，解锁条件 = Composition 重获 UI 承载）；preview 口径校正 ≤80 字符；「管理结构」排序落地 UI（SubStage 拖拽 + Scene 前移/后移按钮）| P3-1 / P3-2 / P0-5 / P3-6 |
+| §13.3 aside 补充（新增）| Modifier 原子库参考面契约收录（ADR-018 补遗-1 R2 欠账回流）：四象限 chip 点击复制不记 usage + 层标记 pill + hover 最小管理簇（移象限 = `update_modifier` 新可选 `group_kind` 入参 / 删除二次确认）+ 无 UI 新建入口；非 Tab region | P3-4 / P3-6 |
+| §13.3 区域 9 | 更新页补「检查失败反馈分级」：auto 静默降级（不挂常驻横幅）/ manual 保留 error + toast（触 ADR-017 交互记载）| P0-4 |
+
+**未触动**：Tab cycle 仍 6（Modifier 参考面非 region）；区域编号体系不动（Modifier 参考面以「aside 补充」收录，不占编号）；v0.9 UI 减负决策不变（管理口是补救入口非编辑面板回潮）。
 
 ### v0.12（2026-06-28）— 数据导入导出涟漪：设置弹窗新增「数据」页
 

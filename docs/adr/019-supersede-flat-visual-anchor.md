@@ -2,7 +2,7 @@
 type: adr
 project: prompt-hub
 id: ADR-019
-status: Proposed
+status: Accepted
 date: 2026-06-25
 description: 推翻 ADR-012 的「反 polish / flat」视觉锚点，引入 elevation（box-shadow）并重审颜色本体论强度，以贴近 Promptscape 设计稿观感；启用 ADR-012 当年明示排除的 Option E。本 ADR 由 AI 起草待 omar 人审。关键校正：颜色本体论与反阴影底线实际住在 design-spec §2.4.1/§8.2（🤝 AI 可起草层），constitution B2 只管结构分离不管颜色——故 Option A（含放弃颜色本体论）无须人主笔改宪法，无人主笔门槛。
 related:
@@ -16,7 +16,7 @@ related:
 
 # ADR-019: 推翻 flat 视觉锚点，引入 elevation 并重审颜色本体论
 
-> **状态说明**：本 ADR 为 **AI 起草草案（Proposed）**，等 omar 人审。Decision 节给出 AI 建议，最终拍板属 omar（ADR-012 决策者）。
+> **状态说明**：本 ADR 由 AI 起草，omar 已于 2026-06-26 人审拍板 **Option A**（见 §2 Status），状态 `Accepted`。
 
 ## 1. 标题与日期
 

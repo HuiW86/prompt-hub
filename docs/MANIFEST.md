@@ -1,12 +1,12 @@
 ---
 type: manifest
 project: prompt-hub
-version: v1.7
+version: v1.8
 status: active
 created: 2026-05-24
-last_modified: 2026-06-27
+last_modified: 2026-07-01
 audience: [human, ai]
-description: prompt-hub 项目前期准备文件总清单——按方法论 v1.3 六层架构（L0 宪法 / L1 产品契约 / L2 工程规格 / L3 实施规格 / L4 索引 / L5 协作契约）+ ADR + 实施方案 + 视觉原型 + AI 上下文。AI 进项目读完 CLAUDE.md 后接读本文件能 1 分钟拿全貌；不写行数（参考性强但易过期）
+description: prompt-hub 项目前期准备文件总清单——按方法论 v1.3 六层架构（L0 宪法 / L1 产品契约 / L2 工程规格 / L3 实施规格 / L4 索引 / L5 协作契约）+ ADR + 实施方案 + 视觉原型 + AI 上下文 + 工程护栏（CI/gate 测试）。AI 进项目读完 CLAUDE.md 后接读本文件能 1 分钟拿全貌；不写行数（参考性强但易过期）。v1.8：+ADR-020 / +§11.6 工程护栏（ci.yml + 3 个源码级 gate 测试）/ 版本号除锈
 related:
   - CLAUDE
   - 02-constitution
@@ -29,11 +29,12 @@ related:
 | 🤝 共创 | 6 | 6/6 ratified（2026-06-01 product-spec v0.7 / design-spec v0.8 omar 审定升 ratified）|
 | 🤖 AI 主笔（人审） | 6 | 4/6 ratified + prd pre-code + features in-progress |
 | 🤖 AI 派生人审（L5） | 2 | 2/2 active |
-| ADR 决策记录 | 18 | 16 Accepted + 1 Superseded（012）+ 1 Proposed（005）（+ 011 Reserved）|
+| ADR 决策记录 | 19 | 17 Accepted + 1 Superseded（012）+ 1 Proposed（005）（+ 011 Reserved）|
 | 实施方案 | 1 | active |
 | 视觉原型 | 1 | v1 已归档至 archive/（2026-05-25）|
 | 项目 AI 上下文 | 2 | active |
 | 反思沉淀 | 1 | active（2026-06-04 新增 learnings v0.1）|
+| 工程护栏 | 5 | active（2026-07-01 新增 ci.yml + 登记 3 个源码级 gate 测试）|
 
 ---
 
@@ -50,7 +51,7 @@ related:
 
 | 路径 | 内容 | 状态 |
 |---|---|---|
-| `docs/design/03-product-spec.md` | UI 契约（双形态 / 布局 / 交互） | ratified v0.11（2026-06-27 scene-substage-editing 涟漪：§13.3 区域 4 +管理结构编辑器；前 v0.10 ADR-018 §13 +Header +设置弹窗 +任务层 2 列 / v0.8 Tab cycle 6→8）|
+| `docs/design/03-product-spec.md` | UI 契约（双形态 / 布局 / 交互） | draft v0.12（2026-06-28 数据导入导出涟漪：设置弹窗 +「数据」页；前 v0.11 scene-substage-editing §13.3 结构编辑器 / v0.10 ADR-018 +Header +设置弹窗 +任务层 2 列 / v0.9 UI 减负 Tab cycle 8→6；v0.10 起待 omar 人审，前序 v0.8 已 ratified）|
 | `docs/design/04-user-flows.md` | 用户流（边缘 / 异常 / 跨形态） | ratified |
 | `docs/design/05-design-spec.md` | 视觉/动效 token 体系 | ratified v0.12（2026-06-26 ⚠️ ADR-019 涟漪：推翻 flat 锚点——§8.2 撤 box-shadow + §8.2.1 elevation / §2.4.1 颜色本体论降视觉选择级转中性 / §13 重定向；前 v0.11 ADR-018 中性强调色 + 主题三态）|
 
@@ -61,7 +62,7 @@ related:
 | 路径 | 内容 | 状态 |
 |---|---|---|
 | `docs/design/06-prd.md` | 数据契约 / API / 状态机 / 错误码 | pre-code v0.11（2026-06-27 scene-substage-editing 涟漪：§6.4 +写入口归属指派；前 v0.10 ADR-017 C3 §8.3 updater 例外）|
-| `docs/design/07-features.md` | 66 功能矩阵 S1–S5 + AE + 自动更新 + Promptscape 吸收 + 结构编辑 | in-progress v1.6（2026-06-27 scene-substage-editing：§3.8 Scene/SubStage 结构编辑 done，合计 65→66；前 2026-06-26 ADR-019 / 2026-06-25 ADR-018 Promptscape / v1.4 Scene 话术编辑）|
+| `docs/design/07-features.md` | 66 功能矩阵 S1–S5 + AE + 自动更新 + Promptscape 吸收 + 结构编辑 + 数据导入导出 | in-progress v1.7（2026-06-28：§3.4 数据导入导出（JSON）done——export/import + 2 path-based IPC + SettingsModal「数据」页；前 v1.6 scene-substage-editing §3.8 done 合计 65→66 / 2026-06-26 ADR-019 / 2026-06-25 ADR-018）|
 | `docs/design/08-sitemap.md` | 资产对象树 + 视图导航图 | ratified |
 
 ---
@@ -104,7 +105,7 @@ related:
 
 ---
 
-## §8 ADR 决策记录（18 份）
+## §8 ADR 决策记录（19 份）
 
 | 编号 | 标题 | 状态 |
 |---|---|---|
@@ -128,6 +129,7 @@ related:
 | 017 | enable-auto-update（tauri-plugin-updater + GitHub Releases + Actions 出包，mac 先行；A2 唯一出站豁免边界） | Accepted（2026-06-17） |
 | 018 | absorb-promptscape-design（吸收 Promptscape 设计稿，组合 A1+B1+C1+D+E：保语义色 + 不引 Modifier 右栏 + 改造现有组件 + 接既有 store + 保 prompt-hub 名去头像；三放大决策 3→2 列 / +Header / 省略全局新建） | Accepted（2026-06-25） |
 | 019 | supersede-flat-visual-anchor（推翻 ADR-012 反 polish / Bloomberg-flat 锚点，omar 拍板 Option A：引 subtle elevation + 放弃颜色本体论改靠位置+形状，全面对齐 Promptscape；校正：颜色/反阴影住 design-spec 非 constitution，无人主笔门槛） | Accepted（2026-06-26） |
+| 020 | restore-protocol-dark-band（恢复协议层暗色 band——调和 ADR-018「吸收暗 band」与 ADR-019「全面中性化」实现冲突：新增 `--band-*` 层级固定色 token 族（双主题恒深底浅字）+ band 作用域整体重映射中性 token + 层级编码修缮（ModifierGrid 层标记 / RecentList 徽标撤 accent 实底）；澄清「层级固定色 ≠ 语义色」不属 ADR-019 废除的颜色本体论） | Accepted（2026-07-01） |
 
 ---
 
@@ -154,7 +156,7 @@ related:
 
 | 路径 | 内容 | 状态 |
 |---|---|---|
-| `CLAUDE.md` | 项目级行为规范（含三温区映射 / 忌讳清单 / §7 状态指针） | v1.0 |
+| `CLAUDE.md` | 项目级行为规范（含三温区映射 / 忌讳清单 / §7 状态指针） | v1.1（2026-07-01 §7 除锈+补账）|
 | `HANDOFF.md` | 会话断点 | 动态（每次 /checkpoint 更新） |
 
 ---
@@ -166,6 +168,20 @@ related:
 | 路径 | 内容 | 状态 |
 |---|---|---|
 | `docs/learnings.md` | 7 条可迁移信条 + 技术栈速查（M0 阶段经验提炼） | active v0.1（2026-06-04）|
+
+---
+
+## §11.6 工程护栏（5 份 · CI + 源码级 gate）
+
+> 非文档但属「体系保真」基础设施——CI workflow 与读源码断言的 gate 测试，破坏契约时在 `pnpm test` / CI 层直接报警。gate 测试随 `pnpm test` 全量执行。
+
+| 路径 | 内容 | 状态 |
+|---|---|---|
+| `.github/workflows/ci.yml` | 测试 CI——push main + 全部 PR，macos-14，frontend job（lint / prettier --check / test / build）+ rust job（fmt / clippy -D warnings / cargo test --workspace），action 全 pin commit SHA | active（2026-07-01 P2-1 新增）|
+| `.github/workflows/release.yml` | 发布出包——tag 触发 two-job 隔离，双架构 + minisign 签名 + latest.json（ADR-017） | active（2026-06-19）|
+| `src/styles/token-gate.test.ts` | CSS token 纪律 gate——组件 CSS 禁裸 px/hex/ms + 禁 `var(--layer)` 作文字色（P0-1 新规则） | active |
+| `src/components/__tests__/b2-separation.test.ts` | B2 源码级 gate——任务层 4 组件零 alignment 引用 + DraftInbox scoped 断言（取代已删 composition-b2-separation.test.ts） | active（2026-07-01 P2-2 新增）|
+| `src/ipc/ipc-contract.test.ts` | IPC 三方契约 gate——commands.rs ↔ generate_handler ↔ ipc/index.ts 46 命令双向等价 + 防空转守卫 | active（2026-07-01 P2-3 新增）|
 
 ---
 

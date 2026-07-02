@@ -1,13 +1,13 @@
 ---
 type: prd
 project: prompt-hub
-version: v0.11
+version: v0.12
 created: 2026-05-18
-last_modified: 2026-06-27
+last_modified: 2026-07-01
 status: pre-code
 author: ai  # 🤖 AI 主笔 + 人审（CLAUDE §5.2）
 related: [[01-spec]], [[03-product-spec]], [[prompt-hub-mvp]], [[015-expose-mcp-write-pipeline]], [[mcp-write-pipeline]]
-description: 手动 AI 编程仪表盘的工程契约——数据模型三表式/状态机/升级回滚/NFR/Boundaries 三段式/安全字段（含本地+离线档）/ §10 MCP write pipeline 接口契约（drafts 收件箱 + 5 IPC + 14 MCP tool）
+description: 手动 AI 编程仪表盘的工程契约——数据模型三表式/状态机/升级回滚/NFR/Boundaries 三段式/安全字段（含本地+离线档）/ §10 MCP write pipeline 接口契约（drafts 收件箱 + 6 IPC + 14 MCP tool；v0.12 补 get_draft UI 水合 + composition promote 暂缓注记 + set_default_alignment_phrase / update_modifier group_kind 资产管理命令）
 ---
 
 # PRD: prompt-hub（工程契约）
@@ -420,6 +420,12 @@ graph TD
 - `deprecated` 不用删除而用标记——历史痕迹是资产的一部分
 - **不带 phase 字段**——Phase 只服务于 AlignmentPhrase，不污染 Modifier（[[01-spec#3.5-认知相位（Phase）与对齐话术（AlignmentPhrase）]] 决策）
 
+#### 象限（group_kind）补救入口（v0.12 · P3-6）
+
+> `modifiers.group_kind` 由 omar 在 promote 时四象限手选（§10.2 决策 iii），此前选错后**不可改**。v0.12 扩展 IPC **`update_modifier(id, name, content, group_kind?)`**：可选 `group_kind` 入参（CHECK 拒非法值），单事务把该 Modifier 移到目标象限尾部；缺省 = 旧有仅改 name/content 语义（命令名不变，IPC 契约测试通过）。UI 入口 = aside Modifier 参考面 chip 的 hover 管理簇（[[03-product-spec#13.3]]）。
+>
+> **登记既有 drift**：上文「删除策略」的 soft-delete（`deprecated=true`）表述与现实装不符——`delete_modifier` IPC 自 AE 批次起即为 hard DELETE（P3-6 仅为其补了二次确认 UI）。差异属既有欠账，是否回改 soft-delete 待 omar 裁定，本版仅如实登记。
+
 ### 6.2 Composition（通常不持久化，临时态）
 
 > **临时态说明**：Composition 默认存在于内存或 session storage，不持久化到 IndexedDB。值得沉淀的 Composition 升级为 Macro（[[#6.3-macro]]）后才创建持久化记录。因此本节 Fields 描述运行时结构，**无 id / 无 Indexes / Relations 仅描述引用**。
@@ -661,6 +667,10 @@ Scene 节包含 3 个相关模型：**Scene**（场景容器）、**Phrase**（S
 - **独立对象**而非 Macro 子类型——哲学七要求协议层和内容层物理分离
 - `phase_id` 必填——AlignmentPhrase 没有"无相位归属"的合法状态
 - `is_default` 与 Phase 的 `default_alignment_phrase_id` 互为冗余——这是刻意为之，方便不同方向的查询（从 Phase 找 default / 列出 Phase 下所有 default）
+
+#### 默认话术切换（v0.12 · P3-6 补写入口）
+
+> 此前 default 只在 seed 里钉死：delete 拒绝默认项、create 恒非默认——默认话术不可换是资产生命周期缺口。v0.12 新增 IPC **`set_default_alignment_phrase(phase_id, id)`**（Tauri-only，不经 MCP）：单事务把旧默认置 `is_default=0`、新默认置 `=1`，**同步维护 `phases.default_alignment_phrase_id` 冗余指针**（导出/Phase 模型依赖该指针）；目标不存在或不属该 phase → `TargetNotFound`（与 reorder 契约一致）。UI 入口 = 对齐话术编辑态非默认行的 Star 按钮（[[03-product-spec#13.3]] 区域 2-bis）。
 
 ### 6.7 SOP
 
@@ -1125,7 +1135,7 @@ major 升级（v1.x → v2.0）需满足：
 
 ## 10. MCP write pipeline（v0.7 新增 — 反哺自 [[015-expose-mcp-write-pipeline]]）
 
-> 本章是 PRD 首个「接口契约」专章，承载 prompt-hub 向外部 AI（首版 = Claude Code 本地 stdio）暴露的写入面：drafts 暂态层 + 5 Tauri IPC + 14 MCP tool。
+> 本章是 PRD 首个「接口契约」专章，承载 prompt-hub 向外部 AI（首版 = Claude Code 本地 stdio）暴露的写入面：drafts 暂态层 + 6 Tauri IPC（v0.12 补 `get_draft`）+ 14 MCP tool。
 >
 > 决策依据见 [[015-expose-mcp-write-pipeline]] Accepted；实施步骤与风险登记见 [[mcp-write-pipeline]] v0.2。本章只承载**接口契约**——具体 schema 演进与 promote 流程的代码级细节由 plan / repo-write crate 持有。
 
@@ -1138,7 +1148,7 @@ major 升级（v1.x → v2.0）需满足：
 - drafts 表（暂态层，4 类 target_type，forward-only migration 0003）
 - `prompt-hub-mcp` 独立 binary（rmcp 1.7 + stdio + tracing→stderr）
 - 14 MCP tool（5 CRUD + 3 helpers + 6 read）+ AI 友好错误响应
-- 5 Tauri IPC（prompt-hub 主 bin 独占，**不暴露给 MCP**）
+- 6 Tauri IPC（prompt-hub 主 bin 独占，**不暴露给 MCP**；v0.12 补 `get_draft` UI 水合）
 - promote 跨表事务（DraftRepo + AssetRepo + 4 variant match）
 
 #### ❌ 不包含（明确排除）
@@ -1242,19 +1252,24 @@ promote 由 Tauri IPC `promote_draft` 触发（**不**暴露给 MCP），在 `re
 - `override_payload?` — UI edit 后直接 promote 的快捷路径，以传入 payload 覆盖落库前的 row payload，省一次 update_draft + promote 两阶段调用
 - `group_kind?` — **仅 Modifier promote 需要**（决策 iii）。`modifiers.group_kind`（cognition/action/delivery/constraint，NOT NULL）是 omar 的四象限认知判断，不让 AI 在 payload 里代填——这是哲学六/七「方向盘在人手里」在数据层的落点。其余三类忽略此字段。
 
-### 10.3 Tauri IPC（5 个，prompt-hub bin 独占）
+### 10.3 Tauri IPC（6 个，prompt-hub bin 独占）
 
 | IPC | 入参 | 出参 | 用途 |
 |-----|------|------|------|
-| `list_drafts` | status?, target_type?, limit? | `[{ id, target_type, name, preview, provenance, created_at }]` | Scene 草稿 tab 渲染列表 |
+| `list_drafts` | status?, target_type?, limit? | `[{ id, target_type, name, preview, provenance, created_at }]` | Scene 草稿 tab 渲染列表（preview ≤ 80 字符，`DraftPayload::preview()` 口径）|
 | `count_pending_drafts` | — | `{ count: u32 }` | 主形态顶部 badge（仅 N>0 显示）|
-| `promote_draft` | id, override_payload?, group_kind? | `{ inserted_asset_id, inserted_asset_type }` | 跨表事务，详见 §10.2；group_kind 仅 Modifier 需要（决策 iii）|
-| `update_draft` | id, payload | `{ ok: true, updated_at }` | UI 编辑保存 |
+| `get_draft`（v0.12 · P3-2 新增）| id | 完整 Draft（full payload + provenance + status + timestamps）| **UI 编辑前水合全量 payload**——list 只发 80 字有损 preview，而 `update_draft` 是全量替换写，直接编辑 preview 会截断内容并丢隐藏字段；复用 `DraftRepo::get_draft`，与 MCP 侧同名 tool（§10.4.1）语义一致（「update 前必读」）。原表列 5 个，本行是第 6 个 |
+| `promote_draft` | id, override_payload?, group_kind? | `{ inserted_asset_id, inserted_asset_type }` | 跨表事务，详见 §10.2；group_kind 仅 Modifier 需要（决策 iii）。**composition promote 暂缓注记（v0.12 · P0-5）**：命令本身保留 4 类 arm 不变，但 UI 侧（DraftInbox）对 target_type=composition 禁用归档入口 +「该类型暂无 UI 承载」提示——v0.9 UI 减负后 Composition 无查看/搜索/删除承载，promote 入库即成孤儿数据；discard 不受影响。解锁条件 = Composition 重获 UI 承载（[[03-product-spec#13.3]] 区域 4）|
+| `update_draft` | id, payload | `{ ok: true, updated_at }` | UI 编辑保存（v0.12 起被 DraftCard「编辑」动作实际消费：`get_draft` 水合 → 改 name+content → 全量替换保存）|
 | `discard_draft` | id | `{ ok: true }` | UI 显式丢弃（status='discarded'）|
 
 **边界**：以上 IPC **不**通过 MCP server 暴露——promote / edit / discard 是 omar 主导动作，外部 AI 不应触达。
 
 **性能预算**：`count_pending_drafts` 必须 ≤ 1ms（prepared statement + 索引），守 [[02-constitution#C1]] 200ms 唤起；若破预算降级为 lazy load（Scene tab 打开时再查）。
+
+> **v0.12 资产管理命令补记（drafts 面之外，Tauri-only 不经 MCP）**：本表只列 drafts 接口面；同批产品走查修缮（P3-6）新增/扩展了两个资产管理 IPC，契约细节住 §6 各资产节，此处登记指针——
+> - `set_default_alignment_phrase(phase_id, id)`：单事务切换 Phase 默认对齐话术（旧默认 `is_default=0` / 新默认 `=1`，同步 `phases.default_alignment_phrase_id` 反规范化指针）；目标不存在或跨 phase → `TargetNotFound`（与 reorder 契约一致）。这是默认话术唯一可变更入口（delete 拒绝默认项、create 恒非默认），见 §6.5/§6.6
+> - `update_modifier(id, name, content, group_kind?)`：新增可选 `group_kind` 入参（cognition/action/delivery/constraint，CHECK 拒非法值）——单事务把 Modifier 移到目标象限尾部，补救 promote 时象限选错（决策 iii 的修正路径）；缺省 = 旧有仅改 name/content 语义，命令名不变
 
 ### 10.4 MCP tool 集（14 个，双层）
 
@@ -1265,7 +1280,7 @@ promote 由 Tauri IPC `promote_draft` 触发（**不**暴露给 MCP），在 `re
 | Tool | 入参 | 出参 | 说明 |
 |------|------|------|------|
 | `create_draft` | target_type, payload, provenance | `{ draft_id }` | 唯一原子写入入口；payload 必须 match DraftPayload enum |
-| `list_drafts` | status?, target_type?, limit? | `[{ id, target_type, name, preview, provenance.tool_name, created_at }]` | **仅返 metadata + preview**（≤ 100 字），避免百条 draft 撑爆 LLM context |
+| `list_drafts` | status?, target_type?, limit? | `[{ id, target_type, name, preview, provenance.tool_name, created_at }]` | **仅返 metadata + preview**（≤ 80 字符，v0.12 校正为 `DraftPayload::preview()` 代码口径），避免百条 draft 撑爆 LLM context |
 | `get_draft` | id | `{ full payload + provenance + status + timestamps }` | AI 在 list 后看完整 payload；隔天 update 前必读 |
 | `update_draft` | id, payload | `{ ok, updated_at }` | AI 修订未 promote 的 draft；payload 全替换非 partial |
 | `delete_draft` | id | `{ ok }` | AI 撤回 draft（→ status='discarded'，非物理删除）|
@@ -1358,6 +1373,20 @@ PRD 不复刻风险表，避免双源真理漂移；实施侧风险/缓解以 pl
 ---
 
 ## 修订记录
+
+### v0.12（2026-07-01）— 产品走查修缮批次涟漪：get_draft IPC + composition promote 暂缓 + 资产管理命令补记
+
+**触发**：2026-07-01 产品走查修缮批次（P0-5 / P3-2 / P3-6）落地后按方法论 §7 回流代码事实。
+
+| 章节 | 改动 |
+|------|------|
+| §10.0 / §10.3 | Tauri IPC 5 → **6**：新增 `get_draft(id)`——UI 编辑前水合全量 payload（list 只发 80 字有损 preview 而 `update_draft` 是全量替换写），复用 `DraftRepo::get_draft`，与 MCP 同名 tool 语义一致（P3-2）|
+| §10.3 `promote_draft` 行 | 补 **composition promote 暂缓注记**（P0-5 止血）：命令 4 类 arm 不变，UI 侧对 composition 草稿禁用归档 +「该类型暂无 UI 承载」，discard 可用；解锁条件 = Composition 重获 UI 承载 |
+| §10.3 注 / §6.6 / §6.1 | 资产管理命令补记（Tauri-only 不经 MCP）：新增 `set_default_alignment_phrase(phase_id, id)`（单事务换默认 + 同步 `phases.default_alignment_phrase_id` 指针，跨 phase 拒 `TargetNotFound`）；`update_modifier` 扩展可选 `group_kind` 入参（象限选错补救，决策 iii 修正路径）|
+| §10.3 / §10.4.1 | preview 口径校正：≤ 100 字 → **≤ 80 字符**（`DraftPayload::preview()` 代码口径）|
+| §6.1 | 登记既有 drift：`delete_modifier` 实为 hard DELETE，与「删除策略」soft-delete 表述不符（AE 批次遗留，是否回改待裁定）|
+
+验证：`pnpm test` 全绿（含 IPC 三方契约 gate 46 命令一致）/ `cargo test --workspace` 全绿。UI 契约涟漪见 [[03-product-spec]] v0.13。
 
 ### v0.11（2026-06-27）— scene-substage-editing 涟漪：§6.4 补「写入口归属」指派
 
