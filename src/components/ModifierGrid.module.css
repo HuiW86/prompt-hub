@@ -10,6 +10,22 @@
   background: var(--canvas);
 }
 
+/* Layer marker pill — same spec as ProtocolBand's 协议层 pill and Dashboard's
+ * 任务层 pill (neutral chrome label; layer read from text, not hue). Sits in
+ * the RegionHeader right slot so the header layout is unchanged (ADR-020). */
+.layerPill {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--s-1);
+  padding: var(--s-0_5) var(--s-2);
+  border-radius: var(--r-2);
+  background: var(--surface-2);
+  color: var(--fg-2);
+  font: var(--w-600) var(--t-11) / 1 var(--font-sans);
+  letter-spacing: var(--tr-meta);
+  white-space: nowrap;
+}
+
 .card {
   display: flex;
   flex-direction: column;
@@ -19,6 +35,7 @@
   background: var(--surface-1);
   border: var(--hairline) solid var(--border-1);
   border-radius: var(--r-4);
+  box-shadow: var(--shadow-1); /* resting lift off the muted canvas (P3-3) */
   max-height: var(--h-macro-strip);
   overflow-y: auto;
 }
@@ -61,4 +78,73 @@
   display: flex;
   flex-wrap: wrap;
   gap: var(--s-1_5);
+}
+
+/* P3-6 minimal management entry: chip + hover/focus-revealed cluster (move
+   quadrant / delete) flow together inside the wrapping chips row. */
+.atom {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--s-1);
+  min-width: 0;
+}
+
+/* Revealed on pointer hover OR keyboard focus anywhere inside the atom (the
+   buttons stay in the tab order — opacity does not remove focusability). */
+.manage {
+  opacity: 0;
+  transition: opacity var(--d-fast) var(--ease);
+}
+
+.atom:hover .manage,
+.atom:focus-within .manage {
+  opacity: 1;
+}
+
+/* Quadrant-move menu — same neutral chip language as DraftInbox's promote-time
+   four-quadrant picker (the layer identity stays a data decision, not a hue). */
+.moveMenu {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--s-1);
+}
+
+.moveBtn {
+  height: var(--h-chip);
+  padding: 0 var(--s-2);
+  border: var(--hairline) solid var(--border-2);
+  border-radius: var(--r-2);
+  background: var(--surface-1);
+  color: var(--fg-1);
+  font: var(--w-500) var(--t-11) / 1 var(--font-sans);
+  white-space: nowrap;
+  cursor: pointer;
+  transition:
+    background-color var(--d-fast) var(--ease),
+    border-color var(--d-fast) var(--ease);
+}
+
+.moveBtn:hover {
+  background: var(--surface-2);
+  border-color: var(--border-3);
+}
+
+.moveBtn:focus-visible {
+  outline: var(--border-thick) solid var(--accent);
+  outline-offset: 0;
+}
+
+/* Promptscape hover language (P3-5): atom chips share the shadow + 1px rise
+   of the other click-to-copy surfaces, layered onto the Chip border-darken. */
+.atomChip {
+  transition:
+    border-color var(--d-fast) var(--ease),
+    background-color var(--d-fast) var(--ease),
+    transform var(--d-fast) var(--ease),
+    box-shadow var(--d-fast) var(--ease);
+}
+
+.atomChip:hover {
+  box-shadow: var(--shadow-1);
+  transform: translateY(var(--lift-1));
 }

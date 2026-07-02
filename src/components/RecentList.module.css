@@ -1,5 +1,6 @@
 /* RecentList — recent-copies aux panel.
-   Bundle pattern (border-only default / hover surface-1 / focus task outline).
+   Rows live inside a raised surface-1 card with a resting shadow (Promptscape
+   aside card, ADR-018 补遗 P3-3); rows hover to the muted surface-2 fill.
    No direct bundle component; styled per Claude Design vocabulary (ADR-012). */
 
 .region {
@@ -15,14 +16,19 @@
   outline-offset: calc(-1 * var(--border-thick));
 }
 
+/* Raised card container (matches the ModifierGrid card in the same aside). */
 .list {
   display: flex;
   flex-direction: column;
   min-height: 0;
   overflow-y: auto;
-  margin: 0;
+  margin: var(--s-3) var(--s-3_5) var(--s-3_5);
   padding: 0;
   list-style: none;
+  background: var(--surface-1);
+  border: var(--hairline) solid var(--border-1);
+  border-radius: var(--r-4);
+  box-shadow: var(--shadow-1); /* resting lift off the muted canvas (P3-3) */
 }
 
 .item {
@@ -40,15 +46,21 @@
   appearance: none;
   font: inherit;
   cursor: pointer;
-  transition: background-color var(--d-fast) var(--ease);
+  transition:
+    background-color var(--d-fast) var(--ease),
+    transform var(--d-fast) var(--ease),
+    box-shadow var(--d-fast) var(--ease);
 }
 
+/* Promptscape hover language (P3-5): shadow + 1px rise on the row. */
 .item:hover:not(:disabled) {
-  background: var(--surface-1);
+  background: var(--surface-2);
+  box-shadow: var(--shadow-1);
+  transform: translateY(var(--lift-1));
 }
 
 .item:active:not(:disabled) {
-  background: var(--surface-2);
+  background: var(--surface-3);
 }
 
 .item:focus-visible {
@@ -71,11 +83,10 @@
   white-space: nowrap;
 }
 
-.badgeProtocol {
-  background: var(--accent);
-  color: var(--accent-fg);
-}
-
+/* Both badges share the neutral outline shape (design-spec §13.1: --accent
+ * carries no semantics — ADR-020 ripple); the layer is read from the label
+ * text alone. Class split kept so the TSX mapping stays explicit. */
+.badgeProtocol,
 .badgeTask {
   background: var(--surface-2);
   color: var(--fg-3);

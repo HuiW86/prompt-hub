@@ -23,7 +23,10 @@
   align-items: center;
   justify-content: center;
   gap: var(--s-2);
-  font: var(--w-500) var(--t-13) / 1 var(--font-sans);
+  /* Inactive phases rest at --w-400; the active one carries --w-600 (spec §6).
+     On the dark band this keeps --fg-2 (band-fg-muted) readable while letting
+     weight — not just fill — separate the active segment. */
+  font: var(--w-400) var(--t-13) / 1 var(--font-sans);
   color: var(--fg-2);
   cursor: pointer;
   border: 0;
@@ -53,6 +56,7 @@
 .phase.active {
   background: var(--surface-2);
   color: var(--fg-1);
+  font-weight: var(--w-600);
 }
 
 .phase.active::after {
@@ -84,7 +88,7 @@
 }
 
 .label {
-  font: var(--w-500) var(--t-13) / 1 var(--font-sans);
+  /* Size/weight inherit from .phase so the active w-600 applies to the label. */
   letter-spacing: var(--tr-tight);
 }
 

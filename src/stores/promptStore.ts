@@ -4,6 +4,7 @@ import { ipc } from "../ipc";
 import type {
   AlignmentPhrase,
   Composition,
+  DraftPayload,
   DraftSummary,
   GroupKind,
   Macro,
@@ -41,6 +42,10 @@ interface PromptState {
   recordCopy: (input: RecordUsageInput) => Promise<void>;
   refreshDrafts: () => Promise<void>;
   promoteDraft: (args: { id: string; groupKind?: string }) => Promise<void>;
+  // UI edit-save of a pending draft (PRD §10.3 update_draft). `payload` is the
+  // FULL replacement body — callers hydrate via ipc.getDraft first so hidden
+  // fields (schema_version / phase_id / scene_id / is_default) survive the edit.
+  updateDraft: (args: { id: string; payload: DraftPayload }) => Promise<void>;
   discardDraft: (id: string) => Promise<void>;
 
   // Direct macro editing (plan asset-editing §0 Q2/Q6). create awaits the
@@ -61,7 +66,9 @@ interface PromptState {
 
   // Direct modifier editing (plan asset-editing §0 Q2/Q6, decision D-a). Mirrors
   // the macro methods; reorder is scoped to one groupKind quadrant since
-  // order_index restarts per quadrant.
+  // order_index restarts per quadrant. update's optional groupKind is the P3-6
+  // quadrant-move remedy: the backend re-homes the row at the END of the target
+  // quadrant, and the optimistic patch mirrors that append.
   createModifier: (args: {
     name: string;
     content: string;
@@ -71,6 +78,7 @@ interface PromptState {
     id: string;
     name: string;
     content: string;
+    groupKind?: GroupKind;
   }) => Promise<void>;
   deleteModifier: (id: string) => Promise<void>;
   reorderModifiers: (
@@ -96,6 +104,10 @@ interface PromptState {
     phaseId: string,
     orderedIds: string[],
   ) => Promise<void>;
+  // P3-6: swap the phase's protocol default. Optimistically flips isDefault
+  // inside the phase bucket AND the phases[].defaultAlignmentPhraseId pointer
+  // (both mirror the single backend transaction); rolls back both on rejection.
+  setDefaultAlignmentPhrase: (phaseId: string, id: string) => Promise<void>;
 
   // Direct composition editing (plan asset-editing §0 Q2/Q6, decision A +
   // per-phase). Operates on the grouped compositionsByPhase structure; the body
@@ -180,6 +192,21 @@ function indexCompositionsByPhase(
     (acc[c.phaseId] ??= []).push(c);
     return acc;
   }, {});
+}
+
+// Client-side mirror of DraftPayload::preview() in repo-core (80 chars,
+// char-boundary safe via the spread iterator, Composition summarizes its
+// modifier count) so the optimistic inbox card matches what a refetch shows.
+const DRAFT_PREVIEW_MAX = 80;
+function draftPreview(payload: DraftPayload): string {
+  const body =
+    payload.target_type === "composition"
+      ? `${payload.modifier_ids.length} modifiers`
+      : payload.content;
+  const chars = [...body];
+  return chars.length > DRAFT_PREVIEW_MAX
+    ? `${chars.slice(0, DRAFT_PREVIEW_MAX).join("")}…`
+    : body;
 }
 
 // Mutate the matching asset list so the UI reflects the bump without a full
@@ -337,6 +364,26 @@ export const usePromptStore = create<PromptState>()((set, get) => ({
     await get().refreshDrafts();
   },
 
+  // Optimistic like updateMacro: re-derive the card's name/preview from the new
+  // payload immediately, roll back to the snapshot if the IPC rejects (payload
+  // too large, draft no longer pending, schema drift...) and rethrow for toasts.
+  updateDraft: async ({ id, payload }) => {
+    const snapshot = get().drafts;
+    set({
+      drafts: snapshot.map((d) =>
+        d.id === id
+          ? { ...d, name: payload.name, preview: draftPreview(payload) }
+          : d,
+      ),
+    });
+    try {
+      await ipc.updateDraft(id, payload);
+    } catch (err) {
+      set({ drafts: snapshot });
+      throw err;
+    }
+  },
+
   discardDraft: async (id) => {
     await ipc.discardDraft(id);
     await get().refreshDrafts();
@@ -391,15 +438,39 @@ export const usePromptStore = create<PromptState>()((set, get) => ({
     set((state) => ({ modifiers: [...state.modifiers, created] }));
   },
 
-  updateModifier: async ({ id, name, content }) => {
+  updateModifier: async ({ id, name, content, groupKind }) => {
     const snapshot = get().modifiers;
+    // Quadrant move (groupKind set + actually different): the backend appends at
+    // the END of the target quadrant, so the optimistic orderIndex mirrors that.
+    const current = snapshot.find((m) => m.id === id);
+    const moving =
+      groupKind !== undefined &&
+      current !== undefined &&
+      current.groupKind !== groupKind;
+    const nextOrderIndex = moving
+      ? Math.max(
+          -1,
+          ...snapshot
+            .filter((m) => m.groupKind === groupKind)
+            .map((m) => m.orderIndex),
+        ) + 1
+      : undefined;
     set({
       modifiers: snapshot.map((m) =>
-        m.id === id ? { ...m, name, content } : m,
+        m.id === id
+          ? {
+              ...m,
+              name,
+              content,
+              ...(moving
+                ? { groupKind, orderIndex: nextOrderIndex as number }
+                : {}),
+            }
+          : m,
       ),
     });
     try {
-      await ipc.updateModifier({ id, name, content });
+      await ipc.updateModifier({ id, name, content, groupKind });
     } catch (err) {
       set({ modifiers: snapshot });
       throw err;
@@ -497,6 +568,32 @@ export const usePromptStore = create<PromptState>()((set, get) => ({
       await ipc.reorderAlignmentPhrases(phaseId, orderedIds);
     } catch (err) {
       set({ alignmentPhrasesByPhase: snapshot });
+      throw err;
+    }
+  },
+
+  setDefaultAlignmentPhrase: async (phaseId, id) => {
+    const phrasesSnapshot = get().alignmentPhrasesByPhase;
+    const phasesSnapshot = get().phases;
+    set({
+      alignmentPhrasesByPhase: {
+        ...phrasesSnapshot,
+        [phaseId]: (phrasesSnapshot[phaseId] ?? []).map((a) => ({
+          ...a,
+          isDefault: a.id === id,
+        })),
+      },
+      phases: phasesSnapshot.map((p) =>
+        p.id === phaseId ? { ...p, defaultAlignmentPhraseId: id } : p,
+      ),
+    });
+    try {
+      await ipc.setDefaultAlignmentPhrase({ phaseId, id });
+    } catch (err) {
+      set({
+        alignmentPhrasesByPhase: phrasesSnapshot,
+        phases: phasesSnapshot,
+      });
       throw err;
     }
   },

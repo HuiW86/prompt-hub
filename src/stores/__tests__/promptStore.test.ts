@@ -3,6 +3,7 @@ import { beforeEach, describe, expect, it, vi } from "vitest";
 import type {
   AlignmentPhrase,
   Composition,
+  DraftPayload,
   DraftSummary,
   Macro,
   Modifier,
@@ -358,6 +359,62 @@ describe("promptStore", () => {
     expect(state.pendingDraftCount).toBe(0);
   });
 
+  it("updateDraft patches the inbox card optimistically and sends the full payload", async () => {
+    mockListAll();
+    await usePromptStore.getState().refreshAll();
+
+    // Content longer than the 80-char preview cap so the derived preview is
+    // asserted to truncate exactly like the backend's DraftPayload::preview().
+    const editedPayload: DraftPayload = {
+      target_type: "macro",
+      schema_version: 1,
+      name: "草稿 · 深挖（改）",
+      content: "改".repeat(100),
+      phase_id: "phase-diverge",
+      scene_id: null,
+    };
+    invokeMock.mockImplementation((cmd: string) => {
+      if (cmd === "update_draft")
+        return Promise.resolve({ ok: true, updatedAt: "2026-07-01T00:00:00Z" });
+      return Promise.reject(new Error(`unexpected ${cmd}`));
+    });
+
+    await usePromptStore
+      .getState()
+      .updateDraft({ id: "draft-1", payload: editedPayload });
+
+    expect(invokeMock).toHaveBeenCalledWith("update_draft", {
+      id: "draft-1",
+      payload: editedPayload,
+    });
+    const card = usePromptStore.getState().drafts[0];
+    expect(card.name).toBe("草稿 · 深挖（改）");
+    expect(card.preview).toBe(`${"改".repeat(80)}…`);
+    // Metadata not derived from the payload stays untouched.
+    expect(card.toolName).toBe("save_conversation_as_macro");
+  });
+
+  it("updateDraft rolls back the inbox card on failure", async () => {
+    mockListAll();
+    await usePromptStore.getState().refreshAll();
+
+    invokeMock.mockRejectedValue(new Error("payload too large"));
+    await expect(
+      usePromptStore.getState().updateDraft({
+        id: "draft-1",
+        payload: {
+          target_type: "macro",
+          schema_version: 1,
+          name: "不会生效",
+          content: "x",
+          phase_id: "phase-diverge",
+          scene_id: null,
+        },
+      }),
+    ).rejects.toThrow("payload too large");
+    expect(usePromptStore.getState().drafts).toEqual(fakeDrafts);
+  });
+
   it("createMacro appends the backend-returned macro", async () => {
     mockListAll();
     await usePromptStore.getState().refreshAll();
@@ -505,6 +562,72 @@ describe("promptStore", () => {
         .updateModifier({ id: "mod-structured", name: "改名", content: "x" }),
     ).rejects.toThrow("write rejected");
     expect(usePromptStore.getState().modifiers).toEqual(fakeModifiers);
+  });
+
+  it("updateModifier with groupKind moves the modifier to the end of the target quadrant", async () => {
+    // One resident in the target quadrant so the appended orderIndex is visible.
+    const twoQuads: Modifier[] = [
+      { ...fakeModifiers[0], id: "mod-move", groupKind: "delivery" },
+      { ...fakeModifiers[0], id: "mod-resident", groupKind: "action" },
+    ];
+    invokeMock.mockImplementation((cmd: string) => {
+      switch (cmd) {
+        case "list_modifiers":
+          return Promise.resolve(twoQuads);
+        case "update_modifier":
+          return Promise.resolve({ ok: true });
+        case "list_phases":
+          return Promise.resolve(fakePhases);
+        case "list_alignment_phrases":
+          return Promise.resolve(fakeAlignments);
+        case "list_compositions":
+          return Promise.resolve(fakeCompositions);
+        case "list_macros":
+          return Promise.resolve(fakeMacros);
+        case "list_scenes_with_children":
+          return Promise.resolve(fakeScenes);
+        case "list_recent_usage":
+          return Promise.resolve(fakeRecent);
+        case "count_today_usage":
+          return Promise.resolve(0);
+        case "list_drafts":
+          return Promise.resolve(fakeDrafts);
+        case "count_pending_drafts":
+          return Promise.resolve(fakeDrafts.length);
+        default:
+          return Promise.reject(new Error(`unexpected ${cmd}`));
+      }
+    });
+    await usePromptStore.getState().refreshAll();
+
+    await usePromptStore.getState().updateModifier({
+      id: "mod-move",
+      name: "结构化输出",
+      content: "请用要点列表回答",
+      groupKind: "action",
+    });
+    const moved = usePromptStore
+      .getState()
+      .modifiers.find((m) => m.id === "mod-move");
+    expect(moved?.groupKind).toBe("action");
+    // Optimistic append mirrors the backend: end of the target quadrant.
+    expect(moved?.orderIndex).toBe(1);
+    // The wire call carries the target quadrant.
+    const call = invokeMock.mock.calls.find((c) => c[0] === "update_modifier");
+    expect(call?.[1]).toMatchObject({ id: "mod-move", groupKind: "action" });
+
+    // Failure: quadrant + orderIndex snap back with the snapshot.
+    const before = usePromptStore.getState().modifiers;
+    invokeMock.mockRejectedValue(new Error("move rejected"));
+    await expect(
+      usePromptStore.getState().updateModifier({
+        id: "mod-resident",
+        name: "x",
+        content: "y",
+        groupKind: "cognition",
+      }),
+    ).rejects.toThrow("move rejected");
+    expect(usePromptStore.getState().modifiers).toEqual(before);
   });
 
   it("deleteModifier removes optimistically and rolls back on failure", async () => {
@@ -704,6 +827,82 @@ describe("promptStore", () => {
         .reorderAlignmentPhrases("phase-diverge", ["ap-a", "ap-b"]),
     ).rejects.toThrow("reorder rejected");
     expect(usePromptStore.getState().alignmentPhrasesByPhase).toEqual(before);
+  });
+
+  it("setDefaultAlignmentPhrase flips the bucket flag + phase pointer and rolls back", async () => {
+    // Seed default + a non-default candidate in the same phase.
+    const twoPhrases: AlignmentPhrase[] = [
+      fakeAlignments[0],
+      {
+        ...fakeAlignments[0],
+        id: "ap-diverge-alt",
+        isDefault: false,
+        orderIndex: 1,
+      },
+    ];
+    invokeMock.mockImplementation((cmd: string) => {
+      switch (cmd) {
+        case "list_alignment_phrases":
+          return Promise.resolve(twoPhrases);
+        case "list_compositions":
+          return Promise.resolve(fakeCompositions);
+        case "list_macros":
+          return Promise.resolve(fakeMacros);
+        case "list_modifiers":
+          return Promise.resolve(fakeModifiers);
+        case "list_phases":
+          return Promise.resolve(fakePhases);
+        case "list_scenes_with_children":
+          return Promise.resolve(fakeScenes);
+        case "list_recent_usage":
+          return Promise.resolve(fakeRecent);
+        case "count_today_usage":
+          return Promise.resolve(0);
+        case "list_drafts":
+          return Promise.resolve(fakeDrafts);
+        case "count_pending_drafts":
+          return Promise.resolve(fakeDrafts.length);
+        default:
+          return Promise.reject(new Error(`unexpected ${cmd}`));
+      }
+    });
+    await usePromptStore.getState().refreshAll();
+
+    // Success: exactly one default (the new one) and the phases pointer follows.
+    invokeMock.mockResolvedValue({ ok: true });
+    await usePromptStore
+      .getState()
+      .setDefaultAlignmentPhrase("phase-diverge", "ap-diverge-alt");
+    const bucket =
+      usePromptStore.getState().alignmentPhrasesByPhase["phase-diverge"];
+    expect(bucket.filter((a) => a.isDefault).map((a) => a.id)).toEqual([
+      "ap-diverge-alt",
+    ]);
+    expect(
+      usePromptStore.getState().phases.find((p) => p.id === "phase-diverge")
+        ?.defaultAlignmentPhraseId,
+    ).toBe("ap-diverge-alt");
+    const call = invokeMock.mock.calls.find(
+      (c) => c[0] === "set_default_alignment_phrase",
+    );
+    expect(call?.[1]).toMatchObject({
+      phaseId: "phase-diverge",
+      id: "ap-diverge-alt",
+    });
+
+    // Failure: both the bucket and the phases pointer snap back.
+    const beforePhrases = usePromptStore.getState().alignmentPhrasesByPhase;
+    const beforePhases = usePromptStore.getState().phases;
+    invokeMock.mockRejectedValue(new Error("set default rejected"));
+    await expect(
+      usePromptStore
+        .getState()
+        .setDefaultAlignmentPhrase("phase-diverge", "ap-diverge-default"),
+    ).rejects.toThrow("set default rejected");
+    expect(usePromptStore.getState().alignmentPhrasesByPhase).toEqual(
+      beforePhrases,
+    );
+    expect(usePromptStore.getState().phases).toEqual(beforePhases);
   });
 
   it("createComposition appends to its phase bucket", async () => {

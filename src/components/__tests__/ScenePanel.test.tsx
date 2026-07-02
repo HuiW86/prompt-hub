@@ -111,6 +111,49 @@ describe("ScenePanel edit mode — Scene / SubStage structure", () => {
     expect(call?.[1]).toMatchObject({ sceneId: "scene-plan", name: "修订" });
   });
 
+  it("edit mode exposes drag handles for sub-stage reorder", () => {
+    render(<ScenePanel />);
+    enterEditMode();
+    // Every sub-stage row (including the empty 评审) is drag-sortable (P3-6).
+    expect(screen.getByLabelText("拖动排序 生成")).toBeInTheDocument();
+    expect(screen.getByLabelText("拖动排序 评审")).toBeInTheDocument();
+  });
+
+  it("场景后移 swaps the tab order via reorder_scenes", () => {
+    const twoScenes: SceneWithChildren[] = [
+      scenes[0],
+      {
+        scene: {
+          id: "scene-review",
+          name: "评审场景",
+          icon: null,
+          orderIndex: 1,
+          visible: true,
+          rolePresets: [],
+          color: null,
+        },
+        subStages: [],
+        phrases: [],
+      },
+    ];
+    usePromptStore.setState({ scenes: twoScenes, pendingDraftCount: 0 });
+    invokeMock.mockImplementation((cmd: string) => {
+      if (cmd === "list_scenes_with_children")
+        return Promise.resolve([twoScenes[1], twoScenes[0]]);
+      return Promise.resolve({ ok: true });
+    });
+    render(<ScenePanel />);
+    enterEditMode();
+    // First tab is active: 前移 hits the left boundary, 后移 is available.
+    expect(screen.getByLabelText("场景前移")).toBeDisabled();
+    expect(screen.getByLabelText("场景后移")).toBeEnabled();
+    fireEvent.click(screen.getByLabelText("场景后移"));
+    const call = invokeMock.mock.calls.find((c) => c[0] === "reorder_scenes");
+    expect(call?.[1]).toMatchObject({
+      orderedIds: ["scene-review", "scene-plan"],
+    });
+  });
+
   it("deleting a Scene asks for confirmation before invoking delete_scene", () => {
     render(<ScenePanel />);
     enterEditMode();
@@ -119,8 +162,65 @@ describe("ScenePanel edit mode — Scene / SubStage structure", () => {
     expect(
       invokeMock.mock.calls.find((c) => c[0] === "delete_scene"),
     ).toBeUndefined();
+    // The store re-pulls scenes after the delete resolves — the mock must
+    // answer with an array (here: none left) or the panel render crashes.
+    invokeMock.mockImplementation((cmd: string) => {
+      if (cmd === "list_scenes_with_children") return Promise.resolve([]);
+      return Promise.resolve({ ok: true });
+    });
     fireEvent.click(screen.getByLabelText("确认删除场景"));
     const call = invokeMock.mock.calls.find((c) => c[0] === "delete_scene");
     expect(call?.[1]).toMatchObject({ id: "scene-plan" });
+  });
+});
+
+describe("ScenePanel view mode — ungrouped column header", () => {
+  // Same scene shape, plus a phrase with no sub-stage: it lands in the trailing
+  // ungrouped column, which must render a muted「未分组」header (not headerless).
+  const scenesWithUngrouped: SceneWithChildren[] = [
+    {
+      ...scenes[0],
+      phrases: [
+        ...scenes[0].phrases,
+        {
+          id: "phrase-2",
+          sceneId: "scene-plan",
+          name: "补充上下文",
+          content: "先补充项目上下文再继续。",
+          usageCount: 0,
+          lastUsedAt: null,
+          createdAt: "2026-05-23T00:00:00Z",
+          notes: null,
+          deprecated: false,
+          subStageId: null,
+          orderIndex: 0,
+        },
+      ],
+    },
+  ];
+
+  beforeEach(() => {
+    usePromptStore.setState(promptInitial, true);
+    useAppStore.setState(appInitial, true);
+    invokeMock.mockReset();
+    invokeMock.mockResolvedValue({ ok: true });
+  });
+
+  it("renders a 未分组 header for phrases without a sub-stage", () => {
+    usePromptStore.setState({
+      scenes: scenesWithUngrouped,
+      pendingDraftCount: 0,
+    });
+    render(<ScenePanel />);
+    // Both the real sub-stage column and the ungrouped column carry a header.
+    expect(screen.getByText("生成")).toBeInTheDocument();
+    expect(screen.getByText("未分组")).toBeInTheDocument();
+    expect(screen.getByLabelText("补充上下文")).toBeInTheDocument();
+  });
+
+  it("omits the 未分组 header when every phrase belongs to a sub-stage", () => {
+    usePromptStore.setState({ scenes, pendingDraftCount: 0 });
+    render(<ScenePanel />);
+    expect(screen.queryByText("未分组")).not.toBeInTheDocument();
   });
 });

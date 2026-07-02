@@ -6,8 +6,9 @@ import { relativeTime } from "../utils/time";
 import { EmptyState, RegionHeader } from "./primitives";
 import styles from "./RecentList.module.css";
 
-// Type badge per recent row (Promptscape): alignment phrases are protocol-layer
-// (filled), every other asset is task-layer (muted outline).
+// Type badge per recent row (Promptscape): every asset type renders the same
+// neutral outline badge — the layer is read from the label text, not a fill
+// (design-spec §13.1 "accent carries no semantics", ADR-020 ripple).
 const TYPE_LABELS: Record<UsageTargetType, string> = {
   alignment: "对齐话术",
   macro: "Macro",

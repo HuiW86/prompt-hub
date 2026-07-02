@@ -1,22 +1,44 @@
 /* Protocol-layer band — a single inset card grouping PhaseBar + AlignmentPhrases.
- * Surface lift (surface-1) + hairline + rounded frame give the "distinct layer"
- * read from the Promptscape design, translated to the project's dark palette
- * (no light oklch band). The children render transparent so this surface shows. */
+ * Restored to the Promptscape draft's DARK band in both themes (ADR-020): the
+ * band paints --band-* fixed hierarchy colors and remaps the neutral token
+ * scale for its subtree, so every child (PhaseBar, AlignmentPhrases, Chip /
+ * Kbd / Button / Editor primitives) stays readable on the dark surface without
+ * per-component overrides. The children render transparent so this shows. */
 
 .band {
   margin: var(--s-3) var(--s-3) 0;
-  background: var(--surface-1);
-  border: var(--hairline) solid var(--border-1);
+  background: var(--band-bg);
+  border: var(--hairline) solid var(--band-border-1);
   border-radius: var(--r-frame);
   overflow: hidden;
+  color: var(--band-fg);
+
+  /* Band-scoped token remap (ADR-020). Descendant CSS keeps referencing the
+   * global token names; inside the band they resolve to the band ramp. The
+   * accent is re-based too: the neutral swatch is dark ink in light mode and
+   * would vanish on the dark band (see tokens.css --band-accent). */
+  --canvas: var(--band-bg);
+  --surface-1: var(--band-surface-1);
+  --surface-2: var(--band-surface-2);
+  --surface-3: var(--band-surface-3);
+  --border-1: var(--band-border-1);
+  --border-2: var(--band-border-2);
+  --border-3: var(--band-border-3);
+  --fg-1: var(--band-fg);
+  --fg-2: var(--band-fg-muted);
+  --fg-3: var(--band-fg-faint);
+  --fg-4: var(--band-fg-ghost);
+  --aux: var(--band-fg-faint);
+  --accent: var(--band-accent);
+  --accent-fg: var(--band-accent-fg);
 }
 
 .head {
   padding: var(--s-2) var(--s-3_5) 0;
 }
 
-/* "协议层" tag — neutral chrome label (ADR-019: colour no longer marks layer).
- * The layer identity is carried by this band's position + inset surface, not hue. */
+/* "协议层" tag — chrome label on the band surface. Layer identity is carried
+ * by the band's fixed dark color + position (ADR-020), not an accent hue. */
 .pill {
   display: inline-flex;
   align-items: center;

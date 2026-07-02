@@ -29,7 +29,10 @@
   max-height: var(--h-macro-strip);
 }
 
-/* Override CardSurface's vertical card shell into a compact horizontal bar. */
+/* Override CardSurface's vertical card shell into a compact horizontal bar.
+ * Resting --shadow-1 lifts the bar off the muted canvas (Promptscape macro
+ * entry, ADR-018 补遗 P3-3); hover adds the shared 1px rise on top of the
+ * CardSurface border-darken cue (Promptscape hover language, P3-5). */
 .macroCard {
   flex: 1 1 var(--col-min-macro);
   flex-direction: row;
@@ -37,12 +40,16 @@
   gap: var(--s-2_5);
   min-height: var(--h-phasebar);
   padding: 0 var(--s-3);
-  transition: box-shadow var(--d-fast) var(--ease);
+  box-shadow: var(--shadow-1);
+  transition:
+    border-color var(--d-fast) var(--ease),
+    background-color var(--d-fast) var(--ease),
+    transform var(--d-fast) var(--ease),
+    box-shadow var(--d-fast) var(--ease);
 }
 
-/* Subtle elevation on hover — floating-surface lift (design-spec §8.2.1). */
 .macroCard:hover {
-  box-shadow: var(--shadow-1);
+  transform: translateY(var(--lift-1));
 }
 
 /* Main click-to-copy surface fills the bar; action controls overlay the right. */
@@ -61,15 +68,20 @@
   min-width: 0;
 }
 
+/* Inline control inside the card: offset 0 hugs the copy surface instead of
+   bleeding past the card border (focus-offset taxonomy — see design-spec §10.1:
+   containers/regions inset with a negative offset; inline controls use
+   var(--hairline) or 0). */
 .copyArea:focus-visible {
   outline: var(--border-thick) solid var(--accent);
-  outline-offset: var(--s-1);
+  outline-offset: 0;
   border-radius: var(--r-2);
 }
 
-/* Leading icon chip; filled neutral accent for the hot (high-usage) macros so
- * the "frequent" signal survives the move to user-controlled order (ADR-019:
- * emphasis via accent, not task-green ontology). */
+/* Leading icon chip — EVERY macro gets the filled accent box (Promptscape:
+ * each entry is a dark box with a white glyph; ADR-018 补遗 P3-5). The hot
+ * (high-usage) signal no longer rides the fill: it is carried by the Flame
+ * glyph rendering solid (filled) on the top-N macros. */
 .iconChip {
   display: flex;
   align-items: center;
@@ -77,26 +89,19 @@
   width: var(--s-6);
   height: var(--s-6);
   border-radius: var(--r-3);
-  background: var(--surface-2);
-  border: var(--hairline) solid var(--border-1);
-  color: var(--fg-3);
+  background: var(--accent);
+  border: var(--hairline) solid var(--accent);
+  color: var(--accent-fg);
   flex-shrink: 0;
 }
 
-.iconChipHot {
-  background: var(--accent);
-  border-color: var(--accent);
-  color: var(--accent-fg);
-}
-
 .name {
+  composes: ph-card-title from "../styles/typography.module.css";
   flex: 1;
   min-width: 0;
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
-  font: var(--w-600) var(--t-13) / var(--lh-tight) var(--font-sans);
-  color: var(--fg-1);
 }
 
 .uses {

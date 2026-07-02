@@ -217,9 +217,11 @@
   border-color: var(--fg-1);
 }
 
+/* Inline control: hairline offset (focus-offset taxonomy — design-spec §10.1),
+   enough to clear the swatch's own 2px selection border. */
 .swatch:focus-visible {
   outline: var(--border-thick) solid var(--accent);
-  outline-offset: var(--s-0_5);
+  outline-offset: var(--hairline);
 }
 
 .dot {

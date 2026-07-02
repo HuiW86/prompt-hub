@@ -131,14 +131,12 @@
   font-variant-numeric: tabular-nums;
 }
 
-.groupEmpty,
-.empty {
+.groupEmpty {
   font-size: var(--t-12);
   color: var(--fg-3);
 }
 
 .empty {
+  composes: ph-empty from "../styles/typography.module.css";
   padding: var(--s-8);
-  text-align: center;
-  font-size: var(--t-13);
 }

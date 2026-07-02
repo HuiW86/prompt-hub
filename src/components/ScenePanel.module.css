@@ -141,6 +141,7 @@
   background: var(--surface-1);
   border: var(--hairline) solid var(--border-1);
   border-radius: var(--r-4);
+  box-shadow: var(--shadow-1); /* resting lift off the muted canvas (P3-3) */
   overflow: hidden;
 }
 
@@ -290,6 +291,12 @@
   min-width: 0;
 }
 
+/* P3-6 sub-stage drag-reorder: same in-flight look as the phrase rows. */
+.subStageItem.dragging {
+  opacity: var(--op-dim);
+  border-color: var(--accent);
+}
+
 .subStageItemName {
   flex: 1;
   min-width: 0;
@@ -308,14 +315,20 @@
   min-width: 0;
 }
 
-/* Sub-stages flow as a fixed 4-column grid (Promptscape Scene 全景): each group
- * is a column, its phrases stack as cards beneath the sub-stage header. Columns
- * < 4 left-align; > 4 wrap to the next row. View mode only — edit mode keeps the
- * vertical list below. */
+/* Sub-stages flow as an adaptive column grid (Promptscape Scene 全景): each
+ * group is a column, its phrases stack as cards beneath the sub-stage header.
+ * auto-fit sizes tracks to the panel: a narrow panel drops to fewer, wider
+ * columns instead of crushing each one below --col-min-substage, and with few
+ * groups the tracks stretch to fill instead of leaving empty rails. min(…, 100%)
+ * keeps a lone column from overflowing panels narrower than the column minimum.
+ * View mode only — edit mode keeps the vertical list below. */
 .phrases {
   flex: 1;
   display: grid;
-  grid-template-columns: repeat(4, minmax(0, 1fr));
+  grid-template-columns: repeat(
+    auto-fit,
+    minmax(min(var(--col-min-substage), 100%), 1fr)
+  );
   gap: var(--s-4);
   padding: var(--s-3_5);
   align-content: start;
@@ -356,8 +369,15 @@
   color: var(--fg-1);
 }
 
+/* Ungrouped phrases get a muted「未分组」header so the orphan column shares the
+ * same header structure and baseline as real sub-stage columns. */
+.subStageNameMuted {
+  color: var(--fg-3);
+}
+
 /* Phrase card (Promptscape script chip): a muted card at rest that lifts to the
- * primary surface on hover, with a faint copy glyph cueing click-to-copy. */
+ * primary surface on hover — shadow + 1px rise, the shared Promptscape hover
+ * language (P3-5) — with a faint copy glyph cueing click-to-copy. */
 .phrase {
   display: flex;
   align-items: flex-start;
@@ -374,12 +394,16 @@
   user-select: none;
   transition:
     background-color var(--d-fast) var(--ease),
-    border-color var(--d-fast) var(--ease);
+    border-color var(--d-fast) var(--ease),
+    transform var(--d-fast) var(--ease),
+    box-shadow var(--d-fast) var(--ease);
 }
 
 .phrase:hover {
   background: var(--surface-1);
   border-color: var(--border-2);
+  box-shadow: var(--shadow-1);
+  transform: translateY(var(--lift-1));
 }
 
 .phraseIcon {
@@ -406,15 +430,13 @@
 }
 
 .phraseTitle {
-  font: var(--w-500) var(--t-13) / 1 var(--font-sans);
-  color: var(--fg-1);
+  composes: ph-card-title from "../styles/typography.module.css";
   margin: 0;
 }
 
 .phraseContent {
+  composes: ph-card-body from "../styles/typography.module.css";
   margin: 0;
-  font: var(--w-400) var(--t-12) / var(--lh-body) var(--font-sans);
-  color: var(--fg-2);
   display: -webkit-box;
   -webkit-line-clamp: 2;
   line-clamp: 2;

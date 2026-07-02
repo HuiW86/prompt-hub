@@ -2,7 +2,7 @@ import { useEffect, useMemo, useRef, useState } from "react";
 import { DragDropProvider } from "@dnd-kit/react";
 import { useSortable } from "@dnd-kit/react/sortable";
 import { move } from "@dnd-kit/helpers";
-import { GripVertical, Pencil, Plus, Trash2, Zap } from "lucide-react";
+import { Flame, GripVertical, Pencil, Plus, Trash2, Zap } from "lucide-react";
 
 import { useCopy } from "../hooks/useCopy";
 import { usePromptStore } from "../stores/promptStore";
@@ -33,6 +33,7 @@ export function MacroGrid() {
   const reorderMacros = usePromptStore((s) => s.reorderMacros);
   const deleteMacro = usePromptStore((s) => s.deleteMacro);
   const showToast = useToastStore((s) => s.show);
+  const showError = useToastStore((s) => s.showError);
 
   // Local render source during a drag (learnings 信条五: a single local array is
   // the source of truth while dragging; the store stays untouched until the drop
@@ -61,7 +62,7 @@ export function MacroGrid() {
       await deleteMacro(id);
       showToast("已永久删除");
     } catch (err) {
-      showToast(err instanceof Error ? err.message : "删除失败");
+      showError(err instanceof Error ? err.message : "删除失败");
     }
   };
 
@@ -92,12 +93,32 @@ export function MacroGrid() {
         <MacroEditor
           target={editing}
           onClose={() => setEditing(null)}
-          onError={(msg) => showToast(msg)}
+          onError={showError}
         />
       )}
 
       {macros.length === 0 ? (
-        <EmptyState>暂无 Macro · 把高频组合保存下来吧</EmptyState>
+        /* Rich empty state (Promptscape empty Macro: dashed strip + in-place
+           create wired to the same editor the header 新增 button opens). The
+           illustration glyph follows the design draft's zapBig. */
+        <EmptyState
+          framed
+          row
+          icon={<Zap size={16} aria-hidden strokeWidth={2} />}
+          title="还没有 Macro"
+          action={
+            <Button
+              layer="task"
+              aria-label="新建 Macro"
+              onClick={() => setEditing({ mode: "create" })}
+            >
+              <Plus size={14} aria-hidden strokeWidth={2} />
+              <span>新建 Macro</span>
+            </Button>
+          }
+        >
+          把高频 Composition 固化成一键入口，常用动作一步直达
+        </EmptyState>
       ) : (
         <DragDropProvider
           onDragOver={(event) => setItems((prev) => move(prev, event))}
@@ -110,7 +131,7 @@ export function MacroGrid() {
             }
             const orderedIds = items.map((m) => m.id);
             void reorderMacros(orderedIds).catch((err) => {
-              showToast(err instanceof Error ? err.message : "排序保存失败");
+              showError(err instanceof Error ? err.message : "排序保存失败");
             });
           }}
         >
@@ -190,11 +211,15 @@ function SortableMacroCard({
           )
         }
       >
-        <span
-          className={`${styles.iconChip} ${isHot ? styles.iconChipHot : ""}`}
-          aria-hidden
-        >
-          <Zap size={14} strokeWidth={2} />
+        {/* Filled accent box on every card (Promptscape); the Flame glyph is
+            the design-spec §12.4 macro icon, rendered solid on hot macros so
+            the usage signal survives the all-filled boxes (P3-5). */}
+        <span className={styles.iconChip} aria-hidden>
+          <Flame
+            size={14}
+            strokeWidth={2}
+            fill={isHot ? "currentColor" : "none"}
+          />
         </span>
         <span className={styles.name}>{macro.name}</span>
         <span className={styles.uses}>{macro.usageCount} 次</span>

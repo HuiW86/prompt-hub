@@ -39,9 +39,7 @@
 }
 
 .title {
-  font: var(--w-600) var(--t-14) / var(--lh-tight) var(--font-sans);
-  letter-spacing: var(--tr-tight);
-  color: var(--fg-1);
+  composes: ph-region-header from "../styles/typography.module.css";
 }
 
 .subtitle {

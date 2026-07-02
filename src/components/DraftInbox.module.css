@@ -19,30 +19,27 @@
   min-width: 0;
 }
 
+/* target_type corner tag — .ph-meta uppercase (design-spec §10.4.3). */
 .type {
+  composes: ph-meta from "../styles/typography.module.css";
   flex: 0 0 auto;
-  padding: 0 var(--s-1_5);
+  padding: var(--s-0_5) var(--s-1_5);
   border: var(--hairline) solid var(--border-2);
   border-radius: var(--r-1);
-  font: var(--w-500) var(--t-10) / 1.6 var(--font-mono);
-  color: var(--fg-3);
   text-transform: uppercase;
-  letter-spacing: var(--tr-meta);
 }
 
 .name {
+  composes: ph-card-title from "../styles/typography.module.css";
   margin: 0;
-  font: var(--w-500) var(--t-13) / var(--lh-tight) var(--font-sans);
-  color: var(--fg-1);
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
 }
 
 .preview {
+  composes: ph-card-body from "../styles/typography.module.css";
   margin: 0;
-  font: var(--w-400) var(--t-12) / var(--lh-body) var(--font-sans);
-  color: var(--fg-2);
   display: -webkit-box;
   -webkit-line-clamp: 2;
   line-clamp: 2;
@@ -64,9 +61,9 @@
   min-width: 0;
 }
 
+/* Provenance line — .ph-meta (design-spec §10.4.3). */
 .source {
-  font: var(--w-500) var(--t-11) / 1 var(--font-mono);
-  color: var(--fg-3);
+  composes: ph-meta from "../styles/typography.module.css";
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
@@ -83,6 +80,14 @@
   align-items: center;
   gap: var(--s-1_5);
   flex: 0 0 auto;
+}
+
+/* P0-5 stopgap hint shown next to the disabled promote button when the draft's
+   target type has no UI surface yet (currently: composition). */
+.blockedHint {
+  font: var(--w-400) var(--t-11) / 1 var(--font-sans);
+  color: var(--fg-4);
+  white-space: nowrap;
 }
 
 .quadBtn:disabled {

@@ -1,13 +1,27 @@
-import { Check, X } from "lucide-react";
-import { useState } from "react";
+import { Check, Pencil, X } from "lucide-react";
+import { useEffect, useRef, useState } from "react";
 
+import { ipc } from "../ipc";
 import { GROUP_KINDS } from "../ipc/types";
-import type { DraftSummary, DraftTargetType, GroupKind } from "../ipc/types";
+import type {
+  DraftPayload,
+  DraftSummary,
+  DraftTargetType,
+  GroupKind,
+} from "../ipc/types";
 import { usePromptStore } from "../stores/promptStore";
 import { useToastStore } from "../stores/toastStore";
 import { relativeTime } from "../utils/time";
 
-import { Button, CardSurface, EmptyState } from "./primitives";
+import {
+  Button,
+  CardSurface,
+  EditorActions,
+  EditorInput,
+  EditorPanel,
+  EmptyState,
+  Input,
+} from "./primitives";
 import styles from "./DraftInbox.module.css";
 
 const TYPE_LABEL: Record<DraftTargetType, string> = {
@@ -25,6 +39,17 @@ const GROUP_KIND_LABEL: Record<GroupKind, string> = {
   delivery: "交付",
   constraint: "约束",
 };
+
+// P0-5 stopgap: a promoted Composition becomes a ghost asset — no UI surface
+// can view/search/delete it yet, so promote is blocked (discard stays open)
+// until Composition gets a real UI home. Docs ripple handled separately.
+// P3-2 mirrors the block for editing: the composition body is a modifier_ids
+// array, which has no editor surface here either.
+const PROMOTE_BLOCKED_HINT = "该类型暂无 UI 承载";
+
+// The three editable draft variants all carry name + content. Composition
+// (modifier_ids body) is excluded — its edit stays blocked alongside promote.
+type EditablePayload = Exclude<DraftPayload, { target_type: "composition" }>;
 
 export function DraftInbox() {
   const drafts = usePromptStore((s) => s.drafts);
@@ -46,10 +71,16 @@ function DraftCard({ draft }: { draft: DraftSummary }) {
   const promoteDraft = usePromptStore((s) => s.promoteDraft);
   const discardDraft = usePromptStore((s) => s.discardDraft);
   const toast = useToastStore((s) => s.show);
+  const toastError = useToastStore((s) => s.showError);
   const [picking, setPicking] = useState(false);
   const [busy, setBusy] = useState(false);
+  // Full payload hydrated via get_draft when the edit flow opens; null = closed.
+  const [editing, setEditing] = useState<EditablePayload | null>(null);
 
   const isModifier = draft.targetType === "modifier";
+  const promoteBlocked = draft.targetType === "composition";
+  // Same stopgap as promote: no editor surface for a modifier_ids body.
+  const editBlocked = promoteBlocked;
 
   async function doPromote(groupKind?: string) {
     if (busy) return;
@@ -58,7 +89,7 @@ function DraftCard({ draft }: { draft: DraftSummary }) {
       await promoteDraft({ id: draft.id, groupKind });
       toast(`已归入 ${TYPE_LABEL[draft.targetType]}`);
     } catch (err) {
-      toast(err instanceof Error ? err.message : "归档失败");
+      toastError(err instanceof Error ? err.message : "归档失败");
     } finally {
       setBusy(false);
       setPicking(false);
@@ -72,17 +103,39 @@ function DraftCard({ draft }: { draft: DraftSummary }) {
       await discardDraft(draft.id);
       toast("已丢弃草稿");
     } catch (err) {
-      toast(err instanceof Error ? err.message : "丢弃失败");
+      toastError(err instanceof Error ? err.message : "丢弃失败");
     } finally {
       setBusy(false);
     }
   }
 
   function onPromoteClick() {
+    // Defensive: the button is disabled for blocked types, keep the guard
+    // anyway so a programmatic click can never promote a ghost asset.
+    if (promoteBlocked) return;
     // Modifier needs the four-quadrant pick before it can land; everything else
     // promotes straight through (PRD §10.2).
     if (isModifier) setPicking((v) => !v);
     else void doPromote();
+  }
+
+  // Hydrate the full stored payload before opening the editor — the list only
+  // carries an 80-char preview, and update_draft is a full-replacement write.
+  async function onEditClick() {
+    if (busy || editBlocked) return;
+    setBusy(true);
+    try {
+      const full = await ipc.getDraft(draft.id);
+      // Defensive: composition never reaches here (button disabled), but a
+      // stale summary row must not open an editor that drops modifier_ids.
+      if (full.payload.target_type === "composition") return;
+      setPicking(false);
+      setEditing(full.payload);
+    } catch (err) {
+      toastError(err instanceof Error ? err.message : "读取草稿失败");
+    } finally {
+      setBusy(false);
+    }
   }
 
   return (
@@ -91,47 +144,166 @@ function DraftCard({ draft }: { draft: DraftSummary }) {
         <span className={styles.type}>{TYPE_LABEL[draft.targetType]}</span>
         <h4 className={styles.name}>{draft.name}</h4>
       </div>
-      <p className={styles.preview}>{draft.preview}</p>
-      <div className={styles.foot}>
-        <div className={styles.meta}>
-          <span className={styles.source}>{draft.toolName}</span>
-          <span className={styles.time}>{relativeTime(draft.createdAt)}</span>
-        </div>
-        <div className={styles.actions}>
-          <Button
-            intent="ghost"
-            onClick={() => void doDiscard()}
-            disabled={busy}
-          >
-            <X size={13} aria-hidden strokeWidth={2} />
-            丢弃
-          </Button>
-          <Button
-            intent="ghost"
-            onClick={onPromoteClick}
-            disabled={busy}
-            aria-expanded={isModifier ? picking : undefined}
-          >
-            <Check size={13} aria-hidden strokeWidth={2} />
-            归档
-          </Button>
-        </div>
-      </div>
-      {isModifier && picking && (
-        <div className={styles.quad} role="group" aria-label="选择四象限分类">
-          {GROUP_KINDS.map((kind) => (
-            <button
-              key={kind}
-              type="button"
-              className={styles.quadBtn}
-              onClick={() => void doPromote(kind)}
-              disabled={busy}
+      {editing ? (
+        <DraftEditor
+          draftId={draft.id}
+          payload={editing}
+          onClose={() => setEditing(null)}
+        />
+      ) : (
+        <>
+          <p className={styles.preview}>{draft.preview}</p>
+          <div className={styles.foot}>
+            <div className={styles.meta}>
+              <span className={styles.source}>{draft.toolName}</span>
+              <span className={styles.time}>
+                {relativeTime(draft.createdAt)}
+              </span>
+            </div>
+            <div className={styles.actions}>
+              {promoteBlocked && (
+                <span className={styles.blockedHint}>
+                  {PROMOTE_BLOCKED_HINT}
+                </span>
+              )}
+              <Button
+                intent="ghost"
+                onClick={() => void onEditClick()}
+                disabled={busy || editBlocked}
+                title={editBlocked ? PROMOTE_BLOCKED_HINT : undefined}
+              >
+                <Pencil size={13} aria-hidden strokeWidth={2} />
+                编辑
+              </Button>
+              <Button
+                intent="ghost"
+                onClick={() => void doDiscard()}
+                disabled={busy}
+              >
+                <X size={13} aria-hidden strokeWidth={2} />
+                丢弃
+              </Button>
+              <Button
+                intent="ghost"
+                onClick={onPromoteClick}
+                disabled={busy || promoteBlocked}
+                title={promoteBlocked ? PROMOTE_BLOCKED_HINT : undefined}
+                aria-expanded={isModifier ? picking : undefined}
+              >
+                <Check size={13} aria-hidden strokeWidth={2} />
+                归档
+              </Button>
+            </div>
+          </div>
+          {isModifier && picking && (
+            <div
+              className={styles.quad}
+              role="group"
+              aria-label="选择四象限分类"
             >
-              {GROUP_KIND_LABEL[kind]}
-            </button>
-          ))}
-        </div>
+              {GROUP_KINDS.map((kind) => (
+                <button
+                  key={kind}
+                  type="button"
+                  className={styles.quadBtn}
+                  onClick={() => void doPromote(kind)}
+                  disabled={busy}
+                >
+                  {GROUP_KIND_LABEL[kind]}
+                </button>
+              ))}
+            </div>
+          )}
+        </>
       )}
     </CardSurface>
+  );
+}
+
+// Inline edit panel for a pending draft (PRD §10.3 update_draft "UI 编辑保存").
+// Only name + content are exposed; every hidden payload field (schema_version /
+// phase_id / scene_id / is_default) is carried over verbatim from the hydrated
+// payload. Modifier drafts carry NO group_kind here — the four-quadrant call
+// stays a promote-time human decision (ADR-015 补遗 decision iii).
+function DraftEditor({
+  draftId,
+  payload,
+  onClose,
+}: {
+  draftId: string;
+  payload: EditablePayload;
+  onClose: () => void;
+}) {
+  const updateDraft = usePromptStore((s) => s.updateDraft);
+  const toast = useToastStore((s) => s.show);
+  const toastError = useToastStore((s) => s.showError);
+  const [name, setName] = useState(payload.name);
+  const [content, setContent] = useState(payload.content);
+  const [saving, setSaving] = useState(false);
+  const nameRef = useRef<HTMLInputElement>(null);
+
+  useEffect(() => {
+    nameRef.current?.focus();
+  }, []);
+
+  const canSave = name.trim().length > 0 && content.trim().length > 0;
+
+  const handleSave = async () => {
+    if (!canSave || saving) return;
+    setSaving(true);
+    try {
+      await updateDraft({
+        id: draftId,
+        payload: { ...payload, name: name.trim(), content: content.trim() },
+      });
+      toast("草稿已保存");
+      onClose();
+    } catch (err) {
+      toastError(err instanceof Error ? err.message : "保存失败");
+      setSaving(false);
+    }
+  };
+
+  return (
+    <EditorPanel layer="neutral" role="group" aria-label="编辑草稿">
+      <Input
+        ref={nameRef}
+        placeholder="名称"
+        value={name}
+        onChange={(e) => setName(e.target.value)}
+        onKeyDown={(e) => {
+          if (e.key === "Escape") onClose();
+          if (e.key === "Enter") {
+            e.preventDefault();
+            void handleSave();
+          }
+        }}
+      />
+      <EditorInput
+        placeholder="内容"
+        value={content}
+        rows={3}
+        onChange={(e) => setContent(e.target.value)}
+        onKeyDown={(e) => {
+          if (e.key === "Escape") onClose();
+          if (e.key === "Enter" && (e.metaKey || e.ctrlKey)) {
+            e.preventDefault();
+            void handleSave();
+          }
+        }}
+      />
+      <EditorActions>
+        <Button intent="subtle" onClick={onClose}>
+          取消
+        </Button>
+        <Button
+          intent="primary"
+          onClick={() => void handleSave()}
+          disabled={!canSave || saving}
+        >
+          保存
+        </Button>
+      </EditorActions>
+    </EditorPanel>
   );
 }

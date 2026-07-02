@@ -18,6 +18,12 @@
   display: none;
 }
 
+/* B5-5: region-level Tab landing (03-product-spec §13.4). */
+.phrases:focus-visible {
+  outline: var(--border-thick) solid var(--accent);
+  outline-offset: calc(-1 * var(--border-thick));
+}
+
 .label {
   font: var(--w-500) var(--t-11) / 1 var(--font-mono);
   color: var(--fg-3);

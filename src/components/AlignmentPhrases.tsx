@@ -2,7 +2,7 @@ import { useEffect, useMemo, useRef, useState } from "react";
 import { DragDropProvider } from "@dnd-kit/react";
 import { useSortable } from "@dnd-kit/react/sortable";
 import { move } from "@dnd-kit/helpers";
-import { GripVertical, Pencil, Plus, Trash2 } from "lucide-react";
+import { GripVertical, Pencil, Plus, Star, Trash2 } from "lucide-react";
 
 import { useCopy } from "../hooks/useCopy";
 import { useAppStore } from "../stores/appStore";
@@ -35,9 +35,13 @@ export function AlignmentPhrases() {
     (s) => s.reorderAlignmentPhrases,
   );
   const deleteAlignmentPhrase = usePromptStore((s) => s.deleteAlignmentPhrase);
+  const setDefaultAlignmentPhrase = usePromptStore(
+    (s) => s.setDefaultAlignmentPhrase,
+  );
   const copy = useCopy();
   const flashId = useToastStore((s) => s.flashTargetId);
   const showToast = useToastStore((s) => s.show);
+  const showError = useToastStore((s) => s.showError);
 
   const phrases = useMemo(
     () => (activePhaseId != null ? (phrasesByPhase[activePhaseId] ?? []) : []),
@@ -67,7 +71,19 @@ export function AlignmentPhrases() {
       showToast("已永久删除");
     } catch (err) {
       // Backend rejects deleting a phase's default phrase — surface the reason.
-      showToast(err instanceof Error ? err.message : "删除失败");
+      showError(err instanceof Error ? err.message : "删除失败");
+    }
+  };
+
+  // P3-6: swap the phase's protocol default (create is always non-default and
+  // delete refuses the default, so this is the only way it can ever change).
+  const handleSetDefault = async (id: string) => {
+    if (activePhaseId == null) return;
+    try {
+      await setDefaultAlignmentPhrase(activePhaseId, id);
+      showToast("已设为默认");
+    } catch (err) {
+      showError(err instanceof Error ? err.message : "设为默认失败");
     }
   };
 
@@ -163,7 +179,7 @@ export function AlignmentPhrases() {
           target={editing}
           phaseId={activePhaseId}
           onClose={() => setEditing(null)}
-          onError={(msg) => showToast(msg)}
+          onError={showError}
         />
       )}
 
@@ -181,7 +197,7 @@ export function AlignmentPhrases() {
             const orderedIds = items.map((p) => p.id);
             void reorderAlignmentPhrases(activePhaseId, orderedIds).catch(
               (err) => {
-                showToast(err instanceof Error ? err.message : "排序保存失败");
+                showError(err instanceof Error ? err.message : "排序保存失败");
               },
             );
           }}
@@ -193,6 +209,7 @@ export function AlignmentPhrases() {
                 phrase={p}
                 index={idx}
                 isConfirming={confirmingId === p.id}
+                onSetDefault={() => void handleSetDefault(p.id)}
                 onEdit={() => setEditing({ mode: "edit", phrase: p })}
                 onRequestDelete={() => setConfirmingId(p.id)}
                 onCancelDelete={() => setConfirmingId(null)}
@@ -210,6 +227,7 @@ interface RowProps {
   phrase: AlignmentPhrase;
   index: number;
   isConfirming: boolean;
+  onSetDefault: () => void;
   onEdit: () => void;
   onRequestDelete: () => void;
   onCancelDelete: () => void;
@@ -220,6 +238,7 @@ function SortablePhraseRow({
   phrase,
   index,
   isConfirming,
+  onSetDefault,
   onEdit,
   onRequestDelete,
   onCancelDelete,
@@ -255,6 +274,16 @@ function SortablePhraseRow({
         />
       ) : (
         <ActionCluster>
+          {/* P3-6: only non-defaults offer the swap — the current default is
+              already marked by the 默认 badge. */}
+          {!phrase.isDefault && (
+            <IconButton
+              aria-label={`设为默认 ${phrase.name}`}
+              onClick={onSetDefault}
+            >
+              <Star size={13} aria-hidden strokeWidth={2} />
+            </IconButton>
+          )}
           <IconButton aria-label={`编辑 ${phrase.name}`} onClick={onEdit}>
             <Pencil size={13} aria-hidden strokeWidth={2} />
           </IconButton>
