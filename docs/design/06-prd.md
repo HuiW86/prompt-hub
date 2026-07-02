@@ -7,7 +7,7 @@ last_modified: 2026-07-01
 status: pre-code
 author: ai  # 🤖 AI 主笔 + 人审（CLAUDE §5.2）
 related: [[01-spec]], [[03-product-spec]], [[prompt-hub-mvp]], [[015-expose-mcp-write-pipeline]], [[mcp-write-pipeline]]
-description: 手动 AI 编程仪表盘的工程契约——数据模型三表式/状态机/升级回滚/NFR/Boundaries 三段式/安全字段（含本地+离线档）/ §10 MCP write pipeline 接口契约（drafts 收件箱 + 6 IPC + 14 MCP tool；v0.12 补 get_draft UI 水合 + composition promote 暂缓注记 + set_default_alignment_phrase / update_modifier group_kind 资产管理命令）
+description: 手动 AI 编程仪表盘的工程契约——数据模型/状态机/NFR/Boundaries/IPC + MCP 接口契约；写后端 / 数据层时召回。版本叙事见 CHANGELOG
 ---
 
 # PRD: prompt-hub（工程契约）

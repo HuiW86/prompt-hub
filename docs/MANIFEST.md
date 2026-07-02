@@ -1,12 +1,12 @@
 ---
 type: manifest
 project: prompt-hub
-version: v1.8
+version: v1.9
 status: active
 created: 2026-05-24
-last_modified: 2026-07-01
+last_modified: 2026-07-02
 audience: [human, ai]
-description: prompt-hub 项目前期准备文件总清单——按方法论 v1.3 六层架构（L0 宪法 / L1 产品契约 / L2 工程规格 / L3 实施规格 / L4 索引 / L5 协作契约）+ ADR + 实施方案 + 视觉原型 + AI 上下文 + 工程护栏（CI/gate 测试）。AI 进项目读完 CLAUDE.md 后接读本文件能 1 分钟拿全貌；不写行数（参考性强但易过期）。v1.8：+ADR-020 / +§11.6 工程护栏（ci.yml + 3 个源码级 gate 测试）/ 版本号除锈
+description: prompt-hub 项目前期准备文件总清单——按方法论 v1.3 六层架构（L0 宪法 / L1 产品契约 / L2 工程规格 / L3 实施规格 / L4 索引 / L5 协作契约）+ ADR + 实施方案 + 视觉原型 + AI 上下文 + 工程护栏（CI/gate 测试）。AI 进项目读完 CLAUDE.md 后接读本文件能 1 分钟拿全貌；不写行数（参考性强但易过期）。v1.9：§9 plans 补 3 份已收口 plan / +§11.7 技术调研（docs/research/）/ +ADR-011 Reserved 占位落盘
 related:
   - CLAUDE
   - 02-constitution
@@ -29,8 +29,9 @@ related:
 | 🤝 共创 | 6 | 6/6 ratified（2026-06-01 product-spec v0.7 / design-spec v0.8 omar 审定升 ratified）|
 | 🤖 AI 主笔（人审） | 6 | 4/6 ratified + prd pre-code + features in-progress |
 | 🤖 AI 派生人审（L5） | 2 | 2/2 active |
-| ADR 决策记录 | 19 | 17 Accepted + 1 Superseded（012）+ 1 Proposed（005）（+ 011 Reserved）|
-| 实施方案 | 1 | active |
+| ADR 决策记录 | 20 | 17 Accepted + 1 Superseded（012）+ 1 Proposed（005）+ 1 Reserved（011）|
+| 实施方案 | 6 | 4 done + 1 active + 1 in-progress |
+| 技术调研 | 2 | active（索引 + 1 份调研）|
 | 视觉原型 | 1 | v1 已归档至 archive/（2026-05-25）|
 | 项目 AI 上下文 | 2 | active |
 | 反思沉淀 | 1 | active（2026-06-04 新增 learnings v0.1）|
@@ -105,7 +106,7 @@ related:
 
 ---
 
-## §8 ADR 决策记录（19 份）
+## §8 ADR 决策记录（20 份）
 
 | 编号 | 标题 | 状态 |
 |---|---|---|
@@ -120,7 +121,7 @@ related:
 | 008 | enable-macos-private-api | Accepted |
 | 009 | choose-styling (CSS Modules) | Accepted |
 | 010 | doc-directory-restructure | Accepted |
-| 011 | _reserved_（计划：search UsageSource，HANDOFF backlog） | — |
+| 011 | search-usagesource（编号预留占位，复议条件：搜索功能进入 plan 时） | Reserved（占位文件 2026-07-02 落盘） |
 | 012 | lock-visual-quality-anchor (Linear 整体气质) | Superseded by ADR-019（2026-06-26）；原 Accepted（2026-05-24） |
 | 013 | alignment-phrases-tab-inclusion（AlignmentPhrases 独立 region + Tab cycle 6 tab-reachable，追认 ADR-012 Phase 3） | Accepted（2026-05-25） |
 | 014 | nspanel-isa-swizzle（NSPanel 子类 override canBecomeKeyWindow + isa-swizzle 取得 borderless key-window 资格，下位于 ADR-008） | Accepted（2026-06-03） |
@@ -133,13 +134,16 @@ related:
 
 ---
 
-## §9 实施方案（3 份 · 🤝 共创）
+## §9 实施方案（6 份 · 🤝 共创）
 
 | 路径 | 内容 | 状态 |
 |---|---|---|
-| `docs/plans/prompt-hub-mvp.md` | 五阶段任务清单 | v0.8（第一阶段 MVP 收尾中） |
-| `docs/plans/mcp-write-pipeline.md` | MCP write pipeline 实施 plan（drafts staging + 14 tool 双层 + workspace 4 crate 物理拆分） | v0.2（2026-05-27 · pre-code） |
+| `docs/plans/prompt-hub-mvp.md` | 五阶段任务清单 | v0.8 · active（M0 四项全绿，第一阶段 MVP 收尾中） |
+| `docs/plans/mcp-write-pipeline.md` | MCP write pipeline 实施 plan（drafts staging + 14 tool 双层 + workspace 4 crate 物理拆分） | v0.2 · done（2026-06-03 M-X.1–X.3 全收口） |
 | `docs/plans/adr-017-auto-update.md` | 自动更新实施 plan（6 阶段：密钥 / 配置接入 / 客户端+UI / Vite 加固 / CI 出包 / 验证）| v0.1（2026-06-19 · Phase 1-4 done，Phase 6 真机待办）|
+| `docs/plans/asset-editing-and-adaptive-layout.md` | 资产编辑 + 自适应布局 plan（4 类资产编辑 UI + dnd-kit 区域内排序 + react-resizable-panels 可拖分隔条，分 P1–P4）| v0.6 · done（2026-06-08 P1–P4 全收口，2026-06-11 验收收口）|
+| `docs/plans/scene-phrase-editing.md` | Scene 场景话术（Phrase）编辑 plan（CRUD + 拖拽排序 + SubStage 归属，migration 0009 order_index）| done（2026-06-22 收口 9/9）|
+| `docs/plans/scene-substage-editing.md` | Scene/SubStage 结构编辑 plan（容器 + 子阶段 CRUD/排序 + seed 0011，补 Phrase 编辑 defer 的死维度）| done（2026-06-27 收口）|
 
 ---
 
@@ -182,6 +186,17 @@ related:
 | `src/styles/token-gate.test.ts` | CSS token 纪律 gate——组件 CSS 禁裸 px/hex/ms + 禁 `var(--layer)` 作文字色（P0-1 新规则） | active |
 | `src/components/__tests__/b2-separation.test.ts` | B2 源码级 gate——任务层 4 组件零 alignment 引用 + DraftInbox scoped 断言（取代已删 composition-b2-separation.test.ts） | active（2026-07-01 P2-2 新增）|
 | `src/ipc/ipc-contract.test.ts` | IPC 三方契约 gate——commands.rs ↔ generate_handler ↔ ipc/index.ts 46 命令双向等价 + 防空转守卫 | active（2026-07-01 P2-3 新增）|
+
+---
+
+## §11.7 技术调研（2 份）
+
+> 编码前的结构化调研产物，支撑 ADR / plan 选型；索引见 `docs/research/README.md`，日期倒序。
+
+| 路径 | 内容 | 状态 |
+|---|---|---|
+| `docs/research/README.md` | 技术调研索引表 | active |
+| `docs/research/2026-06-04-resizable-panels.md` | react-resizable-panels 多区域可调布局选型调研（支撑 ADR-016） | 已收口（ADR-016 Accepted 2026-06-04）|
 
 ---
 

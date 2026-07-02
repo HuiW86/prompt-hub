@@ -4,10 +4,10 @@ project: prompt-hub
 version: v0.13
 created: 2026-05-18
 last_modified: 2026-07-01
-status: ratified  # 🤝 共创，v0.10 UI 一致性治理 omar 人审通过（2026-06-21）；v0.11 ADR-018 涟漪待人审；v0.12 ADR-019 推翻 flat 锚点（omar 拍板 Option A）待人审；v0.13 产品走查修缮批次涟漪（ADR-020 暗 band + light 重绘 + preset 落地等）待人审
+status: ratified  # v0.10 已 omar 审定（2026-06-21）；v0.11–v0.13 增量待人审
 author: co  # 🤝 人机共创（CLAUDE §5.2）
 related: [[01-spec]], [[02-constitution]], [[03-product-spec]], [[012-lock-visual-quality-anchor]], [[019-supersede-flat-visual-anchor]], [[020-restore-protocol-dark-band]], [[CLAUDE-DESIGN]], [[015-expose-mcp-write-pipeline]], [[016-choose-dnd-and-resizable-layout]], [[018-absorb-promptscape-design]], [[asset-editing-and-adaptive-layout]]
-description: 手动 AI 编程仪表盘的视觉规范——token 命名与 tokens.css 单一真源对齐（--t-/--s-/ontology + neutral scale），WCAG light 实测 + dark v1.0 实装；v0.7 加 §8-§13 bundle 派生 6 章；v0.8 涟漪 ADR-015 加 §10.4 MCP write pipeline 组件视觉；v0.9 涟漪 ADR-016 加 §10.5 全景区可拖列布局 + PanoramaSeparator；v0.10 UI 一致性治理：§2.2 圆角归一 + §10.2 primitive 清单 + §10.6 Card vs List 矩阵 + §10.7 Button 矩阵 + §11 flash keyframes；v0.11 涟漪 ADR-018 Promptscape 吸收：§2.4.4 中性强调色 + scrim token / §2.5 主题三态 / §10.3+§10.8 Header·ProtocolBand·SettingsModal / §13.1 中性强调非第四语义层；**v0.12 ⚠️ 重大涟漪 ADR-019 推翻 flat 锚点**：§8.1 锚点改 Linear typography + subtle elevation / §8.2 撤 box-shadow 禁项 + 加 elevation 允许范围 / §10.1 hover 允许 subtle shadow / §2.4.1 颜色本体论降「视觉选择级」转中性 / §5 反设计撤反阴影 + 颜色冗余编码改靠位置+形状 / §13.1 解除「跨层=违宪」措辞（颜色非 B2 强制）；**v0.13 产品走查修缮涟漪（2026-07-01）**：§2.4.2 light neutral scale 重绘（muted canvas + 纯白抬升卡）/ §2.4.5+§10.8.2 协议层暗 band `--band-*` token（ADR-020）/ §8.2.1 elevation 落地契约（resting `--shadow-1` + hover `--lift-1`）/ §9 preset 已落地 typography.module.css / §10.1 focus offset 分类规则 / §10.3+§10.6 ModifierGrid chip 参考面新形态 / §10.7 intent=accent + primary 文字色 `--fg-1` / §11 Toast intent 分级 / EmptyState 富空态 + Chip transparent 截断 / §13.1 RecentList 徽标中性化
+description: 手动 AI 编程仪表盘的视觉规范——tokens.css 单一真源 + 主题/elevation/组件视觉契约；写 CSS / 视觉时召回。版本叙事见 CHANGELOG
 ---
 
 # Design Spec: prompt-hub（视觉规范）
@@ -877,7 +877,7 @@ bundle 派生的 3 个跨组件 chrome primitive：
 - 显式小映射（非全量 lucide 注册表）守 §12 bundle 克制——新增 seed/内置 Scene 用到的 lucide 名需同步登记进 `SCENE_LUCIDE`。
 - **seed 默认走 lucide 名**：`0002_seed.sql` 三 Scene 自 `📐/🔍/🔧` 改 `drafting-compass`/`microscope`/`wrench`，与设计稿 lucide 风格一致；emoji 仅作用户自建时的 fallback 形态。
 
-**当前 v1.0 实测**（`src-tauri/migrations/0002_seed.sql`）：
+**当前 v1.0 实测**（`src-tauri/crates/repo-core/migrations/0002_seed.sql`）：
 - `scene-plan`: `📐` 方案设计
 - `scene-research`: `🔍` 调研
 - `scene-debug`: `🔧` 排查

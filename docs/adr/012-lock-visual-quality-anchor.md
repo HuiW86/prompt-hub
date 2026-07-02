@@ -2,7 +2,7 @@
 type: adr
 project: prompt-hub
 id: ADR-012
-status: Accepted
+status: Superseded # by ADR-019（2026-06-26 omar 拍板推翻 flat 锚点）；原 Accepted 2026-05-24
 date: 2026-05-24
 description: 锁定 Linear 整体气质为 prompt-hub 视觉质感锚点（Option A）；从此 design-spec 不再 token-only，新增「质感锚点 / typography 组合 / 组件 pattern / 状态规范 / icon 系统 / 视觉权重」六章；不触动 [[02-constitution#B2]] 色块即本体与反设计清单底线
 related:

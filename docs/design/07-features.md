@@ -4,10 +4,10 @@ project: prompt-hub
 version: v1.8
 created: 2026-05-19
 last_modified: 2026-07-01
-status: in-progress  # S1 主形态 MVP 5 模块 + 跨模块 P0 多项 done（ADR-012 Phase 1-5 全 done）；M-X 全收口——数据层 + workspace + MCP server + UI 收件箱（草稿 tab + 待审 badge + 5 IPC + schema recheck）done；M0-4 签名公证链路 done（M0 四项全绿）；ADR-017 自动更新客户端 + CI 出包链路 done（dry-run 端到端验证）；design-spec v0.10 UI 一致性治理 A 阶段 primitives 迁移 done（真机验证待补）；v1.3 UI 减负移除 Composition/Modifier 编辑面板（Tab cycle 8→6，数据层保留）；v1.8 产品走查修缮批次 12 功能 + 7 质量/治理项 done（含 ADR-020 暗 band）
+status: in-progress  # S1 进行中（M0 四项全绿）；进度叙事见 §4 节奏表与 CHANGELOG
 author: ai  # 🤖 AI 主笔 + 人审（CLAUDE §5.2）
 audience: [human, ai]
-description: prompt-hub 功能清单运营视图——功能 × 状态 × 测试覆盖 × 版本，单一事实源；v1.8 新增 §3.12 产品走查修缮批次（Draft 促升前编辑 / composition promote 暂缓 / Modifier 管理簇 / 设为默认 / Scene·SubStage 排序 UI / Toast 分级 / 更新失败分级 / 启动兜底 / 暗 band ADR-020 / light 重绘 / auto-fit 全景 / 像素对齐包 + CI·B2 gate·IPC gate 等治理项）；v1.3 UI 减负移除主仪表盘 Composition/Modifier 编辑面板（Tab cycle 8→6，资产类型保留在数据层），前序 v1.2 §3.10 UI 一致性治理区 / v1.1 §3.9 自动更新区
+description: prompt-hub 功能清单运营视图——功能 × 状态 × 测试覆盖 × 版本的单一事实源；查/改功能状态时召回。版本叙事见 CHANGELOG
 related:
   - 06-prd
   - prompt-hub-mvp
@@ -315,7 +315,7 @@ related:
 - M0-4 签名公证链路（2026-06-03）: M0 四项全绿 — Developer ID 签名 + 公证 Accepted + Gatekeeper 放行 + release 运行时不黑屏（runbook [[m0-4-macos-signing]]）
 - 下一动作：bench 脚本回归（`bench:cold-start`/`hotkey-wake`）；P2 defer：`create_draft` 单写 size-cap（M-X.4）
 
-**自动同步约定**（v0.3+ 启用）：
-- 每次 commit 主分支后跑 `scripts/update-features.sh` 同步状态（脚本待 [[11-test-spec]] 启动后加）
+**同步约定**（v0.3+ 启用）：
+- 每次 commit 主分支后**手动**同步本清单状态（原设想的 `scripts/update-features.sh` 自动化脚本从未落地，现状为手动维护；若未来补脚本再回改本条）
 - 单元测试覆盖率由 vitest coverage report 直接填入（替换当前「集成 / 单元未量化」占位）
 - 责任人字段单人项目暂时全为 `omar`，多人协作时按 commit author 自动填

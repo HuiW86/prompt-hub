@@ -4,10 +4,10 @@ project: prompt-hub
 version: v0.13
 created: 2026-05-18
 last_modified: 2026-07-01
-status: draft  # 🤝 共创，v0.13 产品走查修缮批次（Draft 编辑态 / Modifier 最小管理口 / 设为默认 / Scene·SubStage 排序 / composition promote 暂缓等）+ v0.12 涟漪数据导入导出设置页 + v0.11 scene-substage-editing 结构编辑契约 + v0.10 ADR-018 Promptscape 吸收待 omar 人审；前序 v0.8 已 ratified
+status: draft  # v0.10 起增量待 omar 人审；前序 v0.8 已 ratified
 author: co  # 🤝 人机共创（CLAUDE §5.2）
 related: [[01-spec]], [[05-design-spec]], [[06-prd]], [[012-lock-visual-quality-anchor]], [[019-supersede-flat-visual-anchor]], [[020-restore-protocol-dark-band]], [[013-alignment-phrases-tab-inclusion]], [[015-expose-mcp-write-pipeline]], [[017-enable-auto-update]], [[018-absorb-promptscape-design]]
-description: 手动 AI 编程仪表盘的 UI 契约——双形态架构/布局/点击路径/交互频率/状态反馈/引导/用户旅程/主形态 UI 草案；v0.13 产品走查修缮批次：Draft 促升前编辑 + composition promote 暂缓 / Modifier aside 参考面最小管理口 / 对齐话术「设为默认」/ Scene·SubStage 排序 UI /「未分组」列头 / 更新失败 auto-manual 分级；v0.9 移除主仪表盘的 Composition/Modifier 编辑面板（UI 减负·选项 2），Tab cycle 8 → 6，资产类型保留在数据层；v0.10 涟漪 ADR-018 Promptscape 吸收：§13.2 加 Header 区域0 + 协议层 band + 任务层 3→2 列 + 设置弹窗区域9；v0.7 涟漪 ADR-015 草稿收件箱 tab + 待审 badge
+description: 手动 AI 编程仪表盘的 UI 契约——双形态架构/布局/点击路径/状态反馈/用户旅程/主形态 UI 草案；写 UI / 改交互时召回。版本叙事见 CHANGELOG
 ---
 
 # Product Spec: prompt-hub（UI 契约）

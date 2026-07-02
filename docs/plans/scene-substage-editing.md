@@ -1,3 +1,11 @@
+---
+type: plan
+project: prompt-hub
+status: done
+created: 2026-06-27
+description: Scene/SubStage 结构编辑 plan——容器与子阶段 CRUD + 排序 + seed 0011，补 Phrase 编辑 defer 的死维度；2026-06-27 收口
+---
+
 # Plan — Scene / SubStage 结构编辑
 
 > 状态：Done（2026-06-27 收口，真机 CRUD 落盘待验）。补齐 [[scene-phrase-editing]] 当初有意 defer 的另一半——Scene 容器本体 + SubStage 子阶段的增/改/删/排序。契约现成（[[06-prd#6.4]] 已定义 Scene/SubStage 字段、FK、删除语义），不违 [[01-spec#8.4]]（§8.4 只禁嵌套子 Scene，明确「SubStage 是同级分组」）。

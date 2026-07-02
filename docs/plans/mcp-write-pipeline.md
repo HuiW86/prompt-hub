@@ -4,7 +4,7 @@ project: prompt-hub
 version: v0.2
 created: 2026-05-27
 last_modified: 2026-05-27
-status: pre-code
+status: done  # completed 2026-06-03: 14 MCP tools + workspace 4-crate split + drafts UI inbox (M-X.1–X.3) all shipped
 author: co  # 🤝 人机共创（CLAUDE §5.2）
 related:
   - 01-spec

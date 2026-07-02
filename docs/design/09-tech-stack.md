@@ -7,7 +7,7 @@ updated: 2026-06-19
 status: ratified  # ADR-001~004/006~009/015/016/017 全部 Accepted；ADR-005（prompt-combiner 复用）仍 Proposed
 author: ai  # 🤖 AI 主笔 + 人审（CLAUDE §5.2）
 audience: [ai]
-description: prompt-hub 技术栈快照——全栈拍板：Tauri 2.x + React 19.2 + rusqlite 0.32 + pnpm 10.x + Zustand 5 + Vitest 4 + CSS Modules，macos-private-api 启用；v1.3 加 tauri-plugin-updater + plugin-process（ADR-017 自动更新）+ GitHub Actions 出包；v1.2 加 rmcp 1.7（prompt-hub-mcp binary）+ Cargo workspace 4 crate
+description: prompt-hub 技术栈快照——全栈选型与依赖版本锁定（Tauri 2.x + React 19.2 等决策表）；生成 import / 评估依赖时召回
 related:
   - 02-constitution
   - prompt-hub-mvp

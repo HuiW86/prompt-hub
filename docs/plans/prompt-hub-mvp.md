@@ -4,7 +4,7 @@ project: prompt-hub
 version: v0.8
 created: 2026-05-18
 last_modified: 2026-05-20
-status: pre-code
+status: active  # M0 milestone all green (2026-06-03); S1 main-form MVP in progress
 author: co  # 🤝 人机共创（CLAUDE §5.2）
 related: [[01-spec]], [[03-product-spec]], [[06-prd]], [[09-tech-stack]], [[001-choose-desktop-runtime]], [[002-choose-frontend-framework]], [[003-choose-data-persistence]], [[004-choose-package-manager]], [[006-choose-state-management]], [[007-choose-test-stack]], [[008-enable-macos-private-api]], [[009-choose-styling]]
 description: 手动 AI 编程仪表盘的实施任务清单——M0 技术验证里程碑 + 五阶段（主形态优先）；v0.8 新增 M0 风险前移（cargo build 实测 / 200ms 唤起 spike / 签名公证链路）

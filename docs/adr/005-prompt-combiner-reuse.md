@@ -28,6 +28,9 @@ related:
 
 `Proposed`（2026-05-19，待调研后转 Accepted）
 
+- Last reviewed: 2026-07-02
+- 复议条件：omar 提供 prompt-combiner 仓库后启动调研；45 天未复议则再次上浮。
+
 ## 3. Context
 
 ### 触发事件

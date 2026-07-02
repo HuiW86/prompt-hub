@@ -1,3 +1,11 @@
+---
+type: plan
+project: prompt-hub
+status: done
+created: 2026-06-22
+description: Scene 场景话术（Phrase）编辑 plan——CRUD + 拖拽排序 + SubStage 归属，migration 0009 order_index；2026-06-22 收口 9/9
+---
+
 # Scene 场景话术（Phrase）编辑功能
 
 Status: done

@@ -1,7 +1,7 @@
 ---
 type: adr
 project: prompt-hub
-status: accepted
+status: Accepted
 description: 选择 tauri-plugin-updater + GitHub Releases 作为自动更新机制，mac 先行后全平台；记录 A2 隐私铁律的出站网络豁免边界
 ---
 
