@@ -6,14 +6,10 @@
    Hotkey badge
    ============================ */
 .kbd {
+  composes: ph-hotkey from "../../styles/typography.module.css";
   display: inline-flex;
   align-items: center;
   padding: var(--s-0_5) var(--s-1_25);
-  font-family: var(--font-mono);
-  font-size: var(--t-12);
-  font-weight: var(--w-500);
-  line-height: 1;
-  color: var(--fg-2);
   background: var(--surface-2);
   border: var(--hairline) solid var(--border-1);
   border-radius: var(--r-2);
@@ -22,7 +18,6 @@
 
 .kbdSm {
   padding: var(--s-0_5) var(--s-1);
-  font-size: var(--t-11);
 }
 
 /* ============================
@@ -51,12 +46,7 @@
 }
 
 .regionHeaderTitle {
-  font-family: var(--font-sans);
-  font-size: var(--t-14);
-  font-weight: var(--w-600);
-  line-height: 1;
-  letter-spacing: var(--tr-tight);
-  color: var(--fg-1);
+  composes: ph-region-header from "../../styles/typography.module.css";
 }
 
 /* Region descriptor (Promptscape "主名 · 副述") — a muted suffix to the title. */
@@ -91,23 +81,97 @@
    Empty state
    ============================ */
 .empty {
+  composes: ph-empty from "../../styles/typography.module.css";
   flex: 1;
   display: flex;
   flex-direction: column;
   align-items: center;
   justify-content: center;
   gap: var(--s-2_5);
-  color: var(--fg-3);
-  font-family: var(--font-sans);
-  font-size: var(--t-13);
-  line-height: var(--lh-body);
-  text-align: center;
 }
 
 .emptyHint {
   display: inline-flex;
   align-items: center;
   gap: var(--s-1_5);
+}
+
+/* Rich empty-state slots (Promptscape, ADR-018 补遗 P3-5): dashed placeholder
+   frame + icon box + headline + CTA. Legacy single-slot usage is untouched. */
+.emptyFramed {
+  margin: var(--s-3) var(--s-3_5) var(--s-3_5);
+  padding: var(--s-5);
+  background: var(--surface-1);
+  border: var(--hairline) dashed var(--border-2);
+  border-radius: var(--r-4);
+}
+
+/* Horizontal compact strip (Promptscape empty Macro). */
+.emptyRow {
+  flex: none;
+  flex-direction: row;
+  align-items: center;
+  gap: var(--s-3_5);
+  padding: var(--s-3) var(--s-4);
+}
+
+/* Doubled selector: overrides .ph-empty's centered text regardless of where
+   Vite emits the composed typography module in the bundle (equal-specificity
+   overrides of preset longhands are cascade-order-fragile — see typography
+   module header). */
+.emptyRow.emptyRow {
+  text-align: left;
+}
+
+.emptyIcon {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: var(--s-12);
+  height: var(--s-12);
+  flex: none;
+  border-radius: var(--r-4);
+  background: var(--surface-2);
+  border: var(--hairline) solid var(--border-1);
+  color: var(--fg-3);
+}
+
+.emptyRow .emptyIcon {
+  width: var(--s-8);
+  height: var(--s-8);
+  border-radius: var(--r-3);
+}
+
+.emptyBody {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: var(--s-1);
+  min-width: 0;
+}
+
+.emptyRow .emptyBody {
+  flex: 1;
+  align-items: flex-start;
+}
+
+.emptyTitle {
+  font: var(--w-600) var(--t-16) / var(--lh-tight) var(--font-sans);
+  letter-spacing: var(--tr-tight);
+  color: var(--fg-1);
+}
+
+.emptyRow .emptyTitle {
+  font: var(--w-600) var(--t-13) / var(--lh-tight) var(--font-sans);
+}
+
+.emptyRow .emptyBody > div:not(.emptyTitle) {
+  font-size: var(--t-12);
+}
+
+.emptyAction {
+  display: flex;
+  flex: none;
 }
 
 /* ============================================================
@@ -238,16 +302,32 @@
   border-color: var(--border-3);
 }
 
-/* intent=primary: current-layer fill */
+/* intent=primary: current-layer fill. Text is --fg-1, never --layer:
+   --layer resolves to a border alias (--border-3) which lands at ~1.4:1
+   contrast on lifted surfaces (design-spec §2.3 readability regression). */
 .btnPrimary {
   background: var(--layer-16);
   border-color: var(--layer);
-  color: var(--layer);
+  color: var(--fg-1);
 }
 
 .btnPrimary:hover:not(:disabled) {
   background: var(--layer);
   color: var(--layer-fg);
+}
+
+/* intent=accent: neutral-accent filled CTA (Promptscape empty-state primary,
+   ADR-018 补遗 P3-5). Accent is the non-semantic emphasis color (§13.1), so
+   this stays a visual choice, not a layer marker. */
+.btnAccent {
+  background: var(--accent);
+  border-color: var(--accent);
+  color: var(--accent-fg);
+}
+
+.btnAccent:hover:not(:disabled) {
+  box-shadow: var(--shadow-1);
+  color: var(--accent-fg);
 }
 
 /* intent=subtle: text-only, no border */
@@ -318,8 +398,15 @@
   background: var(--surface-2);
   border: var(--hairline) solid var(--border-2);
   border-radius: var(--r-3);
+  /* .ph-card-body metrics (§10.2.2), but typed text stays --fg-1: the preset's
+     --fg-2 is a preview tone and would dim user input below comfort. Declared
+     longhand here (composes is illegal on grouped selectors). */
+  font-family: var(--font-sans);
+  font-size: var(--t-13);
+  font-weight: var(--w-400);
+  line-height: var(--lh-body);
+  letter-spacing: var(--tr-normal);
   color: var(--fg-1);
-  font: var(--w-400) var(--t-13) / var(--lh-body) var(--font-sans);
 }
 
 .editorInput {
@@ -353,23 +440,33 @@
 
 /* ── Chip — single tag (§10.2.2) ─────────────────────────────────────── */
 .chip {
+  composes: ph-card-body from "../../styles/typography.module.css";
   display: inline-flex;
   align-items: center;
   gap: var(--s-1_5);
   height: var(--h-chip);
+  max-width: var(--w-chip-max);
   padding: 0 var(--s-2_25);
+  overflow: hidden;
   appearance: none;
-  background: var(--surface-1);
+  background: transparent; /* border-only baseline (§10.2.2) */
   border: var(--hairline) solid var(--border-1);
   border-radius: var(--r-2);
-  color: var(--fg-1);
   cursor: pointer;
   user-select: none;
   white-space: nowrap;
-  font: var(--w-500) var(--t-12) / 1 var(--font-sans);
   transition:
     border-color var(--d-fast) var(--ease),
     background-color var(--d-fast) var(--ease);
+}
+
+/* Text slot — string children are wrapped here (Chip.tsx) so overlong names
+   ellipsize inside the capped chip; the full name rides the title attribute. */
+.chipLabel {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 
 .chip:hover {

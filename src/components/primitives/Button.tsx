@@ -3,12 +3,13 @@ import type { ComponentPropsWithRef } from "react";
 import { cx, type Layer } from "./cx";
 import styles from "./primitives.module.css";
 
-type Intent = "primary" | "ghost" | "subtle";
+type Intent = "primary" | "ghost" | "subtle" | "accent";
 
 const intentClass: Record<Intent, string> = {
   primary: styles.btnPrimary,
   ghost: styles.btnGhost,
   subtle: styles.btnSubtle,
+  accent: styles.btnAccent,
 };
 
 interface ButtonProps extends ComponentPropsWithRef<"button"> {

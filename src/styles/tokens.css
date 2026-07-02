@@ -69,22 +69,26 @@
   --scrim: rgba(0, 0, 0, 0.45);
 
   /* Elevation — subtle drop-shadow (ADR-019, design-spec §8.2.1).
-     Apply ONLY on floating surfaces (card/banner/overlay/popover) hover &
-     raised states. Dark canvas needs deeper alpha to read against #0e0e10.
+     Apply on floating surfaces (card/banner/overlay/popover) and as the
+     RESTING shadow of raised surface-1 containers (Promptscape, ADR-018
+     补遗 P3-3). Dark canvas needs deeper alpha to read against #0e0e10.
      No glow / no inset / no colored / no multi-layer shadow. */
-  --shadow-1: 0 1px 2px rgba(0, 0, 0, 0.4); /* card / banner hover lift */
+  --shadow-1: 0 1px 2px rgba(0, 0, 0, 0.4); /* card resting / hover lift */
   --shadow-2: 0 4px 12px rgba(0, 0, 0, 0.5); /* overlay / popover */
 }
 
 /* ============================================================
    1a. LIGHT mode override (system preference + .light class)
+   Elevation direction follows the Promptscape handoff (ADR-018 补遗 P3-3):
+   muted-gray canvas, PURE WHITE raised cards (+ resting --shadow-1), then
+   surface-2/3 step back DOWN as nested muted fills / pressed states.
    ============================================================ */
 @media (prefers-color-scheme: light) {
   :root:not(.dark) {
-    --canvas: #fafaf9;
-    --surface-1: #f2f2f0;
-    --surface-2: #eaeae7;
-    --surface-3: #ddddd9;
+    --canvas: #f2f2f0; /* muted gray page bg — white cards lift off it */
+    --surface-1: #ffffff; /* raised card / container (pairs with --shadow-1) */
+    --surface-2: #ececea; /* nested muted fill (chips, tracks, card heads) */
+    --surface-3: #e0e0dc; /* strongest fill — selected / pressed / ::selection */
 
     --border-1: #e2e2de;
     --border-2: #cfcfca;
@@ -105,10 +109,10 @@
 }
 
 :root.light {
-  --canvas: #fafaf9;
-  --surface-1: #f2f2f0;
-  --surface-2: #eaeae7;
-  --surface-3: #ddddd9;
+  --canvas: #f2f2f0;
+  --surface-1: #ffffff;
+  --surface-2: #ececea;
+  --surface-3: #e0e0dc;
   --border-1: #e2e2de;
   --border-2: #cfcfca;
   --border-3: #b6b6b0;
@@ -159,6 +163,56 @@
 :root.accent-amber {
   --accent: var(--accent-swatch-amber);
   --accent-fg: #ffffff;
+}
+
+/* ============================================================
+   1c. Protocol band — fixed hierarchy colors (ADR-020).
+   The protocol layer renders as a DARK band in both themes, per the
+   Promptscape draft (band background oklch(0.165 0 0) + foreground
+   oklch(0.985 0 0), translated to the project neutral hex ramp).
+   These are position-dimension layer colors, NOT the accent-semantic
+   colors ADR-019 abolished: they paint the container, never an asset
+   type. Values are mode-invariant by design — in light mode the band
+   is the draft's dark island; in dark mode the same values read as a
+   lifted surface (~surface-2 depth), keeping a discernible luminance
+   step off the #0e0e10 canvas.
+   ============================================================ */
+:root {
+  --band-bg: #18181b;
+  --band-fg: #ececee; /* primary text on the band */
+  --band-fg-muted: #b4b4b8; /* secondary text (labels, pill) */
+  --band-fg-faint: #7e7e84; /* meta text (shortcuts, counts) */
+  --band-fg-ghost: #55555b; /* dimmed markers (inactive dots) */
+  --band-surface-1: #232328; /* chip / row fill on the band */
+  --band-surface-2: #2e2e34; /* hover / nested fill */
+  --band-surface-3: #3a3a42; /* pressed / selected / flash fill */
+  --band-border-1: #2e2e34;
+  --band-border-2: #3a3a42;
+  --band-border-3: #4a4a52;
+
+  /* Band-safe accent: the neutral swatch resolves to --fg-1, which in light
+     mode is dark ink — invisible on the dark band. Focus rings, active-phase
+     underline and chip dots inside the band use this alias instead; colored
+     swatches keep their hue (readable on the dark band, see overrides). */
+  --band-accent: var(--band-fg);
+  --band-accent-fg: var(--band-bg);
+}
+
+:root.accent-blue {
+  --band-accent: var(--accent-swatch-blue);
+  --band-accent-fg: #ffffff;
+}
+:root.accent-green {
+  --band-accent: var(--accent-swatch-green);
+  --band-accent-fg: #ffffff;
+}
+:root.accent-violet {
+  --band-accent: var(--accent-swatch-violet);
+  --band-accent-fg: #ffffff;
+}
+:root.accent-amber {
+  --band-accent: var(--accent-swatch-amber);
+  --band-accent-fg: #ffffff;
 }
 
 /* ============================================================
@@ -239,6 +293,9 @@
    ============================================================ */
 :root {
   --h-chip: 24px;
+  /* Chip primitive width cap — long names ellipsize past this instead of
+     stretching the aside column (design-spec §10.2.2; full name via title). */
+  --w-chip-max: 200px;
   --h-phasebar: 44px;
   --h-phrases: 44px;
   --h-statusbar: 28px;
@@ -275,6 +332,10 @@
   --d-fast: 120ms;
   --d-base: 160ms;
   --d-slow: 200ms;
+
+  /* Hover lift offset — interactive cards/rows rise together with --shadow-1
+     (Promptscape hover language, ADR-018 补遗 P3-5; elevation rules §8.2.1). */
+  --lift-1: -1px;
 }
 
 /* ============================================================

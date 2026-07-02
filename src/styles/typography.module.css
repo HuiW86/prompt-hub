@@ -1,0 +1,85 @@
+/* Typography presets — design-spec §9 single source.
+ * Each .ph-* class fixes the size + weight + line-height + tracking + color
+ * combination for one text role. Component CSS composes these instead of
+ * re-declaring scattered font shorthands (§9 hard rule); local rules may
+ * override single longhands (e.g. input text color) but never re-derive a
+ * whole combination. Longhand properties (not the `font:` shorthand) so a
+ * composing class can override one axis without resetting the rest.
+ *
+ * Cascade caveat: this module is pulled in via `composes` and Vite emits it
+ * mid-bundle, so an equal-specificity local rule overriding a preset longhand
+ * is NOT guaranteed to win (dev and build order differ). If a composing rule
+ * must override a preset property, raise specificity (double the class, e.g.
+ * primitives .emptyRow.emptyRow) instead of relying on source order.
+ */
+
+/* Region titles (PhaseBar / Macro / Scene headers). */
+.ph-region-header {
+  font-family: var(--font-sans);
+  font-size: var(--t-14);
+  font-weight: var(--w-600);
+  line-height: var(--lh-tight);
+  letter-spacing: var(--tr-tight);
+  color: var(--fg-1);
+}
+
+/* Card titles (Macro card / Scene row / DraftCard name). */
+.ph-card-title {
+  font-family: var(--font-sans);
+  font-size: var(--t-14);
+  font-weight: var(--w-500);
+  line-height: var(--lh-tight);
+  letter-spacing: var(--tr-normal);
+  color: var(--fg-1);
+}
+
+/* Card body copy (Macro summary / phrase preview / Chip label / Input text). */
+.ph-card-body {
+  font-family: var(--font-sans);
+  font-size: var(--t-13);
+  font-weight: var(--w-400);
+  line-height: var(--lh-body);
+  letter-spacing: var(--tr-normal);
+  color: var(--fg-2);
+}
+
+/* Meta text (usage counts / timestamps / count badges / uppercase tags). */
+.ph-meta {
+  font-family: var(--font-sans);
+  font-size: var(--t-11);
+  font-weight: var(--w-400);
+  line-height: var(--lh-tight);
+  letter-spacing: var(--tr-meta);
+  color: var(--fg-3);
+}
+
+/* Hotkey badges (⌘K / ⌥Space) — mono. */
+.ph-hotkey {
+  font-family: var(--font-mono);
+  font-size: var(--t-11);
+  font-weight: var(--w-500);
+  line-height: var(--lh-tight);
+  letter-spacing: var(--tr-normal);
+  color: var(--fg-2);
+}
+
+/* EmptyState centered hint text. */
+.ph-empty {
+  font-family: var(--font-sans);
+  font-size: var(--t-13);
+  font-weight: var(--w-400);
+  line-height: var(--lh-body);
+  letter-spacing: var(--tr-normal);
+  color: var(--fg-3);
+  text-align: center;
+}
+
+/* Code snippets / Modifier raw text — mono. */
+.ph-code {
+  font-family: var(--font-mono);
+  font-size: var(--t-12);
+  font-weight: var(--w-400);
+  line-height: var(--lh-body);
+  letter-spacing: var(--tr-normal);
+  color: var(--fg-2);
+}

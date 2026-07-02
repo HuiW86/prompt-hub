@@ -33,6 +33,14 @@ const NAKED = [
   { label: "naked px length", re: /\b\d+px\b/g },
   { label: "naked hex color", re: /#[0-9a-fA-F]{3,8}\b/g },
   { label: "naked ms duration", re: /\b\d+ms\b/g },
+  // --layer is a structural alias (resolves to --border-3): as a text color it
+  // drops to ~1.4:1 contrast on lifted surfaces (the .btnPrimary regression).
+  // Only the bare `color:` property is banned; border-color / background-color
+  // and derived vars (--layer-fg / --layer-8 / --layer-16) stay legal.
+  {
+    label: "var(--layer) as text color",
+    re: /(?:^|[;{])\s*color\s*:\s*var\(--layer\s*(?:,[^)]*)?\)/g,
+  },
 ];
 
 describe("CSS token gate — no naked px / hex / ms outside tokens.css", () => {
