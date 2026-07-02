@@ -27,7 +27,7 @@ related:
 |---|---|---|
 | 🧑 人主笔 | 2 | 2/2 ratified |
 | 🤝 共创 | 6 | 6/6 ratified（2026-06-01 product-spec v0.7 / design-spec v0.8 omar 审定升 ratified）|
-| 🤖 AI 主笔（人审） | 6 | 4/6 ratified + prd pre-code + features in-progress |
+| 🤖 AI 主笔（人审） | 6 | 2/6 ratified（tech-stack / ops-spec）+ sitemap·test-spec draft v0.2 待人审 + prd pre-code + features in-progress |
 | 🤖 AI 派生人审（L5） | 2 | 2/2 active |
 | ADR 决策记录 | 20 | 17 Accepted + 1 Superseded（012）+ 1 Proposed（005）+ 1 Reserved（011）|
 | 实施方案 | 6 | 4 done + 1 active + 1 in-progress |
@@ -64,7 +64,7 @@ related:
 |---|---|---|
 | `docs/design/06-prd.md` | 数据契约 / API / 状态机 / 错误码 | pre-code v0.11（2026-06-27 scene-substage-editing 涟漪：§6.4 +写入口归属指派；前 v0.10 ADR-017 C3 §8.3 updater 例外）|
 | `docs/design/07-features.md` | 66 功能矩阵 S1–S5 + AE + 自动更新 + Promptscape 吸收 + 结构编辑 + 数据导入导出 | in-progress v1.7（2026-06-28：§3.4 数据导入导出（JSON）done——export/import + 2 path-based IPC + SettingsModal「数据」页；前 v1.6 scene-substage-editing §3.8 done 合计 65→66 / 2026-06-26 ADR-019 / 2026-06-25 ADR-018）|
-| `docs/design/08-sitemap.md` | 资产对象树 + 视图导航图 | ratified |
+| `docs/design/08-sitemap.md` | 资产对象树 + 区域地图 + 焦点导航 | draft v0.2（2026-07-02 全量重写对齐 product-spec v0.13「单窗口一屏全景 + 浮层」现状，待 omar 人审；前 v0.1 视图清单已失真）|
 
 ---
 
@@ -74,7 +74,7 @@ related:
 |---|---|---|
 | `docs/design/09-tech-stack.md` | 全栈技术决议 | ratified v1.3（2026-06-19 ADR-017 涟漪：D14 自动更新 + §4.4 updater 子系统 + plugin-process 依赖锁）|
 | `docs/design/10-ops-spec.md` | 运维规格 | ratified v0.3（2026-06-17 ADR-017 C4：§5.2 telemetry 措辞澄清 + §9.4 反向指针）|
-| `docs/design/11-test-spec.md` | 测试规格 | ratified |
+| `docs/design/11-test-spec.md` | 测试规格 | draft v0.2（2026-07-02 改写为实际测试盘面：前端 154 + Rust 135 + 4 源码级 gate + CI 双 job，待人审；前 v0.1 pre-code 规划）|
 
 ---
 
