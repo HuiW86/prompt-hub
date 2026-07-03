@@ -22,6 +22,8 @@ logs
 *.log
 npm-debug.log*
 pnpm-debug.log*
+# Exception: versioned metrics baseline appended by /checkpoint health pulse
+!docs/.metrics/cochange.log
 
 # Env
 .env
