@@ -4,7 +4,7 @@ project: prompt-hub
 version: v0.2
 created: 2026-05-19
 last_modified: 2026-07-02
-status: draft  # 🤖 AI 主笔全量重写，待 omar 人审；对齐 03-product-spec v0.13
+status: ratified  # 2026-07-02 人审通过（对齐 03-product-spec v0.13）
 author: ai  # 🤖 AI 主笔 + 人审（CLAUDE §5.2）
 audience: [human, ai]
 description: prompt-hub 资产对象树 + 区域地图 + 焦点导航（无 URL 路由，桌面双形态语境）；对齐 product-spec v0.13 现状

@@ -121,7 +121,8 @@ export default {
   // ── C. frontmatter — numbered design docs schema ───────────────────────────
   //
   // Vocabulary basis (盘面实际, 2026-07-02): docs/design/01–11 use
-  // pre-code (01/04/06/10) · ratified (02/05/09) · draft (03/08/11) ·
+  // pre-code (01/04/06/10) · ratified (02/05/08/09/11; 08/11 v0.2 human-reviewed
+  // 2026-07-02) · draft (03) ·
   // in-progress (07); done/active/paused reserved as known lifecycle states
   // (MANIFEST/plans use active·done; paused per methodology vocabulary).
   //

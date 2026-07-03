@@ -4,7 +4,7 @@ project: prompt-hub
 version: v0.2
 created: 2026-05-19
 last_modified: 2026-07-02
-status: draft # 🤖 AI 主笔更新，待人审
+status: ratified # 2026-07-02 人审通过（2026-07-02 实测口径）
 author: ai # 🤖 AI 主笔 + 人审（CLAUDE §5.2）
 audience: [ai, human]
 description: prompt-hub 测试规格——前端 Vitest 154 用例 + Rust workspace 135 + 4 源码级 gate + CI 双 job + C1 bench gate；LLM Eval N/A
