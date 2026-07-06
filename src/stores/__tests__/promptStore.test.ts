@@ -1163,4 +1163,105 @@ describe("promptStore", () => {
     expect(call?.[1]).toMatchObject({ id: "ss-old" });
     expect(usePromptStore.getState().scenes).toEqual(fakeScenes);
   });
+
+  // Race guard: two scene mutations fire back-to-back; the FIRST re-pull
+  // resolves LAST with a stale snapshot. Without the monotonic ticket, that
+  // stale snapshot would clobber the newer one (a just-deleted phrase would
+  // reappear). The guard must keep the newest (second) snapshot.
+  it("scene re-pull ignores a stale earlier result that resolves last", async () => {
+    mockListAll();
+    await usePromptStore.getState().refreshAll();
+
+    // Deferred controllers for the two overlapping list_scenes_with_children
+    // re-pulls, so the test drives their resolution order explicitly.
+    const deferreds: Array<(v: SceneWithChildren[]) => void> = [];
+    const staleSnapshot: SceneWithChildren[] = [
+      {
+        ...fakeScenes[0],
+        // Old snapshot still carries the phrase that the second op deleted.
+        phrases: fakeScenes[0].phrases,
+      },
+    ];
+    const freshSnapshot: SceneWithChildren[] = [
+      { ...fakeScenes[0], phrases: [] },
+    ];
+
+    let pullCount = 0;
+    invokeMock.mockImplementation((cmd: string) => {
+      if (cmd === "create_phrase" || cmd === "delete_phrase") {
+        return Promise.resolve({ ok: true });
+      }
+      if (cmd === "list_scenes_with_children") {
+        return new Promise<SceneWithChildren[]>((resolve) => {
+          deferreds[pullCount++] = resolve;
+        });
+      }
+      return Promise.reject(new Error(`unexpected ${cmd}`));
+    });
+
+    // Fire two mutations without awaiting — both take a ticket, both block on
+    // their deferred re-pull.
+    const first = usePromptStore.getState().createPhrase({
+      sceneId: "scene-plan",
+      name: "临时",
+      content: "x",
+      subStageId: null,
+    });
+    const second = usePromptStore.getState().deletePhrase("phrase-plan-export");
+
+    // Wait until both re-pulls are in flight.
+    await vi.waitFor(() => expect(deferreds).toHaveLength(2));
+
+    // Resolve out of order: the SECOND (newest) first, then the stale first.
+    deferreds[1](freshSnapshot);
+    deferreds[0](staleSnapshot);
+    await Promise.all([first, second]);
+
+    // The stale earlier snapshot must NOT win: state reflects the fresh one.
+    expect(usePromptStore.getState().scenes).toEqual(freshSnapshot);
+    expect(usePromptStore.getState().scenes[0].phrases).toHaveLength(0);
+  });
+
+  // Same race guard on the drafts inbox: a rapid promote/discard burst whose
+  // earlier count/list resolves last must not overwrite the newer one.
+  it("draft re-pull ignores a stale earlier result that resolves last", async () => {
+    mockListAll();
+    await usePromptStore.getState().refreshAll();
+
+    const listDeferreds: Array<(v: DraftSummary[]) => void> = [];
+    const countDeferreds: Array<(v: number) => void> = [];
+    invokeMock.mockImplementation((cmd: string) => {
+      if (cmd === "list_drafts") {
+        return new Promise<DraftSummary[]>((resolve) => {
+          listDeferreds.push(resolve);
+        });
+      }
+      if (cmd === "count_pending_drafts") {
+        return new Promise<number>((resolve) => {
+          countDeferreds.push(resolve);
+        });
+      }
+      return Promise.reject(new Error(`unexpected ${cmd}`));
+    });
+
+    const first = usePromptStore.getState().refreshDrafts();
+    const second = usePromptStore.getState().refreshDrafts();
+
+    await vi.waitFor(() => {
+      expect(listDeferreds).toHaveLength(2);
+      expect(countDeferreds).toHaveLength(2);
+    });
+
+    // Newest (second) resolves first with the empty/settled inbox.
+    listDeferreds[1]([]);
+    countDeferreds[1](0);
+    // Stale first resolves last with the pre-drain snapshot.
+    listDeferreds[0](fakeDrafts);
+    countDeferreds[0](fakeDrafts.length);
+    await Promise.all([first, second]);
+
+    // Stale result discarded: the inbox stays drained.
+    expect(usePromptStore.getState().drafts).toEqual([]);
+    expect(usePromptStore.getState().pendingDraftCount).toBe(0);
+  });
 });

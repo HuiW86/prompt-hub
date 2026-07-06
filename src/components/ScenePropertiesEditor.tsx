@@ -76,6 +76,14 @@ export function ScenePropertiesEditor({
 }: ScenePropertiesEditorProps) {
   const [name, setName] = useState(scene.name);
   const [icon, setIcon] = useState<string | null>(scene.icon);
+  // Free-text draft is tracked independently from `icon` so a typed value that
+  // happens to equal a lucide preset name (e.g. "wrench") still echoes back
+  // instead of being blanked mid-keystroke by an `icon in SCENE_LUCIDE` filter.
+  // Seeded only from a non-preset scene icon; a preset icon leaves it empty
+  // (the preset picker already marks the active choice).
+  const [iconText, setIconText] = useState(
+    scene.icon && !(scene.icon in SCENE_LUCIDE) ? scene.icon : "",
+  );
   const [color, setColor] = useState<string | null>(scene.color);
   const [rolePresets, setRolePresets] = useState<string[]>(scene.rolePresets);
   const [roleDraft, setRoleDraft] = useState("");
@@ -158,7 +166,12 @@ export function ScenePropertiesEditor({
                 aria-label={`图标 ${presetName}`}
                 aria-pressed={active}
                 className={active ? styles.iconChoiceActive : styles.iconChoice}
-                onClick={() => setIcon(presetName)}
+                onClick={() => {
+                  setIcon(presetName);
+                  // Selection moved to a preset — drop any free-text draft so
+                  // the two icon sources never disagree.
+                  setIconText("");
+                }}
               >
                 <Icon size={16} aria-hidden strokeWidth={2} />
               </IconButton>
@@ -168,7 +181,10 @@ export function ScenePropertiesEditor({
             intent={icon === null ? "subtle" : "ghost"}
             aria-pressed={icon === null}
             aria-label="无图标"
-            onClick={() => setIcon(null)}
+            onClick={() => {
+              setIcon(null);
+              setIconText("");
+            }}
           >
             无
           </Button>
@@ -176,10 +192,15 @@ export function ScenePropertiesEditor({
         <Input
           aria-label="自定义图标"
           placeholder="或输入 emoji / 单字"
-          // A lucide preset name here would collide with the map; free text is
-          // for emoji / single chars, so only surface a non-preset value.
-          value={icon && !(icon in SCENE_LUCIDE) ? icon : ""}
-          onChange={(e) => setIcon(e.target.value || null)}
+          // Bound to the free-text draft (not `icon`), so typing a value that
+          // collides with a preset name still echoes instead of blanking. The
+          // draft drives the effective icon while it is non-empty.
+          value={iconText}
+          onChange={(e) => {
+            const next = e.target.value;
+            setIconText(next);
+            setIcon(next || null);
+          }}
         />
       </div>
 
@@ -248,7 +269,7 @@ export function ScenePropertiesEditor({
       <div className={styles.footer}>
         {confirmingDelete ? (
           <ConfirmInline
-            text="删除场景？"
+            text="永久删除？"
             confirmLabel="确认删除场景"
             cancelLabel="取消删除"
             onConfirm={() => {

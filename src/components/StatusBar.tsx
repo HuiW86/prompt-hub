@@ -65,10 +65,6 @@ export function StatusBar() {
         <Kbd sm>⏎</Kbd>
       </span>
       <span className={styles.grp}>
-        <span>新建</span>
-        <Kbd sm>⌘N</Kbd>
-      </span>
-      <span className={styles.grp}>
         <span>设置</span>
         <Kbd sm>⌘,</Kbd>
       </span>

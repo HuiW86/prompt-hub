@@ -214,6 +214,24 @@ describe("ScenePanel view mode — in-place structure + content editing", () => 
     expect(call?.[1]).toMatchObject({ id: "phrase-1" });
   });
 
+  it("Enter mid-IME-composition does not commit a phrase edit", () => {
+    // Fix 1: the PhraseEditor name field must swallow the commit-Enter of an
+    // in-flight IME composition instead of saving the phrase.
+    render(<ScenePanel />);
+    fireEvent.click(screen.getByLabelText("编辑 设计导出模块"));
+    const nameField = screen.getByPlaceholderText("名称");
+    fireEvent.change(nameField, { target: { value: "改名" } });
+    fireEvent.keyDown(nameField, { key: "Enter", isComposing: true });
+    expect(
+      invokeMock.mock.calls.find((c) => c[0] === "update_phrase"),
+    ).toBeUndefined();
+    // A normal Enter still commits.
+    fireEvent.keyDown(nameField, { key: "Enter" });
+    expect(
+      invokeMock.mock.calls.find((c) => c[0] === "update_phrase"),
+    ).toBeTruthy();
+  });
+
   it("下移 swaps a phrase with its group neighbour via reorder_phrases", () => {
     render(<ScenePanel />);
     // 设计导出模块 (idx 0) moves down past 写测试 (idx 1) within 生成.
@@ -647,6 +665,31 @@ describe("ScenePanel properties panel — scene reorder link", () => {
     expect(call?.[1]).toMatchObject({
       orderedIds: ["scene-impl", "scene-plan"],
     });
+  });
+
+  // Fix 5a regression: after the reorder persists and the store re-pulls the
+  // swapped order, the properties panel must stay open and still point at the
+  // SAME scene the user was editing. Before the fix, moving from the fallback
+  // (activeSceneId === null) selection dropped the panel because the pinned id
+  // did not survive the re-pull's new scenes[0].
+  it("场景后移 keeps the properties panel open on the same scene after the re-pull", async () => {
+    // Mock the re-pull to return the SWAPPED order (真实后端行为), so the panel
+    // must survive scenes[0] changing under it.
+    const swapped: SceneWithChildren[] = [twoScenes[1], twoScenes[0]];
+    invokeMock.mockImplementation((cmd: string) => {
+      if (cmd === "list_scenes_with_children") return Promise.resolve(swapped);
+      return Promise.resolve({ ok: true });
+    });
+    render(<ScenePanel />);
+    // Open properties WITHOUT first clicking a tab — activeSceneId stays null,
+    // exercising the fallback-selection path where the bug surfaced.
+    fireEvent.click(screen.getByLabelText("编辑场景属性"));
+    fireEvent.click(screen.getByLabelText("场景后移"));
+    // Drive the async refreshScenes microtask, then assert the panel is still
+    // mounted and the edited scene (方案设计 / scene-plan) is still active.
+    await screen.findByLabelText("场景属性");
+    expect(screen.getByLabelText("场景属性")).toBeInTheDocument();
+    expect(screen.getByLabelText("场景名称")).toHaveValue("方案设计");
   });
 });
 

@@ -277,6 +277,24 @@ describe("DraftInbox — promote 前编辑 (P3-2)", () => {
     ).not.toBeInTheDocument();
   });
 
+  it("Enter mid-IME-composition does not commit a draft edit", async () => {
+    // Fix 1: committing a pinyin/kana candidate fires Enter with isComposing
+    // still true — the name field must swallow it instead of saving.
+    render(<DraftInbox />);
+    const card = cardOf(makeDraft("modifier"));
+    fireEvent.click(within(card).getByRole("button", { name: /编辑/ }));
+    const editor = await within(card).findByRole("group", {
+      name: "编辑草稿",
+    });
+    const nameField = within(editor).getByPlaceholderText("名称");
+    fireEvent.change(nameField, { target: { value: "改名" } });
+    fireEvent.keyDown(nameField, { key: "Enter", isComposing: true });
+    expect(updateDraft).not.toHaveBeenCalled();
+    // A normal Enter (no composition) still commits.
+    fireEvent.keyDown(nameField, { key: "Enter" });
+    expect(updateDraft).toHaveBeenCalled();
+  });
+
   it("cancel closes the editor without saving", async () => {
     render(<DraftInbox />);
     const card = cardOf(makeDraft("modifier"));

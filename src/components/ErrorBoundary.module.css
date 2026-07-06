@@ -1,0 +1,42 @@
+/* ErrorBoundary fallback — mirrors the Dashboard load-error state
+ * (Dashboard.module.css .error): centered column, high-contrast neutral copy,
+ * ghost reload button. Tokens only. */
+
+.error {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: var(--s-3);
+  height: 100vh;
+  color: var(--fg-1);
+  font: var(--w-500) var(--t-16) / var(--lh-tight) var(--font-sans);
+}
+
+/* Ghost button matching primitives .btnGhost visual language. */
+.reload {
+  display: inline-flex;
+  align-items: center;
+  height: var(--h-chip);
+  padding: 0 var(--s-3);
+  border: var(--hairline) solid var(--border-2);
+  border-radius: var(--r-3);
+  background: transparent;
+  color: var(--fg-1);
+  font: var(--w-500) var(--t-13) / 1 var(--font-sans);
+  cursor: pointer;
+  appearance: none;
+  transition:
+    background-color var(--d-fast) var(--ease),
+    border-color var(--d-fast) var(--ease);
+}
+
+.reload:hover {
+  border-color: var(--border-3);
+  background: var(--surface-2);
+}
+
+.reload:focus-visible {
+  outline: var(--border-thick) solid var(--accent);
+  outline-offset: 0;
+}

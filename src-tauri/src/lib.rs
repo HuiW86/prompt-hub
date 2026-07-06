@@ -62,6 +62,8 @@ fn fail_startup(app: &tauri::App, message: String) {
     if let Ok(conn) = rusqlite::Connection::open_in_memory() {
         app.manage(AppState {
             conn: Mutex::new(conn),
+            // Throwaway in-memory DB — no file, so no backups/checkpoint target.
+            db_path: None,
             copy_seq: AtomicU64::new(0),
         });
     }
@@ -103,15 +105,19 @@ pub fn run() {
                 .map_err(|e| format!("Failed to resolve the application data directory: {e}"))
                 .and_then(|data_dir| {
                     let db_path = data_dir.join("prompt-hub.db");
-                    repo_core::db::open_and_migrate(&db_path).map_err(|e| {
-                        format!(
-                            "Failed to open or migrate the database at\n{}\n\n{e}",
-                            db_path.display()
-                        )
-                    })
+                    // Carry the path out alongside the connection so AppState can
+                    // hold it for the backup / checkpoint paths.
+                    repo_core::db::open_and_migrate(&db_path)
+                        .map(|conn| (conn, db_path.clone()))
+                        .map_err(|e| {
+                            format!(
+                                "Failed to open or migrate the database at\n{}\n\n{e}",
+                                db_path.display()
+                            )
+                        })
                 });
-            let conn = match db_init {
-                Ok(conn) => conn,
+            let (conn, db_path) = match db_init {
+                Ok(pair) => pair,
                 Err(message) => {
                     fail_startup(app, message);
                     // Keep the event loop alive (skip shortcut/panel setup);
@@ -121,6 +127,7 @@ pub fn run() {
             };
             app.manage(AppState {
                 conn: Mutex::new(conn),
+                db_path: Some(db_path),
                 copy_seq: AtomicU64::new(0),
             });
 
@@ -260,6 +267,25 @@ pub fn run() {
         if let RunEvent::Exit = event {
             #[cfg(desktop)]
             let _ = app.global_shortcut().unregister_all();
+
+            // Fold the WAL back into the main DB file on a clean exit so the
+            // on-disk `prompt-hub.db` is self-contained (no lingering `-wal`
+            // with uncheckpointed pages). TRUNCATE also shrinks the WAL to 0.
+            // Best-effort only: a poisoned lock or busy DB must never block
+            // shutdown, so every failure is logged and swallowed.
+            if let Some(state) = app.try_state::<AppState>() {
+                match state.conn.lock() {
+                    Ok(conn) => {
+                        // wal_checkpoint(TRUNCATE) returns a result row, so drive
+                        // it with execute_batch rather than pragma_update (which is
+                        // for `PRAGMA k = v` and would error on the returned rows).
+                        if let Err(e) = conn.execute_batch("PRAGMA wal_checkpoint(TRUNCATE)") {
+                            eprintln!("exit checkpoint failed: {e}");
+                        }
+                    }
+                    Err(_) => eprintln!("exit checkpoint skipped: state lock poisoned"),
+                }
+            }
         }
     });
 }

@@ -289,6 +289,10 @@ function DraftEditor({
         onKeyDown={(e) => {
           if (e.key === "Escape") onClose();
           if (e.key === "Enter") {
+            // IME guard: committing a pinyin/kana candidate fires Enter while
+            // isComposing is still true — swallowing it would eat the
+            // composition instead of saving.
+            if (e.nativeEvent.isComposing) return;
             e.preventDefault();
             void handleSave();
           }
@@ -302,6 +306,8 @@ function DraftEditor({
         onKeyDown={(e) => {
           if (e.key === "Escape") onClose();
           if (e.key === "Enter" && (e.metaKey || e.ctrlKey)) {
+            // IME guard: skip the commit-Enter of an in-flight composition.
+            if (e.nativeEvent.isComposing) return;
             e.preventDefault();
             void handleSave();
           }

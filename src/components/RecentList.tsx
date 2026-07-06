@@ -33,7 +33,7 @@ export function RecentList() {
     >
       <RegionHeader title="最近使用" count={recent.length} />
       {recent.length === 0 ? (
-        <EmptyState>完成 3 次复制后会在这里看到</EmptyState>
+        <EmptyState>复制过的话术会在这里出现</EmptyState>
       ) : (
         <ul className={styles.list}>
           {recent.map((entry) => {

@@ -9,7 +9,7 @@
 //! `ReadOnlyAssetRepo`. The real asset tables are unreachable here because this
 //! crate doesn't depend on `repo-write` (plan §3.3).
 
-use std::sync::{Arc, Mutex};
+use std::sync::{Arc, Mutex, MutexGuard};
 use std::time::{Duration, Instant};
 
 use rmcp::handler::server::router::tool::ToolRouter;
@@ -25,7 +25,7 @@ use serde::{Deserialize, Serialize};
 use repo_core::models::{DraftStatus, DraftTargetType};
 use repo_core::{DraftRepo, ReadOnlyAssetRepo, RepoError};
 
-use crate::errors::{invalid_input, json_ok, repo_error};
+use crate::errors::{invalid_input, json_ok, poisoned_lock, repo_error};
 use crate::tools::{split_markdown_sections, PayloadArg, ProvenanceArg};
 
 // import_json hardening (plan §5.2). The DB-size guard and 5MB request cap are
@@ -221,17 +221,32 @@ impl Hub {
         }
     }
 
+    // Fail-loud lock acquisition. A poisoned mutex means a prior request panicked
+    // mid-operation; silently reusing the connection (the old
+    // `unwrap_or_else(|e| e.into_inner())`) could serve reads/writes against
+    // half-mutated state. Return an `Err(CallToolResult)` the caller bubbles up
+    // as a tool error so the host sees the failure and can restart us.
+    fn lock_db(&self) -> Result<MutexGuard<'_, Connection>, CallToolResult> {
+        self.db.lock().map_err(|_| poisoned_lock())
+    }
+
+    fn lock_import_log(&self) -> Result<MutexGuard<'_, Vec<Instant>>, CallToolResult> {
+        self.import_log.lock().map_err(|_| poisoned_lock())
+    }
+
     #[tool(description = "Health check: open the database and echo a message back.")]
     async fn echo(
         &self,
         Parameters(EchoArgs { msg }): Parameters<EchoArgs>,
     ) -> Result<CallToolResult, McpError> {
-        let reachable = {
-            let conn = self.db.lock().unwrap_or_else(|e| e.into_inner());
-            conn.query_row("SELECT 1", [], |row| row.get::<_, i64>(0))
-                .map(|n| n == 1)
-                .unwrap_or(false)
+        let conn = match self.lock_db() {
+            Ok(conn) => conn,
+            Err(e) => return Ok(e),
         };
+        let reachable = conn
+            .query_row("SELECT 1", [], |row| row.get::<_, i64>(0))
+            .map(|n| n == 1)
+            .unwrap_or(false);
         Ok(CallToolResult::success(vec![Content::text(format!(
             "{msg} (db_reachable={reachable})"
         ))]))
@@ -260,7 +275,10 @@ impl Hub {
             Ok(p) => p,
             Err(msg) => return Ok(invalid_input(msg)),
         };
-        let conn = self.db.lock().unwrap_or_else(|e| e.into_inner());
+        let conn = match self.lock_db() {
+            Ok(conn) => conn,
+            Err(e) => return Ok(e),
+        };
         match conn.create_draft(&payload, &provenance) {
             Ok(id) => Ok(json_ok(&serde_json::json!({ "draft_id": id }))),
             Err(e) => Ok(repo_error(e)),
@@ -276,7 +294,10 @@ impl Hub {
         &self,
         Parameters(DraftIdArgs { id }): Parameters<DraftIdArgs>,
     ) -> Result<CallToolResult, McpError> {
-        let conn = self.db.lock().unwrap_or_else(|e| e.into_inner());
+        let conn = match self.lock_db() {
+            Ok(conn) => conn,
+            Err(e) => return Ok(e),
+        };
         match conn.get_draft(&id) {
             Ok(Some(draft)) => Ok(json_ok(&draft)),
             Ok(None) => Ok(repo_error(RepoError::DraftNotFound(id))),
@@ -317,7 +338,10 @@ impl Hub {
             .unwrap_or(DEFAULT_DRAFT_LIMIT)
             .clamp(1, MAX_DRAFT_LIMIT);
 
-        let conn = self.db.lock().unwrap_or_else(|e| e.into_inner());
+        let conn = match self.lock_db() {
+            Ok(conn) => conn,
+            Err(e) => return Ok(e),
+        };
         match conn.list_drafts(status, target_type, limit) {
             Ok(rows) => Ok(json_ok(&rows)),
             Err(e) => Ok(repo_error(e)),
@@ -336,7 +360,10 @@ impl Hub {
             return Ok(invalid_input(msg));
         }
         let payload = payload.into();
-        let conn = self.db.lock().unwrap_or_else(|e| e.into_inner());
+        let conn = match self.lock_db() {
+            Ok(conn) => conn,
+            Err(e) => return Ok(e),
+        };
         match conn.update_draft(&id, &payload) {
             Ok(()) => Ok(json_ok(&serde_json::json!({ "ok": true, "draft_id": id }))),
             Err(e) => Ok(repo_error(e)),
@@ -352,7 +379,10 @@ impl Hub {
         &self,
         Parameters(DraftIdArgs { id }): Parameters<DraftIdArgs>,
     ) -> Result<CallToolResult, McpError> {
-        let conn = self.db.lock().unwrap_or_else(|e| e.into_inner());
+        let conn = match self.lock_db() {
+            Ok(conn) => conn,
+            Err(e) => return Ok(e),
+        };
         match conn.mark_discarded(&id) {
             Ok(()) => Ok(json_ok(&serde_json::json!({ "ok": true, "draft_id": id }))),
             Err(e) => Ok(repo_error(e)),
@@ -388,7 +418,10 @@ impl Hub {
 
         let mut created = Vec::new();
         let mut skipped = Vec::new();
-        let conn = self.db.lock().unwrap_or_else(|e| e.into_inner());
+        let conn = match self.lock_db() {
+            Ok(conn) => conn,
+            Err(e) => return Ok(e),
+        };
         for (index, (name, content)) in sections.into_iter().enumerate() {
             let payload = PayloadArg::Macro {
                 schema_version: 1,
@@ -445,7 +478,10 @@ impl Hub {
             Ok(p) => p,
             Err(msg) => return Ok(invalid_input(msg)),
         };
-        let conn = self.db.lock().unwrap_or_else(|e| e.into_inner());
+        let conn = match self.lock_db() {
+            Ok(conn) => conn,
+            Err(e) => return Ok(e),
+        };
         match conn.create_draft(&payload, &provenance) {
             Ok(id) => Ok(json_ok(&serde_json::json!({ "draft_id": id }))),
             Err(e) => Ok(repo_error(e)),
@@ -474,7 +510,10 @@ impl Hub {
 
         // Quota: prune timestamps older than an hour, then refuse if we're at cap.
         {
-            let mut log = self.import_log.lock().unwrap_or_else(|e| e.into_inner());
+            let mut log = match self.lock_import_log() {
+                Ok(log) => log,
+                Err(e) => return Ok(e),
+            };
             let now = Instant::now();
             log.retain(|t| now.duration_since(*t) < IMPORT_QUOTA_WINDOW);
             if log.len() >= IMPORT_QUOTA_PER_HOUR {
@@ -514,7 +553,10 @@ impl Hub {
             payloads.push((payload, provenance));
         }
 
-        let conn = self.db.lock().unwrap_or_else(|e| e.into_inner());
+        let conn = match self.lock_db() {
+            Ok(conn) => conn,
+            Err(e) => return Ok(e),
+        };
         let tx = match conn.unchecked_transaction() {
             Ok(tx) => tx,
             Err(e) => return Ok(repo_error(RepoError::Sqlite(e))),
@@ -547,7 +589,10 @@ impl Hub {
                           choosing a phase_id."
     )]
     async fn list_phases(&self) -> Result<CallToolResult, McpError> {
-        let conn = self.db.lock().unwrap_or_else(|e| e.into_inner());
+        let conn = match self.lock_db() {
+            Ok(conn) => conn,
+            Err(e) => return Ok(e),
+        };
         match conn.list_phases() {
             Ok(rows) => Ok(json_ok(&rows)),
             Err(e) => Ok(repo_error(e)),
@@ -559,7 +604,10 @@ impl Hub {
         &self,
         Parameters(PhaseFilterArgs { phase_id }): Parameters<PhaseFilterArgs>,
     ) -> Result<CallToolResult, McpError> {
-        let conn = self.db.lock().unwrap_or_else(|e| e.into_inner());
+        let conn = match self.lock_db() {
+            Ok(conn) => conn,
+            Err(e) => return Ok(e),
+        };
         match conn.list_alignment_phrases() {
             Ok(rows) => {
                 let rows: Vec<_> = rows
@@ -577,7 +625,10 @@ impl Hub {
                        so you can reuse one instead of staging a duplicate."
     )]
     async fn list_modifiers(&self) -> Result<CallToolResult, McpError> {
-        let conn = self.db.lock().unwrap_or_else(|e| e.into_inner());
+        let conn = match self.lock_db() {
+            Ok(conn) => conn,
+            Err(e) => return Ok(e),
+        };
         match conn.list_modifiers() {
             Ok(rows) => {
                 let briefs: Vec<ModifierBrief> = rows
@@ -603,7 +654,10 @@ impl Hub {
         &self,
         Parameters(PhaseSceneFilterArgs { phase_id, scene_id }): Parameters<PhaseSceneFilterArgs>,
     ) -> Result<CallToolResult, McpError> {
-        let conn = self.db.lock().unwrap_or_else(|e| e.into_inner());
+        let conn = match self.lock_db() {
+            Ok(conn) => conn,
+            Err(e) => return Ok(e),
+        };
         match conn.list_compositions() {
             Ok(rows) => {
                 let rows: Vec<_> = rows
@@ -630,7 +684,10 @@ impl Hub {
         &self,
         Parameters(SceneFilterArgs { scene_id }): Parameters<SceneFilterArgs>,
     ) -> Result<CallToolResult, McpError> {
-        let conn = self.db.lock().unwrap_or_else(|e| e.into_inner());
+        let conn = match self.lock_db() {
+            Ok(conn) => conn,
+            Err(e) => return Ok(e),
+        };
         match conn.list_macros() {
             Ok(rows) => {
                 let briefs: Vec<MacroBrief> = rows
@@ -655,7 +712,10 @@ impl Hub {
 
     #[tool(description = "List scenes (id, name). Read this before choosing a scene_id.")]
     async fn list_scenes(&self) -> Result<CallToolResult, McpError> {
-        let conn = self.db.lock().unwrap_or_else(|e| e.into_inner());
+        let conn = match self.lock_db() {
+            Ok(conn) => conn,
+            Err(e) => return Ok(e),
+        };
         match conn.list_scenes_with_children() {
             Ok(rows) => {
                 let briefs: Vec<SceneBrief> = rows

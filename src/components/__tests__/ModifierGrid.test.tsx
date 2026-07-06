@@ -58,6 +58,22 @@ describe("ModifierGrid — P3-6 minimal management entry", () => {
     });
   });
 
+  it("copying a chip records usage with target_type modifier (Recent + usageCount)", async () => {
+    // Fix 6: a Modifier copy must run through the shared record_usage path like
+    // every other asset (was a clipboard-only bypass that never bumped usage).
+    const recordCopy = vi.fn().mockResolvedValue(undefined);
+    usePromptStore.setState({ recordCopy });
+    render(<ModifierGrid />);
+    fireEvent.click(screen.getByLabelText("结构化输出"));
+    await vi.waitFor(() => expect(recordCopy).toHaveBeenCalled());
+    expect(recordCopy).toHaveBeenCalledWith(
+      expect.objectContaining({
+        targetType: "modifier",
+        targetId: "mod-structured",
+      }),
+    );
+  });
+
   it("delete asks for confirmation before invoking delete_modifier", () => {
     render(<ModifierGrid />);
     fireEvent.click(screen.getByLabelText("删除 结构化输出"));

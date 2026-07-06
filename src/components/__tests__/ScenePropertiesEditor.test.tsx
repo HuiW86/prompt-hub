@@ -91,6 +91,26 @@ describe("ScenePropertiesEditor — icon sources", () => {
     );
   });
 
+  it("echoes a free-text value that collides with a lucide preset name", () => {
+    // Fix 5b: typing "wrench" (a preset name) into the free-text field must not
+    // be blanked mid-keystroke by an `icon in SCENE_LUCIDE` value filter.
+    const onSave = vi.fn();
+    setup({ scene: { ...baseScene, icon: null }, onSave });
+    const field = screen.getByLabelText("自定义图标");
+    fireEvent.change(field, { target: { value: "wrench" } });
+    expect(field).toHaveValue("wrench");
+    fireEvent.click(screen.getByRole("button", { name: "保存" }));
+    expect(onSave).toHaveBeenCalledWith(
+      expect.objectContaining({ icon: "wrench" }),
+    );
+  });
+
+  it("seeds the free-text field from a non-preset scene icon", () => {
+    // A stored emoji icon must round-trip into the editable free-text field.
+    setup({ scene: { ...baseScene, icon: "🚀" } });
+    expect(screen.getByLabelText("自定义图标")).toHaveValue("🚀");
+  });
+
   it("choosing 无 clears the icon", () => {
     const onSave = vi.fn();
     setup({ onSave });

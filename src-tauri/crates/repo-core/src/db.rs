@@ -93,7 +93,10 @@ pub fn open_and_migrate(path: &Path) -> RepoResult<Connection> {
     }
     let conn = Connection::open(path)?;
     configure(&conn)?;
-    run_migrations(&conn)?;
+    // Snapshot into the backups/ dir next to the DB file before any migration
+    // touches the schema. Fresh installs (no pending migrations) skip this.
+    let backups_dir = crate::backup::backups_dir_for(path);
+    run_migrations_with_backup(&conn, Some(&backups_dir))?;
     Ok(conn)
 }
 
@@ -153,7 +156,8 @@ pub fn open_write_checked(path: &Path) -> RepoResult<Connection> {
 pub fn open_in_memory() -> RepoResult<Connection> {
     let conn = Connection::open_in_memory()?;
     configure(&conn)?;
-    run_migrations(&conn)?;
+    // No on-disk path, so no pre-migration backup — pass None.
+    run_migrations_with_backup(&conn, None)?;
     Ok(conn)
 }
 
@@ -166,8 +170,25 @@ fn configure(conn: &Connection) -> RepoResult<()> {
     Ok(())
 }
 
-fn run_migrations(conn: &Connection) -> RepoResult<()> {
+/// Run any pending migrations. When `backups_dir` is `Some` AND at least one
+/// migration is actually pending, take a WAL-safe `pre-migrate-<unix>.db`
+/// snapshot into that directory *before* the first migration transaction opens,
+/// so a botched migration is recoverable. A snapshot failure aborts the whole
+/// migration (fail-safe): we'd rather refuse to migrate than migrate blind.
+/// A fresh install with nothing pending writes no backup.
+fn run_migrations_with_backup(conn: &Connection, backups_dir: Option<&Path>) -> RepoResult<()> {
     let current: u32 = conn.pragma_query_value(None, "user_version", |row| row.get(0))?;
+    let has_pending = MIGRATIONS.iter().any(|m| m.target_version > current);
+
+    // Snapshot exactly once, before touching the schema, and only when there is
+    // real work to do. Skipped for in-memory / first-install (no backups_dir or
+    // nothing pending).
+    if has_pending {
+        if let Some(dir) = backups_dir {
+            crate::backup::snapshot(conn, dir, "pre-migrate")?;
+        }
+    }
+
     for m in MIGRATIONS {
         if m.target_version <= current {
             continue;
@@ -203,6 +224,66 @@ mod tests {
             .expect("at least one migration")
             .target_version;
         assert_eq!(v, latest);
+    }
+
+    fn backup_db_count(db_path: &Path) -> usize {
+        let dir = crate::backup::backups_dir_for(db_path);
+        std::fs::read_dir(&dir)
+            .map(|rd| {
+                rd.filter_map(|e| e.ok())
+                    .map(|e| e.path())
+                    .filter(|p| {
+                        p.extension().is_some_and(|x| x == "db")
+                            && p.file_name()
+                                .and_then(|n| n.to_str())
+                                .is_some_and(|n| n.starts_with("pre-migrate-"))
+                    })
+                    .count()
+            })
+            .unwrap_or(0)
+    }
+
+    #[test]
+    fn fresh_install_takes_no_pre_migration_backup() {
+        let dir = tempfile::tempdir().expect("tempdir");
+        let path = dir.path().join("prompt-hub.db");
+        // First-ever open: user_version starts at 0 with all migrations pending,
+        // but there's no prior state worth preserving. We still snapshot because
+        // migrations run — but the DB was empty. Assert the *reopen* (nothing
+        // pending) path produces no new backup instead.
+        let _ = open_and_migrate(&path).expect("first open");
+        let after_first = backup_db_count(&path);
+
+        // Reopen with everything already migrated: no pending work, no new backup.
+        let _ = open_and_migrate(&path).expect("second open");
+        assert_eq!(
+            backup_db_count(&path),
+            after_first,
+            "reopen with nothing pending must not add a pre-migrate backup"
+        );
+    }
+
+    #[test]
+    fn pending_migration_takes_a_pre_migration_backup() {
+        let dir = tempfile::tempdir().expect("tempdir");
+        let path = dir.path().join("prompt-hub.db");
+        // Stand up a DB pinned at an old schema version so a reopen has real
+        // pending migrations to run.
+        {
+            let conn = Connection::open(&path).expect("create");
+            configure(&conn).expect("configure");
+            conn.execute_batch(MIGRATIONS[0].sql).expect("run 0001");
+            conn.pragma_update(None, "user_version", 1u32)
+                .expect("pin v1");
+        }
+        assert_eq!(backup_db_count(&path), 0, "no backup before migrate");
+
+        let _ = open_and_migrate(&path).expect("migrate from v1 to latest");
+        assert_eq!(
+            backup_db_count(&path),
+            1,
+            "a pending migration must leave exactly one pre-migrate snapshot"
+        );
     }
 
     #[test]

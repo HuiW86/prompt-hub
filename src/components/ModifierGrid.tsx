@@ -1,7 +1,7 @@
 import { useMemo, useState } from "react";
 import { ArrowRightLeft, Route, Trash2 } from "lucide-react";
 
-import { writeClipboard } from "../hooks/useClipboard";
+import { useCopy } from "../hooks/useCopy";
 import { GROUP_KINDS, type GroupKind, type Modifier } from "../ipc/types";
 import { usePromptStore } from "../stores/promptStore";
 import { useToastStore } from "../stores/toastStore";
@@ -42,6 +42,7 @@ export function ModifierGrid() {
   const deleteModifier = usePromptStore((s) => s.deleteModifier);
   const showToast = useToastStore((s) => s.show);
   const showError = useToastStore((s) => s.showError);
+  const copy = useCopy();
   // At most one open management affordance at a time: a quadrant menu OR a
   // delete confirm, keyed by modifier id.
   const [menuId, setMenuId] = useState<string | null>(null);
@@ -58,19 +59,6 @@ export function ModifierGrid() {
       })).filter((g) => g.items.length > 0),
     [modifiers],
   );
-
-  // UsageSource has no `modifier` value, so a Modifier copy writes the clipboard
-  // directly — it skips the record_usage round-trip the other assets make (and
-  // therefore does not surface in Recent / bump usageCount). Faithful adaptation
-  // of the design's click-to-copy without inventing a wire source.
-  const copy = async (content: string, name: string) => {
-    try {
-      await writeClipboard(content);
-      showToast("已复制");
-    } catch {
-      showError(`复制「${name}」失败`);
-    }
-  };
 
   const moveTo = async (m: Modifier, kind: GroupKind) => {
     setMenuId(null);
@@ -139,7 +127,28 @@ export function ModifierGrid() {
                       className={styles.atomChip}
                       title={m.content}
                       aria-label={m.name}
-                      onClick={() => void copy(m.content, m.name)}
+                      onClick={() =>
+                        void copy(
+                          m.content,
+                          {
+                            // Record the copy so a Modifier bumps usageCount and
+                            // shows up in Recent like every other asset. The wire
+                            // supports target_type "modifier" (record_usage maps
+                            // it to the modifiers table); UsageSource has no
+                            // atom-library value, so reuse macro_area — the
+                            // closest grid-chip copy source (待 omar 复核: 是否
+                            // 新增 modifier 专属 source).
+                            targetType: "modifier",
+                            targetId: m.id,
+                            source: "macro_area",
+                            modifierIds: null,
+                            sopId: null,
+                            sopStepOrder: null,
+                            phaseId: null,
+                          },
+                          m.id,
+                        )
+                      }
                     >
                       {m.name}
                     </Chip>

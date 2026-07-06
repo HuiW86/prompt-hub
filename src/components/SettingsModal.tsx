@@ -18,7 +18,7 @@ import {
   Upload,
   X,
 } from "lucide-react";
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 
 import { ipc } from "../ipc";
 import {
@@ -103,6 +103,11 @@ export function SettingsModal() {
   const [dataBusy, setDataBusy] = useState(false);
   const [dataStatus, setDataStatus] = useState<string | null>(null);
 
+  // Modal container ref (initial focus landing point + focus-trap boundary).
+  const modalRef = useRef<HTMLDivElement>(null);
+  // Element that had focus before the modal opened, to restore on close.
+  const triggerRef = useRef<HTMLElement | null>(null);
+
   const handleExport = async () => {
     if (dataBusy) return;
     setDataBusy(true);
@@ -167,13 +172,78 @@ export function SettingsModal() {
     }
   };
 
+  // Focus domain: the modal owns keyboard focus while open (product-spec.md:786
+  // / design-spec.md:786 "模态弹窗有自己的焦点域"). On open we record the
+  // trigger element, move focus into the dialog, and trap Tab/Shift+Tab inside;
+  // on close we hand focus back to the trigger.
   useEffect(() => {
     if (!open) return;
-    const onKey = (e: KeyboardEvent) => {
-      if (e.key === "Escape") close();
+
+    // Deterministic landing point (resolves the ledger's line-162 focus-落点
+    // TODO): focus the dialog container itself rather than any single control,
+    // matching the useRegionNav model where the container is the neutral Tab
+    // entry. Arrow/Tab then roam from there.
+    triggerRef.current =
+      document.activeElement instanceof HTMLElement
+        ? document.activeElement
+        : null;
+    modalRef.current?.focus();
+
+    // Enumerate the currently tabbable controls inside the modal, in DOM order.
+    // Recomputed on each Tab so tab-switch / disabled-state changes stay honest.
+    const focusables = (): HTMLElement[] => {
+      const root = modalRef.current;
+      if (!root) return [];
+      return Array.from(
+        root.querySelectorAll<HTMLElement>(
+          'button:not([disabled]), [href], input:not([disabled]), select:not([disabled]), textarea:not([disabled]), [tabindex]:not([tabindex="-1"])',
+        ),
+      );
     };
+
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key === "Escape") {
+        close();
+        return;
+      }
+      if (e.key !== "Tab") return;
+
+      const items = focusables();
+      if (items.length === 0) {
+        // Nothing tabbable — keep focus pinned to the dialog container.
+        e.preventDefault();
+        modalRef.current?.focus();
+        return;
+      }
+      const first = items[0];
+      const last = items[items.length - 1];
+      const active = document.activeElement;
+      const root = modalRef.current;
+
+      // Focus outside the modal (or on the container) → pull it back to an edge.
+      if (!root || !(active instanceof HTMLElement) || !root.contains(active)) {
+        e.preventDefault();
+        (e.shiftKey ? last : first).focus();
+        return;
+      }
+      if (e.shiftKey && active === first) {
+        e.preventDefault();
+        last.focus();
+      } else if (!e.shiftKey && active === last) {
+        e.preventDefault();
+        first.focus();
+      }
+    };
+
     window.addEventListener("keydown", onKey);
-    return () => window.removeEventListener("keydown", onKey);
+    return () => {
+      window.removeEventListener("keydown", onKey);
+      // Restore focus to the opener on close/unmount (guard against a stale node
+      // detached from the DOM in the interim).
+      const trigger = triggerRef.current;
+      triggerRef.current = null;
+      if (trigger && document.contains(trigger)) trigger.focus();
+    };
   }, [open, close]);
 
   if (!open) return null;
@@ -192,10 +262,12 @@ export function SettingsModal() {
       }}
     >
       <div
+        ref={modalRef}
         className={styles.modal}
         role="dialog"
         aria-modal="true"
         aria-label="设置"
+        tabIndex={-1}
       >
         <nav className={styles.nav} aria-label="设置分区">
           <span className={styles.navHead}>设置</span>

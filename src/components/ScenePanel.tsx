@@ -672,7 +672,7 @@ function ViewColumn({
           <>
             <span className={styles.subStageName}>{subStage.name}</span>
             <ConfirmInline
-              text="删除子阶段？话术将解除归属"
+              text="永久删除？话术将解除归属"
               confirmLabel="确认删除子阶段"
               cancelLabel="取消删除"
               onConfirm={onDeleteConfirm}
@@ -1037,6 +1037,10 @@ function PhraseEditor({
         onKeyDown={(e) => {
           if (e.key === "Escape") onClose();
           if (e.key === "Enter") {
+            // IME guard: committing a pinyin/kana candidate fires Enter while
+            // isComposing is still true — swallowing it would eat the
+            // composition instead of saving.
+            if (e.nativeEvent.isComposing) return;
             e.preventDefault();
             void handleSave();
           }
@@ -1050,6 +1054,8 @@ function PhraseEditor({
         onKeyDown={(e) => {
           if (e.key === "Escape") onClose();
           if (e.key === "Enter" && (e.metaKey || e.ctrlKey)) {
+            // IME guard: skip the commit-Enter of an in-flight composition.
+            if (e.nativeEvent.isComposing) return;
             e.preventDefault();
             void handleSave();
           }

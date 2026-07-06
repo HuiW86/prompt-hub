@@ -90,6 +90,18 @@ pub fn invalid_input(reason: impl Into<String>) -> CallToolResult {
     CallToolResult::error(vec![Content::text(reason.into())])
 }
 
+/// A mutex guarding shared state was poisoned by a panic on another request.
+/// Fail loud rather than silently reusing a connection whose invariants a
+/// panicking write may have left half-applied — the host should restart us.
+/// Mirrors the Tauri side's `AppError::LockPoisoned` (commands.rs).
+pub fn poisoned_lock() -> CallToolResult {
+    CallToolResult::error(vec![Content::text(
+        "Internal state was corrupted by an earlier failure (poisoned lock). \
+         The server can't safely continue on this connection — restart the \
+         prompt-hub MCP server, then retry.",
+    )])
+}
+
 /// Serialize a serializable value into a successful JSON text result. Falls back
 /// to an error result if serialization itself fails (should be unreachable for
 /// our owned types).

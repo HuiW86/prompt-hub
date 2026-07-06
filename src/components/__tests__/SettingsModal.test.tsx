@@ -112,3 +112,68 @@ describe("SettingsModal — data page export/import", () => {
     expect(refreshAllMock).not.toHaveBeenCalled();
   });
 });
+
+describe("SettingsModal — focus domain", () => {
+  beforeEach(() => {
+    usePromptStore.setState(promptInitial, true);
+    useSettingsStore.setState(settingsInitial, true);
+    invokeMock.mockReset();
+    saveMock.mockReset();
+    openMock.mockReset();
+    confirmMock.mockReset();
+  });
+
+  it("moves initial focus into the dialog container on open", () => {
+    useSettingsStore.setState({ settingsOpen: true });
+    render(<SettingsModal />);
+
+    const dialog = screen.getByRole("dialog");
+    expect(document.activeElement).toBe(dialog);
+  });
+
+  it("wraps Tab from the last control back to the first (no escape)", () => {
+    useSettingsStore.setState({ settingsOpen: true });
+    render(<SettingsModal />);
+
+    const dialog = screen.getByRole("dialog");
+    const focusables = Array.from(
+      dialog.querySelectorAll<HTMLElement>("button:not([disabled])"),
+    );
+    const first = focusables[0];
+    const last = focusables[focusables.length - 1];
+
+    // Park focus on the last control, then Tab forward — the trap must land it
+    // back on the first control, never on a node outside the dialog.
+    last.focus();
+    fireEvent.keyDown(window, { key: "Tab" });
+    expect(document.activeElement).toBe(first);
+    expect(dialog.contains(document.activeElement)).toBe(true);
+
+    // Shift+Tab from the first control wraps to the last.
+    first.focus();
+    fireEvent.keyDown(window, { key: "Tab", shiftKey: true });
+    expect(document.activeElement).toBe(last);
+  });
+
+  it("returns focus to the opening trigger when closed", () => {
+    // A stand-in trigger button that lives outside the modal.
+    const trigger = document.createElement("button");
+    trigger.textContent = "打开设置";
+    document.body.appendChild(trigger);
+    trigger.focus();
+    expect(document.activeElement).toBe(trigger);
+
+    useSettingsStore.setState({ settingsOpen: true });
+    const { rerender } = render(<SettingsModal />);
+    // Focus moved into the dialog on open.
+    expect(document.activeElement).toBe(screen.getByRole("dialog"));
+
+    // Close: the store flips settingsOpen off, the modal unmounts its content,
+    // and the cleanup restores focus to the recorded trigger.
+    useSettingsStore.setState({ settingsOpen: false });
+    rerender(<SettingsModal />);
+    expect(document.activeElement).toBe(trigger);
+
+    trigger.remove();
+  });
+});
