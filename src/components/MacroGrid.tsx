@@ -5,6 +5,7 @@ import { move } from "@dnd-kit/helpers";
 import { Flame, GripVertical, Pencil, Plus, Trash2, Zap } from "lucide-react";
 
 import { useCopy } from "../hooks/useCopy";
+import { useRegionNav } from "../hooks/useRegionNav";
 import { usePromptStore } from "../stores/promptStore";
 import { useToastStore } from "../stores/toastStore";
 import type { Macro } from "../ipc/types";
@@ -34,6 +35,7 @@ export function MacroGrid() {
   const deleteMacro = usePromptStore((s) => s.deleteMacro);
   const showToast = useToastStore((s) => s.show);
   const showError = useToastStore((s) => s.showError);
+  const onRegionKeyDown = useRegionNav();
 
   // Local render source during a drag (learnings 信条五: a single local array is
   // the source of truth while dragging; the store stays untouched until the drop
@@ -72,6 +74,7 @@ export function MacroGrid() {
       aria-label="Macro 快捷区"
       data-region="macro-grid"
       tabIndex={0}
+      onKeyDown={onRegionKeyDown}
     >
       <RegionHeader
         title="Macro"
@@ -81,6 +84,8 @@ export function MacroGrid() {
           <Button
             layer="task"
             aria-label="新增 Macro"
+            data-nav-item
+            tabIndex={-1}
             onClick={() => setEditing({ mode: "create" })}
           >
             <Plus size={14} aria-hidden strokeWidth={2} />
@@ -195,6 +200,8 @@ function SortableMacroCard({
         className={styles.copyArea}
         aria-label={macro.name}
         title={macro.content}
+        data-nav-item
+        tabIndex={-1}
         onClick={() =>
           void copy(
             macro.content,
@@ -239,14 +246,23 @@ function SortableMacroCard({
           <IconButton
             ref={handleRef}
             dragHandle
+            data-nav-item
+            tabIndex={-1}
             aria-label={`拖动排序 ${macro.name}`}
           >
             <GripVertical size={14} aria-hidden strokeWidth={2} />
           </IconButton>
-          <IconButton aria-label={`编辑 ${macro.name}`} onClick={onEdit}>
+          <IconButton
+            data-nav-item
+            tabIndex={-1}
+            aria-label={`编辑 ${macro.name}`}
+            onClick={onEdit}
+          >
             <Pencil size={13} aria-hidden strokeWidth={2} />
           </IconButton>
           <IconButton
+            data-nav-item
+            tabIndex={-1}
             aria-label={`删除 ${macro.name}`}
             onClick={onRequestDelete}
           >

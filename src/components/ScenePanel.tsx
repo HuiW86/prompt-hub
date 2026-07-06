@@ -23,6 +23,7 @@ import {
 import { type ReactNode, useEffect, useRef, useState } from "react";
 
 import { useCopy } from "../hooks/useCopy";
+import { useRegionNav } from "../hooks/useRegionNav";
 import type { Phrase, Scene, SubStage } from "../ipc/types";
 import { useAppStore } from "../stores/appStore";
 import { usePromptStore } from "../stores/promptStore";
@@ -119,6 +120,7 @@ export function ScenePanel() {
   const flashId = useToastStore((s) => s.flashTargetId);
   const showToast = useToastStore((s) => s.show);
   const showError = useToastStore((s) => s.showError);
+  const onRegionKeyDown = useRegionNav();
   // Active scene is tracked by ID, not index (P3-6): a tab reorder shifts every
   // index, and an index-keyed selection would silently land on a neighbour scene
   // — which also resets edit mode via the currentSceneId effect below. The id
@@ -237,6 +239,7 @@ export function ScenePanel() {
         aria-describedby="scene-panel-empty-msg"
         data-region="scene-panel"
         tabIndex={0}
+        onKeyDown={onRegionKeyDown}
       >
         <RegionHeader title="Scene" subtitle="场景全景" count={0} />
         {/* Rich empty state (Promptscape empty Scene: dashed card + folder
@@ -250,6 +253,8 @@ export function ScenePanel() {
               layer="task"
               intent="accent"
               aria-label="创建第一个场景"
+              data-nav-item
+              tabIndex={-1}
               onClick={() => void handleCreateScene()}
             >
               <Plus size={14} aria-hidden strokeWidth={2} />
@@ -271,6 +276,7 @@ export function ScenePanel() {
       aria-label="Scene 全景区"
       data-region="scene-panel"
       tabIndex={0}
+      onKeyDown={onRegionKeyDown}
     >
       <RegionHeader title="Scene" subtitle="场景全景" count={scenes.length} />
       <nav className={styles.tabs} aria-label="Scene tabs">
@@ -282,6 +288,8 @@ export function ScenePanel() {
               onClick={() => setShowDrafts(true)}
               aria-current={draftsActive ? "page" : undefined}
               aria-label={`草稿收件箱，${pendingDraftCount} 条待审`}
+              data-nav-item
+              tabIndex={-1}
             >
               <Inbox
                 size={13}
@@ -307,6 +315,8 @@ export function ScenePanel() {
                 setActiveSceneId(sc.scene.id);
               }}
               aria-current={isActive ? "page" : undefined}
+              data-nav-item
+              tabIndex={-1}
             >
               <SceneIcon
                 name={sc.scene.icon}
@@ -362,6 +372,8 @@ export function ScenePanel() {
               ) : (
                 <IconButton
                   aria-label="管理话术"
+                  data-nav-item
+                  tabIndex={-1}
                   onClick={() => setEditMode(true)}
                 >
                   <Pencil size={12} aria-hidden strokeWidth={2} />
@@ -451,6 +463,8 @@ export function ScenePanel() {
                         key={p.id}
                         type="button"
                         className={cls}
+                        data-nav-item
+                        tabIndex={-1}
                         onClick={() =>
                           void copy(
                             p.content,

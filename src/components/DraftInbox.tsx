@@ -166,11 +166,21 @@ function DraftCard({ draft }: { draft: DraftSummary }) {
                   {PROMOTE_BLOCKED_HINT}
                 </span>
               )}
+              {/* P0-1 roving nav (03-product-spec §13.4 v0.7 "方向键选草稿卡 +
+                  动作键 promote/discard"): the browse-state action buttons opt
+                  into the scene-panel region's arrow traversal via data-nav-item
+                  + tabIndex=-1. Type-blocked buttons (composition edit/promote)
+                  stay OUT of the nav list — focus() is a no-op on a disabled
+                  button, so marking them would strand arrow traversal. The
+                  discard button is never type-blocked, so it always anchors the
+                  card in the sequence. */}
               <Button
                 intent="ghost"
                 onClick={() => void onEditClick()}
                 disabled={busy || editBlocked}
                 title={editBlocked ? PROMOTE_BLOCKED_HINT : undefined}
+                data-nav-item={editBlocked ? undefined : true}
+                tabIndex={-1}
               >
                 <Pencil size={13} aria-hidden strokeWidth={2} />
                 编辑
@@ -179,6 +189,8 @@ function DraftCard({ draft }: { draft: DraftSummary }) {
                 intent="ghost"
                 onClick={() => void doDiscard()}
                 disabled={busy}
+                data-nav-item
+                tabIndex={-1}
               >
                 <X size={13} aria-hidden strokeWidth={2} />
                 丢弃
@@ -189,6 +201,8 @@ function DraftCard({ draft }: { draft: DraftSummary }) {
                 disabled={busy || promoteBlocked}
                 title={promoteBlocked ? PROMOTE_BLOCKED_HINT : undefined}
                 aria-expanded={isModifier ? picking : undefined}
+                data-nav-item={promoteBlocked ? undefined : true}
+                tabIndex={-1}
               >
                 <Check size={13} aria-hidden strokeWidth={2} />
                 归档

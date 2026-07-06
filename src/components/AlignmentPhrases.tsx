@@ -5,6 +5,7 @@ import { move } from "@dnd-kit/helpers";
 import { GripVertical, Pencil, Plus, Star, Trash2 } from "lucide-react";
 
 import { useCopy } from "../hooks/useCopy";
+import { useRegionNav } from "../hooks/useRegionNav";
 import { useAppStore } from "../stores/appStore";
 import { usePromptStore } from "../stores/promptStore";
 import { useToastStore } from "../stores/toastStore";
@@ -42,6 +43,7 @@ export function AlignmentPhrases() {
   const flashId = useToastStore((s) => s.flashTargetId);
   const showToast = useToastStore((s) => s.show);
   const showError = useToastStore((s) => s.showError);
+  const onRegionKeyDown = useRegionNav();
 
   const phrases = useMemo(
     () => (activePhaseId != null ? (phrasesByPhase[activePhaseId] ?? []) : []),
@@ -94,6 +96,7 @@ export function AlignmentPhrases() {
         aria-label="对齐话术"
         data-region="alignment-phrases"
         tabIndex={0}
+        onKeyDown={onRegionKeyDown}
       >
         <span className={styles.label}>aligned</span>
         {phrases.length === 0 ? (
@@ -109,6 +112,8 @@ export function AlignmentPhrases() {
               dim={!p.isDefault}
               flash={flashId === p.id}
               aria-label={p.name}
+              data-nav-item
+              tabIndex={-1}
               onClick={() =>
                 void copy(
                   p.content,
@@ -137,6 +142,8 @@ export function AlignmentPhrases() {
           <IconButton
             className={styles.manageBtn}
             aria-label="管理对齐话术"
+            data-nav-item
+            tabIndex={-1}
             onClick={() => setEditMode(true)}
           >
             <Pencil size={12} aria-hidden strokeWidth={2} />

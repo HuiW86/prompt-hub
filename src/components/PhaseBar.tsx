@@ -1,3 +1,4 @@
+import { useRegionNav } from "../hooks/useRegionNav";
 import { useAppStore } from "../stores/appStore";
 import { usePromptStore } from "../stores/promptStore";
 import { useSettingsStore } from "../stores/settingsStore";
@@ -13,6 +14,7 @@ export function PhaseBar() {
   const setActivePhase = useAppStore((s) => s.setActivePhase);
   const hiddenIds = useSettingsStore((s) => s.hiddenPhaseIds);
   const flashId = useToastStore((s) => s.flashTargetId);
+  const onRegionKeyDown = useRegionNav();
   const visible = phases.filter((p) => !hiddenIds.includes(p.id));
 
   return (
@@ -21,6 +23,7 @@ export function PhaseBar() {
       aria-label="相位带"
       data-region="phase-bar"
       tabIndex={0}
+      onKeyDown={onRegionKeyDown}
     >
       {visible.map((phase, idx) => {
         const isActive = phase.id === activePhaseId;
@@ -40,6 +43,8 @@ export function PhaseBar() {
             aria-current={isActive ? "true" : undefined}
             className={cls}
             data-phase-id={phase.id}
+            data-nav-item
+            tabIndex={-1}
             onClick={() => setActivePhase(phase.id)}
           >
             <span className={styles.num} aria-hidden>

@@ -1,7 +1,7 @@
 import { fireEvent, render, screen } from "@testing-library/react";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
-import type { SceneWithChildren } from "../../ipc/types";
+import type { DraftSummary, SceneWithChildren } from "../../ipc/types";
 
 const invokeMock = vi.fn();
 vi.mock("@tauri-apps/api/core", () => ({
@@ -222,5 +222,64 @@ describe("ScenePanel view mode — ungrouped column header", () => {
     usePromptStore.setState({ scenes, pendingDraftCount: 0 });
     render(<ScenePanel />);
     expect(screen.queryByText("未分组")).not.toBeInTheDocument();
+  });
+});
+
+// P0-1: the drafts view is rendered INSIDE the scene-panel region container, so
+// its onKeyDown bubbles up and the draft card action buttons join the region's
+// arrow-key roving traversal (03-product-spec §13.4 v0.7 "方向键选草稿卡 + 动作键
+// promote/discard").
+describe("ScenePanel drafts view — roving nav reaches draft actions", () => {
+  const draft: DraftSummary = {
+    id: "draft-macro",
+    targetType: "macro",
+    name: "示例 Macro",
+    preview: "预览内容",
+    toolName: "mcp:create_draft",
+    status: "pending",
+    createdAt: "2026-06-30T00:00:00Z",
+  };
+
+  beforeEach(() => {
+    usePromptStore.setState(promptInitial, true);
+    useAppStore.setState(appInitial, true);
+    usePromptStore.setState({
+      scenes,
+      drafts: [draft],
+      pendingDraftCount: 1,
+    });
+    invokeMock.mockReset();
+    invokeMock.mockResolvedValue({ ok: true });
+  });
+
+  it("arrow keys walk from the draft tab into the first draft action button", () => {
+    const { container } = render(<ScenePanel />);
+    const region = container.querySelector(
+      "[data-region='scene-panel']",
+    ) as HTMLElement;
+    // Activate the drafts view via its tab.
+    const draftTab = screen.getByLabelText("草稿收件箱，1 条待审");
+    fireEvent.click(draftTab);
+
+    // The draft card's action buttons are now nav items inside the region.
+    const items = Array.from(
+      region.querySelectorAll<HTMLElement>("[data-nav-item]"),
+    );
+    const firstDraftAction = items.find((el) =>
+      el.textContent?.includes("编辑"),
+    );
+    expect(firstDraftAction).toBeDefined();
+    expect(firstDraftAction?.getAttribute("tabindex")).toBe("-1");
+
+    // Starting on the draft tab, arrowing right must eventually land on a draft
+    // action button (the scene tab sits between them in DOM order).
+    draftTab.focus();
+    const startIndex = items.indexOf(draftTab);
+    expect(startIndex).toBeGreaterThanOrEqual(0);
+    for (let i = startIndex; i < items.length - 1; i++) {
+      if (document.activeElement === firstDraftAction) break;
+      fireEvent.keyDown(region, { key: "ArrowRight" });
+    }
+    expect(document.activeElement).toBe(firstDraftAction);
   });
 });

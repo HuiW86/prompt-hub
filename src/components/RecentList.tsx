@@ -1,4 +1,5 @@
 import { useCopy } from "../hooks/useCopy";
+import { useRegionNav } from "../hooks/useRegionNav";
 import type { UsageTargetType } from "../ipc/types";
 import { usePromptStore } from "../stores/promptStore";
 import { relativeTime } from "../utils/time";
@@ -20,6 +21,7 @@ const TYPE_LABELS: Record<UsageTargetType, string> = {
 export function RecentList() {
   const recent = usePromptStore((s) => s.recentUsage);
   const copy = useCopy();
+  const onRegionKeyDown = useRegionNav();
 
   return (
     <section
@@ -27,6 +29,7 @@ export function RecentList() {
       aria-label="最近使用"
       data-region="recent-list"
       tabIndex={0}
+      onKeyDown={onRegionKeyDown}
     >
       <RegionHeader title="最近使用" count={recent.length} />
       {recent.length === 0 ? (
@@ -43,6 +46,8 @@ export function RecentList() {
                   type="button"
                   className={styles.item}
                   disabled={!canRecopy}
+                  data-nav-item
+                  tabIndex={-1}
                   onClick={() => {
                     if (!canRecopy) return;
                     void copy(

@@ -497,6 +497,9 @@ describe("Dashboard click → IPC flow", () => {
       "[role='search'] input",
     ) as HTMLInputElement;
     fireEvent.change(input, { target: { value: "hello" } });
+    // The input now auto-focuses on mount per product-spec §13.4 wake-focus;
+    // blur first so ⌘K's re-focus + select is what's actually under test.
+    input.blur();
     expect(document.activeElement).not.toBe(input);
 
     fireEvent.keyDown(document, { key: "k", metaKey: true });
@@ -511,6 +514,9 @@ describe("Dashboard click → IPC flow", () => {
     const input = container.querySelector(
       "[role='search'] input",
     ) as HTMLInputElement;
+    // Mount now auto-focuses the search input per product-spec §13.4 wake-focus;
+    // blur to body first so the shortcut is tested in isolation.
+    input.blur();
     expect(document.activeElement).not.toBe(input);
     fireEvent.keyDown(document, { key: "k", metaKey: true, shiftKey: true });
     expect(document.activeElement).not.toBe(input);
@@ -522,6 +528,9 @@ describe("Dashboard click → IPC flow", () => {
     const input = container.querySelector(
       "[role='search'] input",
     ) as HTMLInputElement;
+    // Mount now auto-focuses the search input per product-spec §13.4 wake-focus;
+    // blur to body first so the shortcut is tested in isolation.
+    input.blur();
     expect(document.activeElement).not.toBe(input);
     fireEvent.keyDown(document, { key: "k" });
     expect(document.activeElement).not.toBe(input);
