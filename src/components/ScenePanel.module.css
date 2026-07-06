@@ -130,6 +130,36 @@
   background: var(--border-2);
 }
 
+/* Trailing「＋ 新建场景」in the tab track — a fixed-width segment styled like a
+ * muted tab, set off from the equal-width scene tabs (which flex to fill). */
+.tabAdd {
+  flex: none;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: var(--h-scene-row);
+  height: var(--h-scene-row);
+  border: none;
+  border-radius: var(--r-3);
+  background: transparent;
+  color: var(--fg-3);
+  cursor: pointer;
+  appearance: none;
+  transition:
+    color var(--d-fast) var(--ease),
+    background-color var(--d-fast) var(--ease);
+}
+
+.tabAdd:hover {
+  color: var(--fg-1);
+  background: var(--surface-1);
+}
+
+.tabAdd:focus-visible {
+  outline: var(--border-thick) solid var(--accent);
+  outline-offset: 0;
+}
+
 /* Contained panorama card (Promptscape Scene 全景): a bordered surface holding
  * the scene-identity header bar atop the sub-stage grid. */
 .sceneCard {
@@ -187,9 +217,23 @@
 }
 
 .sceneMeta {
+  display: flex;
+  align-items: center;
+  gap: var(--s-2);
   margin-top: var(--s-0_5);
+  min-width: 0;
   font: var(--w-400) var(--t-12) / 1 var(--font-sans);
   color: var(--fg-3);
+}
+
+/* rolePresets chips trailing the phrase count — dim task-layer chips, clipped so
+ * a long preset list never pushes the count off the header row. */
+.roleChips {
+  display: flex;
+  align-items: center;
+  gap: var(--s-1);
+  min-width: 0;
+  overflow: hidden;
 }
 
 /* Sub-stage count badge, docked right of the identity block (Promptscape). */
@@ -214,99 +258,6 @@
   padding: var(--s-2_5) var(--s-3_5) 0;
 }
 
-/* ── Edit mode: Scene + sub-stage structure editor ───────────────────────────
-   A bordered inset below the header (edit mode only) that hosts scene rename /
-   delete / new-scene controls and the sub-stage CRUD list. Neutral surfaces
-   only (constitution B2 — Scene's task colour lives on the tab, not here). */
-.structureEditor {
-  display: flex;
-  flex-direction: column;
-  gap: var(--s-3);
-  flex: none;
-  margin: var(--s-2_5) var(--s-3_5) 0;
-  padding: var(--s-3);
-  background: var(--surface-2);
-  border: var(--hairline) solid var(--border-1);
-  border-radius: var(--r-3);
-}
-
-.structureRow {
-  display: flex;
-  align-items: center;
-  gap: var(--s-2);
-  min-width: 0;
-}
-
-.structureLabel {
-  display: inline-flex;
-  align-items: center;
-  gap: var(--s-1_5);
-  flex: 1;
-  min-width: 0;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
-  font: var(--w-600) var(--t-13) / 1 var(--font-sans);
-  color: var(--fg-1);
-}
-
-.subStageManager {
-  display: flex;
-  flex-direction: column;
-  gap: var(--s-2);
-  padding-top: var(--s-3);
-  border-top: var(--hairline) solid var(--border-1);
-}
-
-.subStageManagerHead {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: var(--s-2);
-}
-
-.subStageEmpty {
-  margin: 0;
-  font: var(--w-400) var(--t-12) / 1 var(--font-sans);
-  color: var(--fg-3);
-}
-
-.subStageList {
-  display: flex;
-  flex-direction: column;
-  gap: var(--s-1_5);
-  margin: 0;
-  padding: 0;
-  list-style: none;
-}
-
-.subStageItem {
-  display: flex;
-  align-items: center;
-  gap: var(--s-2);
-  padding: var(--s-1_5) var(--s-2);
-  background: var(--surface-1);
-  border: var(--hairline) solid var(--border-1);
-  border-radius: var(--r-2);
-  min-width: 0;
-}
-
-/* P3-6 sub-stage drag-reorder: same in-flight look as the phrase rows. */
-.subStageItem.dragging {
-  opacity: var(--op-dim);
-  border-color: var(--accent);
-}
-
-.subStageItemName {
-  flex: 1;
-  min-width: 0;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
-  font: var(--w-500) var(--t-12) / 1 var(--font-sans);
-  color: var(--fg-1);
-}
-
 .subStageInline {
   display: flex;
   align-items: center;
@@ -320,8 +271,8 @@
  * auto-fit sizes tracks to the panel: a narrow panel drops to fewer, wider
  * columns instead of crushing each one below --col-min-substage, and with few
  * groups the tracks stretch to fill instead of leaving empty rails. min(…, 100%)
- * keeps a lone column from overflowing panels narrower than the column minimum.
- * View mode only — edit mode keeps the vertical list below. */
+ * keeps a lone column from overflowing panels narrower than the column
+ * minimum. */
 .phrases {
   flex: 1;
   display: grid;
@@ -349,6 +300,20 @@
   gap: var(--s-2);
   padding: 0 0 var(--s-2);
   border-bottom: var(--hairline) solid var(--border-1);
+}
+
+/* Sub-stage header action cluster (task 5): rename / move / delete, pinned to
+   the right of the header row and revealed on header hover / focus-within. The
+   primitives reveal rule only keys off .card/.row parents, so the view grid
+   drives its own reveal from the column header + card below. */
+.subStageActions {
+  margin-left: auto;
+  flex: none;
+}
+
+.subStage:hover .subStageActions,
+.subStage:focus-within .subStageActions {
+  opacity: 1;
 }
 
 /* Sub-stage sequence number (Promptscape 01/02… index per column). */
@@ -418,6 +383,20 @@
   flex-direction: column;
   gap: var(--s-1);
   min-width: 0;
+  flex: 1;
+}
+
+/* Phrase-card action cluster (task 6): move / edit / delete, pinned right and
+   revealed on card hover / focus-within. Buttons stopPropagation in the TSX so
+   the card's copy action never fires from a cluster click. */
+.phraseActions {
+  flex: none;
+  align-self: flex-start;
+}
+
+.phrase:hover .phraseActions,
+.phrase:focus-within .phraseActions {
+  opacity: 1;
 }
 
 .phrase:active {
@@ -444,42 +423,6 @@
   overflow: hidden;
 }
 
-/* ── Edit mode: sortable phrase rows ──────────────────────────────────────── */
-.list {
-  display: flex;
-  flex-direction: column;
-  gap: var(--s-1_5);
-  margin: 0;
-  padding: var(--s-2) var(--s-3_5);
-  list-style: none;
-}
-
-.row {
-  display: flex;
-  align-items: center;
-  gap: var(--s-2);
-  padding: var(--s-1_5) var(--s-2);
-  background: var(--surface-1);
-  border: var(--hairline) solid var(--border-1);
-  border-radius: var(--r-2);
-  min-width: 0;
-}
-
-.row.dragging {
-  opacity: var(--op-dim);
-  border-color: var(--accent);
-}
-
-.rowName {
-  flex: 1;
-  min-width: 0;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
-  font: var(--w-500) var(--t-12) / 1 var(--font-sans);
-  color: var(--fg-1);
-}
-
 /* Sub-stage picker inside the editor panel; native control, token-styled to
    match the Editor primitives. */
 .subStageSelect {
@@ -498,6 +441,45 @@
 .subStageSelect:focus-visible {
   outline: var(--border-thick) solid var(--accent);
   outline-offset: 0;
+}
+
+/* Trailing ghost column (task 5): a muted, dashed-bordered column holding the
+   「＋ 新增子阶段」affordance, set apart from the real sub-stage columns. */
+.ghostColumn {
+  justify-content: flex-start;
+}
+
+/* Ghost「add」affordance — shared by the add-phrase card (per column) and the
+   new-sub-stage column button. A dashed, muted placeholder that firms up on
+   hover / focus, echoing the empty-state CTA language without a filled surface. */
+.ghostAdd {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: var(--s-1_5);
+  padding: var(--s-2_5);
+  border: var(--hairline) dashed var(--border-2);
+  border-radius: var(--r-3);
+  background: transparent;
+  color: var(--fg-3);
+  font: var(--w-500) var(--t-12) / 1 var(--font-sans);
+  cursor: pointer;
+  appearance: none;
+  transition:
+    color var(--d-fast) var(--ease),
+    border-color var(--d-fast) var(--ease),
+    background-color var(--d-fast) var(--ease);
+}
+
+.ghostAdd:hover {
+  color: var(--fg-1);
+  border-color: var(--border-3);
+  background: var(--surface-2);
+}
+
+.ghostAdd:focus-visible {
+  outline: var(--border-thick) solid var(--accent);
+  outline-offset: calc(-1 * var(--border-thick));
 }
 
 /* Copy-success flash reuses the single ph-flash keyframe (design-spec §11);

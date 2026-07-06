@@ -1,5 +1,10 @@
-import { fireEvent, render, screen } from "@testing-library/react";
-import { beforeEach, describe, expect, it, vi } from "vitest";
+import {
+  fireEvent,
+  render,
+  screen,
+  waitForElementToBeRemoved,
+} from "@testing-library/react";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
 import type { DraftSummary, SceneWithChildren } from "../../ipc/types";
 
@@ -10,13 +15,15 @@ vi.mock("@tauri-apps/api/core", () => ({
 
 import { useAppStore } from "../../stores/appStore";
 import { usePromptStore } from "../../stores/promptStore";
+import { useToastStore } from "../../stores/toastStore";
 import { ScenePanel } from "../ScenePanel";
 
 const promptInitial = usePromptStore.getState();
 const appInitial = useAppStore.getState();
+const toastInitial = useToastStore.getState();
 
 // One scene with a non-empty sub-stage (生成) and an empty one (评审) so we can
-// assert that edit mode surfaces empty sub-stages the view mode would drop.
+// assert the view grid surfaces empty sub-stages as manageable columns.
 const scenes: SceneWithChildren[] = [
   {
     scene: {
@@ -50,7 +57,7 @@ const scenes: SceneWithChildren[] = [
   },
 ];
 
-describe("ScenePanel edit mode — Scene / SubStage structure", () => {
+describe("ScenePanel scene card — view grid + properties entry", () => {
   beforeEach(() => {
     usePromptStore.setState(promptInitial, true);
     useAppStore.setState(appInitial, true);
@@ -59,111 +66,322 @@ describe("ScenePanel edit mode — Scene / SubStage structure", () => {
     invokeMock.mockResolvedValue({ ok: true });
   });
 
-  function enterEditMode() {
-    fireEvent.click(screen.getByLabelText("管理话术"));
-  }
-
-  it("view mode drops the empty sub-stage", () => {
+  it("view mode surfaces the empty sub-stage as a manageable column", () => {
     render(<ScenePanel />);
-    // 生成 has a phrase → shown; 评审 is empty → hidden in view mode.
+    // 阶段 2 (task 5): view mode now includes empty sub-stages so a freshly
+    // created column stays visible + manageable. Both 生成 (populated) and 评审
+    // (empty) render as columns, and 评审 carries its own header action cluster.
     expect(screen.getByText("生成")).toBeInTheDocument();
-    expect(screen.queryByText("评审")).not.toBeInTheDocument();
-  });
-
-  it("edit mode reveals Scene controls + new-scene action", () => {
-    render(<ScenePanel />);
-    enterEditMode();
-    expect(screen.getByText("场景 · 方案设计")).toBeInTheDocument();
-    expect(screen.getByLabelText("重命名场景")).toBeInTheDocument();
-    expect(screen.getByLabelText("删除场景")).toBeInTheDocument();
-    expect(screen.getByLabelText("新建场景")).toBeInTheDocument();
-  });
-
-  it("edit mode surfaces the empty sub-stage in the manager", () => {
-    render(<ScenePanel />);
-    enterEditMode();
-    // Both sub-stages are now manageable, including the empty 评审.
+    expect(screen.getByText("评审")).toBeInTheDocument();
     expect(screen.getByLabelText("重命名 评审")).toBeInTheDocument();
-    expect(screen.getByLabelText("删除 评审")).toBeInTheDocument();
+    expect(screen.getByLabelText("在 评审 添加话术")).toBeInTheDocument();
   });
 
-  it("clicking 新增子阶段 opens the inline name editor", () => {
+  it("卡头 pencil opens the properties panel", () => {
     render(<ScenePanel />);
-    enterEditMode();
-    fireEvent.click(screen.getByLabelText("新增子阶段"));
-    expect(screen.getByLabelText("子阶段名称")).toBeInTheDocument();
+    fireEvent.click(screen.getByLabelText("编辑场景属性"));
+    expect(screen.getByLabelText("场景属性")).toBeInTheDocument();
   });
 
-  it("creating a sub-stage invokes create_sub_stage with sceneId + name", () => {
-    render(<ScenePanel />);
-    enterEditMode();
-    fireEvent.click(screen.getByLabelText("新增子阶段"));
-    const input = screen.getByLabelText("子阶段名称");
-    fireEvent.change(input, { target: { value: "修订" } });
-    // Re-pull after the write resolves; return the same scenes to keep render stable.
+  it("saving properties invokes update_scene with the scene id + payload", () => {
     invokeMock.mockImplementation((cmd: string) => {
-      if (cmd === "create_sub_stage") return Promise.resolve({});
       if (cmd === "list_scenes_with_children") return Promise.resolve(scenes);
       return Promise.resolve({ ok: true });
     });
-    fireEvent.keyDown(input, { key: "Enter" });
-    const call = invokeMock.mock.calls.find((c) => c[0] === "create_sub_stage");
-    expect(call?.[1]).toMatchObject({ sceneId: "scene-plan", name: "修订" });
-  });
-
-  it("edit mode exposes drag handles for sub-stage reorder", () => {
     render(<ScenePanel />);
-    enterEditMode();
-    // Every sub-stage row (including the empty 评审) is drag-sortable (P3-6).
-    expect(screen.getByLabelText("拖动排序 生成")).toBeInTheDocument();
-    expect(screen.getByLabelText("拖动排序 评审")).toBeInTheDocument();
+    fireEvent.click(screen.getByLabelText("编辑场景属性"));
+    fireEvent.click(screen.getByRole("button", { name: "保存" }));
+    const call = invokeMock.mock.calls.find((c) => c[0] === "update_scene");
+    expect(call?.[1]).toMatchObject({
+      id: "scene-plan",
+      name: "方案设计",
+      rolePresets: ["架构师"],
+    });
   });
 
-  it("场景后移 swaps the tab order via reorder_scenes", () => {
-    const twoScenes: SceneWithChildren[] = [
-      scenes[0],
-      {
-        scene: {
-          id: "scene-review",
-          name: "评审场景",
-          icon: null,
+  it("renders scene rolePresets as chips in the card meta row", () => {
+    render(<ScenePanel />);
+    // 架构师 preset from the fixture surfaces as a meta-row chip.
+    expect(screen.getByText("架构师")).toBeInTheDocument();
+  });
+});
+
+// 阶段 2 (tasks 5 + 6): view-mode grid in-place editing. The action clusters on
+// the sub-stage column headers and phrase cards must reach every SubStage /
+// Phrase mutation directly in the grid. A two-phrase fixture lets us assert the
+// ↑↓ within-group swap; the empty 评审 column exercises empty-column ops.
+describe("ScenePanel view mode — in-place structure + content editing", () => {
+  const twoPhrase: SceneWithChildren[] = [
+    {
+      ...scenes[0],
+      phrases: [
+        scenes[0].phrases[0],
+        {
+          id: "phrase-2",
+          sceneId: "scene-plan",
+          name: "写测试",
+          content: "为该模块补充单元测试。",
+          usageCount: 0,
+          lastUsedAt: null,
+          createdAt: "2026-05-23T00:00:00Z",
+          notes: null,
+          deprecated: false,
+          subStageId: "ss-generate",
           orderIndex: 1,
-          visible: true,
-          rolePresets: [],
-          color: null,
         },
-        subStages: [],
-        phrases: [],
-      },
-    ];
-    usePromptStore.setState({ scenes: twoScenes, pendingDraftCount: 0 });
+      ],
+    },
+  ];
+
+  beforeEach(() => {
+    usePromptStore.setState(promptInitial, true);
+    useAppStore.setState(appInitial, true);
+    usePromptStore.setState({ scenes: twoPhrase, pendingDraftCount: 0 });
+    invokeMock.mockReset();
     invokeMock.mockImplementation((cmd: string) => {
       if (cmd === "list_scenes_with_children")
-        return Promise.resolve([twoScenes[1], twoScenes[0]]);
+        return Promise.resolve(twoPhrase);
       return Promise.resolve({ ok: true });
-    });
-    render(<ScenePanel />);
-    enterEditMode();
-    // First tab is active: 前移 hits the left boundary, 后移 is available.
-    expect(screen.getByLabelText("场景前移")).toBeDisabled();
-    expect(screen.getByLabelText("场景后移")).toBeEnabled();
-    fireEvent.click(screen.getByLabelText("场景后移"));
-    const call = invokeMock.mock.calls.find((c) => c[0] === "reorder_scenes");
-    expect(call?.[1]).toMatchObject({
-      orderedIds: ["scene-review", "scene-plan"],
     });
   });
 
-  it("deleting a Scene asks for confirmation before invoking delete_scene", () => {
+  // ── SubStage: Update / Reorder / Delete / Create ──────────────────────────
+  it("renames a sub-stage in place via update_sub_stage", () => {
     render(<ScenePanel />);
-    enterEditMode();
+    fireEvent.click(screen.getByLabelText("重命名 生成"));
+    const input = screen.getAllByLabelText("子阶段名称")[0];
+    fireEvent.change(input, { target: { value: "起草" } });
+    fireEvent.keyDown(input, { key: "Enter" });
+    const call = invokeMock.mock.calls.find((c) => c[0] === "update_sub_stage");
+    expect(call?.[1]).toMatchObject({ id: "ss-generate", name: "起草" });
+  });
+
+  it("Enter mid-IME-composition does not commit a sub-stage rename", () => {
+    render(<ScenePanel />);
+    fireEvent.click(screen.getByLabelText("重命名 生成"));
+    const input = screen.getAllByLabelText("子阶段名称")[0];
+    fireEvent.change(input, { target: { value: "起草" } });
+    // Committing an IME candidate fires Enter with isComposing still true.
+    fireEvent.keyDown(input, { key: "Enter", isComposing: true });
+    expect(
+      invokeMock.mock.calls.find((c) => c[0] === "update_sub_stage"),
+    ).toBeUndefined();
+  });
+
+  it("后移 swaps a sub-stage with its neighbour via reorder_sub_stages", () => {
+    render(<ScenePanel />);
+    // 生成 (idx 0) can move right into 评审 (idx 1); the resulting id order swaps.
+    fireEvent.click(screen.getByLabelText("后移 生成"));
+    const call = invokeMock.mock.calls.find(
+      (c) => c[0] === "reorder_sub_stages",
+    );
+    expect(call?.[1]).toMatchObject({
+      sceneId: "scene-plan",
+      orderedIds: ["ss-review", "ss-generate"],
+    });
+  });
+
+  it("deleting a sub-stage confirms then invokes delete_sub_stage", () => {
+    render(<ScenePanel />);
+    fireEvent.click(screen.getByLabelText("删除 评审"));
+    // Confirm gate: nothing fires until the user confirms.
+    expect(
+      invokeMock.mock.calls.find((c) => c[0] === "delete_sub_stage"),
+    ).toBeUndefined();
+    fireEvent.click(screen.getByLabelText("确认删除子阶段"));
+    const call = invokeMock.mock.calls.find((c) => c[0] === "delete_sub_stage");
+    expect(call?.[1]).toMatchObject({ id: "ss-review" });
+  });
+
+  it("the ghost column creates a sub-stage via create_sub_stage", () => {
+    render(<ScenePanel />);
+    fireEvent.click(screen.getByLabelText("新增子阶段"));
+    const inputs = screen.getAllByLabelText("子阶段名称");
+    const ghostInput = inputs[inputs.length - 1];
+    fireEvent.change(ghostInput, { target: { value: "验收" } });
+    fireEvent.keyDown(ghostInput, { key: "Enter" });
+    const call = invokeMock.mock.calls.find((c) => c[0] === "create_sub_stage");
+    expect(call?.[1]).toMatchObject({ sceneId: "scene-plan", name: "验收" });
+  });
+
+  // ── Phrase: Update / Reorder / Delete / Create ────────────────────────────
+  it("editing a phrase in place swaps in the editor and saves via update_phrase", () => {
+    render(<ScenePanel />);
+    fireEvent.click(screen.getByLabelText("编辑 设计导出模块"));
+    // The card is replaced by the editor; save the (unchanged) fields.
+    fireEvent.click(screen.getByRole("button", { name: "保存" }));
+    const call = invokeMock.mock.calls.find((c) => c[0] === "update_phrase");
+    expect(call?.[1]).toMatchObject({ id: "phrase-1" });
+  });
+
+  it("下移 swaps a phrase with its group neighbour via reorder_phrases", () => {
+    render(<ScenePanel />);
+    // 设计导出模块 (idx 0) moves down past 写测试 (idx 1) within 生成.
+    fireEvent.click(screen.getByLabelText("下移 设计导出模块"));
+    const call = invokeMock.mock.calls.find((c) => c[0] === "reorder_phrases");
+    expect(call?.[1]).toMatchObject({
+      sceneId: "scene-plan",
+      subStageId: "ss-generate",
+      orderedIds: ["phrase-2", "phrase-1"],
+    });
+  });
+
+  it("deleting a phrase confirms then invokes delete_phrase", () => {
+    render(<ScenePanel />);
+    fireEvent.click(screen.getByLabelText("删除 设计导出模块"));
+    expect(
+      invokeMock.mock.calls.find((c) => c[0] === "delete_phrase"),
+    ).toBeUndefined();
+    fireEvent.click(screen.getByLabelText("确认永久删除"));
+    const call = invokeMock.mock.calls.find((c) => c[0] === "delete_phrase");
+    expect(call?.[1]).toMatchObject({ id: "phrase-1" });
+  });
+
+  it("the add-phrase ghost prefills the column's sub-stage on create", () => {
+    render(<ScenePanel />);
+    fireEvent.click(screen.getByLabelText("在 生成 添加话术"));
+    // The create editor opens with 生成 preselected in the sub-stage picker.
+    expect(screen.getByLabelText("所属子阶段")).toHaveValue("ss-generate");
+    fireEvent.change(screen.getByPlaceholderText("名称"), {
+      target: { value: "新话术" },
+    });
+    fireEvent.change(screen.getByPlaceholderText("话术内容"), {
+      target: { value: "内容" },
+    });
+    fireEvent.click(screen.getByRole("button", { name: "新增" }));
+    const call = invokeMock.mock.calls.find((c) => c[0] === "create_phrase");
+    expect(call?.[1]).toMatchObject({
+      sceneId: "scene-plan",
+      name: "新话术",
+      subStageId: "ss-generate",
+    });
+  });
+
+  // ── Copy isolation: cluster clicks must not fire the card's copy action ────
+  it("clicking a phrase card action does not trigger copy", () => {
+    render(<ScenePanel />);
+    // The move button lives inside the card whose whole surface copies; its
+    // stopPropagation must keep record_usage (the copy path's IPC) from firing.
+    fireEvent.click(screen.getByLabelText("下移 设计导出模块"));
+    expect(
+      invokeMock.mock.calls.find((c) => c[0] === "record_usage"),
+    ).toBeUndefined();
+  });
+});
+
+// 阶段 1 core acceptance: the properties panel must persist EVERY edited field
+// through update_scene — the pre-refactor path (ScenePanel.tsx old 568-574) only
+// passed name/rolePresets and let icon/color ride the stale scene value. These
+// integration tests drive the real ScenePropertiesEditor rendered inside the
+// panel and assert the invoke payload carries the fresh icon / color / role edits.
+describe("ScenePanel properties panel — full-field save link", () => {
+  beforeEach(() => {
+    usePromptStore.setState(promptInitial, true);
+    useAppStore.setState(appInitial, true);
+    usePromptStore.setState({ scenes, pendingDraftCount: 0 });
+    invokeMock.mockReset();
+    invokeMock.mockImplementation((cmd: string) => {
+      if (cmd === "list_scenes_with_children") return Promise.resolve(scenes);
+      return Promise.resolve({ ok: true });
+    });
+  });
+
+  function openProperties() {
+    fireEvent.click(screen.getByLabelText("编辑场景属性"));
+    return screen.getByLabelText("场景属性");
+  }
+
+  it("persists edited name / icon / color / rolePresets in one update_scene call", () => {
+    render(<ScenePanel />);
+    openProperties();
+
+    // name: overwrite the fixture value.
+    fireEvent.change(screen.getByLabelText("场景名称"), {
+      target: { value: "重构规划" },
+    });
+    // icon: pick a lucide preset by aria-label (avoids preset-order coupling);
+    // microscope differs from the fixture's drafting-compass.
+    fireEvent.click(screen.getByLabelText("图标 microscope"));
+    // color: pick a swatch.
+    fireEvent.click(screen.getByLabelText("颜色 #2f9e6e"));
+    // rolePresets: add a second role via Enter.
+    const roleInput = screen.getByLabelText("添加角色预设");
+    fireEvent.change(roleInput, { target: { value: "评审员" } });
+    fireEvent.keyDown(roleInput, { key: "Enter" });
+
+    fireEvent.click(screen.getByRole("button", { name: "保存" }));
+
+    const call = invokeMock.mock.calls.find((c) => c[0] === "update_scene");
+    expect(call?.[1]).toMatchObject({
+      id: "scene-plan",
+      name: "重构规划",
+      icon: "microscope",
+      color: "#2f9e6e",
+      rolePresets: ["架构师", "评审员"],
+    });
+  });
+
+  it("clearing icon and color sends undefined (not the stale scene value)", () => {
+    render(<ScenePanel />);
+    openProperties();
+    // 无 clears the icon; the X swatch clears the color.
+    fireEvent.click(screen.getByLabelText("无图标"));
+    fireEvent.click(screen.getByLabelText("清除颜色"));
+    fireEvent.click(screen.getByRole("button", { name: "保存" }));
+
+    const call = invokeMock.mock.calls.find((c) => c[0] === "update_scene");
+    // icon defaulted from the fixture (drafting-compass) must not leak through.
+    expect(call?.[1]).toMatchObject({
+      id: "scene-plan",
+      icon: undefined,
+      color: undefined,
+    });
+  });
+
+  it("removing a role chip drops it from the saved rolePresets", () => {
+    render(<ScenePanel />);
+    openProperties();
+    fireEvent.click(screen.getByLabelText("删除角色 架构师"));
+    fireEvent.click(screen.getByRole("button", { name: "保存" }));
+    const call = invokeMock.mock.calls.find((c) => c[0] === "update_scene");
+    expect(call?.[1]).toMatchObject({ id: "scene-plan", rolePresets: [] });
+  });
+
+  it("closes the panel after a successful save", async () => {
+    render(<ScenePanel />);
+    openProperties();
+    fireEvent.click(screen.getByRole("button", { name: "保存" }));
+    // handleSaveProperties awaits update_scene before closing — let the
+    // resolve microtask flush so the panel actually unmounts.
+    await waitForElementToBeRemoved(() => screen.queryByLabelText("场景属性"));
+  });
+
+  it("取消 closes the panel without invoking update_scene", () => {
+    render(<ScenePanel />);
+    openProperties();
+    fireEvent.click(screen.getByRole("button", { name: "取消" }));
+    expect(screen.queryByLabelText("场景属性")).not.toBeInTheDocument();
+    expect(
+      invokeMock.mock.calls.find((c) => c[0] === "update_scene"),
+    ).toBeUndefined();
+  });
+
+  it("Escape from the name field closes the panel", () => {
+    render(<ScenePanel />);
+    openProperties();
+    fireEvent.keyDown(screen.getByLabelText("场景名称"), { key: "Escape" });
+    expect(screen.queryByLabelText("场景属性")).not.toBeInTheDocument();
+  });
+
+  it("deleting from the panel confirms, calls delete_scene, and closes", async () => {
+    render(<ScenePanel />);
+    openProperties();
+    // The delete lives in the panel footer; the confirm gate fires first.
     fireEvent.click(screen.getByLabelText("删除场景"));
-    // The confirm affordance appears; delete is not fired until confirmed.
     expect(
       invokeMock.mock.calls.find((c) => c[0] === "delete_scene"),
     ).toBeUndefined();
-    // The store re-pulls scenes after the delete resolves — the mock must
-    // answer with an array (here: none left) or the panel render crashes.
+    // After delete resolves the store re-pulls; answer empty so render survives.
     invokeMock.mockImplementation((cmd: string) => {
       if (cmd === "list_scenes_with_children") return Promise.resolve([]);
       return Promise.resolve({ ok: true });
@@ -171,6 +389,104 @@ describe("ScenePanel edit mode — Scene / SubStage structure", () => {
     fireEvent.click(screen.getByLabelText("确认删除场景"));
     const call = invokeMock.mock.calls.find((c) => c[0] === "delete_scene");
     expect(call?.[1]).toMatchObject({ id: "scene-plan" });
+    // deleteScene awaits the store re-pull before the panel closes.
+    await waitForElementToBeRemoved(() => screen.queryByLabelText("场景属性"));
+  });
+});
+
+// 阶段 1 wiring: the tab-tail ＋ creates a scene, jumps to it, and auto-opens the
+// properties panel (replacing the old inline-rename-in-edit-mode flow).
+describe("ScenePanel new-scene entry — auto-opens properties", () => {
+  beforeEach(() => {
+    usePromptStore.setState(promptInitial, true);
+    useAppStore.setState(appInitial, true);
+    usePromptStore.setState({ scenes, pendingDraftCount: 0 });
+    invokeMock.mockReset();
+    invokeMock.mockResolvedValue({ ok: true });
+  });
+
+  it("＋ new-scene creates via create_scene then opens the properties panel", async () => {
+    const created: SceneWithChildren = {
+      scene: {
+        id: "scene-new",
+        name: "新场景",
+        icon: null,
+        orderIndex: 1,
+        visible: true,
+        rolePresets: [],
+        color: null,
+      },
+      subStages: [],
+      phrases: [],
+    };
+    // The store optimistically re-pulls after create_scene; return the fixture
+    // scene plus the freshly-created one so the panel can jump to the new tab.
+    invokeMock.mockImplementation((cmd: string) => {
+      if (cmd === "list_scenes_with_children")
+        return Promise.resolve([scenes[0], created]);
+      return Promise.resolve({ ok: true });
+    });
+
+    render(<ScenePanel />);
+    fireEvent.click(screen.getByLabelText("新建场景"));
+
+    // Let the create + re-pull microtasks flush.
+    await screen.findByLabelText("场景属性");
+    const call = invokeMock.mock.calls.find((c) => c[0] === "create_scene");
+    expect(call?.[1]).toMatchObject({ name: "新场景", rolePresets: [] });
+    // The panel is scoped to the newly-created scene (its name in the input).
+    expect(screen.getByLabelText("场景名称")).toHaveValue("新场景");
+  });
+});
+
+// 阶段 1 consumption anchors: scene.color paints the icon wrapper's inline color;
+// rolePresets render as meta-row chips only when non-empty.
+describe("ScenePanel consumption anchors — color + rolePresets", () => {
+  beforeEach(() => {
+    usePromptStore.setState(promptInitial, true);
+    useAppStore.setState(appInitial, true);
+    invokeMock.mockReset();
+    invokeMock.mockResolvedValue({ ok: true });
+  });
+
+  it("paints the tab + card-head icon wrappers with scene.color", () => {
+    const colored: SceneWithChildren[] = [
+      {
+        ...scenes[0],
+        scene: { ...scenes[0].scene, color: "#4c8dff" },
+      },
+    ];
+    usePromptStore.setState({ scenes: colored, pendingDraftCount: 0 });
+    const { container } = render(<ScenePanel />);
+    // Both the active tab icon span and the card-head icon span carry the
+    // inline color (rgb-normalised by jsdom).
+    const painted = Array.from(
+      container.querySelectorAll<HTMLElement>("span[style]"),
+    ).filter((el) => el.style.color === "rgb(76, 141, 255)");
+    expect(painted.length).toBeGreaterThanOrEqual(2);
+  });
+
+  it("omits the inline color when scene.color is null", () => {
+    usePromptStore.setState({ scenes, pendingDraftCount: 0 });
+    const { container } = render(<ScenePanel />);
+    const painted = Array.from(
+      container.querySelectorAll<HTMLElement>("span[style]"),
+    ).filter((el) => el.style.color !== "");
+    expect(painted).toHaveLength(0);
+  });
+
+  it("renders no role chips when rolePresets is empty", () => {
+    const noRoles: SceneWithChildren[] = [
+      {
+        ...scenes[0],
+        scene: { ...scenes[0].scene, rolePresets: [] },
+      },
+    ];
+    usePromptStore.setState({ scenes: noRoles, pendingDraftCount: 0 });
+    render(<ScenePanel />);
+    // The fixture's 架构师 chip must be gone; the phrase-count meta stays.
+    expect(screen.queryByText("架构师")).not.toBeInTheDocument();
+    expect(screen.getByText("1 条话术")).toBeInTheDocument();
   });
 });
 
@@ -281,5 +597,205 @@ describe("ScenePanel drafts view — roving nav reaches draft actions", () => {
       fireEvent.keyDown(region, { key: "ArrowRight" });
     }
     expect(document.activeElement).toBe(firstDraftAction);
+  });
+});
+
+// ── CRUD matrix cell: Scene × Reorder ─────────────────────────────────────────
+// The 12-cell 实体×CRUD matrix demands one ScenePanel-level assertion per cell
+// that the in-place entry reaches the right IPC link. Every other cell already
+// has an integration test above (Scene C/U/D, SubStage C/U/D/R, Phrase C/U/D/R);
+// Scene × Reorder was only covered at the ScenePropertiesEditor unit level
+// (onMoveScene callback), never wired through the panel to reorder_scenes. Two
+// scenes let the active-scene move right past its neighbour.
+describe("ScenePanel properties panel — scene reorder link", () => {
+  const twoScenes: SceneWithChildren[] = [
+    scenes[0],
+    {
+      scene: {
+        id: "scene-impl",
+        name: "编码实现",
+        icon: "wrench",
+        orderIndex: 1,
+        visible: true,
+        rolePresets: [],
+        color: null,
+      },
+      subStages: [],
+      phrases: [],
+    },
+  ];
+
+  beforeEach(() => {
+    usePromptStore.setState(promptInitial, true);
+    useAppStore.setState(appInitial, true);
+    usePromptStore.setState({ scenes: twoScenes, pendingDraftCount: 0 });
+    invokeMock.mockReset();
+    invokeMock.mockImplementation((cmd: string) => {
+      if (cmd === "list_scenes_with_children")
+        return Promise.resolve(twoScenes);
+      return Promise.resolve({ ok: true });
+    });
+  });
+
+  it("场景后移 from the properties panel invokes reorder_scenes with the swapped order", () => {
+    render(<ScenePanel />);
+    fireEvent.click(screen.getByLabelText("编辑场景属性"));
+    // Active scene is the first tab (方案设计); moving it right swaps it past
+    // 编码实现, so the persisted order transposes the two ids.
+    fireEvent.click(screen.getByLabelText("场景后移"));
+    const call = invokeMock.mock.calls.find((c) => c[0] === "reorder_scenes");
+    expect(call?.[1]).toMatchObject({
+      orderedIds: ["scene-impl", "scene-plan"],
+    });
+  });
+});
+
+// ── Adversarial gap 1: async failure paths ────────────────────────────────────
+// A rejected update_scene / delete_scene must surface the backend message via
+// showError and must NOT silently drop the panel — the user has to see why the
+// save/delete failed and still have the panel to retry.
+describe("ScenePanel properties panel — async failure surfaces + panel survives", () => {
+  // Fake timers here, not real. toastStore.show() arms a setTimeout that resets
+  // intent → "success" after the dwell, and its seq guard is defeated by
+  // beforeEach's setState(reset) rewinding seq — so a prior test's still-pending
+  // dwell callback can flip THIS test's error intent back to success mid-poll
+  // (the observed flake). Freezing timers means no dwell callback fires, so the
+  // asserted error intent is stable; clearAllTimers on teardown drops any armed
+  // timer before real timers resume so it can never leak into a later test.
+  beforeEach(() => {
+    vi.useFakeTimers();
+    usePromptStore.setState(promptInitial, true);
+    useAppStore.setState(appInitial, true);
+    useToastStore.setState(toastInitial, true);
+    usePromptStore.setState({ scenes, pendingDraftCount: 0 });
+    invokeMock.mockReset();
+  });
+
+  afterEach(() => {
+    vi.clearAllTimers();
+    vi.useRealTimers();
+  });
+
+  it("update_scene rejection keeps the panel open and shows the error", async () => {
+    invokeMock.mockImplementation((cmd: string) => {
+      if (cmd === "list_scenes_with_children") return Promise.resolve(scenes);
+      if (cmd === "update_scene")
+        return Promise.reject(new Error("SceneNotEmpty"));
+      return Promise.resolve({ ok: true });
+    });
+    render(<ScenePanel />);
+    fireEvent.click(screen.getByLabelText("编辑场景属性"));
+    fireEvent.click(screen.getByRole("button", { name: "保存" }));
+
+    // handleSaveProperties awaits update_scene; on reject it never closes the
+    // panel and routes the message through showError (toast intent "error").
+    // vi.waitFor drives fake time forward to flush the rejection microtask.
+    await vi.waitFor(() => {
+      expect(useToastStore.getState().intent).toBe("error");
+    });
+    expect(screen.getByLabelText("场景属性")).toBeInTheDocument();
+    expect(useToastStore.getState().message).toBeTruthy();
+  });
+
+  it("delete_scene rejection keeps the panel open and shows the error", async () => {
+    invokeMock.mockImplementation((cmd: string) => {
+      if (cmd === "list_scenes_with_children") return Promise.resolve(scenes);
+      if (cmd === "delete_scene")
+        return Promise.reject(new Error("SceneNotEmpty"));
+      return Promise.resolve({ ok: true });
+    });
+    render(<ScenePanel />);
+    fireEvent.click(screen.getByLabelText("编辑场景属性"));
+    fireEvent.click(screen.getByLabelText("删除场景"));
+    fireEvent.click(screen.getByLabelText("确认删除场景"));
+
+    await vi.waitFor(() => {
+      expect(useToastStore.getState().intent).toBe("error");
+    });
+    // handleDeleteScene only closes the panel on success; a reject must leave it
+    // mounted so the SceneNotEmpty reason stays actionable.
+    expect(screen.getByLabelText("场景属性")).toBeInTheDocument();
+  });
+});
+
+// ── Adversarial gap 2: draftsActive reset ─────────────────────────────────────
+// The edit-reset effect depends on [currentSceneId, draftsActive]. Switching to
+// the drafts view must reset an open properties panel and any in-place editor —
+// otherwise a stale editor would mutate a scene the user can no longer see.
+describe("ScenePanel — switching to drafts resets open editors", () => {
+  const draft: DraftSummary = {
+    id: "draft-macro",
+    targetType: "macro",
+    name: "示例 Macro",
+    preview: "预览内容",
+    toolName: "mcp:create_draft",
+    status: "pending",
+    createdAt: "2026-06-30T00:00:00Z",
+  };
+
+  beforeEach(() => {
+    usePromptStore.setState(promptInitial, true);
+    useAppStore.setState(appInitial, true);
+    usePromptStore.setState({
+      scenes,
+      drafts: [draft],
+      pendingDraftCount: 1,
+    });
+    invokeMock.mockReset();
+    invokeMock.mockResolvedValue({ ok: true });
+  });
+
+  it("activating the drafts tab closes an open properties panel", () => {
+    render(<ScenePanel />);
+    fireEvent.click(screen.getByLabelText("编辑场景属性"));
+    expect(screen.getByLabelText("场景属性")).toBeInTheDocument();
+    // draftsActive flips true → the [currentSceneId, draftsActive] reset effect
+    // runs and clears showProperties.
+    fireEvent.click(screen.getByLabelText("草稿收件箱，1 条待审"));
+    expect(screen.queryByLabelText("场景属性")).not.toBeInTheDocument();
+  });
+
+  it("activating the drafts tab cancels an in-place sub-stage rename", () => {
+    render(<ScenePanel />);
+    fireEvent.click(screen.getByLabelText("重命名 生成"));
+    expect(screen.getAllByLabelText("子阶段名称").length).toBeGreaterThan(0);
+    fireEvent.click(screen.getByLabelText("草稿收件箱，1 条待审"));
+    // The rename input is gone: the reset cleared renamingSubId, and the drafts
+    // view replaces the grid entirely.
+    expect(screen.queryByLabelText("子阶段名称")).not.toBeInTheDocument();
+  });
+});
+
+// ── Adversarial gap 3: keyboard reachability of action clusters ────────────────
+// Tasks 5/6 give every in-place action button data-nav-item + tabIndex={-1} so
+// the region's roving arrow-key nav can reach them (mirrors the drafts-nav test
+// above, which asserts the same markers on draft actions). Assert the SubStage
+// and Phrase clusters are inside the roving sequence with the right markers.
+describe("ScenePanel view grid — action clusters are roving-nav items", () => {
+  beforeEach(() => {
+    usePromptStore.setState(promptInitial, true);
+    useAppStore.setState(appInitial, true);
+    usePromptStore.setState({ scenes, pendingDraftCount: 0 });
+    invokeMock.mockReset();
+    invokeMock.mockResolvedValue({ ok: true });
+  });
+
+  it("sub-stage + phrase cluster buttons carry data-nav-item and tabindex -1", () => {
+    const { container } = render(<ScenePanel />);
+    const region = container.querySelector(
+      "[data-region='scene-panel']",
+    ) as HTMLElement;
+    const navItems = Array.from(
+      region.querySelectorAll<HTMLElement>("[data-nav-item]"),
+    );
+    // A representative button from each cluster must be a nav item.
+    const subMove = screen.getByLabelText("后移 生成");
+    const subDelete = screen.getByLabelText("删除 生成");
+    const phraseMove = screen.getByLabelText("下移 设计导出模块");
+    const phraseEdit = screen.getByLabelText("编辑 设计导出模块");
+    for (const btn of [subMove, subDelete, phraseMove, phraseEdit]) {
+      expect(navItems).toContain(btn);
+      expect(btn.getAttribute("tabindex")).toBe("-1");
+    }
   });
 });

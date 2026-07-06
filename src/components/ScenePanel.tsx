@@ -1,30 +1,26 @@
-import { DragDropProvider } from "@dnd-kit/react";
-import { useSortable } from "@dnd-kit/react/sortable";
-import { move } from "@dnd-kit/helpers";
 import {
-  Bug,
-  ChevronLeft,
-  ChevronRight,
-  Code,
+  ArrowDown,
+  ArrowLeft,
+  ArrowRight,
+  ArrowUp,
   Copy,
-  DraftingCompass,
   Folder,
-  GripVertical,
   Inbox,
   Layers,
-  type LucideIcon,
-  Microscope,
-  Pen,
   Pencil,
   Plus,
   Trash2,
-  Wrench,
 } from "lucide-react";
-import { type ReactNode, useEffect, useRef, useState } from "react";
+import {
+  type MouseEvent as ReactMouseEvent,
+  useEffect,
+  useRef,
+  useState,
+} from "react";
 
 import { useCopy } from "../hooks/useCopy";
 import { useRegionNav } from "../hooks/useRegionNav";
-import type { Phrase, Scene, SubStage } from "../ipc/types";
+import type { Phrase, SubStage } from "../ipc/types";
 import { useAppStore } from "../stores/appStore";
 import { usePromptStore } from "../stores/promptStore";
 import { useToastStore } from "../stores/toastStore";
@@ -34,6 +30,7 @@ import { DraftInbox } from "./DraftInbox";
 import {
   ActionCluster,
   Button,
+  Chip,
   ConfirmInline,
   EditorActions,
   EditorInput,
@@ -44,50 +41,21 @@ import {
   RegionHeader,
 } from "./primitives";
 import primitiveStyles from "./primitives/primitives.module.css";
+import { SceneIcon } from "./SceneIcon";
 import styles from "./ScenePanel.module.css";
-
-// Scene icons are user content (design-spec §12.4): a lucide name string renders
-// as a lucide glyph (matching the Promptscape design稿), anything else falls back
-// to raw text so emoji / single-char icons keep working. Explicit map (not the
-// full lucide registry) keeps the bundle lean per §12 icon restraint.
-const SCENE_LUCIDE: Record<string, LucideIcon> = {
-  "drafting-compass": DraftingCompass,
-  microscope: Microscope,
-  wrench: Wrench,
-  pen: Pen,
-  code: Code,
-  bug: Bug,
-};
-
-function SceneIcon({
-  name,
-  size,
-  className,
-}: {
-  name: string | null;
-  size: number;
-  className?: string;
-}) {
-  if (!name) return null;
-  const Lucide = SCENE_LUCIDE[name];
-  if (Lucide)
-    return (
-      <Lucide size={size} className={className} aria-hidden strokeWidth={2} />
-    );
-  return (
-    <span className={className} aria-hidden>
-      {name}
-    </span>
-  );
-}
+import {
+  ScenePropertiesEditor,
+  type ScenePropertiesPayload,
+} from "./ScenePropertiesEditor";
 
 type EditTarget = { mode: "create" } | { mode: "edit"; phrase: Phrase } | null;
 
 type Grouped = Array<{ subStage: SubStage | null; phrases: Phrase[] }>;
 
-// View mode drops empty sub-stages (no phrases = nothing to show). Edit mode
-// keeps them (includeEmpty) so they render as visible, droppable partitions —
-// otherwise a freshly-created sub-stage would be invisible until it has phrases.
+// includeEmpty keeps sub-stages with no phrases in the result — the grid passes
+// it so a freshly-created empty sub-stage stays a visible, manageable column (a
+// muted column with an add-phrase placeholder). The default-false path is
+// retained for callers that only want populated groups.
 function groupBySubStage(
   phrases: Phrase[],
   subStages: SubStage[],
@@ -115,22 +83,38 @@ export function ScenePanel() {
   const draftsViewRequestId = useAppStore((s) => s.draftsViewRequestId);
   const deletePhrase = usePromptStore((s) => s.deletePhrase);
   const createScene = usePromptStore((s) => s.createScene);
+  const updateScene = usePromptStore((s) => s.updateScene);
   const deleteScene = usePromptStore((s) => s.deleteScene);
   const reorderScenes = usePromptStore((s) => s.reorderScenes);
+  const createSubStage = usePromptStore((s) => s.createSubStage);
+  const updateSubStage = usePromptStore((s) => s.updateSubStage);
+  const deleteSubStage = usePromptStore((s) => s.deleteSubStage);
+  const reorderSubStages = usePromptStore((s) => s.reorderSubStages);
+  const reorderPhrases = usePromptStore((s) => s.reorderPhrases);
   const copy = useCopy();
   const flashId = useToastStore((s) => s.flashTargetId);
   const showToast = useToastStore((s) => s.show);
   const showError = useToastStore((s) => s.showError);
   const onRegionKeyDown = useRegionNav();
   // Active scene is tracked by ID, not index (P3-6): a tab reorder shifts every
-  // index, and an index-keyed selection would silently land on a neighbour scene
-  // — which also resets edit mode via the currentSceneId effect below. The id
-  // stays stable across reorders; a deleted/unknown id falls back to the first.
+  // index, and an index-keyed selection would silently land on a neighbour scene.
+  // The id stays stable across reorders; a deleted/unknown id falls back to the
+  // first.
   const [activeSceneId, setActiveSceneId] = useState<string | null>(null);
   const [showDrafts, setShowDrafts] = useState(false);
-  const [editMode, setEditMode] = useState(false);
-  const [editing, setEditing] = useState<EditTarget>(null);
-  const [confirmingId, setConfirmingId] = useState<string | null>(null);
+  const [showProperties, setShowProperties] = useState(false);
+  // View-mode in-place editing state — the grid's own action clusters (tasks
+  // 5 + 6) drive these. phraseEdit: a phrase card swapped for the PhraseEditor
+  // (edit an existing phrase). addPhraseFor: a column's ghost card opened into a
+  // create-mode PhraseEditor prefilled with that column's subStageId (null =
+  // ungrouped).
+  const [renamingSubId, setRenamingSubId] = useState<string | null>(null);
+  const [confirmingSubId, setConfirmingSubId] = useState<string | null>(null);
+  const [creatingSubStage, setCreatingSubStage] = useState(false);
+  const [phraseEditId, setPhraseEditId] = useState<string | null>(null);
+  const [addPhraseFor, setAddPhraseFor] = useState<{
+    subStageId: string | null;
+  } | null>(null);
 
   // The 待审 badge jumps here by bumping draftsViewRequestId.
   useEffect(() => {
@@ -150,26 +134,28 @@ export function ScenePanel() {
     scenes.find((sc) => sc.scene.id === activeSceneId) ?? scenes[0];
   const currentSceneId = current?.scene.id;
 
-  // Programmatic scene jumps that must keep edit mode alive (create-scene
-  // jumping to the fresh tab for the inline rename) raise this flag; the
-  // reset effect below consumes it once instead of dropping out of edit mode.
-  const keepEditOnSceneChange = useRef(false);
+  // Programmatic scene jumps that must open the properties panel on arrival
+  // (create-scene jumping to the fresh tab) raise this flag; the reset effect
+  // below consumes it once, opening the panel instead of closing it.
+  const openPropsOnSceneChange = useRef(false);
 
   // Switching scenes (or jumping to drafts) mid-edit would mutate a list the
   // user can no longer see — reset edit state on either change. A flagged
-  // programmatic jump keeps editMode but still clears the editor-local state
-  // (the open editor / delete confirm belong to the previous scene's list).
+  // programmatic jump (fresh scene) opens the properties panel on the new tab;
+  // any other change closes the properties panel and clears in-place editors.
   useEffect(() => {
-    if (!keepEditOnSceneChange.current) {
-      setEditMode(false);
-    }
-    keepEditOnSceneChange.current = false;
-    setEditing(null);
-    setConfirmingId(null);
+    setShowProperties(openPropsOnSceneChange.current);
+    openPropsOnSceneChange.current = false;
+    // Reset the view-mode in-place editing state too — a scene switch must
+    // not carry an open rename / confirm / phrase editor onto the new scene.
+    setRenamingSubId(null);
+    setConfirmingSubId(null);
+    setCreatingSubStage(false);
+    setPhraseEditId(null);
+    setAddPhraseFor(null);
   }, [currentSceneId, draftsActive]);
 
   const handleDelete = async (id: string) => {
-    setConfirmingId(null);
     try {
       await deletePhrase(id);
       showToast("已永久删除");
@@ -179,19 +165,33 @@ export function ScenePanel() {
   };
 
   // New scenes append to the global order — after the store re-pull, jump to
-  // the trailing scene (still in edit mode) so the user can rename it inline.
+  // the trailing scene and open its properties panel so the user names / styles
+  // it immediately (replaces the old inline-rename-in-edit-mode flow).
   const handleCreateScene = async () => {
     try {
       await createScene({ name: "新场景", rolePresets: [] });
       const next = usePromptStore.getState().scenes;
       const created = next[next.length - 1];
       if (created) {
-        // Flag the jump so the scene-change reset effect keeps edit mode.
-        keepEditOnSceneChange.current = true;
+        // Flag the jump so the scene-change reset effect opens the props panel.
+        openPropsOnSceneChange.current = true;
         setActiveSceneId(created.scene.id);
       }
     } catch (err) {
       showError(toUserMessage(err, "新建场景失败"));
+    }
+  };
+
+  // Persist the properties panel edits through the existing update_scene link,
+  // then close the panel. onSave's payload already matches update_scene's wire
+  // shape; we only thread the scene id through.
+  const handleSaveProperties = async (payload: ScenePropertiesPayload) => {
+    if (!current) return;
+    try {
+      await updateScene({ id: current.scene.id, ...payload });
+      setShowProperties(false);
+    } catch (err) {
+      showError(toUserMessage(err, "保存场景属性失败"));
     }
   };
 
@@ -201,6 +201,7 @@ export function ScenePanel() {
     try {
       await deleteScene(id);
       showToast("已删除场景");
+      setShowProperties(false);
       setActiveSceneId(null);
     } catch (err) {
       showError(toUserMessage(err, "删除场景失败"));
@@ -211,8 +212,8 @@ export function ScenePanel() {
   // the global tab order. Buttons over tab dnd — the tabs double as
   // click-to-switch buttons and share the nav with the conditional 草稿 tab, so
   // a drag layer there would fight both. Selection is pinned to the moved
-  // scene's id below so the id-keyed lookup keeps it active (and edit mode
-  // alive) through the store re-pull.
+  // scene's id below so the id-keyed lookup keeps it active through the store
+  // re-pull.
   const handleMoveScene = async (dir: -1 | 1) => {
     if (!current) return;
     const idx = scenes.findIndex((sc) => sc.scene.id === current.scene.id);
@@ -229,6 +230,85 @@ export function ScenePanel() {
       await reorderScenes(ids);
     } catch (err) {
       showError(toUserMessage(err, "场景排序保存失败"));
+    }
+  };
+
+  // ── View-mode structure ops (task 5) ──────────────────────────────────────
+  // Sub-stage rename/create commit through the existing update_sub_stage /
+  // create_sub_stage links; the ←→ swap reuses reorder_sub_stages by rebuilding
+  // the ordered id list with the target and its neighbour transposed. Move
+  // buttons over a drag handle — copy is the grid's primary action, so a drag
+  // affordance would fight it (plan 关键决策: 拖拽 → 按钮移动).
+  const handleRenameSub = async (id: string, name: string) => {
+    const trimmed = name.trim();
+    if (!trimmed) return;
+    try {
+      await updateSubStage({ id, name: trimmed });
+      setRenamingSubId(null);
+    } catch (err) {
+      showError(toUserMessage(err, "重命名失败"));
+    }
+  };
+
+  const handleCreateSub = async (name: string) => {
+    if (!current) return;
+    const trimmed = name.trim();
+    if (!trimmed) return;
+    try {
+      await createSubStage({ sceneId: current.scene.id, name: trimmed });
+      setCreatingSubStage(false);
+    } catch (err) {
+      showError(toUserMessage(err, "新增子阶段失败"));
+    }
+  };
+
+  const handleDeleteSub = async (id: string) => {
+    setConfirmingSubId(null);
+    try {
+      await deleteSubStage(id);
+    } catch (err) {
+      showError(toUserMessage(err, "删除子阶段失败"));
+    }
+  };
+
+  const handleMoveSub = async (id: string, dir: -1 | 1) => {
+    if (!current) return;
+    const ordered = [...current.subStages].sort(
+      (a, b) => a.orderIndex - b.orderIndex,
+    );
+    const idx = ordered.findIndex((s) => s.id === id);
+    const target = idx + dir;
+    if (idx < 0 || target < 0 || target >= ordered.length) return;
+    const ids = ordered.map((s) => s.id);
+    [ids[idx], ids[target]] = [ids[target], ids[idx]];
+    try {
+      await reorderSubStages(current.scene.id, ids);
+    } catch (err) {
+      showError(toUserMessage(err, "子阶段排序保存失败"));
+    }
+  };
+
+  // ── View-mode phrase ops (task 6) ─────────────────────────────────────────
+  // ↑↓ swaps a phrase with its neighbour WITHIN its own group, persisting the
+  // partition's new order through reorder_phrases (order_index is partitioned
+  // per (scene, sub-stage), matching this list). Cross-column moves are out of
+  // scope — changing a phrase's group goes through the editor's sub-stage select.
+  const handleMovePhrase = async (
+    subStageId: string | null,
+    groupPhrases: Phrase[],
+    id: string,
+    dir: -1 | 1,
+  ) => {
+    if (!current) return;
+    const idx = groupPhrases.findIndex((p) => p.id === id);
+    const target = idx + dir;
+    if (idx < 0 || target < 0 || target >= groupPhrases.length) return;
+    const ids = groupPhrases.map((p) => p.id);
+    [ids[idx], ids[target]] = [ids[target], ids[idx]];
+    try {
+      await reorderPhrases(current.scene.id, subStageId, ids);
+    } catch (err) {
+      showError(toUserMessage(err, "排序保存失败"));
     }
   };
 
@@ -269,7 +349,9 @@ export function ScenePanel() {
     );
   }
 
-  const groups = groupBySubStage(current.phrases, current.subStages, editMode);
+  // Include empty sub-stages so a freshly-created empty column stays visible and
+  // manageable in the grid (plan task 5).
+  const groups = groupBySubStage(current.phrases, current.subStages, true);
 
   return (
     <section
@@ -319,16 +401,29 @@ export function ScenePanel() {
               data-nav-item
               tabIndex={-1}
             >
-              <SceneIcon
-                name={sc.scene.icon}
-                size={14}
+              <span
                 className={styles.icon}
-              />
+                // Scene color paints only the scene's own icon, never chrome
+                // (ADR-019); absent color falls back to inherited chrome tone.
+                style={{ color: sc.scene.color ?? undefined }}
+              >
+                <SceneIcon name={sc.scene.icon} size={14} />
+              </span>
               <span className={styles.tabName}>{sc.scene.name}</span>
               <span className={styles.tabCount}>{sc.phrases.length}</span>
             </button>
           );
         })}
+        <button
+          type="button"
+          className={styles.tabAdd}
+          onClick={() => void handleCreateScene()}
+          aria-label="新建场景"
+          data-nav-item
+          tabIndex={-1}
+        >
+          <Plus size={14} aria-hidden strokeWidth={2} />
+        </button>
       </nav>
       {draftsActive ? (
         <div className={styles.phrases}>
@@ -337,13 +432,27 @@ export function ScenePanel() {
       ) : (
         <div className={styles.sceneCard}>
           <div className={styles.sceneHead}>
-            <span className={styles.sceneIcon} aria-hidden>
+            <span
+              className={styles.sceneIcon}
+              aria-hidden
+              // Scene color paints only the scene's own icon glyph (ADR-019).
+              style={{ color: current.scene.color ?? undefined }}
+            >
               <SceneIcon name={current.scene.icon ?? "📁"} size={18} />
             </span>
             <div className={styles.sceneIdentity}>
               <div className={styles.sceneName}>{current.scene.name}</div>
               <div className={styles.sceneMeta}>
-                {current.phrases.length} 条话术
+                <span>{current.phrases.length} 条话术</span>
+                {current.scene.rolePresets.length > 0 && (
+                  <span className={styles.roleChips}>
+                    {current.scene.rolePresets.map((role) => (
+                      <Chip key={role} layer="task" dim>
+                        {role}
+                      </Chip>
+                    ))}
+                  </span>
+                )}
               </div>
             </div>
             <span className={styles.sceneSubCount}>
@@ -351,154 +460,128 @@ export function ScenePanel() {
               {current.subStages.length} 个子阶段
             </span>
             <div className={styles.sceneHeadActions}>
-              {editMode ? (
-                <>
-                  <Button
-                    layer="task"
-                    aria-label="新增话术"
-                    onClick={() => setEditing({ mode: "create" })}
-                  >
-                    <Plus size={14} aria-hidden strokeWidth={2} />
-                    <span>新增</span>
-                  </Button>
-                  <Button
-                    onClick={() => {
-                      setEditMode(false);
-                      setEditing(null);
-                    }}
-                  >
-                    完成
-                  </Button>
-                </>
-              ) : (
-                <IconButton
-                  aria-label="管理话术"
-                  data-nav-item
-                  tabIndex={-1}
-                  onClick={() => setEditMode(true)}
-                >
-                  <Pencil size={12} aria-hidden strokeWidth={2} />
-                </IconButton>
-              )}
+              <IconButton
+                aria-label="编辑场景属性"
+                data-nav-item
+                tabIndex={-1}
+                onClick={() => setShowProperties(true)}
+              >
+                <Pencil size={12} aria-hidden strokeWidth={2} />
+              </IconButton>
             </div>
           </div>
 
-          {editMode && (
-            <SceneStructureEditor
-              scene={current.scene}
-              subStages={current.subStages}
-              canMoveLeft={
-                scenes.findIndex((sc) => sc.scene.id === current.scene.id) > 0
-              }
-              canMoveRight={
-                scenes.findIndex((sc) => sc.scene.id === current.scene.id) <
-                scenes.length - 1
-              }
-              onMoveScene={(dir) => void handleMoveScene(dir)}
-              onError={showError}
-              onCreateScene={() => void handleCreateScene()}
-              onDeleteScene={() => void handleDeleteScene(current.scene.id)}
-            />
-          )}
-
-          {editMode && editing && (
+          {showProperties && (
             <div className={styles.editorSlot}>
-              <PhraseEditor
-                target={editing}
-                sceneId={current.scene.id}
-                subStages={current.subStages}
-                onClose={() => setEditing(null)}
-                onError={showError}
+              <ScenePropertiesEditor
+                scene={current.scene}
+                canMoveLeft={
+                  scenes.findIndex((sc) => sc.scene.id === current.scene.id) > 0
+                }
+                canMoveRight={
+                  scenes.findIndex((sc) => sc.scene.id === current.scene.id) <
+                  scenes.length - 1
+                }
+                onSave={(payload) => void handleSaveProperties(payload)}
+                onMoveScene={(dir) => void handleMoveScene(dir)}
+                onDelete={() => void handleDeleteScene(current.scene.id)}
+                onClose={() => setShowProperties(false)}
               />
             </div>
           )}
 
           <div className={styles.phrases}>
-            {groups.length === 0 ? (
-              <EmptyState>
-                {editMode
-                  ? "该 Scene 暂无话术 · 点「新增」添加"
-                  : "该 Scene 暂无话术"}
-              </EmptyState>
-            ) : editMode ? (
-              groups.map((g) => (
-                <EditablePhraseGroup
-                  key={g.subStage?.id ?? "__ungrouped__"}
-                  sceneId={current.scene.id}
-                  subStageId={g.subStage?.id ?? null}
-                  subStageName={g.subStage?.name ?? null}
+            {groups.map((g, gi) => {
+              const subId = g.subStage?.id ?? null;
+              return (
+                <ViewColumn
+                  key={subId ?? "__ungrouped__"}
+                  index={gi}
+                  subStage={g.subStage}
                   phrases={g.phrases}
-                  confirmingId={confirmingId}
-                  onEdit={(p) => setEditing({ mode: "edit", phrase: p })}
-                  onRequestDelete={(id) => setConfirmingId(id)}
-                  onCancelDelete={() => setConfirmingId(null)}
-                  onConfirmDelete={(id) => void handleDelete(id)}
+                  canMoveLeft={gi > 0 && g.subStage != null}
+                  // The ungrouped column always trails last, so a real
+                  // sub-stage can move right only if the next column is also a
+                  // real sub-stage (never past the ungrouped orphan bucket).
+                  canMoveRight={
+                    g.subStage != null && groups[gi + 1]?.subStage != null
+                  }
+                  renaming={renamingSubId === g.subStage?.id}
+                  confirmingDelete={confirmingSubId === g.subStage?.id}
+                  editingPhraseId={phraseEditId}
+                  addingPhrase={addPhraseFor?.subStageId === subId}
+                  flashId={flashId}
+                  sceneId={current.scene.id}
+                  subStages={current.subStages}
+                  onCopy={(p) =>
+                    void copy(
+                      p.content,
+                      {
+                        targetType: "phrase",
+                        targetId: p.id,
+                        source: "scene",
+                        modifierIds: null,
+                        sopId: null,
+                        sopStepOrder: null,
+                        phaseId: null,
+                      },
+                      p.id,
+                    )
+                  }
+                  onRenameStart={() =>
+                    g.subStage && setRenamingSubId(g.subStage.id)
+                  }
+                  onRenameCancel={() => setRenamingSubId(null)}
+                  onRenameSave={(name) =>
+                    g.subStage && void handleRenameSub(g.subStage.id, name)
+                  }
+                  onMove={(dir) =>
+                    g.subStage && void handleMoveSub(g.subStage.id, dir)
+                  }
+                  onDeleteRequest={() =>
+                    g.subStage && setConfirmingSubId(g.subStage.id)
+                  }
+                  onDeleteCancel={() => setConfirmingSubId(null)}
+                  onDeleteConfirm={() =>
+                    g.subStage && void handleDeleteSub(g.subStage.id)
+                  }
+                  onPhraseEdit={(id) => setPhraseEditId(id)}
+                  onPhraseEditClose={() => setPhraseEditId(null)}
+                  onPhraseMove={(id, dir) =>
+                    void handleMovePhrase(subId, g.phrases, id, dir)
+                  }
+                  onPhraseDelete={(id) => void handleDelete(id)}
+                  onAddPhrase={() => setAddPhraseFor({ subStageId: subId })}
+                  onAddPhraseClose={() => setAddPhraseFor(null)}
+                  onError={showError}
                 />
-              ))
-            ) : (
-              groups.map((g, gi) => (
-                <div
-                  key={g.subStage?.id ?? "__ungrouped__"}
-                  className={styles.group}
+              );
+            })}
+            {/* Trailing ghost column — opens an inline name editor to create a
+                  new sub-stage (create link: create_sub_stage). */}
+            <div className={`${styles.group} ${styles.ghostColumn}`}>
+              {creatingSubStage ? (
+                <InlineNameEditor
+                  initialValue=""
+                  ariaLabel="子阶段名称"
+                  placeholder="子阶段名称"
+                  onSave={(name) => void handleCreateSub(name)}
+                  onCancel={() => setCreatingSubStage(false)}
+                />
+              ) : (
+                <button
+                  type="button"
+                  className={styles.ghostAdd}
+                  onClick={() => setCreatingSubStage(true)}
+                  aria-label="新增子阶段"
+                  data-nav-item
+                  tabIndex={-1}
                 >
-                  {/* Ungrouped phrases still get a (muted) header so every
-                      column's header baseline lines up in the grid. */}
-                  <div className={styles.subStage}>
-                    <span className={styles.subStageIdx}>
-                      {String(gi + 1).padStart(2, "0")}
-                    </span>
-                    <span
-                      className={
-                        g.subStage
-                          ? styles.subStageName
-                          : `${styles.subStageName} ${styles.subStageNameMuted}`
-                      }
-                    >
-                      {g.subStage ? g.subStage.name : "未分组"}
-                    </span>
-                  </div>
-                  {g.phrases.map((p) => {
-                    const cls = `${styles.phrase} ${flashId === p.id ? `${primitiveStyles.task} ${primitiveStyles.flash}` : ""}`;
-                    return (
-                      <button
-                        key={p.id}
-                        type="button"
-                        className={cls}
-                        data-nav-item
-                        tabIndex={-1}
-                        onClick={() =>
-                          void copy(
-                            p.content,
-                            {
-                              targetType: "phrase",
-                              targetId: p.id,
-                              source: "scene",
-                              modifierIds: null,
-                              sopId: null,
-                              sopStepOrder: null,
-                              phaseId: null,
-                            },
-                            p.id,
-                          )
-                        }
-                        aria-label={p.name}
-                      >
-                        <Copy
-                          size={13}
-                          className={styles.phraseIcon}
-                          aria-hidden
-                          strokeWidth={2}
-                        />
-                        <span className={styles.phraseBody}>
-                          <h4 className={styles.phraseTitle}>{p.name}</h4>
-                          <p className={styles.phraseContent}>{p.content}</p>
-                        </span>
-                      </button>
-                    );
-                  })}
-                </div>
-              ))
-            )}
+                  <Plus size={14} aria-hidden strokeWidth={2} />
+                  <span>新增子阶段</span>
+                </button>
+              )}
+            </div>
           </div>
         </div>
       )}
@@ -506,366 +589,350 @@ export function ScenePanel() {
   );
 }
 
-interface StructureEditorProps {
-  scene: Scene;
-  subStages: SubStage[];
+interface ViewColumnProps {
+  index: number;
+  subStage: SubStage | null;
+  phrases: Phrase[];
   canMoveLeft: boolean;
   canMoveRight: boolean;
-  onMoveScene: (dir: -1 | 1) => void;
+  renaming: boolean;
+  confirmingDelete: boolean;
+  editingPhraseId: string | null;
+  addingPhrase: boolean;
+  flashId: string | null;
+  sceneId: string;
+  subStages: SubStage[];
+  onCopy: (phrase: Phrase) => void;
+  onRenameStart: () => void;
+  onRenameCancel: () => void;
+  onRenameSave: (name: string) => void;
+  onMove: (dir: -1 | 1) => void;
+  onDeleteRequest: () => void;
+  onDeleteCancel: () => void;
+  onDeleteConfirm: () => void;
+  onPhraseEdit: (id: string) => void;
+  onPhraseEditClose: () => void;
+  onPhraseMove: (id: string, dir: -1 | 1) => void;
+  onPhraseDelete: (id: string) => void;
+  onAddPhrase: () => void;
+  onAddPhraseClose: () => void;
   onError: (msg: string) => void;
-  onCreateScene: () => void;
-  onDeleteScene: () => void;
 }
 
-type SubDraft = { kind: "create" } | { kind: "rename"; id: string } | null;
-
-// Edit-mode structure editor: rename / delete / reorder the current Scene,
-// create a new Scene, and CRUD + drag-reorder its sub-stages (P3-6 wires the
-// previously UI-less reorder_scenes / reorder_sub_stages backends).
-function SceneStructureEditor({
-  scene,
-  subStages,
+// One view-mode grid column: a sub-stage header with a hover/focus-within action
+// cluster (rename / move / delete — task 5) atop its phrase cards, each carrying
+// its own cluster (edit / move / delete — task 6), and a trailing add-phrase
+// ghost card. The ungrouped orphan column (subStage == null) renders the muted
+// 未分组 header with no header actions, but still gets add-phrase (subStageId
+// null) so orphan phrases can be created in place.
+function ViewColumn({
+  index,
+  subStage,
+  phrases,
   canMoveLeft,
   canMoveRight,
-  onMoveScene,
+  renaming,
+  confirmingDelete,
+  editingPhraseId,
+  addingPhrase,
+  flashId,
+  sceneId,
+  subStages,
+  onCopy,
+  onRenameStart,
+  onRenameCancel,
+  onRenameSave,
+  onMove,
+  onDeleteRequest,
+  onDeleteCancel,
+  onDeleteConfirm,
+  onPhraseEdit,
+  onPhraseEditClose,
+  onPhraseMove,
+  onPhraseDelete,
+  onAddPhrase,
+  onAddPhraseClose,
   onError,
-  onCreateScene,
-  onDeleteScene,
-}: StructureEditorProps) {
-  const updateScene = usePromptStore((s) => s.updateScene);
-  const createSubStage = usePromptStore((s) => s.createSubStage);
-  const updateSubStage = usePromptStore((s) => s.updateSubStage);
-  const deleteSubStage = usePromptStore((s) => s.deleteSubStage);
-  const reorderSubStages = usePromptStore((s) => s.reorderSubStages);
-
-  const [renamingScene, setRenamingScene] = useState(false);
-  const [sceneName, setSceneName] = useState(scene.name);
-  const [confirmDeleteScene, setConfirmDeleteScene] = useState(false);
-  const [subDraft, setSubDraft] = useState<SubDraft>(null);
-  const [subName, setSubName] = useState("");
-  const [confirmSubId, setConfirmSubId] = useState<string | null>(null);
-
-  // Local render source during a sub-stage drag (mirrors EditablePhraseGroup):
-  // the store stays source-of-truth until the drop persists, then re-syncs.
-  const [subItems, setSubItems] = useState<SubStage[]>(() =>
-    [...subStages].sort((a, b) => a.orderIndex - b.orderIndex),
-  );
-  useEffect(
-    () =>
-      setSubItems([...subStages].sort((a, b) => a.orderIndex - b.orderIndex)),
-    [subStages],
-  );
-
-  const cancelSceneRename = () => {
-    setRenamingScene(false);
-    setSceneName(scene.name);
-  };
-
-  const saveSceneName = async () => {
-    const name = sceneName.trim();
-    if (!name) return;
-    try {
-      await updateScene({
-        id: scene.id,
-        name,
-        icon: scene.icon ?? undefined,
-        rolePresets: scene.rolePresets,
-        color: scene.color ?? undefined,
-      });
-      setRenamingScene(false);
-    } catch (err) {
-      onError(toUserMessage(err, "重命名失败"));
-    }
-  };
-
-  const cancelSub = () => {
-    setSubDraft(null);
-    setSubName("");
-  };
-
-  const saveSub = async () => {
-    const name = subName.trim();
-    if (!name || !subDraft) return;
-    try {
-      if (subDraft.kind === "create") {
-        await createSubStage({ sceneId: scene.id, name });
-      } else {
-        await updateSubStage({ id: subDraft.id, name });
-      }
-      cancelSub();
-    } catch (err) {
-      onError(toUserMessage(err, "保存失败"));
-    }
-  };
-
-  const removeSub = async (id: string) => {
-    setConfirmSubId(null);
-    try {
-      await deleteSubStage(id);
-    } catch (err) {
-      onError(toUserMessage(err, "删除失败"));
-    }
-  };
-
+}: ViewColumnProps) {
+  const subStageId = subStage?.id ?? null;
   return (
-    <div className={styles.structureEditor}>
-      <div className={styles.structureRow}>
-        {renamingScene ? (
-          <Input
-            autoFocus
-            aria-label="场景名称"
-            value={sceneName}
-            onChange={(e) => setSceneName(e.target.value)}
-            onKeyDown={(e) => {
-              if (e.key === "Escape") cancelSceneRename();
-              if (e.key === "Enter") {
-                e.preventDefault();
-                void saveSceneName();
+    <div className={styles.group}>
+      <div className={styles.subStage}>
+        <span className={styles.subStageIdx}>
+          {String(index + 1).padStart(2, "0")}
+        </span>
+        {renaming && subStage ? (
+          <InlineNameEditor
+            initialValue={subStage.name}
+            ariaLabel="子阶段名称"
+            onSave={onRenameSave}
+            onCancel={onRenameCancel}
+          />
+        ) : confirmingDelete && subStage ? (
+          <>
+            <span className={styles.subStageName}>{subStage.name}</span>
+            <ConfirmInline
+              text="删除子阶段？话术将解除归属"
+              confirmLabel="确认删除子阶段"
+              cancelLabel="取消删除"
+              onConfirm={onDeleteConfirm}
+              onCancel={onDeleteCancel}
+            />
+          </>
+        ) : (
+          <>
+            <span
+              className={
+                subStage
+                  ? styles.subStageName
+                  : `${styles.subStageName} ${styles.subStageNameMuted}`
               }
-            }}
-          />
-        ) : (
-          <span className={styles.structureLabel}>场景 · {scene.name}</span>
-        )}
-        {renamingScene ? (
-          <ActionCluster>
-            <Button intent="subtle" onClick={cancelSceneRename}>
-              取消
-            </Button>
-            <Button
-              layer="task"
-              intent="primary"
-              onClick={() => void saveSceneName()}
-              disabled={sceneName.trim().length === 0}
             >
-              保存
-            </Button>
-          </ActionCluster>
-        ) : confirmDeleteScene ? (
-          <ConfirmInline
-            text="删除场景？"
-            confirmLabel="确认删除场景"
-            cancelLabel="取消删除"
-            onConfirm={() => {
-              setConfirmDeleteScene(false);
-              onDeleteScene();
-            }}
-            onCancel={() => setConfirmDeleteScene(false)}
-          />
-        ) : (
-          <ActionCluster>
-            {/* P3-6: tab-order swap with the neighbour. Buttons instead of tab
-                dnd — the tabs are click-to-switch buttons sharing the nav with
-                the conditional 草稿 tab, so a drag layer would fight both. */}
-            <IconButton
-              aria-label="场景前移"
-              disabled={!canMoveLeft}
-              onClick={() => onMoveScene(-1)}
-            >
-              <ChevronLeft size={13} aria-hidden strokeWidth={2} />
-            </IconButton>
-            <IconButton
-              aria-label="场景后移"
-              disabled={!canMoveRight}
-              onClick={() => onMoveScene(1)}
-            >
-              <ChevronRight size={13} aria-hidden strokeWidth={2} />
-            </IconButton>
-            <IconButton
-              aria-label="重命名场景"
-              onClick={() => {
-                setSceneName(scene.name);
-                setRenamingScene(true);
-              }}
-            >
-              <Pencil size={13} aria-hidden strokeWidth={2} />
-            </IconButton>
-            <IconButton
-              aria-label="删除场景"
-              onClick={() => setConfirmDeleteScene(true)}
-            >
-              <Trash2 size={13} aria-hidden strokeWidth={2} />
-            </IconButton>
-            <Button layer="task" aria-label="新建场景" onClick={onCreateScene}>
-              <Plus size={14} aria-hidden strokeWidth={2} />
-              <span>新建场景</span>
-            </Button>
-          </ActionCluster>
+              {subStage ? subStage.name : "未分组"}
+            </span>
+            {/* Ungrouped column has no rename/move/delete — it is a synthetic
+                bucket, not a real sub-stage. */}
+            {subStage && (
+              <ActionCluster className={styles.subStageActions} reveal>
+                <IconButton
+                  aria-label={`前移 ${subStage.name}`}
+                  data-nav-item
+                  tabIndex={-1}
+                  disabled={!canMoveLeft}
+                  onClick={() => onMove(-1)}
+                >
+                  <ArrowLeft size={13} aria-hidden strokeWidth={2} />
+                </IconButton>
+                <IconButton
+                  aria-label={`后移 ${subStage.name}`}
+                  data-nav-item
+                  tabIndex={-1}
+                  disabled={!canMoveRight}
+                  onClick={() => onMove(1)}
+                >
+                  <ArrowRight size={13} aria-hidden strokeWidth={2} />
+                </IconButton>
+                <IconButton
+                  aria-label={`重命名 ${subStage.name}`}
+                  data-nav-item
+                  tabIndex={-1}
+                  onClick={onRenameStart}
+                >
+                  <Pencil size={13} aria-hidden strokeWidth={2} />
+                </IconButton>
+                <IconButton
+                  aria-label={`删除 ${subStage.name}`}
+                  data-nav-item
+                  tabIndex={-1}
+                  onClick={onDeleteRequest}
+                >
+                  <Trash2 size={13} aria-hidden strokeWidth={2} />
+                </IconButton>
+              </ActionCluster>
+            )}
+          </>
         )}
       </div>
 
-      <div className={styles.subStageManager}>
-        <div className={styles.subStageManagerHead}>
-          <span className={styles.structureLabel}>
-            <Layers size={12} aria-hidden strokeWidth={2} />
-            子阶段
-          </span>
-          {subDraft?.kind !== "create" && (
-            <Button
-              layer="task"
-              aria-label="新增子阶段"
-              onClick={() => {
-                setSubName("");
-                setSubDraft({ kind: "create" });
-              }}
-            >
-              <Plus size={14} aria-hidden strokeWidth={2} />
-              <span>新增子阶段</span>
-            </Button>
-          )}
-        </div>
-
-        {subDraft?.kind === "create" && (
-          <SubStageInlineEditor
-            value={subName}
-            onChange={setSubName}
-            onCancel={cancelSub}
-            onSave={() => void saveSub()}
+      {phrases.map((p, pi) =>
+        editingPhraseId === p.id ? (
+          <PhraseEditor
+            key={p.id}
+            target={{ mode: "edit", phrase: p }}
+            sceneId={sceneId}
+            subStages={subStages}
+            onClose={onPhraseEditClose}
+            onError={onError}
           />
-        )}
-
-        {subItems.length === 0 && subDraft?.kind !== "create" ? (
-          <p className={styles.subStageEmpty}>暂无子阶段</p>
         ) : (
-          /* P3-6: sub-stage drag-reorder reuses the EditablePhraseGroup dnd
-             pattern — one provider scoped to this scene's sub-stage list, the
-             drop persisting via reorder_sub_stages. */
-          <DragDropProvider
-            onDragOver={(event) => setSubItems((prev) => move(prev, event))}
-            onDragEnd={(event) => {
-              if (event.canceled) {
-                setSubItems(
-                  [...subStages].sort((a, b) => a.orderIndex - b.orderIndex),
-                );
-                return;
-              }
-              const orderedIds = subItems.map((s) => s.id);
-              void reorderSubStages(scene.id, orderedIds).catch((err) => {
-                // Persist failed: the local order now disagrees with the
-                // store/DB — roll back to the authoritative source order
-                // (same snapshot-rollback as the canceled path above).
-                setSubItems(
-                  [...subStages].sort((a, b) => a.orderIndex - b.orderIndex),
-                );
-                onError(toUserMessage(err, "子阶段排序保存失败"));
-              });
-            }}
-          >
-            <ul className={styles.subStageList}>
-              {subItems.map((s, idx) => (
-                <SortableSubStageRow key={s.id} subStage={s} index={idx}>
-                  {subDraft?.kind === "rename" && subDraft.id === s.id ? (
-                    <SubStageInlineEditor
-                      value={subName}
-                      onChange={setSubName}
-                      onCancel={cancelSub}
-                      onSave={() => void saveSub()}
-                    />
-                  ) : confirmSubId === s.id ? (
-                    <>
-                      <span className={styles.subStageItemName}>{s.name}</span>
-                      <ConfirmInline
-                        text="删除子阶段？话术将解除归属"
-                        confirmLabel="确认删除子阶段"
-                        cancelLabel="取消删除"
-                        onConfirm={() => void removeSub(s.id)}
-                        onCancel={() => setConfirmSubId(null)}
-                      />
-                    </>
-                  ) : (
-                    <>
-                      <span className={styles.subStageItemName}>{s.name}</span>
-                      <ActionCluster>
-                        <IconButton
-                          aria-label={`重命名 ${s.name}`}
-                          onClick={() => {
-                            setSubName(s.name);
-                            setSubDraft({ kind: "rename", id: s.id });
-                          }}
-                        >
-                          <Pencil size={13} aria-hidden strokeWidth={2} />
-                        </IconButton>
-                        <IconButton
-                          aria-label={`删除 ${s.name}`}
-                          onClick={() => setConfirmSubId(s.id)}
-                        >
-                          <Trash2 size={13} aria-hidden strokeWidth={2} />
-                        </IconButton>
-                      </ActionCluster>
-                    </>
-                  )}
-                </SortableSubStageRow>
-              ))}
-            </ul>
-          </DragDropProvider>
-        )}
-      </div>
+          <ViewPhraseCard
+            key={p.id}
+            phrase={p}
+            flash={flashId === p.id}
+            canMoveUp={pi > 0}
+            canMoveDown={pi < phrases.length - 1}
+            onCopy={() => onCopy(p)}
+            onEdit={() => onPhraseEdit(p.id)}
+            onMove={(dir) => onPhraseMove(p.id, dir)}
+            onDelete={() => onPhraseDelete(p.id)}
+          />
+        ),
+      )}
+
+      {addingPhrase ? (
+        <PhraseEditor
+          target={{ mode: "create" }}
+          sceneId={sceneId}
+          subStages={subStages}
+          initialSubStageId={subStageId}
+          onClose={onAddPhraseClose}
+          onError={onError}
+        />
+      ) : (
+        <button
+          type="button"
+          className={styles.ghostAdd}
+          onClick={onAddPhrase}
+          aria-label={
+            subStage ? `在 ${subStage.name} 添加话术` : "在未分组添加话术"
+          }
+          data-nav-item
+          tabIndex={-1}
+        >
+          <Plus size={14} aria-hidden strokeWidth={2} />
+          <span>添加话术</span>
+        </button>
+      )}
     </div>
   );
 }
 
-// Sortable shell for one sub-stage row (P3-6): drag handle + whatever state the
-// row is in (name+actions / rename editor / delete confirm) as children. Drag
-// activates only from the handle, so the inline editors stay interactable.
-function SortableSubStageRow({
-  subStage,
-  index,
-  children,
-}: {
-  subStage: SubStage;
-  index: number;
-  children: ReactNode;
-}) {
-  const { ref, handleRef, isDragging } = useSortable({
-    id: subStage.id,
-    index,
-  });
+interface ViewPhraseCardProps {
+  phrase: Phrase;
+  flash: boolean;
+  canMoveUp: boolean;
+  canMoveDown: boolean;
+  onCopy: () => void;
+  onEdit: () => void;
+  onMove: (dir: -1 | 1) => void;
+  onDelete: () => void;
+}
 
-  const classes = [styles.subStageItem, isDragging ? styles.dragging : ""]
-    .filter(Boolean)
-    .join(" ");
-
+// A view-mode phrase card: the whole card copies (primary action), so every
+// action-cluster button stops propagation to never trigger a copy (task 6).
+// Delete is a two-step inline confirm held in local state so one card's confirm
+// never bleeds into another's.
+function ViewPhraseCard({
+  phrase,
+  flash,
+  canMoveUp,
+  canMoveDown,
+  onCopy,
+  onEdit,
+  onMove,
+  onDelete,
+}: ViewPhraseCardProps) {
+  const [confirming, setConfirming] = useState(false);
+  const stop = (fn: () => void) => (e: ReactMouseEvent) => {
+    e.stopPropagation();
+    fn();
+  };
+  const cls = `${styles.phrase} ${flash ? `${primitiveStyles.task} ${primitiveStyles.flash}` : ""}`;
   return (
-    <li ref={ref} className={classes} data-sub-stage-id={subStage.id}>
-      <IconButton
-        ref={handleRef}
-        plain
-        dragHandle
-        aria-label={`拖动排序 ${subStage.name}`}
-      >
-        <GripVertical size={14} aria-hidden strokeWidth={2} />
-      </IconButton>
-      {children}
-    </li>
+    <div
+      role="button"
+      tabIndex={-1}
+      className={cls}
+      data-nav-item
+      onClick={onCopy}
+      onKeyDown={(e) => {
+        if (e.key === "Enter" || e.key === " ") {
+          e.preventDefault();
+          onCopy();
+        }
+      }}
+      aria-label={phrase.name}
+    >
+      <Copy
+        size={13}
+        className={styles.phraseIcon}
+        aria-hidden
+        strokeWidth={2}
+      />
+      <span className={styles.phraseBody}>
+        <h4 className={styles.phraseTitle}>{phrase.name}</h4>
+        <p className={styles.phraseContent}>{phrase.content}</p>
+      </span>
+      {confirming ? (
+        <div
+          className={styles.phraseActions}
+          onClick={(e) => e.stopPropagation()}
+        >
+          <ConfirmInline
+            text="永久删除？"
+            confirmLabel="确认永久删除"
+            cancelLabel="取消删除"
+            onConfirm={onDelete}
+            onCancel={() => setConfirming(false)}
+          />
+        </div>
+      ) : (
+        <ActionCluster className={styles.phraseActions} reveal>
+          <IconButton
+            aria-label={`上移 ${phrase.name}`}
+            data-nav-item
+            tabIndex={-1}
+            disabled={!canMoveUp}
+            onClick={stop(() => onMove(-1))}
+          >
+            <ArrowUp size={13} aria-hidden strokeWidth={2} />
+          </IconButton>
+          <IconButton
+            aria-label={`下移 ${phrase.name}`}
+            data-nav-item
+            tabIndex={-1}
+            disabled={!canMoveDown}
+            onClick={stop(() => onMove(1))}
+          >
+            <ArrowDown size={13} aria-hidden strokeWidth={2} />
+          </IconButton>
+          <IconButton
+            aria-label={`编辑 ${phrase.name}`}
+            data-nav-item
+            tabIndex={-1}
+            onClick={stop(onEdit)}
+          >
+            <Pencil size={13} aria-hidden strokeWidth={2} />
+          </IconButton>
+          <IconButton
+            aria-label={`删除 ${phrase.name}`}
+            data-nav-item
+            tabIndex={-1}
+            onClick={stop(() => setConfirming(true))}
+          >
+            <Trash2 size={13} aria-hidden strokeWidth={2} />
+          </IconButton>
+        </ActionCluster>
+      )}
+    </div>
   );
 }
 
-interface SubStageInlineEditorProps {
-  value: string;
-  onChange: (next: string) => void;
+interface InlineNameEditorProps {
+  initialValue: string;
+  ariaLabel: string;
+  placeholder?: string;
+  onSave: (name: string) => void;
   onCancel: () => void;
-  onSave: () => void;
 }
 
-function SubStageInlineEditor({
-  value,
-  onChange,
-  onCancel,
+// Self-contained inline name editor for the view-mode grid (sub-stage rename +
+// create). It owns its draft state so the grid header stays presentational.
+// Enter commits with an IME guard — committing a pinyin/kana candidate fires
+// Enter while isComposing is still true, and swallowing it would eat the
+// composition instead of saving.
+function InlineNameEditor({
+  initialValue,
+  ariaLabel,
+  placeholder,
   onSave,
-}: SubStageInlineEditorProps) {
+  onCancel,
+}: InlineNameEditorProps) {
+  const [value, setValue] = useState(initialValue);
   return (
     <div className={styles.subStageInline}>
       <Input
         autoFocus
-        aria-label="子阶段名称"
-        placeholder="子阶段名称"
+        aria-label={ariaLabel}
+        placeholder={placeholder}
         value={value}
-        onChange={(e) => onChange(e.target.value)}
+        onChange={(e) => setValue(e.target.value)}
         onKeyDown={(e) => {
           if (e.key === "Escape") onCancel();
           if (e.key === "Enter") {
+            if (e.nativeEvent.isComposing) return;
             e.preventDefault();
-            onSave();
+            if (value.trim().length > 0) onSave(value);
           }
         }}
       />
@@ -876,7 +943,7 @@ function SubStageInlineEditor({
         <Button
           layer="task"
           intent="primary"
-          onClick={onSave}
+          onClick={() => onSave(value)}
           disabled={value.trim().length === 0}
         >
           保存
@@ -886,145 +953,14 @@ function SubStageInlineEditor({
   );
 }
 
-interface GroupProps {
-  sceneId: string;
-  subStageId: string | null;
-  subStageName: string | null;
-  phrases: Phrase[];
-  confirmingId: string | null;
-  onEdit: (phrase: Phrase) => void;
-  onRequestDelete: (id: string) => void;
-  onCancelDelete: () => void;
-  onConfirmDelete: (id: string) => void;
-}
-
-// One DragDropProvider PER (scene, sub-stage) partition so a drag can never cross
-// groups — order_index is partitioned the same way in the backend. Local `items`
-// mirror MacroGrid: the store stays source-of-truth until the drop persists.
-function EditablePhraseGroup({
-  sceneId,
-  subStageId,
-  subStageName,
-  phrases,
-  confirmingId,
-  onEdit,
-  onRequestDelete,
-  onCancelDelete,
-  onConfirmDelete,
-}: GroupProps) {
-  const reorderPhrases = usePromptStore((s) => s.reorderPhrases);
-  const showError = useToastStore((s) => s.showError);
-  const [items, setItems] = useState<Phrase[]>(phrases);
-  useEffect(() => setItems(phrases), [phrases]);
-
-  return (
-    <div className={styles.group}>
-      {subStageName && (
-        <div className={styles.subStage}>
-          <span className={styles.subStageName}>{subStageName}</span>
-        </div>
-      )}
-      <DragDropProvider
-        onDragOver={(event) => setItems((prev) => move(prev, event))}
-        onDragEnd={(event) => {
-          if (event.canceled) {
-            setItems(phrases);
-            return;
-          }
-          const orderedIds = items.map((p) => p.id);
-          void reorderPhrases(sceneId, subStageId, orderedIds).catch((err) => {
-            // Persist failed: roll back the local order to the store's
-            // authoritative list (mirrors the canceled path above).
-            setItems(phrases);
-            showError(toUserMessage(err, "排序保存失败"));
-          });
-        }}
-      >
-        <ul className={styles.list}>
-          {items.map((p, idx) => (
-            <SortablePhraseRow
-              key={p.id}
-              phrase={p}
-              index={idx}
-              isConfirming={confirmingId === p.id}
-              onEdit={() => onEdit(p)}
-              onRequestDelete={() => onRequestDelete(p.id)}
-              onCancelDelete={onCancelDelete}
-              onConfirmDelete={() => onConfirmDelete(p.id)}
-            />
-          ))}
-        </ul>
-      </DragDropProvider>
-    </div>
-  );
-}
-
-interface RowProps {
-  phrase: Phrase;
-  index: number;
-  isConfirming: boolean;
-  onEdit: () => void;
-  onRequestDelete: () => void;
-  onCancelDelete: () => void;
-  onConfirmDelete: () => void;
-}
-
-function SortablePhraseRow({
-  phrase,
-  index,
-  isConfirming,
-  onEdit,
-  onRequestDelete,
-  onCancelDelete,
-  onConfirmDelete,
-}: RowProps) {
-  const { ref, handleRef, isDragging } = useSortable({ id: phrase.id, index });
-
-  const classes = [styles.row, isDragging ? styles.dragging : ""]
-    .filter(Boolean)
-    .join(" ");
-
-  return (
-    <li ref={ref} className={classes} data-phrase-id={phrase.id}>
-      <IconButton
-        ref={handleRef}
-        plain
-        dragHandle
-        aria-label={`拖动排序 ${phrase.name}`}
-      >
-        <GripVertical size={14} aria-hidden strokeWidth={2} />
-      </IconButton>
-      <span className={styles.rowName}>{phrase.name}</span>
-
-      {isConfirming ? (
-        <ConfirmInline
-          text="永久删除？"
-          confirmLabel="确认永久删除"
-          cancelLabel="取消删除"
-          onConfirm={onConfirmDelete}
-          onCancel={onCancelDelete}
-        />
-      ) : (
-        <ActionCluster>
-          <IconButton aria-label={`编辑 ${phrase.name}`} onClick={onEdit}>
-            <Pencil size={13} aria-hidden strokeWidth={2} />
-          </IconButton>
-          <IconButton
-            aria-label={`删除 ${phrase.name}`}
-            onClick={onRequestDelete}
-          >
-            <Trash2 size={13} aria-hidden strokeWidth={2} />
-          </IconButton>
-        </ActionCluster>
-      )}
-    </li>
-  );
-}
-
 interface EditorProps {
   target: Exclude<EditTarget, null>;
   sceneId: string;
   subStages: SubStage[];
+  // The add-phrase ghost card prefills the create form with the column's
+  // sub-stage so the new phrase lands in place (task 6); when left undefined the
+  // create form defaults to ungrouped.
+  initialSubStageId?: string | null;
   onClose: () => void;
   onError: (msg: string) => void;
 }
@@ -1035,6 +971,7 @@ function PhraseEditor({
   target,
   sceneId,
   subStages,
+  initialSubStageId,
   onClose,
   onError,
 }: EditorProps) {
@@ -1045,7 +982,7 @@ function PhraseEditor({
   const [name, setName] = useState(existing?.name ?? "");
   const [content, setContent] = useState(existing?.content ?? "");
   const [subStageValue, setSubStageValue] = useState(
-    existing?.subStageId ?? UNGROUPED_VALUE,
+    existing?.subStageId ?? initialSubStageId ?? UNGROUPED_VALUE,
   );
   const [saving, setSaving] = useState(false);
   const nameRef = useRef<HTMLInputElement>(null);

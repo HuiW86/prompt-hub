@@ -1,0 +1,104 @@
+/* ScenePropertiesEditor — Scene attribute panel (name / icon / color /
+   rolePresets) + container-level footer actions. Neutral chrome surfaces only;
+   the only user-content color is the swatch fill, injected via inline style
+   (CSS here stays token-only per CLAUDE §4.1). */
+
+.panel {
+  gap: var(--s-3);
+}
+
+.field {
+  display: flex;
+  flex-direction: column;
+  gap: var(--s-1_5);
+  min-width: 0;
+}
+
+.label {
+  font: var(--w-600) var(--t-11) / 1 var(--font-sans);
+  letter-spacing: var(--tr-meta);
+  text-transform: uppercase;
+  color: var(--fg-3);
+}
+
+/* Icon preset picker — lucide choices + 无. */
+.iconRow {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: var(--s-1_5);
+}
+
+.iconChoice {
+  border: var(--hairline) solid var(--border-1);
+}
+
+.iconChoiceActive {
+  border: var(--hairline) solid var(--accent);
+  background: var(--surface-3);
+  color: var(--fg-1);
+}
+
+/* Color swatch row — user-content presets + clear. */
+.swatchRow {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: var(--s-1_5);
+}
+
+.swatch {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: var(--s-6);
+  height: var(--s-6);
+  flex: none;
+  padding: 0;
+  border: var(--hairline) solid var(--border-2);
+  border-radius: var(--r-3);
+  color: var(--fg-1);
+  cursor: pointer;
+  appearance: none;
+  transition: transform var(--d-fast) var(--ease);
+}
+
+.swatch:hover {
+  transform: translateY(var(--lift-1));
+}
+
+.swatch[aria-pressed="true"] {
+  border-color: var(--accent);
+}
+
+.swatch:focus-visible {
+  outline: var(--border-thick) solid var(--accent);
+  outline-offset: var(--s-0_5);
+}
+
+/* rolePresets chips. */
+.chips {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: var(--s-1_5);
+}
+
+/* Footer — container-level actions on the left, save/cancel on the right. */
+.footer {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--s-2);
+  flex-wrap: wrap;
+  padding-top: var(--s-2);
+  border-top: var(--hairline) solid var(--border-1);
+}
+
+.footerActions {
+  gap: var(--s-1_5);
+}
+
+.saveActions {
+  flex: none;
+}
