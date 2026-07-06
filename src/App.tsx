@@ -97,6 +97,42 @@ function App() {
     return () => document.removeEventListener("keydown", onKey);
   }, [selectPhase]);
 
+  // Wake hygiene (A2-5 walkthrough defect): the Rust side hides the window
+  // ~200ms after a copy, but nothing clears the search query on the way out, so
+  // the SearchOverlay stays mounted and the next ⌥Space wake lands on the
+  // overlay instead of the panoramic dashboard (violates 哲学二「默认视图是全景
+  // 式」). We key off `visibilitychange`→hidden — the symmetric counterpart to
+  // SearchBar's →visible wake signal (03-product-spec §13.4) — because the Rust
+  // side sends no custom hide event and window visibility is the stable signal.
+  //
+  // Two things happen on hide:
+  //   1. clearQuery() drops the query (and resets selectedIndex, searchStore.ts)
+  //      so the overlay unmounts and the next wake shows the full dashboard.
+  //   2. Focus归位: after an Enter-copy the focus rests on a result row; blur it
+  //      so activeElement returns to <body>, which lets SearchBar's wake-focus
+  //      guard (only grabs focus when activeElement is body) re-focus the input
+  //      on the next wake — extending "唤起即聚焦" to the copy-then-rewake path.
+  //      Text-input类元素 (INPUT/TEXTAREA/SELECT/contenteditable) are exempt: a
+  //      user who hid the window mid-edit expects the caret preserved on return.
+  useEffect(() => {
+    function onVisibility() {
+      if (document.visibilityState !== "hidden") return;
+      useSearchStore.getState().clearQuery();
+      const active = document.activeElement as HTMLElement | null;
+      if (!active || active === document.body) return;
+      const tag = active.tagName;
+      const isTextEntry =
+        tag === "INPUT" ||
+        tag === "TEXTAREA" ||
+        tag === "SELECT" ||
+        active.isContentEditable;
+      if (isTextEntry) return;
+      active.blur();
+    }
+    document.addEventListener("visibilitychange", onVisibility);
+    return () => document.removeEventListener("visibilitychange", onVisibility);
+  }, []);
+
   return <Dashboard />;
 }
 

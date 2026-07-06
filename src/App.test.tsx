@@ -1,5 +1,5 @@
 import { fireEvent, render, screen, waitFor } from "@testing-library/react";
-import { beforeEach, describe, expect, it, vi } from "vitest";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
 import type {
   AlignmentPhrase,
@@ -17,6 +17,7 @@ vi.mock("@tauri-apps/api/core", () => ({
 import App from "./App";
 import { useAppStore } from "./stores/appStore";
 import { usePromptStore } from "./stores/promptStore";
+import { useSearchStore } from "./stores/searchStore";
 
 const fakePhases: Phase[] = [
   "发散",
@@ -564,5 +565,92 @@ describe("Dashboard click → IPC flow", () => {
         true,
       ),
     );
+  });
+});
+
+describe("Wake hygiene — clear search residue on hide (P1-4)", () => {
+  const searchInitial = useSearchStore.getState();
+
+  beforeEach(() => {
+    usePromptStore.setState(initialStore, true);
+    useAppStore.setState(initialAppStore, true);
+    useSearchStore.setState(searchInitial, true);
+    invokeMock.mockReset();
+    invokeMock.mockImplementation((cmd: string) => {
+      switch (cmd) {
+        case "list_phases":
+          return Promise.resolve(fakePhases);
+        case "list_alignment_phrases":
+          return Promise.resolve(fakeAlignments);
+        case "list_macros":
+          return Promise.resolve(fakeMacros);
+        case "list_modifiers":
+          return Promise.resolve([]);
+        case "list_compositions":
+          return Promise.resolve([]);
+        case "list_scenes_with_children":
+          return Promise.resolve(fakeScenes);
+        case "list_recent_usage":
+          return Promise.resolve(fakeRecent);
+        case "count_today_usage":
+          return Promise.resolve(0);
+        case "list_drafts":
+          return Promise.resolve([]);
+        case "count_pending_drafts":
+          return Promise.resolve(0);
+        default:
+          return Promise.reject(new Error(`unexpected ${cmd}`));
+      }
+    });
+  });
+
+  // Simulate the Rust-side window hide: flip document.visibilityState to
+  // "hidden" (jsdom defaults it to "visible") then dispatch the event App
+  // listens on.
+  function fireHidden() {
+    Object.defineProperty(document, "visibilityState", {
+      value: "hidden",
+      configurable: true,
+    });
+    fireEvent(document, new Event("visibilitychange"));
+  }
+
+  afterEach(() => {
+    Object.defineProperty(document, "visibilityState", {
+      value: "visible",
+      configurable: true,
+    });
+  });
+
+  it("clears a non-empty search query when the window hides", async () => {
+    render(<App />);
+    await screen.findByRole("button", { name: "借力最优解" });
+    useSearchStore.getState().setQuery("借力");
+    expect(useSearchStore.getState().query).toBe("借力");
+    fireHidden();
+    expect(useSearchStore.getState().query).toBe("");
+  });
+
+  it("blurs a focused non-text element back to body on hide", async () => {
+    render(<App />);
+    const card = await screen.findByRole("button", { name: "借力最优解" });
+    card.focus();
+    expect(document.activeElement).toBe(card);
+    fireHidden();
+    // Focus归位 so SearchBar's next-wake guard (body-only) can re-grab it.
+    expect(document.activeElement).toBe(document.body);
+  });
+
+  it("preserves focus on a text input when the window hides (mid-edit exemption)", async () => {
+    const { container } = render(<App />);
+    await screen.findByRole("button", { name: "借力最优解" });
+    const input = container.querySelector(
+      "[role='search'] input",
+    ) as HTMLInputElement;
+    input.focus();
+    expect(document.activeElement).toBe(input);
+    fireHidden();
+    // A user hiding the window mid-edit keeps the caret; only the query clears.
+    expect(document.activeElement).toBe(input);
   });
 });
