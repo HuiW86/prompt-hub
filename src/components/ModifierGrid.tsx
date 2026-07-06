@@ -5,6 +5,7 @@ import { writeClipboard } from "../hooks/useClipboard";
 import { GROUP_KINDS, type GroupKind, type Modifier } from "../ipc/types";
 import { usePromptStore } from "../stores/promptStore";
 import { useToastStore } from "../stores/toastStore";
+import { toUserMessage } from "../utils/errorMessage";
 
 import {
   ActionCluster,
@@ -82,7 +83,7 @@ export function ModifierGrid() {
       });
       showToast(`已移至「${GROUP_LABELS[kind]}」`);
     } catch (err) {
-      showError(err instanceof Error ? err.message : "移动象限失败");
+      showError(toUserMessage(err, "移动象限失败"));
     }
   };
 
@@ -92,7 +93,7 @@ export function ModifierGrid() {
       await deleteModifier(id);
       showToast("已永久删除");
     } catch (err) {
-      showError(err instanceof Error ? err.message : "删除失败");
+      showError(toUserMessage(err, "删除失败"));
     }
   };
 

@@ -28,6 +28,7 @@ import type { Phrase, Scene, SubStage } from "../ipc/types";
 import { useAppStore } from "../stores/appStore";
 import { usePromptStore } from "../stores/promptStore";
 import { useToastStore } from "../stores/toastStore";
+import { toUserMessage } from "../utils/errorMessage";
 
 import { DraftInbox } from "./DraftInbox";
 import {
@@ -173,7 +174,7 @@ export function ScenePanel() {
       await deletePhrase(id);
       showToast("已永久删除");
     } catch (err) {
-      showError(err instanceof Error ? err.message : "删除失败");
+      showError(toUserMessage(err, "删除失败"));
     }
   };
 
@@ -190,7 +191,7 @@ export function ScenePanel() {
         setActiveSceneId(created.scene.id);
       }
     } catch (err) {
-      showError(err instanceof Error ? err.message : "新建场景失败");
+      showError(toUserMessage(err, "新建场景失败"));
     }
   };
 
@@ -202,7 +203,7 @@ export function ScenePanel() {
       showToast("已删除场景");
       setActiveSceneId(null);
     } catch (err) {
-      showError(err instanceof Error ? err.message : "删除场景失败");
+      showError(toUserMessage(err, "删除场景失败"));
     }
   };
 
@@ -227,7 +228,7 @@ export function ScenePanel() {
     try {
       await reorderScenes(ids);
     } catch (err) {
-      showError(err instanceof Error ? err.message : "场景排序保存失败");
+      showError(toUserMessage(err, "场景排序保存失败"));
     }
   };
 
@@ -573,7 +574,7 @@ function SceneStructureEditor({
       });
       setRenamingScene(false);
     } catch (err) {
-      onError(err instanceof Error ? err.message : "重命名失败");
+      onError(toUserMessage(err, "重命名失败"));
     }
   };
 
@@ -593,7 +594,7 @@ function SceneStructureEditor({
       }
       cancelSub();
     } catch (err) {
-      onError(err instanceof Error ? err.message : "保存失败");
+      onError(toUserMessage(err, "保存失败"));
     }
   };
 
@@ -602,7 +603,7 @@ function SceneStructureEditor({
     try {
       await deleteSubStage(id);
     } catch (err) {
-      onError(err instanceof Error ? err.message : "删除失败");
+      onError(toUserMessage(err, "删除失败"));
     }
   };
 
@@ -746,9 +747,7 @@ function SceneStructureEditor({
                 setSubItems(
                   [...subStages].sort((a, b) => a.orderIndex - b.orderIndex),
                 );
-                onError(
-                  err instanceof Error ? err.message : "子阶段排序保存失败",
-                );
+                onError(toUserMessage(err, "子阶段排序保存失败"));
               });
             }}
           >
@@ -937,7 +936,7 @@ function EditablePhraseGroup({
             // Persist failed: roll back the local order to the store's
             // authoritative list (mirrors the canceled path above).
             setItems(phrases);
-            showError(err instanceof Error ? err.message : "排序保存失败");
+            showError(toUserMessage(err, "排序保存失败"));
           });
         }}
       >
@@ -1082,7 +1081,7 @@ function PhraseEditor({
       }
       onClose();
     } catch (err) {
-      onError(err instanceof Error ? err.message : "保存失败");
+      onError(toUserMessage(err, "保存失败"));
       setSaving(false);
     }
   };

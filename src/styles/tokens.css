@@ -313,6 +313,10 @@
   /* Settings overlay dialog — off-primary surface, larger than the 32px cap. */
   --w-settings-modal: 560px;
   --w-settings-nav: 140px;
+
+  /* Toast width cap — long error strings wrap instead of stretching the toast
+     across the viewport (P1-3 overflow guard). */
+  --w-toast-max: 320px;
 }
 
 /* ============================================================

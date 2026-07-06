@@ -9,6 +9,7 @@ import { useRegionNav } from "../hooks/useRegionNav";
 import { useAppStore } from "../stores/appStore";
 import { usePromptStore } from "../stores/promptStore";
 import { useToastStore } from "../stores/toastStore";
+import { toUserMessage } from "../utils/errorMessage";
 import type { AlignmentPhrase } from "../ipc/types";
 
 import {
@@ -73,7 +74,7 @@ export function AlignmentPhrases() {
       showToast("已永久删除");
     } catch (err) {
       // Backend rejects deleting a phase's default phrase — surface the reason.
-      showError(err instanceof Error ? err.message : "删除失败");
+      showError(toUserMessage(err, "删除失败"));
     }
   };
 
@@ -85,7 +86,7 @@ export function AlignmentPhrases() {
       await setDefaultAlignmentPhrase(activePhaseId, id);
       showToast("已设为默认");
     } catch (err) {
-      showError(err instanceof Error ? err.message : "设为默认失败");
+      showError(toUserMessage(err, "设为默认失败"));
     }
   };
 
@@ -204,7 +205,7 @@ export function AlignmentPhrases() {
             const orderedIds = items.map((p) => p.id);
             void reorderAlignmentPhrases(activePhaseId, orderedIds).catch(
               (err) => {
-                showError(err instanceof Error ? err.message : "排序保存失败");
+                showError(toUserMessage(err, "排序保存失败"));
               },
             );
           }}
@@ -348,7 +349,7 @@ function PhraseEditor({ target, phaseId, onClose, onError }: EditorProps) {
       }
       onClose();
     } catch (err) {
-      onError(err instanceof Error ? err.message : "保存失败");
+      onError(toUserMessage(err, "保存失败"));
       setSaving(false);
     }
   };

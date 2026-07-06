@@ -12,18 +12,24 @@
   border-radius: var(--r-3);
   box-shadow: var(--shadow-2);
   color: var(--fg-1);
-  font: var(--w-500) var(--t-13) / 1 var(--font-sans);
+  /* line-height lifted off 1 so a wrapped multi-line error stays legible. */
+  font: var(--w-500) var(--t-13) / var(--lh-tight) var(--font-sans);
   animation: fadeIn var(--d-slow) var(--ease);
   pointer-events: none;
+  /* Overflow guard (P1-3): cap width and break long unbroken tokens (paths,
+     ids) so a long error string wraps instead of stretching the toast. */
+  max-width: var(--w-toast-max);
+  overflow-wrap: anywhere;
 }
 
-/* Error intent (e.g. clipboard write failed). The palette has no red token;
- * amber is the existing alert-leaning hue (design-spec token set), so the
- * error state borrows --accent-swatch-amber for border + text and bumps the
- * weight — visually distinct from the neutral success flash. */
+/* Error intent (e.g. clipboard write failed). The palette has no red/danger
+ * token (that's an upstream design-spec TODO), so the error state is signalled
+ * by the amber border + heavier weight. Text stays --fg-1: amber-on-white text
+ * only clears ~2.4:1, below the design-spec §2.3 ≥7:1 body-text bar, whereas
+ * amber as a border only needs ≥3:1 and passes. */
 .error {
   border-color: var(--accent-swatch-amber);
-  color: var(--accent-swatch-amber);
+  color: var(--fg-1);
   font-weight: var(--w-600);
 }
 

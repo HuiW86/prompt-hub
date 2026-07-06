@@ -1,5 +1,5 @@
 import { fireEvent, render, screen, within } from "@testing-library/react";
-import { beforeEach, describe, expect, it, vi } from "vitest";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
 import type {
   Draft,
@@ -15,6 +15,7 @@ vi.mock("@tauri-apps/api/core", () => ({
 import { invoke } from "@tauri-apps/api/core";
 
 import { usePromptStore } from "../../stores/promptStore";
+import { useToastStore } from "../../stores/toastStore";
 import { DraftInbox } from "../DraftInbox";
 
 const promptInitial = usePromptStore.getState();
@@ -121,6 +122,45 @@ describe("DraftInbox — composition promote stopgap (P0-5)", () => {
       id: "draft-modifier",
       groupKind: "cognition",
     });
+  });
+});
+
+describe("DraftInbox — error feedback (P1-3)", () => {
+  const promoteDraft = vi.fn().mockResolvedValue(undefined);
+  // Reject with a raw English IO-flavoured string, the shape that used to leak
+  // straight into the toast before toUserMessage() funnelled catch sites.
+  const discardDraft = vi
+    .fn()
+    .mockRejectedValue(new Error("io: some backend failure (os error 5)"));
+
+  beforeEach(() => {
+    vi.spyOn(console, "error").mockImplementation(() => {});
+    useToastStore.getState().clear();
+    usePromptStore.setState(promptInitial, true);
+    usePromptStore.setState({
+      drafts: [makeDraft("macro")],
+      promoteDraft,
+      discardDraft,
+    });
+    discardDraft.mockClear();
+  });
+
+  afterEach(() => {
+    vi.restoreAllMocks();
+  });
+
+  it("shows the Chinese fallback, never the raw English message", async () => {
+    render(<DraftInbox />);
+    const card = cardOf(makeDraft("macro"));
+    fireEvent.click(within(card).getByRole("button", { name: /丢弃/ }));
+
+    // Wait for the rejected mutation's catch to land on the toast store.
+    await vi.waitFor(() => {
+      expect(useToastStore.getState().message).toBe("丢弃失败");
+    });
+    const toast = useToastStore.getState();
+    expect(toast.intent).toBe("error");
+    expect(toast.message).not.toContain("os error");
   });
 });
 

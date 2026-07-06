@@ -1,6 +1,7 @@
 import { create } from "zustand";
 
 import { ipc } from "../ipc";
+import { toUserMessage } from "../utils/errorMessage";
 import type {
   AlignmentPhrase,
   Composition,
@@ -311,9 +312,12 @@ export const usePromptStore = create<PromptState>()((set, get) => ({
         loadState: "ready",
       });
     } catch (err) {
+      // loadError renders verbatim in Dashboard's error state (which prefixes
+      // "加载失败：" itself), so route it through the P1-3 funnel instead of
+      // exposing the raw Rust/IPC string.
       set({
         loadState: "error",
-        loadError: err instanceof Error ? err.message : String(err),
+        loadError: toUserMessage(err, "数据读取异常，请重试或重启应用"),
       });
     }
   },

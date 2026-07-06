@@ -29,6 +29,7 @@ import {
 import { usePromptStore } from "../stores/promptStore";
 import { useToastStore } from "../stores/toastStore";
 import { useUpdaterStore } from "../stores/updaterStore";
+import { toUserMessage } from "../utils/errorMessage";
 
 import { cx } from "./primitives/cx";
 import styles from "./SettingsModal.module.css";
@@ -116,7 +117,12 @@ export function SettingsModal() {
       setDataStatus("已导出备份");
       showToast("已导出备份");
     } catch (err) {
-      setDataStatus(err instanceof Error ? err.message : String(err));
+      setDataStatus(
+        toUserMessage(
+          err,
+          "导出失败：无法写入所选位置，请更换目录或检查磁盘空间后重试",
+        ),
+      );
     } finally {
       setDataBusy(false);
     }
@@ -153,7 +159,9 @@ export function SettingsModal() {
       setDataStatus(`已导入 ${total} 条记录`);
       showToast("已导入备份");
     } catch (err) {
-      setDataStatus(err instanceof Error ? err.message : String(err));
+      setDataStatus(
+        toUserMessage(err, "导入失败：备份文件无法读取，请确认文件存在且完整"),
+      );
     } finally {
       setDataBusy(false);
     }

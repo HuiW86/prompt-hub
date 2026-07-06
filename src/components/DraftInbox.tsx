@@ -11,6 +11,7 @@ import type {
 } from "../ipc/types";
 import { usePromptStore } from "../stores/promptStore";
 import { useToastStore } from "../stores/toastStore";
+import { toUserMessage } from "../utils/errorMessage";
 import { relativeTime } from "../utils/time";
 
 import {
@@ -89,7 +90,7 @@ function DraftCard({ draft }: { draft: DraftSummary }) {
       await promoteDraft({ id: draft.id, groupKind });
       toast(`已归入 ${TYPE_LABEL[draft.targetType]}`);
     } catch (err) {
-      toastError(err instanceof Error ? err.message : "归档失败");
+      toastError(toUserMessage(err, "归档失败"));
     } finally {
       setBusy(false);
       setPicking(false);
@@ -103,7 +104,7 @@ function DraftCard({ draft }: { draft: DraftSummary }) {
       await discardDraft(draft.id);
       toast("已丢弃草稿");
     } catch (err) {
-      toastError(err instanceof Error ? err.message : "丢弃失败");
+      toastError(toUserMessage(err, "丢弃失败"));
     } finally {
       setBusy(false);
     }
@@ -132,7 +133,7 @@ function DraftCard({ draft }: { draft: DraftSummary }) {
       setPicking(false);
       setEditing(full.payload);
     } catch (err) {
-      toastError(err instanceof Error ? err.message : "读取草稿失败");
+      toastError(toUserMessage(err, "读取草稿失败"));
     } finally {
       setBusy(false);
     }
@@ -273,7 +274,7 @@ function DraftEditor({
       toast("草稿已保存");
       onClose();
     } catch (err) {
-      toastError(err instanceof Error ? err.message : "保存失败");
+      toastError(toUserMessage(err, "保存失败"));
       setSaving(false);
     }
   };

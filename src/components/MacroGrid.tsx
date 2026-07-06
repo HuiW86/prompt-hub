@@ -8,6 +8,7 @@ import { useCopy } from "../hooks/useCopy";
 import { useRegionNav } from "../hooks/useRegionNav";
 import { usePromptStore } from "../stores/promptStore";
 import { useToastStore } from "../stores/toastStore";
+import { toUserMessage } from "../utils/errorMessage";
 import type { Macro } from "../ipc/types";
 
 import {
@@ -64,7 +65,7 @@ export function MacroGrid() {
       await deleteMacro(id);
       showToast("已永久删除");
     } catch (err) {
-      showError(err instanceof Error ? err.message : "删除失败");
+      showError(toUserMessage(err, "删除失败"));
     }
   };
 
@@ -136,7 +137,7 @@ export function MacroGrid() {
             }
             const orderedIds = items.map((m) => m.id);
             void reorderMacros(orderedIds).catch((err) => {
-              showError(err instanceof Error ? err.message : "排序保存失败");
+              showError(toUserMessage(err, "排序保存失败"));
             });
           }}
         >
@@ -311,7 +312,7 @@ function MacroEditor({ target, onClose, onError }: EditorProps) {
       }
       onClose();
     } catch (err) {
-      onError(err instanceof Error ? err.message : "保存失败");
+      onError(toUserMessage(err, "保存失败"));
       setSaving(false);
     }
   };

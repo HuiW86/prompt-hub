@@ -205,7 +205,11 @@ describe("promptStore", () => {
     await usePromptStore.getState().refreshAll();
     const state = usePromptStore.getState();
     expect(state.loadState).toBe("error");
-    expect(state.loadError).toBe("db missing");
+    // P1-3: loadError renders verbatim in Dashboard's error state, so the raw
+    // English IPC string is routed through toUserMessage — an unmapped error
+    // lands on the Chinese fallback, never on "db missing" itself.
+    expect(state.loadError).toBe("数据读取异常，请重试或重启应用");
+    expect(state.loadError).not.toContain("db missing");
   });
 
   it("recordCopy bumps Macro usageCount locally and refetches recent", async () => {
