@@ -1,12 +1,12 @@
 ---
 type: design-spec
 project: prompt-hub
-version: v0.13
+version: v0.14
 created: 2026-05-18
-last_modified: 2026-07-01
-status: ratified  # v0.10 已 omar 审定（2026-06-21）；v0.11–v0.13 增量待人审
+last_modified: 2026-07-06
+status: ratified  # v0.10 已 omar 审定（2026-06-21）；v0.11–v0.14 增量待人审
 author: co  # 🤝 人机共创（CLAUDE §5.2）
-related: [[01-spec]], [[02-constitution]], [[03-product-spec]], [[012-lock-visual-quality-anchor]], [[019-supersede-flat-visual-anchor]], [[020-restore-protocol-dark-band]], [[CLAUDE-DESIGN]], [[015-expose-mcp-write-pipeline]], [[016-choose-dnd-and-resizable-layout]], [[018-absorb-promptscape-design]], [[asset-editing-and-adaptive-layout]]
+related: [[01-spec]], [[02-constitution]], [[03-product-spec]], [[012-lock-visual-quality-anchor]], [[019-supersede-flat-visual-anchor]], [[020-restore-protocol-dark-band]], [[021-scene-layered-editing]], [[CLAUDE-DESIGN]], [[015-expose-mcp-write-pipeline]], [[016-choose-dnd-and-resizable-layout]], [[018-absorb-promptscape-design]], [[asset-editing-and-adaptive-layout]]
 description: 手动 AI 编程仪表盘的视觉规范——tokens.css 单一真源 + 主题/elevation/组件视觉契约；写 CSS / 视觉时召回。版本叙事见 CHANGELOG
 ---
 
@@ -884,6 +884,12 @@ bundle 派生的 3 个跨组件 chrome primitive：
 
 合规——属于「用户内容」分类（即使是 seed 数据，本质仍是用户可编辑字段）。
 
+**用户内容色（v0.14 · [[021-scene-layered-editing]] 子决策 2，待 omar 复核）**：`scenes.color` 与 `scenes.icon` 同属用户内容，沿用本节 chrome/用户内容二分——
+
+- **染色范围**：只染场景**自身图标 glyph**（Scene tab + 卡头，`style={{ color }}` 注入 wrapper，lucide 走 `currentColor`）；**不染任何 chrome**（tab pill 边框/底色、列头、卡面均不受影响）。与 [[019-supersede-flat-visual-anchor]]「放弃颜色本体论」不冲突：ADR-019 禁的是 chrome 层 ontology 装饰色，用户内容色是用户表达
+- **预设与存储**：属性面板提供 6 色预设 swatch + 清除；hex 常量定义在 `ScenePropertiesEditor.tsx` 组件内（注释标注 user-content presets, not chrome tokens），**不入 §2.4 token 表**；swatch 填充与 glyph 染色都走 inline style，CSS 保持全 token（token-gate 不豁免 CSS 文件）
+- **回退协议**：omar 否决此定性 → 降级为仅存储不消费（撤 tab/卡头两处 inline style 注入即可，字段与面板编辑保留）
+
 ---
 
 ## 13. 视觉权重（layer 规约）
@@ -944,6 +950,14 @@ bundle 派生的 3 个跨组件 chrome primitive：
 ---
 
 ## 修订记录
+
+### v0.14（2026-07-06）— ADR-021 涟漪：scene.color 用户内容色 + 就地动作簇视觉
+
+回流 [[021-scene-layered-editing]]。🤝 共创起草，待 omar 人审（子决策 2 用户内容色定性为本版唯一待裁项）。
+
+- **§12.4 新增「用户内容色」条目**：`scenes.color` 沿用 chrome/用户内容二分——只染场景自身图标 glyph（tab + 卡头 inline style），不染 chrome；6 色预设 hex 常量组件内定义不入 §2.4 token 表；与 ADR-019 不冲突（禁的是 chrome ontology 装饰色）；回退协议 = 降级仅存储
+- **就地动作簇显隐**：子阶段列头 / 话术卡动作簇采用 hover + `:focus-within` 双通道 reveal（键盘漫游同权）；ghost 入口（新增列 / 添加卡）dashed muted 形态；空子阶段列 muted 常显。密度观感列入真机复验批次
+- Scene 链路退出 @dnd-kit（[[016-choose-dnd-and-resizable-layout]] 适用范围收缩至 MacroGrid / AlignmentPhrases），移动动作视觉统一为 ←→/↑↓ IconButton
 
 ### v0.13（2026-07-01）— 产品走查修缮批次涟漪（P0/P3 + ADR-020 暗 band）
 

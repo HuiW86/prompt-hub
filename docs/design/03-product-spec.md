@@ -1,12 +1,12 @@
 ---
 type: product-spec
 project: prompt-hub
-version: v0.13
+version: v0.14
 created: 2026-05-18
-last_modified: 2026-07-01
+last_modified: 2026-07-06
 status: draft  # v0.10 起增量待 omar 人审；前序 v0.8 已 ratified
 author: co  # 🤝 人机共创（CLAUDE §5.2）
-related: [[01-spec]], [[05-design-spec]], [[06-prd]], [[012-lock-visual-quality-anchor]], [[019-supersede-flat-visual-anchor]], [[020-restore-protocol-dark-band]], [[013-alignment-phrases-tab-inclusion]], [[015-expose-mcp-write-pipeline]], [[017-enable-auto-update]], [[018-absorb-promptscape-design]]
+related: [[01-spec]], [[05-design-spec]], [[06-prd]], [[012-lock-visual-quality-anchor]], [[019-supersede-flat-visual-anchor]], [[020-restore-protocol-dark-band]], [[021-scene-layered-editing]], [[013-alignment-phrases-tab-inclusion]], [[015-expose-mcp-write-pipeline]], [[017-enable-auto-update]], [[018-absorb-promptscape-design]]
 description: 手动 AI 编程仪表盘的 UI 契约——双形态架构/布局/点击路径/状态反馈/用户旅程/主形态 UI 草案；写 UI / 改交互时召回。版本叙事见 CHANGELOG
 ---
 
@@ -689,11 +689,12 @@ graph TD
 #### 区域 4：Scene 区（[[06-prd#5.3-Scene-全景区]]）
 
 - **位置**：v0.11 起为**任务列 Macro 横条下方**，填充任务列剩余高度（原「中部右侧 40%」；涟漪 [[018-absorb-promptscape-design]]）
-- **尺寸**：占任务列剩余空间；视图态子阶段以 **auto-fit 自适应多列全景**呈现（`repeat(auto-fit, minmax(min(var(--col-min-substage), 100%), 1fr))`，v0.13 · P3-1：窄面板自动降列不挤压、少列拉伸填满不留空轨），每子阶段一列、Phrase 堆为 border 卡；编辑态保留纵向行
+- **尺寸**：占任务列剩余空间；视图态子阶段以 **auto-fit 自适应多列全景**呈现（`repeat(auto-fit, minmax(min(var(--col-min-substage), 100%), 1fr))`，v0.13 · P3-1：窄面板自动降列不挤压、少列拉伸填满不留空轨），每子阶段一列、Phrase 堆为 border 卡；**空子阶段列常显**（muted 列头 + 「＋ 添加话术」占位，v0.14 · [[021-scene-layered-editing]]——编辑态废除后空子阶段唯一的可见可管理入口）
 - **顶部 Tab**：7-10 个 Scene 横排小标签（pill 样式，约 24px 高）
   - 当前激活 Tab：**绿色**（Scene 属任务层，selected 态按层取色 `--task-16` fill + `--task` border，见 [[05-design-spec#10.1]] / [[05-design-spec#13.1]]）——v0.7 修订：原「紫色」措辞早于 design-spec v0.7 ontology 系统，紫属协议层、用于 Scene = 跨层污染（[[05-design-spec#13.2]] / [[02-constitution#B2]]），故纠正为绿
   - 未激活 Tab：浅灰背景 + 灰色文字
   - **📥 草稿 tab（v0.7 起）**：Tab 行**最左**，📥 图标 + 一道竖分隔线与 Scene tab 隔开；**仅 pending>0 时出现**（与顶部待审 badge 同生同灭）。它是 MCP 写入的「收件箱入口」，不是一个 Scene，靠图标 + 分隔 + 条件显示三重信号区分（语义边界见 [[06-prd#6.0-资产关系总览]] 暂态-drafts 行——drafts 是收件箱，非第 4 层资产，不违反 [[02-constitution#B1]]）
+  - **「＋ 新建场景」（v0.14 · [[021-scene-layered-editing]]）**：tab 行尾常驻 ghost 按钮（`data-nav-item` 进漫游序列）——点击创建「新场景」并跳转新 tab、**自动打开属性面板**供命名/配属性（替代原编辑态行内改名流）
 - **下方内容**：当前 Scene 展开
   - 如果 Scene 有 SubStage：按 SubStage 分组显示，每组列头「序号 + 子阶段名」；**未归组话术的列头无条件渲染为「未分组」**（v0.13 · P3-1：复用同结构含序号保各列头基线对齐，文案 muted——此前无列头，多列布局下裸卡起排与邻列不齐）
   - 每组下挂 Phrase 卡片（13px，比 Macro 卡片更紧凑）
@@ -708,11 +709,11 @@ graph TD
   - 点击 Tab → 切换 Scene；点击 📥 草稿 tab → 进入收件箱视图
   - 点击 Phrase → 复制 → 自动隐藏窗口
   - 长按 Phrase → 升级为 Macro / 添加到 Composition 队列
-  - **管理话术（编辑模式，[[scene-phrase-editing]]）**：Scene tab 行右侧铅笔切换编辑态；编辑态下每条 Phrase 行内可改名/改内容/删（行内二次确认）+ 拖拽排序（**每个 SubStage 组独立 DnD，不跨组**，order_index 按 (scene, sub_stage) 分区）；「新增」弹编辑器，子阶段下拉含「无分组」。镜像对齐话术编辑模式（[[013-alignment-phrases-tab-inclusion]]）
-  - **管理结构（编辑模式，[[scene-substage-editing]]）**：补齐 [[scene-phrase-editing]] 当初 defer 的结构编辑，与上「管理话术」同处编辑态（同一铅笔切换），在 Scene 头部下方插入「结构编辑器」inset，作用对象是 Scene 容器与 SubStage 本体（Tauri-only，不经 MCP）——
-    - **Scene 容器可改名/删 + 新建**：结构编辑器首行「场景 · {名称}」配铅笔（行内改名）/ 垃圾桶（删除，二次确认）/「新建场景」按钮（新建后跳到新 tab 续编辑）；删除时**若该 Scene 非空（其下有 Phrase 或 SubStage）则后端阻止（`RepoError::SceneNotEmpty`）并 toast 提示**（应用层校验，[[06-prd#6.4]] 删除策略）
-    - **SubStage 子阶段可增/改名/删**：结构编辑器「子阶段」区列出当前 Scene 全部子阶段（**含空子阶段**——编辑态不再像展示态那样隐藏空分组），每条配行内改名/删 + 顶部「新增子阶段」；**删除 SubStage 时其下 Phrase 的 sub_stage_id 解绑为「无分组」**（Phrase 本体保留在 Scene 内，[[06-prd#6.4]] 删除策略）
-    - **排序（v0.13 · P3-6 已落地 UI）**：Scene 全局单序、SubStage per-scene 单序，order_index 重写镜像 Phrase 排序分区。**SubStage** 在结构编辑器内拖拽排序（@dnd-kit，复用 Phrase 排序模式，IPC `reorder_sub_stages`）；**Scene** 用编辑态「场景前移 / 后移」按钮（IPC `reorder_scenes`）——tabs 是点击切换按钮且与条件性草稿 tab 同栏，拖拽会冲突，故退按钮方案；活动场景改为按 id 追踪，排序后编辑态不中断
+  - **就地编辑（三层，v0.14 · [[021-scene-layered-editing]]，推翻 v0.11–v0.13「统一编辑态」契约）**：全局 editMode 已废除，编辑什么点什么（Tauri-only 不经 MCP，[[scene-substage-editing]] D3 沿用；历史谱系：[[scene-phrase-editing]] v1.4 / [[scene-substage-editing]] v1.6 的编辑态承载被本层级模型取代，删除语义与链路不变）——
+    - **属性层**：卡头铅笔 → 属性面板（`ScenePropertiesEditor`）：name 必填 / icon（lucide 6 预设 + emoji 自由输入 + 「无」）/ color（6 预设 swatch + 清除；用户内容色只染场景自身图标，[[05-design-spec#12.4]]，ADR-021 子决策 2 待 omar 复核）/ rolePresets（chip + × 删除 + 回车添加，Enter 带 IME `isComposing` 守卫）；底部动作行收编 **场景前移/后移**（`reorder_scenes`）与**删除**（二次确认；非空 Scene 后端 `RepoError::SceneNotEmpty` 阻止并 toast，[[06-prd#6.4]]）。面板内控件走原生焦点序、不进 `data-nav-item` 漫游（模态编辑上下文，设计选择）；保存 payload 全字段透传 `update_scene`；卡头 meta 行消费 rolePresets chips
+    - **结构层**：子阶段列头 hover / `:focus-within` 双通道显隐动作簇——✎ 行内改名（`update_sub_stage`，IME 守卫）/ ←→ 相邻交换（`reorder_sub_stages`）/ 🗑 二次确认删除（`delete_sub_stage`，**其下 Phrase 解绑为「无分组」**，[[06-prd#6.4]]）；网格尾「＋ 新增子阶段」ghost 列（`create_sub_stage`）
+    - **内容层**：话术卡 hover / `:focus-within` 动作簇——✎ 原位换行内编辑器（`update_phrase`）/ ↑↓ 组内相邻交换（`reorder_phrases`，per-(scene, sub_stage) 分区不跨组）/ 🗑 二次确认删除（`delete_phrase`）；每列底「＋ 添加话术」ghost 卡预填该列 subStageId（`create_phrase`）；**动作簇全部 `stopPropagation`，不触发整卡 copy 主动作**；改分组（跨列移动）走话术编辑器子阶段下拉，不做拖拽
+    - **排序一律按钮不拖拽**（ADR-021 子决策 1）：视图网格 copy 主动作与拖拽 affordance 互斥，原 v0.13 · P3-6 的 SubStage 结构编辑器 dnd 随编辑态移除，←→/↑↓ 按钮等价承接同一 IPC 链路（能力不回退）；order_index 分区语义（Scene 全局单序 / SubStage per-scene 单序 / 活动场景按 id 追踪）不变
   - **草稿卡片 promote 须 omar 显式点击**——无自动 promote 路径（守 [[06-prd#8.2]] N3 / [[02-constitution#D1]]）。promote / discard 是 omar 主导动作，外部 AI 不可触达（IPC 不经 MCP 暴露，[[06-prd#10.3]] 边界）
 
 #### 区域 5：最近使用区（[[06-prd#5.5-最近使用区]]）
@@ -827,6 +828,17 @@ graph TD
 ---
 
 ## 修订记录
+
+### v0.14（2026-07-06）— ADR-021 涟漪：Scene 编辑分层化，废除全局编辑态
+
+回流 [[021-scene-layered-editing]]（plan [[scene-layered-editing]] 3 阶段 9 任务收口）。🤝 共创起草，待 omar 人审。
+
+| 章节 | 改动 | 来源 |
+|------|------|------|
+| §13.3 区域 4 尺寸 | 「编辑态保留纵向行」删除；**空子阶段列常显**（muted 列头 + 添加占位——编辑态废除后空子阶段唯一可见可管理入口，密度变化列真机复验）| ADR-021 |
+| §13.3 区域 4 顶部 Tab | tab 行尾新增「＋ 新建场景」ghost 按钮（`data-nav-item`）——创建后跳新 tab 自动开属性面板，替代原编辑态行内改名流 | ADR-021 |
+| §13.3 区域 4 行为 | **「管理话术」「管理结构」两条统一编辑态契约整体推翻**，重写为三层就地编辑：属性层（铅笔→`ScenePropertiesEditor`：name/icon/color/rolePresets + 场景前移/后移/删除收编，PRD §6.4 三字段首次获 UI 承载）/ 结构层（列头 hover/`:focus-within` 动作簇 + ghost 新增列）/ 内容层（话术卡动作簇 + ghost 添加卡，`stopPropagation` 守 copy 主动作）；**排序一律按钮不拖拽**（SubStage dnd 随编辑态移除，←→/↑↓ 等价承接，ADR-021 子决策 1）| ADR-021 |
+| §13.3 区域 4 行为 | scene.color 定性用户内容色只染场景自身图标（[[05-design-spec#12.4]]，ADR-021 子决策 2 **待 omar 复核**，否决降级仅存储）；属性面板内控件走原生焦点序不进漫游（设计选择，显式记档）| ADR-021 |
 
 ### v0.13（2026-07-01）— 产品走查修缮批次涟漪（Draft 编辑 / Modifier 管理口 / 设为默认 / 排序 UI / composition 暂缓）
 
