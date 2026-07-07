@@ -253,9 +253,13 @@
   flex: none;
 }
 
-/* Inline editor inset within the card, above the phrase grid. */
+/* Inline editor inset within the card, above the phrase grid. min-height 0
+   lets the slot shrink inside the region's flex column so a tall editor
+   scrolls internally instead of clipping its footer past the window edge. */
 .editorSlot {
   padding: var(--s-2_5) var(--s-3_5) 0;
+  min-height: 0;
+  overflow-y: auto;
 }
 
 .subStageInline {
