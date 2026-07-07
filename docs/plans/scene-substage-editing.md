@@ -39,7 +39,7 @@ description: Scene/SubStage 结构编辑 plan——容器与子阶段 CRUD + 排
 ## 5. 实现分层（镜像 phrases.rs 范式）
 
 - **后端**（repo-write）：新增 `scenes.rs` + `sub_stages.rs`，各 create/update/delete/reorder。reorder 分区：Scene 全局单序、SubStage per-scene 单序（`order_index` 重写，镜像 `reorder_phrases`）。`lib.rs` 导出。
-- **IPC**（commands.rs）：8 命令走 `with_write_conn`；tauri `src/lib.rs` invoke_handler 注册。
+- **IPC**（commands.rs）：8 命令走 `with_write_conn`；tauri `src-tauri/src/lib.rs` invoke_handler 注册。
 - **前端**：`ipc/index.ts` +8 方法 / `ipc/types.ts` 入参 / `promptStore` +8 actions / `ScenePanel` 编辑态加 Scene tab 增改名删 + SubStage 增改名删 + 接活已有下拉。
 - **测试**：repo-write 单测镜像 phrases.rs（删除语义/解绑/reorder 分区/非空阻止各一例）+ 前端 store/组件测试。
 

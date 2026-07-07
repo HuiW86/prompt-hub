@@ -23,10 +23,10 @@ prompt-hub 的项目文档体系——主文档分三类：契约层（spec / co
 | 05 | [design-spec](./05-design-spec.md) | 🤝 共创 | 视觉规范——字号 / 间距 / 颜色 / 动画 Token 全 CSS Variables 化 + WCAG 实测 + 暗色模式 |
 | 06 | [prd](./06-prd.md) | 🤖 AI | 工程契约——数据模型三表式 / 状态机 / 升级回滚 / NFR / Boundaries 三段式 / 安全字段 |
 | 07 | [features](./07-features.md) | 🤖 AI | 功能清单运营视图——功能 × 状态 × 测试覆盖 × 版本，单一事实源 |
-| 08 | [sitemap](./08-sitemap.md) | 🤖 AI | 资产对象树 + 视图导航图（无 URL 路由，桌面应用语境） |
+| 08 | [sitemap](./08-sitemap.md) | 🤖 AI | 资产对象树 + 区域地图 + 焦点导航（单窗口一屏全景 + 浮层模型，无 URL 路由） |
 | 09 | [tech-stack](./09-tech-stack.md) | 🤖 AI | 技术栈快照——Tauri 2.x + React 19.2 + rusqlite 0.32 + pnpm 10.x + Zustand 5 + Vitest 4 + CSS Modules |
 | 10 | [ops-spec](./10-ops-spec.md) | 🤖 AI | 运营规格——部署 / 性能预算 / 备份 / 升级回滚 / 监控（本地单人语境） |
-| 11 | [test-spec](./11-test-spec.md) | 🤖 AI | 测试规格——单元 / 集成 / E2E 三层 + 性能基准 + LLM Eval 集 |
+| 11 | [test-spec](./11-test-spec.md) | 🤖 AI | 测试规格——前端 Vitest + Rust workspace + 4 源码级 gate + CI 双 job + C1 bench gate（实测盘面，LLM Eval N/A）|
 | — | [变更日志](./CHANGELOG.md) | — | 设计文档体系修订历史 |
 
 ## L5 派生上下文（协作契约）
@@ -41,7 +41,7 @@ prompt-hub 的项目文档体系——主文档分三类：契约层（spec / co
 ## 关联目录
 
 - `../plans/prompt-hub-mvp.md` — 五阶段实施任务清单（🤝 共创）
-- `../adr/` — 架构决策记录（ADR-001~020：17 Accepted + 005 Proposed + 011 reserved + 012 Superseded by 019，`000-template.md` 为模板）
+- `../adr/` — 架构决策记录（ADR-001~021：18 Accepted + 005 Proposed + 011 Reserved + 012 Superseded by 019，`000-template.md` 为模板）
 - `../../dist/prompt-hub.html` — 全文档单文件阅读型合订（⚠️ 见下方说明）
 
 > **`dist/prompt-hub.html` 已过期**：该合订 HTML 构建于本次目录迁移之前，源文件路径与命名已变更，需重新生成后才与当前文档一致。详见 [ADR-010](../adr/010-doc-directory-restructure.md)。

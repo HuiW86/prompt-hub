@@ -32,13 +32,15 @@ related:
 
 `Accepted`（2026-05-27 — omar 审过 v0.1 → 3 路二轮 review（A codex challenge / B Plan / C Explore）→ 4 Blocker 全修后 v0.2 → Accepted）
 
+- Last reviewed: 2026-07-06
+
 > 修订路径：v0.1 Proposed → 3 路 review 发现 §3.3 trait 边界伪命题 + tool 集 read 不对称 + import_json 加固漏防线 + R9 严重度低估 → 4 Blocker 全修后 Accepted。详见配套 [[mcp-write-pipeline#§13]] 变更日志 v0.2 行。
 
 ## 3. Context
 
 ### 触发事件
 
-omar 询问"提示词怎么管理"，发现当前 11 个 Tauri IPC command 全是 read-only + `record_usage`（[[commands.rs]]），没有任何 write 接口。提示词入库的唯一路径是改 `migrations/0002_seed.sql` 然后清掉 DB 让 migration 重跑——dev-only，不是产品路径。
+omar 询问"提示词怎么管理"，发现当前 11 个 Tauri IPC command 全是 read-only + `record_usage`（`src-tauri/src/commands.rs`），没有任何 write 接口。提示词入库的唯一路径是改 `migrations/0002_seed.sql` 然后清掉 DB 让 migration 重跑——dev-only，不是产品路径。
 
 omar 明确诉求：**希望工具暴露标准接口给外部 AI（比如 Claude）帮自己把对话里产生的提示词入库**。
 
@@ -54,7 +56,7 @@ omar 明确诉求：**希望工具暴露标准接口给外部 AI（比如 Claude
 
 - [[02-constitution#C1]] 主形态唤起 ≤ 200ms P95 死线
 - 现有 SQLite schema 7 表 + WAL 模式 + 全本地 `~/Library/Application Support/.../prompt-hub.db` 路径
-- 现有 11 个 read-only IPC（[[commands.rs]]）
+- 现有 11 个 read-only IPC（`src-tauri/src/commands.rs`）
 - macOS-first（Windows / Linux 未来再说）
 
 ### 不决策的代价

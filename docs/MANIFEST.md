@@ -1,12 +1,12 @@
 ---
 type: manifest
 project: prompt-hub
-version: v1.9
+version: v1.10
 status: active
 created: 2026-05-24
-last_modified: 2026-07-02
+last_modified: 2026-07-06
 audience: [human, ai]
-description: prompt-hub 项目前期准备文件总清单——按方法论 v1.3 六层架构（L0 宪法 / L1 产品契约 / L2 工程规格 / L3 实施规格 / L4 索引 / L5 协作契约）+ ADR + 实施方案 + 视觉原型 + AI 上下文 + 工程护栏（CI/gate 测试）。AI 进项目读完 CLAUDE.md 后接读本文件能 1 分钟拿全貌；不写行数（参考性强但易过期）。v1.9：§9 plans 补 3 份已收口 plan / +§11.7 技术调研（docs/research/）/ +ADR-011 Reserved 占位落盘
+description: prompt-hub 项目前期准备文件总清单——按方法论 v1.3 六层架构（L0 宪法 / L1 产品契约 / L2 工程规格 / L3 实施规格 / L4 索引 / L5 协作契约）+ ADR + 实施方案 + 视觉原型 + AI 上下文 + 工程护栏（CI/gate 测试）。AI 进项目读完 CLAUDE.md 后接读本文件能 1 分钟拿全貌；不写行数（参考性强但易过期）。v1.10：§3/§4 版本列对齐盘面现状（product-spec/design-spec v0.14 / features v1.9）+ §8 ADR 计数 20→21（补 ADR-021 scene-layered-editing）
 related:
   - CLAUDE
   - 02-constitution
@@ -29,8 +29,8 @@ related:
 | 🤝 共创 | 6 | 6/6 ratified（2026-06-01 product-spec v0.7 / design-spec v0.8 omar 审定升 ratified）|
 | 🤖 AI 主笔（人审） | 6 | 4/6 ratified（tech-stack / ops-spec + sitemap·test-spec v0.2 2026-07-02 omar 人审通过）+ prd pre-code + features in-progress |
 | 🤖 AI 派生人审（L5） | 2 | 2/2 active |
-| ADR 决策记录 | 20 | 17 Accepted + 1 Superseded（012）+ 1 Proposed（005）+ 1 Reserved（011）|
-| 实施方案 | 6 | 4 done + 1 active + 1 in-progress |
+| ADR 决策记录 | 21 | 18 Accepted + 1 Superseded（012）+ 1 Proposed（005）+ 1 Reserved（011）|
+| 实施方案 | 7 | 5 done + 1 active + 1 phased（adr-017 Phase 6 待办）|
 | 技术调研 | 2 | active（索引 + 1 份调研）|
 | 视觉原型 | 1 | v1 已归档至 archive/（2026-05-25）|
 | 项目 AI 上下文 | 2 | active |
@@ -52,9 +52,9 @@ related:
 
 | 路径 | 内容 | 状态 |
 |---|---|---|
-| `docs/design/03-product-spec.md` | UI 契约（双形态 / 布局 / 交互） | draft v0.12（2026-06-28 数据导入导出涟漪：设置弹窗 +「数据」页；前 v0.11 scene-substage-editing §13.3 结构编辑器 / v0.10 ADR-018 +Header +设置弹窗 +任务层 2 列 / v0.9 UI 减负 Tab cycle 8→6；v0.10 起待 omar 人审，前序 v0.8 已 ratified）|
+| `docs/design/03-product-spec.md` | UI 契约（双形态 / 布局 / 交互） | draft v0.14（2026-07-06 ADR-021 涟漪：§13.3 区域 4 三层就地编辑契约重写；前 v0.13 走查修缮 / v0.12 数据导入导出 / v0.11 scene-substage-editing 结构编辑器；v0.10 起待 omar 人审，前序 v0.8 已 ratified）|
 | `docs/design/04-user-flows.md` | 用户流（边缘 / 异常 / 跨形态） | ratified |
-| `docs/design/05-design-spec.md` | 视觉/动效 token 体系 | ratified v0.12（2026-06-26 ⚠️ ADR-019 涟漪：推翻 flat 锚点——§8.2 撤 box-shadow + §8.2.1 elevation / §2.4.1 颜色本体论降视觉选择级转中性 / §13 重定向；前 v0.11 ADR-018 中性强调色 + 主题三态）|
+| `docs/design/05-design-spec.md` | 视觉/动效 token 体系 | ratified v0.14（2026-07-06 ADR-021 涟漪：§12.4 用户内容色 scene.color；前 v0.13 走查修缮暗 band / v0.12 ADR-019 推翻 flat 锚点；v0.11–v0.14 增量待人审，v0.10 已 omar 审定）|
 
 ---
 
@@ -63,7 +63,7 @@ related:
 | 路径 | 内容 | 状态 |
 |---|---|---|
 | `docs/design/06-prd.md` | 数据契约 / API / 状态机 / 错误码 | pre-code v0.11（2026-06-27 scene-substage-editing 涟漪：§6.4 +写入口归属指派；前 v0.10 ADR-017 C3 §8.3 updater 例外）|
-| `docs/design/07-features.md` | 66 功能矩阵 S1–S5 + AE + 自动更新 + Promptscape 吸收 + 结构编辑 + 数据导入导出 | in-progress v1.7（2026-06-28：§3.4 数据导入导出（JSON）done——export/import + 2 path-based IPC + SettingsModal「数据」页；前 v1.6 scene-substage-editing §3.8 done 合计 65→66 / 2026-06-26 ADR-019 / 2026-06-25 ADR-018）|
+| `docs/design/07-features.md` | 79 功能矩阵 S1–S5 + AE + 自动更新 + Promptscape 吸收 + 结构编辑 + 数据导入导出 + 走查修缮 + Scene 编辑分层 | in-progress v1.9（2026-07-06 ADR-021：§3.8 Scene 编辑分层化 done + §4 节奏表 78→79；前 v1.8 走查修缮批次 12 功能 66→78 / v1.7 数据导入导出 / v1.6 scene-substage-editing）|
 | `docs/design/08-sitemap.md` | 资产对象树 + 区域地图 + 焦点导航 | ratified v0.2（2026-07-02 omar 人审通过；同日全量重写对齐 product-spec v0.13「单窗口一屏全景 + 浮层」现状；前 v0.1 视图清单已失真）|
 
 ---
@@ -106,7 +106,7 @@ related:
 
 ---
 
-## §8 ADR 决策记录（20 份）
+## §8 ADR 决策记录（21 份）
 
 | 编号 | 标题 | 状态 |
 |---|---|---|
@@ -131,10 +131,11 @@ related:
 | 018 | absorb-promptscape-design（吸收 Promptscape 设计稿，组合 A1+B1+C1+D+E：保语义色 + 不引 Modifier 右栏 + 改造现有组件 + 接既有 store + 保 prompt-hub 名去头像；三放大决策 3→2 列 / +Header / 省略全局新建） | Accepted（2026-06-25） |
 | 019 | supersede-flat-visual-anchor（推翻 ADR-012 反 polish / Bloomberg-flat 锚点，omar 拍板 Option A：引 subtle elevation + 放弃颜色本体论改靠位置+形状，全面对齐 Promptscape；校正：颜色/反阴影住 design-spec 非 constitution，无人主笔门槛） | Accepted（2026-06-26） |
 | 020 | restore-protocol-dark-band（恢复协议层暗色 band——调和 ADR-018「吸收暗 band」与 ADR-019「全面中性化」实现冲突：新增 `--band-*` 层级固定色 token 族（双主题恒深底浅字）+ band 作用域整体重映射中性 token + 层级编码修缮（ModifierGrid 层标记 / RecentList 徽标撤 accent 实底）；澄清「层级固定色 ≠ 语义色」不属 ADR-019 废除的颜色本体论） | Accepted（2026-07-01） |
+| 021 | scene-layered-editing（废除 ScenePanel 全局 editMode，拆属性/结构/内容三层就地编辑；子决策 1 排序拖拽→按钮，ADR-016 dnd 范围收缩至 MacroGrid/AlignmentPhrases；子决策 2 scene.color 定性「用户内容色」**待 omar 复核**） | Accepted（2026-07-06） |
 
 ---
 
-## §9 实施方案（6 份 · 🤝 共创）
+## §9 实施方案（7 份 · 🤝 共创）
 
 | 路径 | 内容 | 状态 |
 |---|---|---|
@@ -144,6 +145,7 @@ related:
 | `docs/plans/asset-editing-and-adaptive-layout.md` | 资产编辑 + 自适应布局 plan（4 类资产编辑 UI + dnd-kit 区域内排序 + react-resizable-panels 可拖分隔条，分 P1–P4）| v0.6 · done（2026-06-08 P1–P4 全收口，2026-06-11 验收收口）|
 | `docs/plans/scene-phrase-editing.md` | Scene 场景话术（Phrase）编辑 plan（CRUD + 拖拽排序 + SubStage 归属，migration 0009 order_index）| done（2026-06-22 收口 9/9）|
 | `docs/plans/scene-substage-editing.md` | Scene/SubStage 结构编辑 plan（容器 + 子阶段 CRUD/排序 + seed 0011，补 Phrase 编辑 defer 的死维度）| done（2026-06-27 收口）|
+| `docs/plans/scene-layered-editing.md` | Scene 编辑分层化 plan（废除全局 editMode 拆三层就地编辑 + 排序拖拽→按钮，ADR-021）| done（2026-07-06 收口 9/9）|
 
 ---
 

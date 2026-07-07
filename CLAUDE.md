@@ -83,7 +83,7 @@ pnpm bench:hotkey-wake                                    # show()+set_focus() R
 - `docs/adr/*` — 决策追溯时
 
 ### 冷区（仅显式查询时取）
-- `docs/MANIFEST.md` v1.9 — 项目全文件清单（六层架构总览，AI 进项目读完 CLAUDE.md 接读拿全貌）
+- `docs/MANIFEST.md` v1.10 — 项目全文件清单（六层架构总览，AI 进项目读完 CLAUDE.md 接读拿全貌）
 - `~/Vault/知识库/方案模板/产品文档体系方法论.md` v1.3 — 文档体系治理时
 - git history — 变更追溯
 
@@ -165,7 +165,7 @@ AI 不得擅自起草人主笔文档（spec / constitution），可起草共创 
 > 本节只留指针，不留编年史。事实明细以 `docs/design/CHANGELOG.md` 日期条目、对应 ADR 与 [[HANDOFF]] 为准。
 
 - **项目阶段**：S1 进行中，**M0 四项交付全绿**（含 M0-4 Developer ID 签名公证，runbook [[m0-4-macos-signing]]）；MCP 写管线 M-X.1–X.4 + 草稿收件箱 UI 已收口（ADR-015，明细见 [[07-features#§4]] 节奏表 2026-06-03 起各行）；资产编辑 AE P1–P4 收口，后随「UI 减负」Modifier/Composition 编辑 UI `withdrawn`、Tab cycle 回落 6 区（[[07-features#3.8]] + [[03-product-spec#13.4]]）；Promptscape 设计吸收落地（ADR-018 + 补遗-1，CHANGELOG 2026-06-25）；flat 视觉锚点被推翻转 subtle elevation（ADR-019，CHANGELOG 2026-06-26）
-- **文档体系**：13 核心 + L5 协作契约 2 + MANIFEST v1.9——product-spec v0.14 / design-spec v0.14 / features v1.9 / prd v0.12 / spec v0.6 / constitution v1.1 / tech-stack v1.3；L5 派生 [[CLAUDE-DESIGN]] v0.2（⚠️ 待 omar 重传）+ [[claude-design-prompts]] v0.1；全文件清单见 [[MANIFEST]] v1.9，版本叙事见 CHANGELOG
+- **文档体系**：13 核心 + L5 协作契约 2 + MANIFEST v1.10——product-spec v0.14 / design-spec v0.14 / features v1.9 / prd v0.12 / spec v0.6 / constitution v1.1 / tech-stack v1.3；L5 派生 [[CLAUDE-DESIGN]] v0.2（⚠️ 待 omar 重传）+ [[claude-design-prompts]] v0.1；全文件清单见 [[MANIFEST]] v1.10，版本叙事见 CHANGELOG
 - **ADR 进度**：001–021 共 18 Accepted + 1 Superseded + 1 Proposed + 1 Reserved——最新 021（scene-layered-editing，2026-07-06，废除 Scene 全局编辑态改三层就地编辑；子决策 scene.color 用户内容色**待 omar 复核**）；012 Superseded by 019；005（prompt-combiner 复用）仍 Proposed 等 omar；011 Reserved（search UsageSource）；各决策与补遗明细见 `docs/adr/`
 - **tech-stack**：**v1.3 ratified**——Tauri 2.x + React 19.2 + Zustand 5 + rusqlite 0.32 + pnpm 10.x + Vite 7.x + Vitest 4 + CSS Modules + macos-private-api + updater/process 插件，全栈拍板见 [[09-tech-stack#§3]]
 - **自动更新（ADR-017）**：客户端 Phase 1-3 + CI Phase 4 已 landed，dry-run 端到端验证通过（CHANGELOG 2026-06-19）；唯一待办 Phase 6 真机验收
