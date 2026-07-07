@@ -1081,7 +1081,7 @@ function PhraseEditor({
           value={subStageValue}
           onChange={(e) => setSubStageValue(e.target.value)}
         >
-          <option value={UNGROUPED_VALUE}>无分组</option>
+          <option value={UNGROUPED_VALUE}>未分组</option>
           {orderedSubStages.map((s) => (
             <option key={s.id} value={s.id}>
               {s.name}
