@@ -63,3 +63,40 @@ jobs:
       - run: cargo fmt --manifest-path src-tauri/Cargo.toml --check
       - run: cargo clippy --workspace --all-targets --manifest-path src-tauri/Cargo.toml -- -D warnings
       - run: cargo test --workspace --manifest-path src-tauri/Cargo.toml
+
+  # ── Job 3: bench-c1 — automated constitution C1 gate (唤起 ≤200ms P95). ──────
+  # Builds src-tauri with `--features bench`, spawns the binary (auto-cycles
+  # show/hide), and asserts the hotkey-wake P95 stays within the 200ms budget.
+  # The bench script exits non-zero when P95 > 200ms, so its exit code IS the
+  # gate — no extra assertion step needed.
+  #
+  # RISK (first CI run unverified): the bench spawns a real Tauri window and
+  # calls show()+set_focus(). GitHub's macos-14 runner is headless-ish (no
+  # attached display / login session); Tauri window creation or the CGWindow
+  # path may fail there even though it passes on developer machines. If this
+  # job fails with a window/display error rather than a P95-over-budget error,
+  # that is the environment limitation, not a real C1 regression — treat it as
+  # a signal to investigate the runner, not to block the PR reflexively.
+  bench-c1:
+    runs-on: macos-14
+    steps:
+      - uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v7.0.0
+      - uses: pnpm/action-setup@0ebf47130e4866e96fce0953f49152a61190b271 # v6.0.9
+      - uses: actions/setup-node@48b55a011bda9f5d6aeb4c2d9c7362e8dae4041e # v6.4.0
+        with:
+          node-version: 22
+          cache: pnpm
+      - uses: dtolnay/rust-toolchain@4be7066ada62dd38de10e7b70166bc74ed198c30 # stable
+      - uses: Swatinem/rust-cache@c19371144df3bb44fab255c43d04cbc2ab54d1c4 # v2.9.1
+        with:
+          workspaces: src-tauri
+
+      # Same rationale as the rust job: dist/ is gitignored, stub it so tauri
+      # codegen never trips on the missing ../dist asset path.
+      - name: Stub frontend dist for tauri codegen
+        run: mkdir -p dist && touch dist/index.html
+
+      - run: pnpm install --frozen-lockfile
+      # Exit code gates C1: bench:hotkey-wake exits 1 when P95 > 200ms.
+      - name: Constitution C1 gate (hotkey-wake P95 ≤ 200ms)
+        run: pnpm bench:hotkey-wake
