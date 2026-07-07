@@ -51,6 +51,10 @@ type EditTarget = { mode: "create" } | { mode: "edit"; phrase: Phrase } | null;
 
 type Grouped = Array<{ subStage: SubStage | null; phrases: Phrase[] }>;
 
+// Sentinel id for the synthetic ungrouped bucket in per-column UI state
+// (rename/promote); it never collides with backend UUIDs.
+const UNGROUPED_KEY = "__ungrouped__";
+
 // includeEmpty keeps sub-stages with no phrases in the result — the grid passes
 // it so a freshly-created empty sub-stage stays a visible, manageable column (a
 // muted column with an add-phrase placeholder). The default-false path is
@@ -81,6 +85,7 @@ export function ScenePanel() {
   const pendingDraftCount = usePromptStore((s) => s.pendingDraftCount);
   const draftsViewRequestId = useAppStore((s) => s.draftsViewRequestId);
   const deletePhrase = usePromptStore((s) => s.deletePhrase);
+  const updatePhrase = usePromptStore((s) => s.updatePhrase);
   const createScene = usePromptStore((s) => s.createScene);
   const updateScene = usePromptStore((s) => s.updateScene);
   const deleteScene = usePromptStore((s) => s.deleteScene);
@@ -258,6 +263,35 @@ export function ScenePanel() {
       setCreatingSubStage(false);
     } catch (err) {
       showError(toUserMessage(err, "新增子阶段失败"));
+    }
+  };
+
+  // Promote the synthetic ungrouped bucket: naming it creates a real sub-stage
+  // and re-homes the bucket's phrases into it (create_sub_stage + update_phrase,
+  // no new write link). Each re-home is an independent write — a mid-loop
+  // failure keeps already-moved phrases, leaves the rest ungrouped and surfaces
+  // the error, so retrying the promote is harmless (the bucket only holds the
+  // remainder).
+  const handlePromoteUngrouped = async (name: string, orphans: Phrase[]) => {
+    if (!current) return;
+    const trimmed = name.trim();
+    if (!trimmed) return;
+    try {
+      const created = await createSubStage({
+        sceneId: current.scene.id,
+        name: trimmed,
+      });
+      for (const p of orphans) {
+        await updatePhrase({
+          id: p.id,
+          name: p.name,
+          content: p.content,
+          subStageId: created.id,
+        });
+      }
+      setRenamingSubId(null);
+    } catch (err) {
+      showError(toUserMessage(err, "转为子阶段失败"));
     }
   };
 
@@ -494,7 +528,7 @@ export function ScenePanel() {
               const subId = g.subStage?.id ?? null;
               return (
                 <ViewColumn
-                  key={subId ?? "__ungrouped__"}
+                  key={subId ?? UNGROUPED_KEY}
                   index={gi}
                   subStage={g.subStage}
                   phrases={g.phrases}
@@ -505,7 +539,7 @@ export function ScenePanel() {
                   canMoveRight={
                     g.subStage != null && groups[gi + 1]?.subStage != null
                   }
-                  renaming={renamingSubId === g.subStage?.id}
+                  renaming={renamingSubId === (g.subStage?.id ?? UNGROUPED_KEY)}
                   confirmingDelete={confirmingSubId === g.subStage?.id}
                   editingPhraseId={phraseEditId}
                   addingPhrase={addPhraseFor?.subStageId === subId}
@@ -528,11 +562,13 @@ export function ScenePanel() {
                     )
                   }
                   onRenameStart={() =>
-                    g.subStage && setRenamingSubId(g.subStage.id)
+                    setRenamingSubId(g.subStage?.id ?? UNGROUPED_KEY)
                   }
                   onRenameCancel={() => setRenamingSubId(null)}
                   onRenameSave={(name) =>
-                    g.subStage && void handleRenameSub(g.subStage.id, name)
+                    g.subStage
+                      ? void handleRenameSub(g.subStage.id, name)
+                      : void handlePromoteUngrouped(name, g.phrases)
                   }
                   onMove={(dir) =>
                     g.subStage && void handleMoveSub(g.subStage.id, dir)
@@ -664,10 +700,14 @@ function ViewColumn({
             {String(index + 1).padStart(2, "0")}
           </span>
         )}
-        {renaming && subStage ? (
+        {renaming ? (
+          // Renaming the ungrouped bucket starts from an empty field —「未分组」
+          // is a placeholder label, not a name; saving promotes the bucket to a
+          // real sub-stage and re-homes its phrases (handlePromoteUngrouped).
           <InlineNameEditor
-            initialValue={subStage.name}
+            initialValue={subStage?.name ?? ""}
             ariaLabel="子阶段名称"
+            placeholder={subStage ? undefined : "子阶段名称"}
             onSave={onRenameSave}
             onCancel={onRenameCancel}
           />
@@ -693,13 +733,25 @@ function ViewColumn({
               title={
                 subStage
                   ? undefined
-                  : "无归属的话术——新增子阶段后，编辑话术即可归入"
+                  : "无归属的话术——命名此列即可转为子阶段并归入这些话术"
               }
             >
               {subStage ? subStage.name : "未分组"}
             </span>
-            {/* Ungrouped column has no rename/move/delete — it is a synthetic
-                bucket, not a real sub-stage. */}
+            {/* The ungrouped bucket is synthetic — no move/delete, but naming
+                it (pencil) promotes it to a real sub-stage. */}
+            {!subStage && (
+              <ActionCluster className={styles.subStageActions} reveal>
+                <IconButton
+                  aria-label="命名未分组为子阶段"
+                  data-nav-item
+                  tabIndex={-1}
+                  onClick={onRenameStart}
+                >
+                  <Pencil size={13} aria-hidden strokeWidth={2} />
+                </IconButton>
+              </ActionCluster>
+            )}
             {subStage && (
               <ActionCluster className={styles.subStageActions} reveal>
                 <IconButton

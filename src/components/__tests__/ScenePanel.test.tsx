@@ -20,7 +20,6 @@ import { ScenePanel } from "../ScenePanel";
 
 const promptInitial = usePromptStore.getState();
 const appInitial = useAppStore.getState();
-const toastInitial = useToastStore.getState();
 
 // One scene with a non-empty sub-stage (生成) and an empty one (评审) so we can
 // assert the view grid surfaces empty sub-stages as manageable columns.
@@ -533,11 +532,23 @@ describe("ScenePanel view mode — ungrouped column header", () => {
     },
   ];
 
+  // Fake timers here: the promote-rejection test arms an error toast whose
+  // dwell setTimeout would otherwise leak past teardown. Reset the toast via
+  // clear() (monotonic seq bump) rather than setState(reset) — rewinding seq to
+  // 0 is what lets a leaked timer's captured seq re-match and flip a later
+  // test's error intent back to success (the historical properties-panel flake).
   beforeEach(() => {
+    vi.useFakeTimers();
     usePromptStore.setState(promptInitial, true);
     useAppStore.setState(appInitial, true);
+    useToastStore.getState().clear();
     invokeMock.mockReset();
     invokeMock.mockResolvedValue({ ok: true });
+  });
+
+  afterEach(() => {
+    vi.clearAllTimers();
+    vi.useRealTimers();
   });
 
   it("renders a 未分组 header for phrases without a sub-stage", () => {
@@ -556,6 +567,75 @@ describe("ScenePanel view mode — ungrouped column header", () => {
     usePromptStore.setState({ scenes, pendingDraftCount: 0 });
     render(<ScenePanel />);
     expect(screen.queryByText("未分组")).not.toBeInTheDocument();
+  });
+
+  // Promote flow: naming the bucket = create_sub_stage + re-home each orphan
+  // phrase via update_phrase (no new write link; see handlePromoteUngrouped).
+  it("naming the ungrouped column creates a sub-stage and re-homes its phrases", async () => {
+    usePromptStore.setState({
+      scenes: scenesWithUngrouped,
+      pendingDraftCount: 0,
+    });
+    invokeMock.mockImplementation((cmd: unknown) => {
+      if (cmd === "create_sub_stage")
+        return Promise.resolve({
+          id: "ss-new",
+          sceneId: "scene-plan",
+          name: "收尾",
+          orderIndex: 2,
+        });
+      if (cmd === "list_scenes_with_children")
+        return Promise.resolve(scenesWithUngrouped);
+      return Promise.resolve({ ok: true });
+    });
+    render(<ScenePanel />);
+    fireEvent.click(screen.getByLabelText("命名未分组为子阶段"));
+    const input = screen.getAllByLabelText("子阶段名称")[0];
+    fireEvent.change(input, { target: { value: "收尾" } });
+    fireEvent.keyDown(input, { key: "Enter" });
+    await vi.waitFor(() => {
+      const create = invokeMock.mock.calls.find(
+        (c) => c[0] === "create_sub_stage",
+      );
+      expect(create?.[1]).toMatchObject({
+        sceneId: "scene-plan",
+        name: "收尾",
+      });
+      const rehome = invokeMock.mock.calls.find(
+        (c) => c[0] === "update_phrase",
+      );
+      expect(rehome?.[1]).toMatchObject({
+        id: "phrase-2",
+        subStageId: "ss-new",
+      });
+    });
+  });
+
+  it("create_sub_stage rejection surfaces an error and re-homes nothing", async () => {
+    usePromptStore.setState({
+      scenes: scenesWithUngrouped,
+      pendingDraftCount: 0,
+    });
+    invokeMock.mockImplementation((cmd: unknown) => {
+      if (cmd === "create_sub_stage")
+        return Promise.reject(new Error("DbError"));
+      if (cmd === "list_scenes_with_children")
+        return Promise.resolve(scenesWithUngrouped);
+      return Promise.resolve({ ok: true });
+    });
+    render(<ScenePanel />);
+    fireEvent.click(screen.getByLabelText("命名未分组为子阶段"));
+    const input = screen.getAllByLabelText("子阶段名称")[0];
+    fireEvent.change(input, { target: { value: "收尾" } });
+    fireEvent.keyDown(input, { key: "Enter" });
+    await vi.waitFor(() => {
+      expect(useToastStore.getState().intent).toBe("error");
+    });
+    // No orphan is re-homed, and the inline editor survives for a retry.
+    expect(
+      invokeMock.mock.calls.find((c) => c[0] === "update_phrase"),
+    ).toBeUndefined();
+    expect(screen.getAllByLabelText("子阶段名称")[0]).toBeInTheDocument();
   });
 });
 
@@ -699,17 +779,18 @@ describe("ScenePanel properties panel — scene reorder link", () => {
 // save/delete failed and still have the panel to retry.
 describe("ScenePanel properties panel — async failure surfaces + panel survives", () => {
   // Fake timers here, not real. toastStore.show() arms a setTimeout that resets
-  // intent → "success" after the dwell, and its seq guard is defeated by
-  // beforeEach's setState(reset) rewinding seq — so a prior test's still-pending
-  // dwell callback can flip THIS test's error intent back to success mid-poll
-  // (the observed flake). Freezing timers means no dwell callback fires, so the
-  // asserted error intent is stable; clearAllTimers on teardown drops any armed
-  // timer before real timers resume so it can never leak into a later test.
+  // intent → "success" after the dwell, guarded by a monotonic seq. Reset the
+  // toast via clear() (bumps seq) instead of setState(reset) — rewinding seq to
+  // 0 is precisely what lets a leaked dwell timer from an earlier real-timer
+  // block re-match the current seq and flip THIS test's error intent back to
+  // success mid-poll (the historical flake). Freezing timers keeps this test's
+  // own dwell callback from firing; clearAllTimers on teardown drops it before
+  // real timers resume so it can never leak into a later test.
   beforeEach(() => {
     vi.useFakeTimers();
     usePromptStore.setState(promptInitial, true);
     useAppStore.setState(appInitial, true);
-    useToastStore.setState(toastInitial, true);
+    useToastStore.getState().clear();
     usePromptStore.setState({ scenes, pendingDraftCount: 0 });
     invokeMock.mockReset();
   });

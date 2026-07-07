@@ -14,6 +14,7 @@ import type {
   RecentUsageEntry,
   RecordUsageInput,
   SceneWithChildren,
+  SubStage,
   UsageTargetType,
 } from "../ipc/types";
 
@@ -169,7 +170,12 @@ interface PromptState {
   }) => Promise<void>;
   deleteScene: (id: string) => Promise<void>;
   reorderScenes: (orderedIds: string[]) => Promise<void>;
-  createSubStage: (args: { sceneId: string; name: string }) => Promise<void>;
+  // Returns the created row so callers can chain writes against its id
+  // (e.g. promoting the ungrouped bucket re-homes phrases into it).
+  createSubStage: (args: {
+    sceneId: string;
+    name: string;
+  }) => Promise<SubStage>;
   updateSubStage: (args: { id: string; name: string }) => Promise<void>;
   deleteSubStage: (id: string) => Promise<void>;
   reorderSubStages: (sceneId: string, orderedIds: string[]) => Promise<void>;
@@ -766,8 +772,9 @@ export const usePromptStore = create<PromptState>()((set, get) => {
     },
 
     createSubStage: async ({ sceneId, name }) => {
-      await ipc.createSubStage({ sceneId, name });
+      const created = await ipc.createSubStage({ sceneId, name });
       await refreshScenes();
+      return created;
     },
 
     updateSubStage: async ({ id, name }) => {
