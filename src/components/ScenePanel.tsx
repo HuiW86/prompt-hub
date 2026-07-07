@@ -32,12 +32,11 @@ import {
   Button,
   Chip,
   ConfirmInline,
-  EditorActions,
-  EditorInput,
-  EditorPanel,
   EmptyState,
   IconButton,
   Input,
+  PhraseFormEditor,
+  type PhraseFormValues,
   RegionHeader,
 } from "./primitives";
 import primitiveStyles from "./primitives/primitives.module.css";
@@ -979,114 +978,56 @@ function PhraseEditor({
   const updatePhrase = usePromptStore((s) => s.updatePhrase);
   const existing = target.mode === "edit" ? target.phrase : null;
 
-  const [name, setName] = useState(existing?.name ?? "");
-  const [content, setContent] = useState(existing?.content ?? "");
+  // Sub-stage picker is the one field beyond name/content, so it rides the
+  // shared editor's extraFields slot rather than forking the whole form.
   const [subStageValue, setSubStageValue] = useState(
     existing?.subStageId ?? initialSubStageId ?? UNGROUPED_VALUE,
   );
-  const [saving, setSaving] = useState(false);
-  const nameRef = useRef<HTMLInputElement>(null);
-
-  useEffect(() => {
-    nameRef.current?.focus();
-  }, []);
 
   const orderedSubStages = [...subStages].sort(
     (a, b) => a.orderIndex - b.orderIndex,
   );
-  const canSave = name.trim().length > 0 && content.trim().length > 0;
 
-  const handleSave = async () => {
-    if (!canSave || saving) return;
-    setSaving(true);
+  const handleSubmit = async ({ name, content }: PhraseFormValues) => {
     const subStageId = subStageValue === UNGROUPED_VALUE ? null : subStageValue;
     try {
       if (existing) {
-        await updatePhrase({
-          id: existing.id,
-          name: name.trim(),
-          content: content.trim(),
-          subStageId,
-        });
+        await updatePhrase({ id: existing.id, name, content, subStageId });
       } else {
-        await createPhrase({
-          sceneId,
-          name: name.trim(),
-          content: content.trim(),
-          subStageId,
-        });
+        await createPhrase({ sceneId, name, content, subStageId });
       }
       onClose();
     } catch (err) {
       onError(toUserMessage(err, "保存失败"));
-      setSaving(false);
+      // Re-throw so the shared editor re-enables its save button.
+      throw err;
     }
   };
 
   return (
-    <EditorPanel
+    <PhraseFormEditor
       layer="task"
-      role="group"
-      aria-label={existing ? "编辑话术" : "新增话术"}
-    >
-      <Input
-        ref={nameRef}
-        placeholder="名称"
-        value={name}
-        onChange={(e) => setName(e.target.value)}
-        onKeyDown={(e) => {
-          if (e.key === "Escape") onClose();
-          if (e.key === "Enter") {
-            // IME guard: committing a pinyin/kana candidate fires Enter while
-            // isComposing is still true — swallowing it would eat the
-            // composition instead of saving.
-            if (e.nativeEvent.isComposing) return;
-            e.preventDefault();
-            void handleSave();
-          }
-        }}
-      />
-      <EditorInput
-        placeholder="话术内容"
-        value={content}
-        rows={3}
-        onChange={(e) => setContent(e.target.value)}
-        onKeyDown={(e) => {
-          if (e.key === "Escape") onClose();
-          if (e.key === "Enter" && (e.metaKey || e.ctrlKey)) {
-            // IME guard: skip the commit-Enter of an in-flight composition.
-            if (e.nativeEvent.isComposing) return;
-            e.preventDefault();
-            void handleSave();
-          }
-        }}
-      />
-      <select
-        className={styles.subStageSelect}
-        aria-label="所属子阶段"
-        value={subStageValue}
-        onChange={(e) => setSubStageValue(e.target.value)}
-      >
-        <option value={UNGROUPED_VALUE}>无分组</option>
-        {orderedSubStages.map((s) => (
-          <option key={s.id} value={s.id}>
-            {s.name}
-          </option>
-        ))}
-      </select>
-      <EditorActions>
-        <Button intent="subtle" onClick={onClose}>
-          取消
-        </Button>
-        <Button
-          layer="task"
-          intent="primary"
-          onClick={() => void handleSave()}
-          disabled={!canSave || saving}
+      ariaLabel={existing ? "编辑话术" : "新增话术"}
+      initialName={existing?.name}
+      initialContent={existing?.content}
+      submitLabel={existing ? "保存" : "新增"}
+      onSubmit={handleSubmit}
+      onClose={onClose}
+      extraFields={
+        <select
+          className={styles.subStageSelect}
+          aria-label="所属子阶段"
+          value={subStageValue}
+          onChange={(e) => setSubStageValue(e.target.value)}
         >
-          {existing ? "保存" : "新增"}
-        </Button>
-      </EditorActions>
-    </EditorPanel>
+          <option value={UNGROUPED_VALUE}>无分组</option>
+          {orderedSubStages.map((s) => (
+            <option key={s.id} value={s.id}>
+              {s.name}
+            </option>
+          ))}
+        </select>
+      }
+    />
   );
 }

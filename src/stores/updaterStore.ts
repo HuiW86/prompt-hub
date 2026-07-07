@@ -24,6 +24,9 @@ interface UpdaterState {
   status: UpdaterStatus;
   availableVersion: string | null;
   error: string | null;
+  // Download progress in [0, 1] while status === "downloading", or null when the
+  // total byte count is unknown (server sent no Content-Length). Transient.
+  downloadProgress: number | null;
   // Handle returned by check(); transient (carries methods, never persisted).
   update: Update | null;
 
@@ -43,6 +46,7 @@ export const useUpdaterStore = create<UpdaterState>()(
       status: "idle",
       availableVersion: null,
       error: null,
+      downloadProgress: null,
       update: null,
 
       acceptOptIn: () => {
@@ -53,7 +57,7 @@ export const useUpdaterStore = create<UpdaterState>()(
       },
       declineOptIn: () => set({ enabled: false, optInDecided: true }),
       reopenOptIn: () => set({ optInDecided: false }),
-      dismiss: () => set({ status: "idle" }),
+      dismiss: () => set({ status: "idle", downloadProgress: null }),
 
       check: async (manual = false) => {
         // The total switch governs ALL egress (ADR-017 §5.3). When off, never
@@ -99,15 +103,40 @@ export const useUpdaterStore = create<UpdaterState>()(
       downloadAndInstall: async () => {
         const update = get().update;
         if (!update) return;
-        set({ status: "downloading" });
+        // Guard against a double click while a download is already running.
+        if (get().status === "downloading") return;
+        set({ status: "downloading", downloadProgress: null });
+        // The plugin streams DownloadEvent: Started (optional contentLength) →
+        // Progress (per-chunk byte length) → Finished. Accumulate chunks into a
+        // ratio so the banner can show a bar; if contentLength is missing we
+        // keep progress null and the UI falls back to an indeterminate label.
+        let total = 0;
+        let downloaded = 0;
         try {
-          await update.downloadAndInstall();
+          await update.downloadAndInstall((event) => {
+            switch (event.event) {
+              case "Started":
+                total = event.data.contentLength ?? 0;
+                downloaded = 0;
+                set({ downloadProgress: total > 0 ? 0 : null });
+                break;
+              case "Progress":
+                downloaded += event.data.chunkLength;
+                if (total > 0) {
+                  set({ downloadProgress: Math.min(downloaded / total, 1) });
+                }
+                break;
+              case "Finished":
+                set({ downloadProgress: total > 0 ? 1 : null });
+                break;
+            }
+          });
           // Restart into the freshly installed version. relaunch() needs the
           // process plugin + process:default capability (plugins-workspace
           // #2273), both wired in Phase 1.
           await relaunch();
         } catch (e) {
-          set({ status: "error", error: String(e) });
+          set({ status: "error", error: String(e), downloadProgress: null });
           useToastStore.getState().showError("更新安装失败");
         }
       },

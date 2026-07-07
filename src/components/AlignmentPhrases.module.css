@@ -1,6 +1,6 @@
 /* Alignment phrases — protocol-layer chip row anchored under PhaseBar.
-   Chip / Button / IconButton / Editor* visuals come from primitives; this
-   module carries the row layout, dot markers, and edit-mode list scaffold. */
+   Chip visuals are local (a role="button" div carries the reveal cluster);
+   Editor* / IconButton / ActionCluster visuals come from primitives. */
 
 .phrases {
   display: flex;
@@ -43,6 +43,7 @@
 .dotDim {
   width: var(--s-1_5);
   height: var(--s-1_5);
+  flex-shrink: 0;
   border-radius: 50%;
   background: var(--accent);
 }
@@ -51,69 +52,87 @@
   background: var(--fg-4);
 }
 
-/* Manage toggle pushed to the right edge of the chip row. */
-.manageBtn {
-  margin-left: auto;
-  flex-shrink: 0;
-}
-
-/* ── Edit mode: expanded vertical management list ──────────────────────── */
-.editRegion {
-  display: flex;
-  flex-direction: column;
-  gap: var(--s-2);
-  padding: var(--s-2) var(--s-3_5) var(--s-3);
-  background: transparent;
-}
-
-.editHeader {
-  display: flex;
+/* ── In-place chip (ADR-021): a chip-styled role="button" so the revealed
+   action cluster can nest IconButtons (buttons can't nest in a button). The
+   whole chip copies; the cluster reveals on hover / focus-within. ────────── */
+.chip {
+  display: inline-flex;
   align-items: center;
-  justify-content: space-between;
-  gap: var(--s-2);
-}
-
-.editHeaderActions {
-  display: flex;
-  align-items: center;
-  gap: var(--s-2);
-}
-
-.list {
-  display: flex;
-  flex-direction: column;
   gap: var(--s-1_5);
-  margin: 0;
-  padding: 0;
-  list-style: none;
-}
-
-.row {
-  display: flex;
-  align-items: center;
-  gap: var(--s-2);
-  padding: var(--s-1_5) var(--s-2);
-  background: var(--surface-1);
+  height: var(--h-chip);
+  padding: 0 var(--s-2_25);
+  flex-shrink: 0;
+  appearance: none;
+  background: transparent;
   border: var(--hairline) solid var(--border-1);
   border-radius: var(--r-2);
-  min-width: 0;
+  cursor: pointer;
+  user-select: none;
+  white-space: nowrap;
+  transition:
+    border-color var(--d-fast) var(--ease),
+    background-color var(--d-fast) var(--ease);
 }
 
-.row.dragging {
-  opacity: var(--op-dim);
+.chip:hover {
+  border-color: var(--border-2);
+}
+
+.chip:focus-visible {
+  outline: var(--border-thick) solid var(--accent);
+  outline-offset: 0;
   border-color: var(--accent);
 }
 
-.rowDot {
-  width: var(--s-1_5);
-  height: var(--s-1_5);
+.chipActive {
+  background: var(--layer-8);
+  border-color: var(--layer);
+}
+
+.chipDim {
+  opacity: var(--op-dim);
+}
+
+.chip:hover.chipDim,
+.chip:focus-within.chipDim {
+  opacity: 1;
+}
+
+.chipName {
+  min-width: 0;
+  max-width: var(--w-chip-max);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  font: var(--w-500) var(--t-12) / 1 var(--font-sans);
+  color: var(--fg-1);
+}
+
+/* Action cluster hidden until the chip is hovered / focused (density guard —
+   ADR-021 §6). focus-within keeps it reachable for keyboard roaming. */
+.chipActions {
+  opacity: 0;
+  transition: opacity var(--d-fast) var(--ease);
+}
+
+.chip:hover .chipActions,
+.chip:focus-within .chipActions {
+  opacity: 1;
+}
+
+/* Inline delete-confirm slot replacing a chip in place. */
+.confirmSlot {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--s-2);
   flex-shrink: 0;
-  border-radius: 50%;
-  background: var(--accent);
+  height: var(--h-chip);
+  padding: 0 var(--s-2_25);
+  border: var(--hairline) solid var(--accent);
+  border-radius: var(--r-2);
 }
 
 .rowName {
-  flex: 1;
   min-width: 0;
   overflow: hidden;
   text-overflow: ellipsis;
@@ -122,12 +141,40 @@
   color: var(--fg-1);
 }
 
-.rowBadge {
+/* Ghost add entry — trailing dashed pill mirroring ScenePanel's ghostAdd. */
+.ghostAdd {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--s-1);
+  height: var(--h-chip);
+  padding: 0 var(--s-2_25);
   flex-shrink: 0;
-  padding: 0 var(--s-1_5);
-  border-radius: var(--r-1);
-  background: var(--surface-2);
+  appearance: none;
+  background: transparent;
+  border: var(--hairline) dashed var(--border-1);
+  border-radius: var(--r-2);
+  color: var(--fg-3);
+  cursor: pointer;
+  white-space: nowrap;
+  font: var(--w-500) var(--t-11) / 1 var(--font-sans);
+  transition:
+    border-color var(--d-fast) var(--ease),
+    color var(--d-fast) var(--ease);
+}
+
+.ghostAdd:hover {
+  border-color: var(--border-2);
   color: var(--fg-2);
-  font: var(--w-500) var(--t-11) / calc(var(--h-chip) - var(--s-1))
-    var(--font-mono);
+}
+
+.ghostAdd:focus-visible {
+  outline: var(--border-thick) solid var(--accent);
+  outline-offset: 0;
+}
+
+/* Inline editor slot — the phrase form pops out of the row without collapsing;
+   the sub-stage column min keeps the name + content inputs usable. */
+.inlineEditor {
+  flex-shrink: 0;
+  min-width: var(--col-min-substage);
 }

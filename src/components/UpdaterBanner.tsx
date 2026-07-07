@@ -16,6 +16,7 @@ export function UpdaterBanner() {
   const declineOptIn = useUpdaterStore((s) => s.declineOptIn);
   const dismiss = useUpdaterStore((s) => s.dismiss);
   const downloadAndInstall = useUpdaterStore((s) => s.downloadAndInstall);
+  const downloadProgress = useUpdaterStore((s) => s.downloadProgress);
 
   if (!optInDecided) {
     return (
@@ -53,9 +54,37 @@ export function UpdaterBanner() {
   }
 
   if (status === "downloading") {
+    // Determinate when the server reported a Content-Length (progress in
+    // [0, 1]); otherwise indeterminate — show a running-state bar without a
+    // percentage so the user still sees the download hasn't stalled.
+    const hasPercent = downloadProgress !== null;
+    const percent = hasPercent ? Math.round(downloadProgress * 100) : null;
     return (
       <div className={styles.banner} role="status" aria-live="polite">
-        <span className={styles.msg}>正在下载更新，完成后将自动重启…</span>
+        <span className={styles.msg}>
+          {hasPercent
+            ? `正在下载更新 ${percent}%，完成后将自动重启…`
+            : "正在下载更新，完成后将自动重启…"}
+          <span
+            className={styles.progressTrack}
+            role="progressbar"
+            aria-valuemin={0}
+            aria-valuemax={100}
+            aria-valuenow={percent ?? undefined}
+          >
+            <span
+              className={
+                hasPercent ? styles.progressFill : styles.progressIndeterminate
+              }
+              style={hasPercent ? { width: `${percent}%` } : undefined}
+            />
+          </span>
+        </span>
+        <span className={styles.actions}>
+          <button className={styles.primary} disabled aria-busy="true">
+            下载中…
+          </button>
+        </span>
       </div>
     );
   }

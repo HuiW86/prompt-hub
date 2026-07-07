@@ -1,0 +1,52 @@
+/* Warning banner for a failed ⌥Space registration. Shares the transient
+ * top-banner chrome with UpdaterBanner (surface-2 + subtle elevation, ADR-019:
+ * lift via --shadow, not colour), but signals the warning with an amber border
+ * — the same convention Toast's error intent uses since the palette has no
+ * red/danger token yet (Toast.module.css .error). Amber-as-border needs only
+ * ≥3:1 and passes; text stays --fg-1 for the design-spec §2.3 ≥7:1 body bar. */
+.banner {
+  display: flex;
+  align-items: center;
+  gap: var(--s-3);
+  padding: var(--s-2) var(--s-3_5);
+  background: var(--surface-2);
+  border-bottom: var(--border-thick) solid var(--accent-swatch-amber);
+  box-shadow: var(--shadow-1);
+  color: var(--fg-1);
+  font: var(--w-400) var(--t-13) / var(--lh-body) var(--font-sans);
+}
+
+.msg {
+  flex: 1;
+  min-width: 0;
+}
+
+.actions {
+  display: flex;
+  align-items: center;
+  gap: var(--s-2);
+  flex-shrink: 0;
+}
+
+.ghost {
+  padding: var(--s-1) var(--s-2_5);
+  border-radius: var(--r-3);
+  font: var(--w-500) var(--t-13) / 1 var(--font-sans);
+  cursor: pointer;
+  background: transparent;
+  color: var(--fg-2);
+  border: var(--hairline) solid var(--border-3);
+  transition: background var(--d-fast) var(--ease);
+}
+
+.ghost:hover {
+  color: var(--fg-1);
+  background: var(--surface-3);
+}
+
+/* Keyboard focus ring — same accent outline as the shared primitives Button
+ * (primitives.module.css .btn:focus-visible) and UpdaterBanner. */
+.ghost:focus-visible {
+  outline: var(--border-thick) solid var(--accent);
+  outline-offset: var(--hairline);
+}

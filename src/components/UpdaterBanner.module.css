@@ -62,3 +62,48 @@
   color: var(--fg-1);
   background: var(--surface-3);
 }
+
+/* Disabled primary while a download is in flight — dim + non-interactive, but
+ * stays in the DOM so aria-busy is announced. */
+.primary:disabled {
+  opacity: var(--op-dim);
+  cursor: default;
+}
+
+/* Download progress bar. The track is a hairline-height rail under the message
+ * line; determinate fills to a % width, indeterminate slides a short segment. */
+.progressTrack {
+  display: block;
+  margin-top: var(--s-1);
+  width: 100%;
+  height: var(--s-1);
+  border-radius: var(--r-1);
+  background: var(--surface-3);
+  overflow: hidden;
+}
+
+.progressFill {
+  display: block;
+  height: 100%;
+  border-radius: var(--r-1);
+  background: var(--accent);
+  transition: width var(--d-base) var(--ease);
+}
+
+.progressIndeterminate {
+  display: block;
+  width: 40%;
+  height: 100%;
+  border-radius: var(--r-1);
+  background: var(--accent);
+  animation: progress-slide var(--d-slow) var(--ease) infinite alternate;
+}
+
+@keyframes progress-slide {
+  from {
+    transform: translateX(-100%);
+  }
+  to {
+    transform: translateX(250%);
+  }
+}

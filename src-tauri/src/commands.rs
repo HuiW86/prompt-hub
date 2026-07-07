@@ -1,5 +1,5 @@
 use std::path::PathBuf;
-use std::sync::atomic::{AtomicU64, Ordering};
+use std::sync::atomic::{AtomicBool, AtomicU64, Ordering};
 use std::sync::Mutex;
 use std::time::Duration;
 
@@ -46,6 +46,12 @@ pub struct AppState {
     // re-summoned the window, manual hide, etc.). Prevents stale timers
     // from hiding a freshly-shown window.
     pub copy_seq: AtomicU64,
+    // Whether the ⌥Space global shortcut registered at setup. Defaults to true;
+    // setup flips it false if register() failed (typically the chord is already
+    // claimed by another app), so the frontend can query and warn the user that
+    // wake won't work. Written once at startup, read once at App mount — never on
+    // the wake hot path, so it costs the C1 budget nothing.
+    pub hotkey_registered: AtomicBool,
 }
 
 fn with_conn<F, T>(state: &State<'_, AppState>, f: F) -> AppResult<T>
@@ -181,6 +187,15 @@ pub fn show_window(state: State<'_, AppState>, window: WebviewWindow) -> AppResu
         crate::macos::wake(&window);
     }
     Ok(())
+}
+
+// True when the ⌥Space global shortcut registered successfully at setup. The
+// frontend polls this once at mount and, on false, shows a dismissible banner
+// telling the user the wake hotkey is unavailable (usually another app already
+// owns ⌥Space). A plain atomic read — no lock, no IO.
+#[tauri::command]
+pub fn hotkey_registered(state: State<'_, AppState>) -> bool {
+    state.hotkey_registered.load(Ordering::Relaxed)
 }
 
 // ── Draft inbox (PRD §10.3) — Tauri-only, never exposed via MCP ──────────────

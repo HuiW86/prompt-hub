@@ -1,4 +1,4 @@
-use std::sync::atomic::{AtomicU64, Ordering};
+use std::sync::atomic::{AtomicBool, AtomicU64, Ordering};
 use std::sync::Mutex;
 
 use tauri::{Manager, PhysicalPosition, PhysicalSize, RunEvent};
@@ -65,6 +65,9 @@ fn fail_startup(app: &tauri::App, message: String) {
             // Throwaway in-memory DB — no file, so no backups/checkpoint target.
             db_path: None,
             copy_seq: AtomicU64::new(0),
+            // Startup already failed; the DB error dialog owns this launch and
+            // shortcut setup is skipped, so the value is moot.
+            hotkey_registered: AtomicBool::new(true),
         });
     }
     if let Some(window) = app.get_webview_window("main") {
@@ -129,6 +132,9 @@ pub fn run() {
                 conn: Mutex::new(conn),
                 db_path: Some(db_path),
                 copy_seq: AtomicU64::new(0),
+                // Optimistic default; the desktop shortcut setup below flips it
+                // false if register() fails.
+                hotkey_registered: AtomicBool::new(true),
             });
 
             #[cfg(desktop)]
@@ -203,7 +209,21 @@ pub fn run() {
                         })
                         .build(),
                 )?;
-                app.global_shortcut().register(toggle)?;
+                // Registering ⌥Space can fail on a user machine — most often the
+                // chord is already claimed by another app (Spotlight remap, an
+                // input-method switcher, etc.). Don't propagate: a bare `?` here
+                // maps to the invisible "Failed to setup app" panic, so a
+                // double-clicked .app just vanishes. Instead record the failure in
+                // AppState (hotkey_registered → false) and keep booting; the
+                // frontend queries it at mount and warns the user. The wake path
+                // is dead without the shortcut, but every other feature still
+                // works and the window is reachable via `show_window`.
+                if let Err(e) = app.global_shortcut().register(toggle) {
+                    eprintln!("global shortcut ⌥Space registration failed: {e}");
+                    app.state::<AppState>()
+                        .hotkey_registered
+                        .store(false, Ordering::Relaxed);
+                }
 
                 #[cfg(feature = "bench")]
                 bench::spawn_wake_cycle(app.handle().clone());
@@ -222,6 +242,7 @@ pub fn run() {
             commands::record_usage,
             commands::hide_window,
             commands::show_window,
+            commands::hotkey_registered,
             commands::list_drafts,
             commands::count_pending_drafts,
             commands::get_draft,

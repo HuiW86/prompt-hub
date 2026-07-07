@@ -41,6 +41,10 @@ export const ipc = {
     invoke<UsageRecord>("record_usage", { input }),
   hideWindow: () => invoke<void>("hide_window"),
   showWindow: () => invoke<void>("show_window"),
+  // True when the ⌥Space global shortcut registered at startup. Queried once at
+  // App mount; false drives a dismissible warning banner (the wake hotkey is
+  // likely claimed by another app).
+  hotkeyRegistered: () => invoke<boolean>("hotkey_registered"),
 
   // ── Draft inbox (PRD §10.3) — Tauri-only, never via MCP ──
   listDrafts: (args?: {

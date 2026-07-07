@@ -1,8 +1,12 @@
-import { useEffect, useMemo, useRef, useState } from "react";
-import { DragDropProvider } from "@dnd-kit/react";
-import { useSortable } from "@dnd-kit/react/sortable";
-import { move } from "@dnd-kit/helpers";
-import { GripVertical, Pencil, Plus, Star, Trash2 } from "lucide-react";
+import { type MouseEvent as ReactMouseEvent, useState } from "react";
+import {
+  ArrowLeft,
+  ArrowRight,
+  Pencil,
+  Plus,
+  Star,
+  Trash2,
+} from "lucide-react";
 
 import { useCopy } from "../hooks/useCopy";
 import { useRegionNav } from "../hooks/useRegionNav";
@@ -14,21 +18,12 @@ import type { AlignmentPhrase } from "../ipc/types";
 
 import {
   ActionCluster,
-  Button,
-  Chip,
   ConfirmInline,
-  EditorActions,
-  EditorInput,
-  EditorPanel,
   IconButton,
-  Input,
+  PhraseFormEditor,
 } from "./primitives";
+import primitiveStyles from "./primitives/primitives.module.css";
 import styles from "./AlignmentPhrases.module.css";
-
-type EditTarget =
-  | { mode: "create" }
-  | { mode: "edit"; phrase: AlignmentPhrase }
-  | null;
 
 export function AlignmentPhrases() {
   const activePhaseId = useAppStore((s) => s.activePhaseId);
@@ -40,32 +35,35 @@ export function AlignmentPhrases() {
   const setDefaultAlignmentPhrase = usePromptStore(
     (s) => s.setDefaultAlignmentPhrase,
   );
+  const createAlignmentPhrase = usePromptStore((s) => s.createAlignmentPhrase);
+  const updateAlignmentPhrase = usePromptStore((s) => s.updateAlignmentPhrase);
   const copy = useCopy();
   const flashId = useToastStore((s) => s.flashTargetId);
   const showToast = useToastStore((s) => s.show);
   const showError = useToastStore((s) => s.showError);
   const onRegionKeyDown = useRegionNav();
 
-  const phrases = useMemo(
-    () => (activePhaseId != null ? (phrasesByPhase[activePhaseId] ?? []) : []),
-    [activePhaseId, phrasesByPhase],
-  );
+  const phrases =
+    activePhaseId != null ? (phrasesByPhase[activePhaseId] ?? []) : [];
 
-  const [editMode, setEditMode] = useState(false);
-  // Local render source during a drag (mirrors MacroGrid): the store stays the
-  // source of truth until the drop persists, then re-syncs on the store change.
-  const [items, setItems] = useState<AlignmentPhrase[]>(phrases);
-  const [editing, setEditing] = useState<EditTarget>(null);
+  // In-place editing state (mirrors ScenePanel's view-mode clusters — ADR-021):
+  // no global editMode. editingId swaps a chip for the inline editor; adding
+  // opens the create editor; the store stays the single source of truth so a
+  // phase switch resets these via the id/flag going stale, not a reset effect.
+  const [editingId, setEditingId] = useState<string | null>(null);
+  const [adding, setAdding] = useState(false);
   const [confirmingId, setConfirmingId] = useState<string | null>(null);
 
-  useEffect(() => setItems(phrases), [phrases]);
-  // Leaving a phase mid-edit would mutate a list the user can no longer see —
-  // reset edit state whenever the active phase changes.
-  useEffect(() => {
-    setEditMode(false);
-    setEditing(null);
-    setConfirmingId(null);
-  }, [activePhaseId]);
+  // A phase switch strands any open editor over a list the user can no longer
+  // see; a stale editingId simply matches nothing, but adding/confirming must be
+  // cleared explicitly. Derive the reset from activePhaseId via a render guard
+  // rather than an effect: if the editing target vanished, drop the state.
+  const editingExists =
+    editingId != null && phrases.some((p) => p.id === editingId);
+  if (editingId != null && !editingExists) setEditingId(null);
+  const confirmingExists =
+    confirmingId != null && phrases.some((p) => p.id === confirmingId);
+  if (confirmingId != null && !confirmingExists) setConfirmingId(null);
 
   const handleDelete = async (id: string) => {
     setConfirmingId(null);
@@ -90,32 +88,73 @@ export function AlignmentPhrases() {
     }
   };
 
-  if (!editMode) {
-    return (
-      <section
-        className={styles.phrases}
-        aria-label="对齐话术"
-        data-region="alignment-phrases"
-        tabIndex={0}
-        onKeyDown={onRegionKeyDown}
-      >
-        <span className={styles.label}>aligned</span>
-        {phrases.length === 0 ? (
-          <span className={styles.empty}>
-            {activePhaseId == null ? "未选相位" : "暂无对齐话术"}
-          </span>
-        ) : (
-          phrases.map((p) => (
-            <Chip
+  // ←→ swaps a phrase with its neighbour in the row, persisting the new order
+  // through reorder_alignment_phrases. Buttons over drag: the chip's whole body
+  // is the copy hot-zone (spec 复制即完成), so a drag handle would fight it
+  // (ADR-021 子决策 1 — 拖拽 → 按钮移动).
+  const handleMove = async (id: string, dir: -1 | 1) => {
+    if (activePhaseId == null) return;
+    const idx = phrases.findIndex((p) => p.id === id);
+    const target = idx + dir;
+    if (idx < 0 || target < 0 || target >= phrases.length) return;
+    const ids = phrases.map((p) => p.id);
+    [ids[idx], ids[target]] = [ids[target], ids[idx]];
+    try {
+      await reorderAlignmentPhrases(activePhaseId, ids);
+    } catch (err) {
+      showError(toUserMessage(err, "排序保存失败"));
+    }
+  };
+
+  const handleCreate = async (name: string, content: string) => {
+    if (activePhaseId == null) return;
+    await createAlignmentPhrase({ phaseId: activePhaseId, name, content });
+    setAdding(false);
+  };
+
+  const handleUpdate = async (id: string, name: string, content: string) => {
+    await updateAlignmentPhrase({ id, name, content });
+    setEditingId(null);
+  };
+
+  return (
+    <section
+      className={styles.phrases}
+      aria-label="对齐话术"
+      data-region="alignment-phrases"
+      tabIndex={0}
+      onKeyDown={onRegionKeyDown}
+    >
+      <span className={styles.label}>aligned</span>
+      {phrases.length === 0 && !adding ? (
+        <span className={styles.empty}>
+          {activePhaseId == null ? "未选相位" : "暂无对齐话术"}
+        </span>
+      ) : (
+        phrases.map((p, idx) =>
+          editingId === p.id ? (
+            <PhraseFormEditor
               key={p.id}
               layer="protocol"
-              active={p.isDefault}
-              dim={!p.isDefault}
+              className={styles.inlineEditor}
+              ariaLabel="编辑对齐话术"
+              initialName={p.name}
+              initialContent={p.content}
+              submitLabel="保存"
+              onSubmit={({ name, content }) =>
+                handleUpdate(p.id, name, content)
+              }
+              onClose={() => setEditingId(null)}
+            />
+          ) : (
+            <PhraseChip
+              key={p.id}
+              phrase={p}
               flash={flashId === p.id}
-              aria-label={p.name}
-              data-nav-item
-              tabIndex={-1}
-              onClick={() =>
+              confirming={confirmingId === p.id}
+              canMoveLeft={idx > 0}
+              canMoveRight={idx < phrases.length - 1}
+              onCopy={() =>
                 void copy(
                   p.content,
                   {
@@ -130,149 +169,88 @@ export function AlignmentPhrases() {
                   p.id,
                 )
               }
-            >
-              <span
-                className={p.isDefault ? styles.dot : styles.dotDim}
-                aria-hidden
-              />
-              {p.name}
-            </Chip>
-          ))
-        )}
-        {activePhaseId != null && (
-          <IconButton
-            className={styles.manageBtn}
-            aria-label="管理对齐话术"
+              onSetDefault={() => void handleSetDefault(p.id)}
+              onEdit={() => setEditingId(p.id)}
+              onMove={(dir) => void handleMove(p.id, dir)}
+              onRequestDelete={() => setConfirmingId(p.id)}
+              onCancelDelete={() => setConfirmingId(null)}
+              onConfirmDelete={() => void handleDelete(p.id)}
+            />
+          ),
+        )
+      )}
+
+      {/* Ghost add entry (ADR-021): opens the inline create editor in place. */}
+      {activePhaseId != null &&
+        (adding ? (
+          <PhraseFormEditor
+            layer="protocol"
+            className={styles.inlineEditor}
+            ariaLabel="新增对齐话术"
+            submitLabel="新增"
+            onSubmit={({ name, content }) => handleCreate(name, content)}
+            onClose={() => setAdding(false)}
+          />
+        ) : (
+          <button
+            type="button"
+            className={styles.ghostAdd}
+            aria-label="新增对齐话术"
             data-nav-item
             tabIndex={-1}
-            onClick={() => setEditMode(true)}
+            onClick={() => setAdding(true)}
           >
-            <Pencil size={12} aria-hidden strokeWidth={2} />
-          </IconButton>
-        )}
-      </section>
-    );
-  }
-
-  return (
-    <section
-      className={styles.editRegion}
-      aria-label="对齐话术 · 编辑"
-      data-region="alignment-phrases"
-    >
-      <div className={styles.editHeader}>
-        <span className={styles.label}>aligned · 编辑</span>
-        <div className={styles.editHeaderActions}>
-          <Button
-            layer="protocol"
-            aria-label="新增对齐话术"
-            onClick={() => setEditing({ mode: "create" })}
-          >
-            <Plus size={14} aria-hidden strokeWidth={2} />
+            <Plus size={12} aria-hidden strokeWidth={2} />
             <span>新增</span>
-          </Button>
-          <Button
-            onClick={() => {
-              setEditMode(false);
-              setEditing(null);
-            }}
-          >
-            完成
-          </Button>
-        </div>
-      </div>
-
-      {editing && activePhaseId != null && (
-        <PhraseEditor
-          target={editing}
-          phaseId={activePhaseId}
-          onClose={() => setEditing(null)}
-          onError={showError}
-        />
-      )}
-
-      {items.length === 0 ? (
-        <span className={styles.empty}>暂无对齐话术 · 点「新增」添加</span>
-      ) : (
-        <DragDropProvider
-          onDragOver={(event) => setItems((prev) => move(prev, event))}
-          onDragEnd={(event) => {
-            if (event.canceled) {
-              setItems(phrases);
-              return;
-            }
-            if (activePhaseId == null) return;
-            const orderedIds = items.map((p) => p.id);
-            void reorderAlignmentPhrases(activePhaseId, orderedIds).catch(
-              (err) => {
-                showError(toUserMessage(err, "排序保存失败"));
-              },
-            );
-          }}
-        >
-          <ul className={styles.list}>
-            {items.map((p, idx) => (
-              <SortablePhraseRow
-                key={p.id}
-                phrase={p}
-                index={idx}
-                isConfirming={confirmingId === p.id}
-                onSetDefault={() => void handleSetDefault(p.id)}
-                onEdit={() => setEditing({ mode: "edit", phrase: p })}
-                onRequestDelete={() => setConfirmingId(p.id)}
-                onCancelDelete={() => setConfirmingId(null)}
-                onConfirmDelete={() => void handleDelete(p.id)}
-              />
-            ))}
-          </ul>
-        </DragDropProvider>
-      )}
+          </button>
+        ))}
     </section>
   );
 }
 
-interface RowProps {
+interface PhraseChipProps {
   phrase: AlignmentPhrase;
-  index: number;
-  isConfirming: boolean;
+  flash: boolean;
+  confirming: boolean;
+  canMoveLeft: boolean;
+  canMoveRight: boolean;
+  onCopy: () => void;
   onSetDefault: () => void;
   onEdit: () => void;
+  onMove: (dir: -1 | 1) => void;
   onRequestDelete: () => void;
   onCancelDelete: () => void;
   onConfirmDelete: () => void;
 }
 
-function SortablePhraseRow({
+// A view-mode alignment-phrase chip: the whole chip copies (primary action), so
+// every action-cluster button stops propagation to never trigger a copy. The
+// cluster (set-default / edit / move / delete) reveals on hover/focus-within,
+// mirroring ScenePanel's ViewPhraseCard (ADR-021). Delete is a two-step inline
+// confirm held by the parent so one chip's confirm never bleeds into another's.
+function PhraseChip({
   phrase,
-  index,
-  isConfirming,
+  flash,
+  confirming,
+  canMoveLeft,
+  canMoveRight,
+  onCopy,
   onSetDefault,
   onEdit,
+  onMove,
   onRequestDelete,
   onCancelDelete,
   onConfirmDelete,
-}: RowProps) {
-  const { ref, handleRef, isDragging } = useSortable({ id: phrase.id, index });
+}: PhraseChipProps) {
+  const stop = (fn: () => void) => (e: ReactMouseEvent) => {
+    e.stopPropagation();
+    fn();
+  };
 
-  const classes = [styles.row, isDragging ? styles.dragging : ""]
-    .filter(Boolean)
-    .join(" ");
-
-  return (
-    <li ref={ref} className={classes} data-phrase-id={phrase.id}>
-      <IconButton
-        ref={handleRef}
-        plain
-        dragHandle
-        aria-label={`拖动排序 ${phrase.name}`}
-      >
-        <GripVertical size={14} aria-hidden strokeWidth={2} />
-      </IconButton>
-      <span className={styles.rowDot} aria-hidden />
-      <span className={styles.rowName}>{phrase.name}</span>
-      {phrase.isDefault && <span className={styles.rowBadge}>默认</span>}
-
-      {isConfirming ? (
+  if (confirming) {
+    return (
+      <span className={styles.confirmSlot}>
+        <span className={styles.rowName}>{phrase.name}</span>
         <ConfirmInline
           text="永久删除？"
           confirmLabel="确认永久删除"
@@ -280,131 +258,91 @@ function SortablePhraseRow({
           onConfirm={onConfirmDelete}
           onCancel={onCancelDelete}
         />
-      ) : (
-        <ActionCluster>
-          {/* P3-6: only non-defaults offer the swap — the current default is
-              already marked by the 默认 badge. */}
-          {!phrase.isDefault && (
-            <IconButton
-              aria-label={`设为默认 ${phrase.name}`}
-              onClick={onSetDefault}
-            >
-              <Star size={13} aria-hidden strokeWidth={2} />
-            </IconButton>
-          )}
-          <IconButton aria-label={`编辑 ${phrase.name}`} onClick={onEdit}>
-            <Pencil size={13} aria-hidden strokeWidth={2} />
-          </IconButton>
-          <IconButton
-            aria-label={`删除 ${phrase.name}`}
-            onClick={onRequestDelete}
-          >
-            <Trash2 size={13} aria-hidden strokeWidth={2} />
-          </IconButton>
-        </ActionCluster>
-      )}
-    </li>
-  );
-}
+      </span>
+    );
+  }
 
-interface EditorProps {
-  target: Exclude<EditTarget, null>;
-  phaseId: string;
-  onClose: () => void;
-  onError: (msg: string) => void;
-}
-
-function PhraseEditor({ target, phaseId, onClose, onError }: EditorProps) {
-  const createAlignmentPhrase = usePromptStore((s) => s.createAlignmentPhrase);
-  const updateAlignmentPhrase = usePromptStore((s) => s.updateAlignmentPhrase);
-  const existing = target.mode === "edit" ? target.phrase : null;
-
-  const [name, setName] = useState(existing?.name ?? "");
-  const [content, setContent] = useState(existing?.content ?? "");
-  const [saving, setSaving] = useState(false);
-  const nameRef = useRef<HTMLInputElement>(null);
-
-  useEffect(() => {
-    nameRef.current?.focus();
-  }, []);
-
-  const canSave = name.trim().length > 0 && content.trim().length > 0;
-
-  const handleSave = async () => {
-    if (!canSave || saving) return;
-    setSaving(true);
-    try {
-      if (existing) {
-        await updateAlignmentPhrase({
-          id: existing.id,
-          name: name.trim(),
-          content: content.trim(),
-        });
-      } else {
-        await createAlignmentPhrase({
-          phaseId,
-          name: name.trim(),
-          content: content.trim(),
-        });
-      }
-      onClose();
-    } catch (err) {
-      onError(toUserMessage(err, "保存失败"));
-      setSaving(false);
-    }
-  };
+  // A chip-styled div (role="button") rather than the Chip <button> primitive:
+  // the revealed action cluster nests IconButtons, and buttons can't nest in a
+  // button. The whole chip copies; cluster buttons stop propagation.
+  const cls = [
+    styles.chip,
+    // .protocol scopes --layer for the active fill (mirrors the Chip primitive).
+    primitiveStyles.protocol,
+    phrase.isDefault ? styles.chipActive : styles.chipDim,
+    flash ? primitiveStyles.flash : "",
+  ]
+    .filter(Boolean)
+    .join(" ");
 
   return (
-    <EditorPanel
-      layer="protocol"
-      role="group"
-      aria-label={existing ? "编辑对齐话术" : "新增对齐话术"}
+    <div
+      role="button"
+      tabIndex={-1}
+      className={cls}
+      data-nav-item
+      aria-label={phrase.name}
+      onClick={onCopy}
+      onKeyDown={(e) => {
+        if (e.key === "Enter" || e.key === " ") {
+          e.preventDefault();
+          onCopy();
+        }
+      }}
     >
-      <Input
-        ref={nameRef}
-        placeholder="名称"
-        value={name}
-        onChange={(e) => setName(e.target.value)}
-        onKeyDown={(e) => {
-          if (e.key === "Escape") onClose();
-          if (e.key === "Enter") {
-            // IME guard: committing a pinyin/kana candidate fires Enter while
-            // isComposing is still true — swallowing it would eat the
-            // composition instead of saving.
-            if (e.nativeEvent.isComposing) return;
-            e.preventDefault();
-            void handleSave();
-          }
-        }}
+      <span
+        className={phrase.isDefault ? styles.dot : styles.dotDim}
+        aria-hidden
       />
-      <EditorInput
-        placeholder="话术内容"
-        value={content}
-        rows={3}
-        onChange={(e) => setContent(e.target.value)}
-        onKeyDown={(e) => {
-          if (e.key === "Escape") onClose();
-          if (e.key === "Enter" && (e.metaKey || e.ctrlKey)) {
-            // IME guard: skip the commit-Enter of an in-flight composition.
-            if (e.nativeEvent.isComposing) return;
-            e.preventDefault();
-            void handleSave();
-          }
-        }}
-      />
-      <EditorActions>
-        <Button intent="subtle" onClick={onClose}>
-          取消
-        </Button>
-        <Button
-          layer="protocol"
-          intent="primary"
-          onClick={() => void handleSave()}
-          disabled={!canSave || saving}
+      <span className={styles.chipName}>{phrase.name}</span>
+      <ActionCluster className={styles.chipActions}>
+        {/* Only non-defaults offer the swap — the current default already shows
+            the filled dot. */}
+        {!phrase.isDefault && (
+          <IconButton
+            aria-label={`设为默认 ${phrase.name}`}
+            data-nav-item
+            tabIndex={-1}
+            onClick={stop(onSetDefault)}
+          >
+            <Star size={12} aria-hidden strokeWidth={2} />
+          </IconButton>
+        )}
+        <IconButton
+          aria-label={`前移 ${phrase.name}`}
+          data-nav-item
+          tabIndex={-1}
+          disabled={!canMoveLeft}
+          onClick={stop(() => onMove(-1))}
         >
-          {existing ? "保存" : "新增"}
-        </Button>
-      </EditorActions>
-    </EditorPanel>
+          <ArrowLeft size={12} aria-hidden strokeWidth={2} />
+        </IconButton>
+        <IconButton
+          aria-label={`后移 ${phrase.name}`}
+          data-nav-item
+          tabIndex={-1}
+          disabled={!canMoveRight}
+          onClick={stop(() => onMove(1))}
+        >
+          <ArrowRight size={12} aria-hidden strokeWidth={2} />
+        </IconButton>
+        <IconButton
+          aria-label={`编辑 ${phrase.name}`}
+          data-nav-item
+          tabIndex={-1}
+          onClick={stop(onEdit)}
+        >
+          <Pencil size={12} aria-hidden strokeWidth={2} />
+        </IconButton>
+        <IconButton
+          aria-label={`删除 ${phrase.name}`}
+          data-nav-item
+          tabIndex={-1}
+          onClick={stop(onRequestDelete)}
+        >
+          <Trash2 size={12} aria-hidden strokeWidth={2} />
+        </IconButton>
+      </ActionCluster>
+    </div>
   );
 }

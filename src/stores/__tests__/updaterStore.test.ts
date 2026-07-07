@@ -105,4 +105,66 @@ describe("updaterStore", () => {
     expect(useUpdaterStore.getState().enabled).toBe(false);
     expect(useUpdaterStore.getState().optInDecided).toBe(true);
   });
+
+  // P1-6: downloadAndInstall relays DownloadEvent chunks into downloadProgress so
+  // the banner can show a determinate bar. Started(contentLength) → Progress →
+  // Finished must land at 1.0.
+  it("downloadAndInstall reports determinate progress from download events", async () => {
+    relaunchMock.mockResolvedValue(undefined);
+    const downloadAndInstall = vi.fn(async (onEvent: (e: unknown) => void) => {
+      onEvent({ event: "Started", data: { contentLength: 100 } });
+      expect(useUpdaterStore.getState().downloadProgress).toBe(0);
+      onEvent({ event: "Progress", data: { chunkLength: 25 } });
+      expect(useUpdaterStore.getState().downloadProgress).toBe(0.25);
+      onEvent({ event: "Progress", data: { chunkLength: 75 } });
+      expect(useUpdaterStore.getState().downloadProgress).toBe(1);
+      onEvent({ event: "Finished" });
+    });
+    useUpdaterStore.setState({
+      enabled: true,
+      optInDecided: true,
+      status: "available",
+      update: { downloadAndInstall } as never,
+    });
+    await useUpdaterStore.getState().downloadAndInstall();
+    expect(downloadAndInstall).toHaveBeenCalledOnce();
+    expect(relaunchMock).toHaveBeenCalledOnce();
+  });
+
+  // When the server sends no Content-Length, progress stays null (indeterminate)
+  // rather than dividing by zero.
+  it("downloadAndInstall keeps progress null when content length is unknown", async () => {
+    relaunchMock.mockResolvedValue(undefined);
+    const downloadAndInstall = vi.fn(async (onEvent: (e: unknown) => void) => {
+      onEvent({ event: "Started", data: {} });
+      onEvent({ event: "Progress", data: { chunkLength: 10 } });
+      expect(useUpdaterStore.getState().downloadProgress).toBeNull();
+      onEvent({ event: "Finished" });
+    });
+    useUpdaterStore.setState({
+      enabled: true,
+      optInDecided: true,
+      status: "available",
+      update: { downloadAndInstall } as never,
+    });
+    await useUpdaterStore.getState().downloadAndInstall();
+    expect(useUpdaterStore.getState().downloadProgress).toBeNull();
+  });
+
+  it("downloadAndInstall failure surfaces error status and clears progress", async () => {
+    const toastSpy = vi.spyOn(useToastStore.getState(), "showError");
+    const downloadAndInstall = vi.fn(async () => {
+      throw new Error("disk full");
+    });
+    useUpdaterStore.setState({
+      enabled: true,
+      optInDecided: true,
+      status: "available",
+      update: { downloadAndInstall } as never,
+    });
+    await useUpdaterStore.getState().downloadAndInstall();
+    expect(useUpdaterStore.getState().status).toBe("error");
+    expect(useUpdaterStore.getState().downloadProgress).toBeNull();
+    expect(toastSpy).toHaveBeenCalledWith("更新安装失败");
+  });
 });

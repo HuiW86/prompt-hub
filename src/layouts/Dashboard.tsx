@@ -7,6 +7,7 @@ import {
 } from "react-resizable-panels";
 
 import { Header } from "../components/Header";
+import { HotkeyBanner } from "../components/HotkeyBanner";
 import { MacroGrid } from "../components/MacroGrid";
 import { ModifierGrid } from "../components/ModifierGrid";
 import { ProtocolBand } from "../components/ProtocolBand";
@@ -63,6 +64,7 @@ export function Dashboard() {
       role="main"
       aria-label="prompt-hub dashboard"
     >
+      <HotkeyBanner />
       <UpdaterBanner />
       <Header />
       <ProtocolBand />
