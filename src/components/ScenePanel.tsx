@@ -657,9 +657,13 @@ function ViewColumn({
   return (
     <div className={styles.group}>
       <div className={styles.subStage}>
-        <span className={styles.subStageIdx}>
-          {String(index + 1).padStart(2, "0")}
-        </span>
+        {/* The ungrouped bucket carries no sequence number — an index would
+            disguise the synthetic column as a real, editable sub-stage. */}
+        {subStage && (
+          <span className={styles.subStageIdx}>
+            {String(index + 1).padStart(2, "0")}
+          </span>
+        )}
         {renaming && subStage ? (
           <InlineNameEditor
             initialValue={subStage.name}
@@ -685,6 +689,11 @@ function ViewColumn({
                 subStage
                   ? styles.subStageName
                   : `${styles.subStageName} ${styles.subStageNameMuted}`
+              }
+              title={
+                subStage
+                  ? undefined
+                  : "无归属的话术——新增子阶段后，编辑话术即可归入"
               }
             >
               {subStage ? subStage.name : "未分组"}

@@ -285,10 +285,15 @@
     minmax(min(var(--col-min-substage), 100%), 1fr)
   );
   gap: var(--s-4);
-  padding: var(--s-3_5);
+  padding: 0 var(--s-3_5) var(--s-3_5);
   align-content: start;
   min-height: 0;
   overflow-y: auto;
+  scrollbar-width: none;
+}
+
+.phrases::-webkit-scrollbar {
+  display: none;
 }
 
 .group {
@@ -298,11 +303,18 @@
   min-width: 0;
 }
 
+/* Sticky column header: the grid's top padding lives here (not on .phrases)
+   so the header pins flush to the scrollport edge and phrase cards slide
+   beneath it instead of clipping its text mid-scroll. */
 .subStage {
+  position: sticky;
+  top: 0;
+  z-index: 2;
   display: flex;
   align-items: center;
   gap: var(--s-2);
-  padding: 0 0 var(--s-2);
+  padding: var(--s-3_5) 0 var(--s-2);
+  background: var(--surface-1);
   border-bottom: var(--hairline) solid var(--border-1);
 }
 
@@ -339,15 +351,18 @@
 }
 
 /* Ungrouped phrases get a muted「未分组」header so the orphan column shares the
- * same header structure and baseline as real sub-stage columns. */
+ * same header structure and baseline as real sub-stage columns — but demoted
+ * (dim + regular weight, no index) so it never reads as an editable stage. */
 .subStageNameMuted {
   color: var(--fg-3);
+  font-weight: var(--w-400);
 }
 
 /* Phrase card (Promptscape script chip): a muted card at rest that lifts to the
  * primary surface on hover — shadow + 1px rise, the shared Promptscape hover
  * language (P3-5) — with a faint copy glyph cueing click-to-copy. */
 .phrase {
+  position: relative;
   display: flex;
   align-items: flex-start;
   gap: var(--s-2);
@@ -390,12 +405,21 @@
   flex: 1;
 }
 
-/* Phrase-card action cluster (task 6): move / edit / delete, pinned right and
-   revealed on card hover / focus-within. Buttons stopPropagation in the TSX so
-   the card's copy action never fires from a cluster click. */
+/* Phrase-card action cluster (task 6): move / edit / delete, floated over the
+   card's top-right corner so its resting (opacity 0) state reserves no layout
+   width — an in-flow cluster squeezed the title to a few characters per line.
+   Buttons stopPropagation in the TSX so the card's copy action never fires
+   from a cluster click. */
 .phraseActions {
-  flex: none;
-  align-self: flex-start;
+  position: absolute;
+  top: var(--s-1);
+  right: var(--s-1);
+  max-width: calc(100% - var(--s-2));
+  padding: var(--s-0_5);
+  background: var(--surface-1);
+  border: var(--hairline) solid var(--border-1);
+  border-radius: var(--r-2);
+  box-shadow: var(--shadow-1);
 }
 
 .phrase:hover .phraseActions,
@@ -451,6 +475,8 @@
    「＋ 新增子阶段」affordance, set apart from the real sub-stage columns. */
 .ghostColumn {
   justify-content: flex-start;
+  /* Real columns carry the grid's top inset on their sticky header. */
+  padding-top: var(--s-3_5);
 }
 
 /* Ghost「add」affordance — shared by the add-phrase card (per column) and the
