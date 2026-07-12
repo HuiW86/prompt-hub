@@ -1,7 +1,7 @@
 ---
 type: features
 project: prompt-hub
-version: v1.10
+version: v1.11
 created: 2026-05-19
 last_modified: 2026-07-12
 status: in-progress  # S1 进行中（M0 四项全绿）；进度叙事见 §4 节奏表与 CHANGELOG
@@ -263,6 +263,16 @@ related:
 
 ---
 
+### 3.14 UX 任务流批次 B（2026-07-12 · 跨 Scene 话术移动）
+
+> 来源：[[022-cross-scene-phrase-move]] Accepted（2026-07-12，子决策 2 = 双路径共存）。T6 死路打通且零历史损失，A1-01（P1）+ A1-06（P2）同批收口。verifier 对抗审查 PASS（独立复跑七项门禁全绿）。真机移动/撤销视觉链路待验。
+
+| 功能 | 优先级 | 状态 | 目标版本 | 测试覆盖 | 责任人 | 引用 |
+|---|---|---|---|---|---|---|
+| 跨 Scene / 跨子阶段话术移动（`move_phrase` 单事务校验 target SubStage∈target Scene + MoveReceipt 撤销回填精确排序位；动作簇「移动到…」分层选择器 + 撤销 toast；同目标确认禁用防空移动；不碰 name/content、不计 usage）| P1 | `done` | v1.11 | repo-write move_phrase 8+ 单测（校验矩阵 + 撤销往返 + 不计 usage）+ ScenePanel 8 前端（选择器/撤销/失败/键盘/同目标禁用）；ipc-contract gate 覆盖新命令 | omar | [[022-cross-scene-phrase-move]] / [[03-product-spec#13.3]] |
+
+---
+
 ## §4 阶段交付节奏
 
 | 阶段 | 版本 | 功能数 | 状态 |
@@ -277,10 +287,11 @@ related:
 | Scene/SubStage 结构编辑（scene-substage-editing）| v1.6 | 1 功能 | `done`（后端 74 / 前端 109 全绿；补 [[scene-phrase-editing]] 当初 defer 的 Scene 容器 + SubStage CRUD；真机 CRUD 落盘待验）|
 | 产品走查修缮批次（P0/P3 + ADR-020）| v1.7 | 12 功能 | `done`（12/12 实装 + 前端/后端测试全绿；另 7 项质量/治理不计数；真机视觉复核待补）|
 | UX 任务流批次 A（整理模式）| v1.10 | 6 功能 | `done`（6/6 实装 + verifier 对抗审查 PASS；NEEDS HUMAN 4 项真机待验）|
+| UX 任务流批次 B（跨 Scene 移动，ADR-022）| v1.11 | 1 功能 | `done`（verifier 对抗审查 PASS；真机移动/撤销链路待验）|
 | S3 SOP 导航 | v1.2 | 3 功能 | `planned` |
 | S4 配置个性化 | v1.3 | 4 功能 | `in-progress`（1/4：数据导入导出 JSON `done`，真机待验；配置入口 / Phase 编辑 / 布局可配置仍 `planned`）|
 | S5 辅形态副屏 | v2.0 | 3 功能 | `planned` |
-| **合计** | — | **85 项** | — |
+| **合计** | — | **86 项** | — |
 
 **注**：版本号语义为 prompt-hub 自身版本，与 prd / spec / methodology 各自独立。v1.0 = 第一阶段 MVP 可发布；v2.0 = 辅形态加入（双形态完整）。
 
@@ -325,6 +336,7 @@ related:
 | 2026-07-06 | v1.9 bump：§3.8 新增「Scene 编辑分层化」→ `done`——废除 ScenePanel 全局 editMode（1706→949 行，删 SceneStructureEditor 等 4 组件 + Scene 链路 dnd，@dnd-kit 留 MacroGrid/AlignmentPhrases），拆三层就地编辑：属性面板（PRD §6.4 icon/color/rolePresets 三字段首获 UI 承载 + 场景移动/删除收编）/ 子阶段列头动作簇（改名/←→交换/删 + ghost 新增列）/ 话术卡动作簇（原位编辑/↑↓交换/删 + ghost 添加卡，`stopPropagation` 守 copy 主动作）；空子阶段视图态常显；新建场景迁 tabs 尾＋并自动开属性面板。**零后端/IPC/MCP 改动**。前端 222 测试全绿（12 格实体×CRUD 矩阵逐格钉死 + 异步失败路径 + 键盘可达），cargo --workspace 全绿；scene.color 用户内容色定性**待 omar 复核**（否决降级仅存储）；真机观感（空列密度/icon 染色/hover 显隐）列复验批次。合计 78→79 项。涟漪 [[03-product-spec]] v0.14 / [[05-design-spec]] v0.14 | [[021-scene-layered-editing]] · plan [[scene-layered-editing]] 收口涟漪 |
 | 2026-07-01 | v1.8 bump：新增 §3.12 产品走查修缮批次（12 功能 → `done`：Draft 促升前编辑 +get_draft IPC / composition promote 暂缓止血 / Modifier 移象限+删除管理簇 / AlignmentPhrase 设为默认 / Scene·SubStage 排序 UI / 复制失败可见+Toast intent 分级 / 更新失败 auto-manual 分级+Dashboard 重试 / 启动 DB 失败兜底对话框 / 暗 band 恢复 ADR-020 / light 明度重绘+resting elevation / Scene auto-fit+未分组列头 / 设计稿像素对齐包；另 7 项质量/治理不计数：测试 CI ci.yml / B2 源码 gate 恢复 / IPC 三方契约 gate / typography preset 落地+token 收敛 / primary 对比度修复+token-gate 新规 / focus 可见补齐 / bench C1 退出码）；§3.7 IPC 行注 5→6（+get_draft）；§4 节奏表加修缮批次行，合计 66→78 项。前端最终 151 测试 / cargo --workspace 全绿。涟漪 [[05-design-spec]] v0.13 / [[03-product-spec]] v0.13 / [[06-prd]] v0.12，暗 band 锚点 [[020-restore-protocol-dark-band]] | 2026-07-01 产品走查修缮批次收口涟漪 |
 | 2026-07-12 | v1.10 bump：新增 §3.13 UX 任务流批次 A（6 功能 → `done`：显式整理模式 D-0 / promote 落地定位 A1-03 / discard 可撤销 A1-04 / 保存 toast A1-07 / ⌘Enter 统一 A1-08 / footer wrap A3-02）；§4 节奏表加批次 A 行，合计 79→85 项（附带修正 §4 合计行 2026-07-06 漏更的 78→79）。前端 301 测试（+24）/ cargo --workspace 147 全绿，verifier 对抗审查 PASS；NEEDS HUMAN 4 项真机待验，确认前整理模式不入对外发布说明。涟漪 [[03-product-spec]] v0.15（新增 §4.0.7 交互模式契约 + §4.3 整理态行 + §4.4 三条新反馈）；同日 [[022-cross-scene-phrase-move]] Accepted（子决策 2 = 双路径共存，批次 B 启动）| 2026-07-12 UX 任务流审计批次 A 收口涟漪 |
+| 2026-07-12 | v1.11 bump：新增 §3.14 UX 任务流批次 B（1 功能 → `done`：跨 Scene/跨子阶段话术移动 `move_phrase` + MoveReceipt 撤销 + 分层选择器，A1-01/A1-06 收口）；§4 节奏表加批次 B 行，合计 85→86。前端 308→309 测试 / cargo 155 全绿，verifier 对抗审查 PASS（P2 空移动已修：同目标确认禁用）；真机移动/撤销链路待验。涟漪 [[03-product-spec]] v0.16 §13.3 移动动作契约（双路径语义等价显式记档） | [[022-cross-scene-phrase-move]] 批次 B 收口涟漪 |
 | 2026-06-28 | v1.7 bump：§3.4「数据导入导出（JSON）」`planned`→`done`——repo-core `export.rs`（全保真聚合，独立无过滤 SELECT 以纳入弃用/隐藏行，data schema_version `1.1`，**不含 usage_records**=决策 D2）+ repo-write `import.rs`（**整库替换**=决策 D1，`defer_foreign_keys` 破 phases↔alignment_phrases FK 环，按 major 版本拒不兼容备份）；2 path-based Tauri IPC（`export_data`/`import_data`，前端 dialog 选路 + Rust `std::fs` 读写，避开 fs-plugin scope）；接 `tauri-plugin-dialog`（决策 D3）；SettingsModal 新增「数据」页（导出 save dialog / 导入 open dialog + 整库替换确认弹窗 + 完成后 `refreshAll`）。后端 export 3 + import 5 单测，前端 109 测试全绿（clippy/fmt/lint/prettier clean）；**真机导入导出待验**。B2 复检通过（导出/导入按表搬运，不混协议层与任务层）；A2 不出站（仅写用户选定本地路径）。涟漪 [[06-prd#6.9]] | 数据导入导出功能收口涟漪 |
 
 ---
