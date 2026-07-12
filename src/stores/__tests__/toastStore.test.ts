@@ -92,6 +92,36 @@ describe("toastStore", () => {
     expect(useToastStore.getState().message).toBeNull();
   });
 
+  it("showWithAction carries an action and dwells 6000ms (D-5)", () => {
+    const onClick = vi.fn();
+    useToastStore.getState().showWithAction("已丢弃「X」", {
+      label: "撤销",
+      onClick,
+    });
+    const s = useToastStore.getState();
+    expect(s.message).toBe("已丢弃「X」");
+    expect(s.intent).toBe("success");
+    expect(s.action?.label).toBe("撤销");
+    // The action window is longer than a plain success flash so 撤销 stays
+    // clickable — still present at 5999ms, gone at 6000ms.
+    vi.advanceTimersByTime(5999);
+    expect(useToastStore.getState().message).toBe("已丢弃「X」");
+    vi.advanceTimersByTime(1);
+    const cleared = useToastStore.getState();
+    expect(cleared.message).toBeNull();
+    expect(cleared.action).toBeNull();
+  });
+
+  it("clear() drops a pending action toast", () => {
+    useToastStore
+      .getState()
+      .showWithAction("已丢弃", { label: "撤销", onClick: vi.fn() });
+    useToastStore.getState().clear();
+    const s = useToastStore.getState();
+    expect(s.message).toBeNull();
+    expect(s.action).toBeNull();
+  });
+
   it("clear() invalidates pending timers", () => {
     useToastStore.getState().show("已复制");
     useToastStore.getState().clear();

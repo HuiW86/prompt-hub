@@ -37,8 +37,10 @@ export const ipc = {
   listRecentUsage: (limit: number) =>
     invoke<RecentUsageEntry[]>("list_recent_usage", { limit }),
   countTodayUsage: () => invoke<number>("count_today_usage"),
-  recordUsage: (input: RecordUsageInput) =>
-    invoke<UsageRecord>("record_usage", { input }),
+  // suppressHide=true keeps the window after the copy (D-0 整理态); omitted /
+  // false preserves 调用态 复制即隐藏.
+  recordUsage: (input: RecordUsageInput, suppressHide?: boolean) =>
+    invoke<UsageRecord>("record_usage", { input, suppressHide }),
   hideWindow: () => invoke<void>("hide_window"),
   showWindow: () => invoke<void>("show_window"),
   // True when the ⌥Space global shortcut registered at startup. Queried once at
@@ -74,6 +76,8 @@ export const ipc = {
   updateDraft: (id: string, payload: DraftPayload) =>
     invoke<UpdateAck>("update_draft", { id, payload }),
   discardDraft: (id: string) => invoke<OkAck>("discard_draft", { id }),
+  // Reverse a discard (A1-04 / D-5): flips a discarded draft back to pending.
+  restoreDraft: (id: string) => invoke<OkAck>("restore_draft", { id }),
 
   // ── Macro direct editing (plan asset-editing §0 Q2/Q6) — Tauri-only ──
   createMacro: (args: { name: string; content: string; sceneId?: string }) =>

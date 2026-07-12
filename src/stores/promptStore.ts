@@ -11,6 +11,7 @@ import type {
   Macro,
   Modifier,
   Phase,
+  PromoteResult,
   RecentUsageEntry,
   RecordUsageInput,
   SceneWithChildren,
@@ -41,14 +42,31 @@ interface PromptState {
   loadError: string | null;
 
   refreshAll: () => Promise<void>;
-  recordCopy: (input: RecordUsageInput) => Promise<void>;
+  // suppressHide=true keeps the window after the copy (D-0 整理态). usageCount is
+  // bumped and recents refresh regardless — hiding and statistics are decoupled.
+  recordCopy: (
+    input: RecordUsageInput,
+    suppressHide?: boolean,
+  ) => Promise<void>;
   refreshDrafts: () => Promise<void>;
-  promoteDraft: (args: { id: string; groupKind?: string }) => Promise<void>;
+  // Returns the PromoteResult (new asset id + type) plus, for phase-scoped
+  // assets (protocol-layer phrases), the phaseId the asset landed under — so the
+  // caller can switch the PhaseBar to it before flashing (A1-03). Keeping the
+  // phase lookup here confines the protocol-layer slice read to the store, off
+  // the task-layer/cross-layer components (B2).
+  promoteDraft: (args: {
+    id: string;
+    groupKind?: string;
+  }) => Promise<PromoteResult & { phaseId: string | null }>;
   // UI edit-save of a pending draft (PRD §10.3 update_draft). `payload` is the
   // FULL replacement body — callers hydrate via ipc.getDraft first so hidden
   // fields (schema_version / phase_id / scene_id / is_default) survive the edit.
   updateDraft: (args: { id: string; payload: DraftPayload }) => Promise<void>;
   discardDraft: (id: string) => Promise<void>;
+  // Reverse a discard (A1-04 / D-5 撤销). Re-pulls the inbox so the restored
+  // draft rejoins the list + badge; rethrows so the caller can toast a failed
+  // restore (e.g. the dedup slot was re-staged in the interim).
+  restoreDraft: (id: string) => Promise<void>;
 
   // Direct macro editing (plan asset-editing §0 Q2/Q6). create awaits the
   // backend (needs the generated id + order_index); update/delete/reorder apply
@@ -361,8 +379,8 @@ export const usePromptStore = create<PromptState>()((set, get) => {
       }
     },
 
-    recordCopy: async (input) => {
-      const record = await ipc.recordUsage(input);
+    recordCopy: async (input, suppressHide) => {
+      const record = await ipc.recordUsage(input, suppressHide);
       set((state) =>
         bumpUsageCount(
           state,
@@ -386,7 +404,7 @@ export const usePromptStore = create<PromptState>()((set, get) => {
     },
 
     promoteDraft: async ({ id, groupKind }) => {
-      await ipc.promoteDraft({ id, groupKind });
+      const result = await ipc.promoteDraft({ id, groupKind });
       // The draft left the inbox and a new asset landed in one of the four real
       // tables. Refresh the inbox (list + badge) and silently re-pull the asset
       // slices so the promoted item shows on this summon without a loadState flash.
@@ -402,15 +420,28 @@ export const usePromptStore = create<PromptState>()((set, get) => {
           ipc.listAlignmentPhrases(),
           ipc.listCompositions(),
         ]);
+      const alignmentPhrasesByPhase = indexByPhase(alignments);
       set({
         macros,
         modifiers,
-        alignmentPhrasesByPhase: indexByPhase(alignments),
+        alignmentPhrasesByPhase,
         compositionsByPhase: indexCompositionsByPhase(compositions),
         // Only overwrite scenes if no newer scene re-pull has been issued since.
         ...(sceneTicket === sceneRefreshSeq ? { scenes } : {}),
       });
       await get().refreshDrafts();
+      // Locate the phase the landed asset belongs to (phase-scoped assets render
+      // only under their active phase). Confined to the store so no task-layer
+      // component reads the protocol-layer slice directly (B2).
+      let phaseId: string | null = null;
+      for (const [pid, list] of Object.entries(alignmentPhrasesByPhase)) {
+        if (list.some((a) => a.id === result.insertedAssetId)) {
+          phaseId = pid;
+          break;
+        }
+      }
+      // Hand the new asset's id + type (+ landed phase) back for the flash (A1-03).
+      return { ...result, phaseId };
     },
 
     // Optimistic like updateMacro: re-derive the card's name/preview from the new
@@ -435,6 +466,11 @@ export const usePromptStore = create<PromptState>()((set, get) => {
 
     discardDraft: async (id) => {
       await ipc.discardDraft(id);
+      await get().refreshDrafts();
+    },
+
+    restoreDraft: async (id) => {
+      await ipc.restoreDraft(id);
       await get().refreshDrafts();
     },
 

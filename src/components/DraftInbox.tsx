@@ -9,6 +9,7 @@ import type {
   DraftTargetType,
   GroupKind,
 } from "../ipc/types";
+import { useAppStore } from "../stores/appStore";
 import { usePromptStore } from "../stores/promptStore";
 import { useToastStore } from "../stores/toastStore";
 import { toUserMessage } from "../utils/errorMessage";
@@ -71,7 +72,10 @@ export function DraftInbox() {
 function DraftCard({ draft }: { draft: DraftSummary }) {
   const promoteDraft = usePromptStore((s) => s.promoteDraft);
   const discardDraft = usePromptStore((s) => s.discardDraft);
+  const restoreDraft = usePromptStore((s) => s.restoreDraft);
+  const setActivePhase = useAppStore((s) => s.setActivePhase);
   const toast = useToastStore((s) => s.show);
+  const toastAction = useToastStore((s) => s.showWithAction);
   const toastError = useToastStore((s) => s.showError);
   const [picking, setPicking] = useState(false);
   const [busy, setBusy] = useState(false);
@@ -87,8 +91,14 @@ function DraftCard({ draft }: { draft: DraftSummary }) {
     if (busy) return;
     setBusy(true);
     try {
-      await promoteDraft({ id: draft.id, groupKind });
-      toast(`已归入 ${TYPE_LABEL[draft.targetType]}`);
+      const result = await promoteDraft({ id: draft.id, groupKind });
+      // A1-03: the draft left the inbox and landed in a real region. Flash the
+      // landed asset so the user sees WHERE it went — the toast's flashTargetId
+      // drives the target region's flash. When the landed asset renders only
+      // under an active phase, the store hands back its phaseId so the PhaseBar
+      // can switch to it first, otherwise the flash target is off-screen.
+      if (result.phaseId) setActivePhase(result.phaseId);
+      toast(`已归入 ${TYPE_LABEL[draft.targetType]}`, result.insertedAssetId);
     } catch (err) {
       toastError(toUserMessage(err, "归档失败"));
     } finally {
@@ -102,7 +112,22 @@ function DraftCard({ draft }: { draft: DraftSummary }) {
     setBusy(true);
     try {
       await discardDraft(draft.id);
-      toast("已丢弃草稿");
+      // D-5: discard is reversible (a status flip, not a delete), so it does not
+      // need a confirm dialog — instead the toast carries an 撤销 button for the
+      // life of the toast. Clicking it restores the draft to pending.
+      toastAction(`已丢弃「${draft.name}」`, {
+        label: "撤销",
+        onClick: () => {
+          void (async () => {
+            try {
+              await restoreDraft(draft.id);
+              toast("已恢复草稿");
+            } catch (err) {
+              toastError(toUserMessage(err, "撤销失败"));
+            }
+          })();
+        },
+      });
     } catch (err) {
       toastError(toUserMessage(err, "丢弃失败"));
     } finally {
@@ -256,6 +281,7 @@ function DraftEditor({
   const [content, setContent] = useState(payload.content);
   const [saving, setSaving] = useState(false);
   const nameRef = useRef<HTMLInputElement>(null);
+  const contentRef = useRef<HTMLTextAreaElement>(null);
 
   useEffect(() => {
     nameRef.current?.focus();
@@ -294,11 +320,15 @@ function DraftEditor({
             // composition instead of saving.
             if (e.nativeEvent.isComposing) return;
             e.preventDefault();
-            void handleSave();
+            // Unified submit key (A1-08): bare Enter in the name field advances
+            // to the content field; Cmd/Ctrl+Enter commits from either field.
+            if (e.metaKey || e.ctrlKey) void handleSave();
+            else contentRef.current?.focus();
           }
         }}
       />
       <EditorInput
+        ref={contentRef}
         placeholder="内容"
         value={content}
         rows={3}

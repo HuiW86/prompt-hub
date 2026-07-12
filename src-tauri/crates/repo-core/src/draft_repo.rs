@@ -22,6 +22,11 @@ pub trait DraftRepo {
     ) -> RepoResult<Vec<DraftSummary>>;
     fn update_draft(&self, id: &str, payload: &DraftPayload) -> RepoResult<()>;
     fn mark_discarded(&self, id: &str) -> RepoResult<()>;
+    /// Reverse a discard: flip a `discarded` row back to `pending` (D-5 撤销).
+    /// Fails if an identical payload was re-staged as pending in the interim —
+    /// the partial unique index `idx_drafts_hash_pending` would be violated, so
+    /// the caller is told which existing draft occupies the slot.
+    fn mark_restored(&self, id: &str) -> RepoResult<()>;
 }
 
 // PRD §10.1.1: payload_json ≤ 64KB. Single source of truth for every write
@@ -289,6 +294,48 @@ impl DraftRepo for Connection {
         }
         Ok(())
     }
+
+    fn mark_restored(&self, id: &str) -> RepoResult<()> {
+        let now = Utc::now().to_rfc3339();
+        let res = self.execute(
+            "UPDATE drafts SET status = 'pending', updated_at = ?1
+             WHERE id = ?2 AND status = 'discarded'",
+            params![now, id],
+        );
+
+        match res {
+            Ok(0) => Err(self.diagnose_unrestorable(id)),
+            Ok(_) => Ok(()),
+            // The only UNIQUE index on drafts is idx_drafts_hash_pending, so a
+            // violation means an identical draft was re-staged as pending while
+            // this one sat discarded — point the caller at the occupant.
+            Err(e) if is_unique_violation(&e) => {
+                let payload_hash: Option<String> = self
+                    .query_row(
+                        "SELECT payload_hash FROM drafts WHERE id = ?1",
+                        params![id],
+                        |row| row.get(0),
+                    )
+                    .optional()?;
+                let existing = match payload_hash {
+                    Some(hash) => self
+                        .query_row(
+                            "SELECT id FROM drafts
+                             WHERE payload_hash = ?1 AND status = 'pending' AND id != ?2",
+                            params![hash, id],
+                            |row| row.get(0),
+                        )
+                        .optional()?,
+                    None => None,
+                };
+                match existing {
+                    Some(existing_id) => Err(RepoError::DuplicateDraft { existing_id }),
+                    None => Err(RepoError::Sqlite(e)),
+                }
+            }
+            Err(e) => Err(RepoError::Sqlite(e)),
+        }
+    }
 }
 
 // Private helper: a WHERE id=? AND status='pending' write that affects 0 rows
@@ -296,10 +343,29 @@ impl DraftRepo for Connection {
 // apart so callers get an actionable error instead of a silent no-op.
 trait DraftDiagnose {
     fn diagnose_unwritable(&self, id: &str) -> RepoError;
+    fn diagnose_unrestorable(&self, id: &str) -> RepoError;
 }
 
 impl DraftDiagnose for Connection {
     fn diagnose_unwritable(&self, id: &str) -> RepoError {
+        self.diagnose_status(id)
+    }
+
+    // A restore (WHERE id=? AND status='discarded') that affects 0 rows either
+    // hit a missing draft or an already-pending one; both surface here.
+    fn diagnose_unrestorable(&self, id: &str) -> RepoError {
+        self.diagnose_status(id)
+    }
+}
+
+// Shared: read the row's status so a 0-row conditional write turns into an
+// actionable error (missing vs wrong-status) instead of a silent no-op.
+trait DraftStatusProbe {
+    fn diagnose_status(&self, id: &str) -> RepoError;
+}
+
+impl DraftStatusProbe for Connection {
+    fn diagnose_status(&self, id: &str) -> RepoError {
         let status: Option<String> = self
             .query_row(
                 "SELECT status FROM drafts WHERE id = ?1",
@@ -435,6 +501,67 @@ mod tests {
         // payload may be staged again once the prior one is discarded.
         conn.create_draft(&payload, &prov)
             .expect("re-create after discard");
+    }
+
+    #[test]
+    fn restore_flips_a_discarded_draft_back_to_pending() {
+        let conn = db::open_in_memory().expect("open db");
+        let id = conn
+            .create_draft(&macro_payload("Undo me"), &sample_provenance("create_draft"))
+            .expect("create");
+        conn.mark_discarded(&id).expect("discard");
+        assert_eq!(count_pending_drafts(&conn).expect("count"), 0);
+
+        conn.mark_restored(&id).expect("restore");
+        assert_eq!(
+            count_pending_drafts(&conn).expect("count after restore"),
+            1,
+            "a restored draft rejoins the pending badge"
+        );
+        let got = conn.get_draft(&id).expect("get").expect("present");
+        assert_eq!(got.status, DraftStatus::Pending);
+    }
+
+    #[test]
+    fn restore_rejects_a_pending_or_missing_draft() {
+        let conn = db::open_in_memory().expect("open db");
+        let id = conn
+            .create_draft(&macro_payload("Still pending"), &sample_provenance("create_draft"))
+            .expect("create");
+        // Already pending — nothing to restore.
+        let err = conn
+            .mark_restored(&id)
+            .expect_err("restoring a pending draft must fail");
+        assert!(matches!(err, RepoError::DraftNotPending { .. }), "got {err:?}");
+        // Missing id.
+        let err = conn
+            .mark_restored("ghost")
+            .expect_err("restoring a missing draft must fail");
+        assert!(matches!(err, RepoError::DraftNotFound(_)), "got {err:?}");
+    }
+
+    #[test]
+    fn restore_reports_the_occupant_when_the_slot_was_re_staged() {
+        let conn = db::open_in_memory().expect("open db");
+        let payload = macro_payload("Contested");
+        let prov = sample_provenance("create_draft");
+        let discarded = conn.create_draft(&payload, &prov).expect("first");
+        conn.mark_discarded(&discarded).expect("discard");
+        // Re-stage an identical payload while the first sits discarded.
+        let occupant = conn.create_draft(&payload, &prov).expect("re-stage");
+
+        // Restoring the discarded one would collide with the pending occupant on
+        // idx_drafts_hash_pending — the caller learns which draft holds the slot.
+        let err = conn
+            .mark_restored(&discarded)
+            .expect_err("restore into an occupied dedup slot must fail");
+        assert!(
+            matches!(&err, RepoError::DuplicateDraft { existing_id } if *existing_id == occupant),
+            "expected DuplicateDraft pointing at {occupant}, got {err:?}"
+        );
+        // The discarded row stays discarded — the failed restore is a no-op.
+        let got = conn.get_draft(&discarded).expect("get").expect("present");
+        assert_eq!(got.status, DraftStatus::Discarded);
     }
 
     #[test]

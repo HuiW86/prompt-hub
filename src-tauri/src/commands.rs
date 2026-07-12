@@ -12,6 +12,14 @@ use tauri::{AppHandle, Manager, State, WebviewWindow};
 // docs/plans/prompt-hub-mvp.md 第一阶段交付标准.
 const COPY_HIDE_DELAY_MS: u64 = 200;
 
+// D-0 hide gate: whether a copy should schedule the 复制即隐藏 timer. `None`
+// (legacy callers) and `Some(false)` (调用态) hide; `Some(true)` (整理态)
+// keeps the window so the user can keep organizing. Extracted as a pure fn so
+// the mode gate is unit-testable without a live Tauri window.
+fn hide_after_copy(suppress_hide: Option<bool>) -> bool {
+    !suppress_hide.unwrap_or(false)
+}
+
 // Defense against a renderer sending an unbounded LIMIT (or LIMIT -1, which
 // SQLite treats as "all rows"). Recent list never needs more than a handful
 // — the UI caps at 5 today and won't realistically grow past 50.
@@ -139,25 +147,38 @@ pub fn record_usage(
     state: State<'_, AppState>,
     app: AppHandle,
     input: RecordUsageInput,
+    // Organize-mode gate (D-0). The frontend is the single source of truth for
+    // the interaction mode; when it copies in 整理态 it passes suppressHide=true
+    // (Tauri maps the JS camelCase arg to this snake_case param) so the window
+    // stays put for continuous organizing. The usage record is written either
+    // way — hiding and statistics are decoupled. Absent (legacy callers)
+    // defaults to false = 复制即隐藏.
+    suppress_hide: Option<bool>,
 ) -> AppResult<UsageRecord> {
     let record = with_conn(&state, |c| repo::record_usage(c, input))?;
-    // 复制即隐藏 (03-product-spec §4.4). The delay gives the React side a
-    // window to flash the card and show a toast; failure to hide is a UX
-    // glitch, not a reason to roll back the usage record.
+    // Always bump the token so any pending 200ms hide timer from an earlier
+    // copy is invalidated (a fresh copy — even a non-hiding one — must not be
+    // hidden by a stale timer).
     let my_seq = state.copy_seq.fetch_add(1, Ordering::SeqCst) + 1;
-    if let Some(window) = app.get_webview_window("main") {
-        let app_clone = app.clone();
-        tauri::async_runtime::spawn(async move {
-            tokio::time::sleep(Duration::from_millis(COPY_HIDE_DELAY_MS)).await;
-            // Only hide if no newer copy/show/hide event has happened during
-            // the delay. Without this guard, a rapid second copy or a manual
-            // re-summon between t=0 and t=200ms would be silently hidden by
-            // a stale timer.
-            let state = app_clone.state::<AppState>();
-            if state.copy_seq.load(Ordering::SeqCst) == my_seq {
-                let _ = window.hide();
-            }
-        });
+    // 复制即隐藏 (03-product-spec §4.4) — but only in 调用态. In 整理态 the copy
+    // is a side action during organizing, so the window must stay. The delay
+    // gives the React side a window to flash the card and show a toast; failure
+    // to hide is a UX glitch, not a reason to roll back the usage record.
+    if hide_after_copy(suppress_hide) {
+        if let Some(window) = app.get_webview_window("main") {
+            let app_clone = app.clone();
+            tauri::async_runtime::spawn(async move {
+                tokio::time::sleep(Duration::from_millis(COPY_HIDE_DELAY_MS)).await;
+                // Only hide if no newer copy/show/hide event has happened during
+                // the delay. Without this guard, a rapid second copy or a manual
+                // re-summon between t=0 and t=200ms would be silently hidden by
+                // a stale timer.
+                let state = app_clone.state::<AppState>();
+                if state.copy_seq.load(Ordering::SeqCst) == my_seq {
+                    let _ = window.hide();
+                }
+            });
+        }
     }
     Ok(record)
 }
@@ -298,6 +319,15 @@ pub fn update_draft(
 #[tauri::command]
 pub fn discard_draft(state: State<'_, AppState>, id: String) -> AppResult<OkAck> {
     with_write_conn(&state, |c| c.mark_discarded(&id))?;
+    Ok(OkAck { ok: true })
+}
+
+// Reverse a discard (A1-04 / D-5 撤销). Flips a discarded draft back to pending;
+// rejects if the dedup slot was re-staged (RepoError::DuplicateDraft) or the row
+// is missing / already pending — the renderer surfaces the message.
+#[tauri::command]
+pub fn restore_draft(state: State<'_, AppState>, id: String) -> AppResult<OkAck> {
+    with_write_conn(&state, |c| c.mark_restored(&id))?;
     Ok(OkAck { ok: true })
 }
 
@@ -774,6 +804,17 @@ mod tests {
         // db_path=None mirrors the fail-startup in-memory fallback: no snapshot,
         // import still runs.
         import_with_backup(&conn, None, &json).expect("import proceeds without a backup target");
+    }
+
+    #[test]
+    fn hide_gate_hides_in_invoke_mode_and_stays_in_organize_mode() {
+        // 调用态 (None legacy / Some(false)) hides; 整理态 (Some(true)) stays.
+        assert!(hide_after_copy(None), "legacy callers keep 复制即隐藏");
+        assert!(hide_after_copy(Some(false)), "invoke mode hides");
+        assert!(
+            !hide_after_copy(Some(true)),
+            "organize mode keeps the window"
+        );
     }
 
     #[test]

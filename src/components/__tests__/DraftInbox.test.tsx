@@ -14,9 +14,11 @@ vi.mock("@tauri-apps/api/core", () => ({
 
 import { invoke } from "@tauri-apps/api/core";
 
+import { useAppStore } from "../../stores/appStore";
 import { usePromptStore } from "../../stores/promptStore";
 import { useToastStore } from "../../stores/toastStore";
 import { DraftInbox } from "../DraftInbox";
+import { Toast } from "../Toast";
 
 const promptInitial = usePromptStore.getState();
 
@@ -46,7 +48,10 @@ function cardOf(draft: DraftSummary) {
 }
 
 describe("DraftInbox — composition promote stopgap (P0-5)", () => {
-  const promoteDraft = vi.fn().mockResolvedValue(undefined);
+  const promoteDraft = vi.fn().mockResolvedValue({
+    insertedAssetId: "asset-new",
+    insertedAssetType: "macro",
+  });
   const discardDraft = vi.fn().mockResolvedValue(undefined);
 
   beforeEach(() => {
@@ -126,7 +131,10 @@ describe("DraftInbox — composition promote stopgap (P0-5)", () => {
 });
 
 describe("DraftInbox — error feedback (P1-3)", () => {
-  const promoteDraft = vi.fn().mockResolvedValue(undefined);
+  const promoteDraft = vi.fn().mockResolvedValue({
+    insertedAssetId: "asset-new",
+    insertedAssetType: "macro",
+  });
   // Reject with a raw English IO-flavoured string, the shape that used to leak
   // straight into the toast before toUserMessage() funnelled catch sites.
   const discardDraft = vi
@@ -164,8 +172,129 @@ describe("DraftInbox — error feedback (P1-3)", () => {
   });
 });
 
+describe("DraftInbox — discard 撤销 (A1-04 / D-5)", () => {
+  const discardDraft = vi.fn().mockResolvedValue(undefined);
+  const restoreDraft = vi.fn().mockResolvedValue(undefined);
+
+  beforeEach(() => {
+    useToastStore.getState().clear();
+    usePromptStore.setState(promptInitial, true);
+    usePromptStore.setState({
+      drafts: [makeDraft("macro")],
+      discardDraft,
+      restoreDraft,
+    });
+    discardDraft.mockClear();
+    restoreDraft.mockClear();
+  });
+
+  it("discard raises an undo toast naming the draft, no confirm dialog", async () => {
+    render(<DraftInbox />);
+    const card = cardOf(makeDraft("macro"));
+    fireEvent.click(within(card).getByRole("button", { name: /丢弃/ }));
+
+    await vi.waitFor(() => {
+      const toast = useToastStore.getState();
+      expect(toast.message).toBe("已丢弃「示例 macro」");
+      expect(toast.action?.label).toBe("撤销");
+    });
+    expect(discardDraft).toHaveBeenCalledWith("draft-macro");
+  });
+
+  it("clicking 撤销 restores the draft", async () => {
+    render(
+      <>
+        <DraftInbox />
+        <Toast />
+      </>,
+    );
+    const card = cardOf(makeDraft("macro"));
+    fireEvent.click(within(card).getByRole("button", { name: /丢弃/ }));
+
+    const undo = await screen.findByRole("button", { name: "撤销" });
+    fireEvent.click(undo);
+    await vi.waitFor(() => {
+      expect(restoreDraft).toHaveBeenCalledWith("draft-macro");
+    });
+    // A successful restore replaces the undo toast with a confirmation.
+    await vi.waitFor(() => {
+      expect(useToastStore.getState().message).toBe("已恢复草稿");
+    });
+  });
+
+  it("surfaces a failed restore without throwing", async () => {
+    vi.spyOn(console, "error").mockImplementation(() => {});
+    restoreDraft.mockRejectedValueOnce(
+      new Error("io: slot taken (os error 5)"),
+    );
+    render(
+      <>
+        <DraftInbox />
+        <Toast />
+      </>,
+    );
+    const card = cardOf(makeDraft("macro"));
+    fireEvent.click(within(card).getByRole("button", { name: /丢弃/ }));
+    fireEvent.click(await screen.findByRole("button", { name: "撤销" }));
+    await vi.waitFor(() => {
+      expect(useToastStore.getState().message).toBe("撤销失败");
+    });
+    expect(useToastStore.getState().message).not.toContain("os error");
+    vi.restoreAllMocks();
+  });
+});
+
+describe("DraftInbox — promote 落地 flash (A1-03)", () => {
+  beforeEach(() => {
+    useToastStore.getState().clear();
+    useAppStore.setState(useAppStore.getState(), true);
+    usePromptStore.setState(promptInitial, true);
+  });
+
+  it("flashes the landed asset via the toast flashTargetId", async () => {
+    const promoteDraft = vi.fn().mockResolvedValue({
+      insertedAssetId: "macro-landed",
+      insertedAssetType: "macro",
+    });
+    usePromptStore.setState({ drafts: [makeDraft("macro")], promoteDraft });
+    render(<DraftInbox />);
+    const card = cardOf(makeDraft("macro"));
+    fireEvent.click(within(card).getByRole("button", { name: /归档/ }));
+    await vi.waitFor(() => {
+      const toast = useToastStore.getState();
+      expect(toast.message).toBe("已归入 Macro");
+      expect(toast.flashTargetId).toBe("macro-landed");
+    });
+  });
+
+  it("switches the active phase before flashing a phase-scoped promoted asset", async () => {
+    // The store computes the landed asset's phaseId (confined there for B2) and
+    // hands it back; DraftInbox switches the PhaseBar to it before flashing.
+    const promoteDraft = vi.fn().mockResolvedValue({
+      insertedAssetId: "ap-landed",
+      insertedAssetType: "alignment_phrase",
+      phaseId: "phase-2",
+    });
+    usePromptStore.setState({
+      drafts: [makeDraft("alignment_phrase")],
+      promoteDraft,
+    });
+    useAppStore.setState({ activePhaseId: "phase-1" });
+    render(<DraftInbox />);
+    const card = cardOf(makeDraft("alignment_phrase"));
+    fireEvent.click(within(card).getByRole("button", { name: /归档/ }));
+    await vi.waitFor(() => {
+      expect(useAppStore.getState().activePhaseId).toBe("phase-2");
+      expect(useToastStore.getState().flashTargetId).toBe("ap-landed");
+    });
+  });
+});
+
 describe("DraftInbox — promote 前编辑 (P3-2)", () => {
-  const promoteDraft = vi.fn().mockResolvedValue(undefined);
+  const promoteDraft = vi.fn().mockResolvedValue({
+    insertedAssetId: "asset-new",
+    insertedAssetType: "macro",
+  });
   const discardDraft = vi.fn().mockResolvedValue(undefined);
   const updateDraft = vi.fn().mockResolvedValue(undefined);
 
@@ -277,7 +406,7 @@ describe("DraftInbox — promote 前编辑 (P3-2)", () => {
     ).not.toBeInTheDocument();
   });
 
-  it("Enter mid-IME-composition does not commit a draft edit", async () => {
+  it("Cmd/Ctrl+Enter mid-IME-composition does not commit a draft edit", async () => {
     // Fix 1: committing a pinyin/kana candidate fires Enter with isComposing
     // still true — the name field must swallow it instead of saving.
     render(<DraftInbox />);
@@ -288,11 +417,31 @@ describe("DraftInbox — promote 前编辑 (P3-2)", () => {
     });
     const nameField = within(editor).getByPlaceholderText("名称");
     fireEvent.change(nameField, { target: { value: "改名" } });
-    fireEvent.keyDown(nameField, { key: "Enter", isComposing: true });
+    fireEvent.keyDown(nameField, {
+      key: "Enter",
+      ctrlKey: true,
+      isComposing: true,
+    });
     expect(updateDraft).not.toHaveBeenCalled();
-    // A normal Enter (no composition) still commits.
-    fireEvent.keyDown(nameField, { key: "Enter" });
+    // A normal Cmd/Ctrl+Enter (no composition) still commits (A1-08).
+    fireEvent.keyDown(nameField, { key: "Enter", ctrlKey: true });
     expect(updateDraft).toHaveBeenCalled();
+  });
+
+  it("bare Enter in the name field advances focus to content, not save (A1-08)", async () => {
+    render(<DraftInbox />);
+    const card = cardOf(makeDraft("modifier"));
+    fireEvent.click(within(card).getByRole("button", { name: /编辑/ }));
+    const editor = await within(card).findByRole("group", {
+      name: "编辑草稿",
+    });
+    const nameField = within(editor).getByPlaceholderText("名称");
+    const contentField = within(editor).getByPlaceholderText("内容");
+    fireEvent.change(nameField, { target: { value: "改名" } });
+    fireEvent.keyDown(nameField, { key: "Enter" });
+    // Bare Enter hands off to content rather than committing a partial edit.
+    expect(updateDraft).not.toHaveBeenCalled();
+    expect(document.activeElement).toBe(contentField);
   });
 
   it("cancel closes the editor without saving", async () => {

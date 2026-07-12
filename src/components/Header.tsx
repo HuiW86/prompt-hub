@@ -2,6 +2,7 @@ import { Layers, Settings } from "lucide-react";
 
 import { useSettingsStore } from "../stores/settingsStore";
 
+import { ModeToggle } from "./ModeToggle";
 import { SearchBar } from "./SearchBar";
 import styles from "./Header.module.css";
 
@@ -23,6 +24,7 @@ export function Header() {
         </span>
       </div>
       <SearchBar />
+      <ModeToggle />
       <button
         type="button"
         className={styles.gear}

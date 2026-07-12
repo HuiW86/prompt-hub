@@ -1,0 +1,49 @@
+/* ModeToggle — D-0 interaction-mode segmented control in the Header. A recessed
+   muted track holds two equal segments; the active one lifts to the primary
+   surface + accent border so "which mode am I in" is answerable at a glance. */
+
+.segment {
+  display: inline-flex;
+  gap: var(--s-1);
+  flex: 0 0 auto;
+  padding: var(--s-1);
+  background: var(--surface-2);
+  border: var(--hairline) solid var(--border-1);
+  border-radius: var(--r-4);
+}
+
+.item {
+  composes: ph-card-body from "../styles/typography.module.css";
+  display: inline-flex;
+  align-items: center;
+  gap: var(--s-1_5);
+  height: var(--h-chip);
+  padding: 0 var(--s-2_5);
+  border: var(--hairline) solid transparent;
+  border-radius: var(--r-3);
+  background: transparent;
+  color: var(--fg-3);
+  cursor: pointer;
+  user-select: none;
+  white-space: nowrap;
+  appearance: none;
+  transition:
+    background-color var(--d-fast) var(--ease),
+    border-color var(--d-fast) var(--ease),
+    color var(--d-fast) var(--ease);
+}
+
+.item:hover {
+  color: var(--fg-1);
+}
+
+.item.active {
+  background: var(--surface-1);
+  border-color: var(--accent);
+  color: var(--fg-1);
+}
+
+.item:focus-visible {
+  outline: var(--border-thick) solid var(--accent);
+  outline-offset: 0;
+}

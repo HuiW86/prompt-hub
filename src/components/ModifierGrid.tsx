@@ -15,6 +15,7 @@ import {
   IconButton,
   RegionHeader,
 } from "./primitives";
+import primitiveStyles from "./primitives/primitives.module.css";
 import styles from "./ModifierGrid.module.css";
 
 // Quadrant labels mirror the four CHECK-constrained groupKinds (migration 0006).
@@ -42,6 +43,7 @@ export function ModifierGrid() {
   const deleteModifier = usePromptStore((s) => s.deleteModifier);
   const showToast = useToastStore((s) => s.show);
   const showError = useToastStore((s) => s.showError);
+  const flashId = useToastStore((s) => s.flashTargetId);
   const copy = useCopy();
   // At most one open management affordance at a time: a quadrant menu OR a
   // delete confirm, keyed by modifier id.
@@ -124,7 +126,11 @@ export function ModifierGrid() {
                   <span key={m.id} className={styles.atom}>
                     <Chip
                       layer="protocol"
-                      className={styles.atomChip}
+                      className={
+                        flashId === m.id
+                          ? `${styles.atomChip} ${primitiveStyles.protocol} ${primitiveStyles.flash}`
+                          : styles.atomChip
+                      }
                       title={m.content}
                       aria-label={m.name}
                       onClick={() =>

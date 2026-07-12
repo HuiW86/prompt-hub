@@ -15,6 +15,7 @@ vi.mock("@tauri-apps/api/core", () => ({
 
 import { useAppStore } from "../../stores/appStore";
 import { usePromptStore } from "../../stores/promptStore";
+import { useSettingsStore } from "../../stores/settingsStore";
 import { useToastStore } from "../../stores/toastStore";
 import { ScenePanel } from "../ScenePanel";
 
@@ -61,6 +62,8 @@ describe("ScenePanel scene card — view grid + properties entry", () => {
     usePromptStore.setState(promptInitial, true);
     useAppStore.setState(appInitial, true);
     usePromptStore.setState({ scenes, pendingDraftCount: 0 });
+    useToastStore.getState().clear();
+    useSettingsStore.setState({ interactionMode: "invoke" });
     invokeMock.mockReset();
     invokeMock.mockResolvedValue({ ok: true });
   });
@@ -213,22 +216,39 @@ describe("ScenePanel view mode — in-place structure + content editing", () => 
     expect(call?.[1]).toMatchObject({ id: "phrase-1" });
   });
 
-  it("Enter mid-IME-composition does not commit a phrase edit", () => {
+  it("Cmd/Ctrl+Enter mid-IME-composition does not commit a phrase edit", () => {
     // Fix 1: the PhraseEditor name field must swallow the commit-Enter of an
     // in-flight IME composition instead of saving the phrase.
     render(<ScenePanel />);
     fireEvent.click(screen.getByLabelText("编辑 设计导出模块"));
     const nameField = screen.getByPlaceholderText("名称");
     fireEvent.change(nameField, { target: { value: "改名" } });
-    fireEvent.keyDown(nameField, { key: "Enter", isComposing: true });
+    fireEvent.keyDown(nameField, {
+      key: "Enter",
+      ctrlKey: true,
+      isComposing: true,
+    });
     expect(
       invokeMock.mock.calls.find((c) => c[0] === "update_phrase"),
     ).toBeUndefined();
-    // A normal Enter still commits.
-    fireEvent.keyDown(nameField, { key: "Enter" });
+    // A normal Cmd/Ctrl+Enter still commits (A1-08 unified submit key).
+    fireEvent.keyDown(nameField, { key: "Enter", ctrlKey: true });
     expect(
       invokeMock.mock.calls.find((c) => c[0] === "update_phrase"),
     ).toBeTruthy();
+  });
+
+  it("bare Enter in the phrase name field advances focus, not save (A1-08)", () => {
+    render(<ScenePanel />);
+    fireEvent.click(screen.getByLabelText("编辑 设计导出模块"));
+    const nameField = screen.getByPlaceholderText("名称");
+    const contentField = screen.getByPlaceholderText("话术内容");
+    fireEvent.change(nameField, { target: { value: "改名" } });
+    fireEvent.keyDown(nameField, { key: "Enter" });
+    expect(
+      invokeMock.mock.calls.find((c) => c[0] === "update_phrase"),
+    ).toBeUndefined();
+    expect(document.activeElement).toBe(contentField);
   });
 
   it("下移 swaps a phrase with its group neighbour via reorder_phrases", () => {
@@ -274,6 +294,42 @@ describe("ScenePanel view mode — in-place structure + content editing", () => 
     });
   });
 
+  it("creating a phrase shows a success toast (A1-07)", async () => {
+    invokeMock.mockImplementation((cmd: string) => {
+      if (cmd === "list_scenes_with_children") return Promise.resolve(scenes);
+      if (cmd === "create_phrase") return Promise.resolve({ id: "phrase-new" });
+      return Promise.resolve({ ok: true });
+    });
+    render(<ScenePanel />);
+    fireEvent.click(screen.getByLabelText("在 生成 添加话术"));
+    fireEvent.change(screen.getByPlaceholderText("名称"), {
+      target: { value: "新话术" },
+    });
+    fireEvent.change(screen.getByPlaceholderText("话术内容"), {
+      target: { value: "内容" },
+    });
+    fireEvent.click(screen.getByRole("button", { name: "新增" }));
+    await waitForElementToBeRemoved(() =>
+      screen.queryByRole("button", { name: "新增" }),
+    );
+    expect(useToastStore.getState().message).toBe("已新增话术");
+    expect(useToastStore.getState().intent).toBe("success");
+  });
+
+  it("editing a phrase shows a success toast (A1-07)", async () => {
+    invokeMock.mockImplementation((cmd: string) => {
+      if (cmd === "list_scenes_with_children") return Promise.resolve(scenes);
+      return Promise.resolve({ ok: true });
+    });
+    render(<ScenePanel />);
+    fireEvent.click(screen.getByLabelText("编辑 设计导出模块"));
+    fireEvent.click(screen.getByRole("button", { name: "保存" }));
+    await waitForElementToBeRemoved(() =>
+      screen.queryByRole("button", { name: "保存" }),
+    );
+    expect(useToastStore.getState().message).toBe("已保存话术");
+  });
+
   // ── Copy isolation: cluster clicks must not fire the card's copy action ────
   it("clicking a phrase card action does not trigger copy", () => {
     render(<ScenePanel />);
@@ -283,6 +339,60 @@ describe("ScenePanel view mode — in-place structure + content editing", () => 
     expect(
       invokeMock.mock.calls.find((c) => c[0] === "record_usage"),
     ).toBeUndefined();
+  });
+
+  it("调用态: whole-card click copies the phrase (T0 zero-regression)", async () => {
+    render(<ScenePanel />);
+    fireEvent.click(screen.getByRole("button", { name: "设计导出模块" }));
+    await vi.waitFor(() =>
+      expect(
+        invokeMock.mock.calls.find((c) => c[0] === "record_usage"),
+      ).toBeTruthy(),
+    );
+  });
+});
+
+// D-0 整理态: the whole-card click previews instead of copying, and copy demotes
+// to an explicit cluster button.
+describe("ScenePanel — 整理态 phrase card (D-0)", () => {
+  beforeEach(() => {
+    usePromptStore.setState(promptInitial, true);
+    useAppStore.setState(appInitial, true);
+    usePromptStore.setState({ scenes, pendingDraftCount: 0 });
+    useToastStore.getState().clear();
+    useSettingsStore.setState({ interactionMode: "organize" });
+    invokeMock.mockReset();
+    invokeMock.mockResolvedValue({ ok: true });
+  });
+
+  afterEach(() => {
+    useSettingsStore.setState({ interactionMode: "invoke" });
+  });
+
+  it("whole-card click previews (aria-expanded) and does NOT copy", () => {
+    render(<ScenePanel />);
+    const card = screen.getByRole("button", { name: "设计导出模块" });
+    expect(card).toHaveAttribute("aria-expanded", "false");
+    fireEvent.click(card);
+    // No copy fired — the click toggled the preview instead.
+    expect(
+      invokeMock.mock.calls.find((c) => c[0] === "record_usage"),
+    ).toBeUndefined();
+    expect(card).toHaveAttribute("aria-expanded", "true");
+    // A second click collapses it again.
+    fireEvent.click(card);
+    expect(card).toHaveAttribute("aria-expanded", "false");
+  });
+
+  it("copy demotes to an explicit cluster button", async () => {
+    render(<ScenePanel />);
+    // The explicit 复制 button exists only in 整理态.
+    fireEvent.click(screen.getByLabelText("复制 设计导出模块"));
+    await vi.waitFor(() =>
+      expect(
+        invokeMock.mock.calls.find((c) => c[0] === "record_usage"),
+      ).toBeTruthy(),
+    );
   });
 });
 

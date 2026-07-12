@@ -23,6 +23,10 @@ import { useRegionNav } from "../hooks/useRegionNav";
 import type { Phrase, SubStage } from "../ipc/types";
 import { useAppStore } from "../stores/appStore";
 import { usePromptStore } from "../stores/promptStore";
+import {
+  type InteractionMode,
+  useSettingsStore,
+} from "../stores/settingsStore";
 import { useToastStore } from "../stores/toastStore";
 import { toUserMessage } from "../utils/errorMessage";
 
@@ -99,6 +103,7 @@ export function ScenePanel() {
   const flashId = useToastStore((s) => s.flashTargetId);
   const showToast = useToastStore((s) => s.show);
   const showError = useToastStore((s) => s.showError);
+  const interactionMode = useSettingsStore((s) => s.interactionMode);
   const onRegionKeyDown = useRegionNav();
   // Active scene is tracked by ID, not index (P3-6): a tab reorder shifts every
   // index, and an index-keyed selection would silently land on a neighbour scene.
@@ -544,6 +549,7 @@ export function ScenePanel() {
                   editingPhraseId={phraseEditId}
                   addingPhrase={addPhraseFor?.subStageId === subId}
                   flashId={flashId}
+                  interactionMode={interactionMode}
                   sceneId={current.scene.id}
                   subStages={current.subStages}
                   onCopy={(p) =>
@@ -635,6 +641,7 @@ interface ViewColumnProps {
   editingPhraseId: string | null;
   addingPhrase: boolean;
   flashId: string | null;
+  interactionMode: InteractionMode;
   sceneId: string;
   subStages: SubStage[];
   onCopy: (phrase: Phrase) => void;
@@ -671,6 +678,7 @@ function ViewColumn({
   editingPhraseId,
   addingPhrase,
   flashId,
+  interactionMode,
   sceneId,
   subStages,
   onCopy,
@@ -809,6 +817,7 @@ function ViewColumn({
             key={p.id}
             phrase={p}
             flash={flashId === p.id}
+            interactionMode={interactionMode}
             canMoveUp={pi > 0}
             canMoveDown={pi < phrases.length - 1}
             onCopy={() => onCopy(p)}
@@ -850,6 +859,7 @@ function ViewColumn({
 interface ViewPhraseCardProps {
   phrase: Phrase;
   flash: boolean;
+  interactionMode: InteractionMode;
   canMoveUp: boolean;
   canMoveDown: boolean;
   onCopy: () => void;
@@ -858,13 +868,18 @@ interface ViewPhraseCardProps {
   onDelete: () => void;
 }
 
-// A view-mode phrase card: the whole card copies (primary action), so every
-// action-cluster button stops propagation to never trigger a copy (task 6).
+// A view-mode phrase card. Its whole-card click is mode-aware (D-0):
+//  • 调用态 — the card copies (primary action, zero-regression T0), so every
+//    action-cluster button stops propagation to never trigger a copy.
+//  • 整理态 — the card toggles a full-content preview (line-clamp off) instead
+//    of copying, so the user can read a phrase while organizing without grabbing
+//    the clipboard or being hidden; copy demotes to an explicit cluster button.
 // Delete is a two-step inline confirm held in local state so one card's confirm
 // never bleeds into another's.
 function ViewPhraseCard({
   phrase,
   flash,
+  interactionMode,
   canMoveUp,
   canMoveDown,
   onCopy,
@@ -873,22 +888,31 @@ function ViewPhraseCard({
   onDelete,
 }: ViewPhraseCardProps) {
   const [confirming, setConfirming] = useState(false);
+  const [expanded, setExpanded] = useState(false);
+  const organizing = interactionMode === "organize";
   const stop = (fn: () => void) => (e: ReactMouseEvent) => {
     e.stopPropagation();
     fn();
   };
+  // Whole-card primary action: copy in 调用态, expand/collapse preview in 整理态.
+  const onCardActivate = organizing ? () => setExpanded((v) => !v) : onCopy;
   const cls = `${styles.phrase} ${flash ? `${primitiveStyles.task} ${primitiveStyles.flash}` : ""}`;
+  const contentCls =
+    organizing && expanded
+      ? `${styles.phraseContent} ${styles.phraseContentExpanded}`
+      : styles.phraseContent;
   return (
     <div
       role="button"
       tabIndex={-1}
       className={cls}
       data-nav-item
-      onClick={onCopy}
+      aria-expanded={organizing ? expanded : undefined}
+      onClick={onCardActivate}
       onKeyDown={(e) => {
         if (e.key === "Enter" || e.key === " ") {
           e.preventDefault();
-          onCopy();
+          onCardActivate();
         }
       }}
       aria-label={phrase.name}
@@ -901,7 +925,7 @@ function ViewPhraseCard({
       />
       <span className={styles.phraseBody}>
         <h4 className={styles.phraseTitle}>{phrase.name}</h4>
-        <p className={styles.phraseContent}>{phrase.content}</p>
+        <p className={contentCls}>{phrase.content}</p>
       </span>
       {confirming ? (
         <div
@@ -918,6 +942,18 @@ function ViewPhraseCard({
         </div>
       ) : (
         <ActionCluster className={styles.phraseActions} reveal>
+          {/* 整理态 demotes copy from the whole-card gesture to an explicit
+              button so the card click can preview instead. */}
+          {organizing && (
+            <IconButton
+              aria-label={`复制 ${phrase.name}`}
+              data-nav-item
+              tabIndex={-1}
+              onClick={stop(onCopy)}
+            >
+              <Copy size={13} aria-hidden strokeWidth={2} />
+            </IconButton>
+          )}
           <IconButton
             aria-label={`上移 ${phrase.name}`}
             data-nav-item
@@ -1037,6 +1073,7 @@ function PhraseEditor({
 }: EditorProps) {
   const createPhrase = usePromptStore((s) => s.createPhrase);
   const updatePhrase = usePromptStore((s) => s.updatePhrase);
+  const showToast = useToastStore((s) => s.show);
   const existing = target.mode === "edit" ? target.phrase : null;
 
   // Sub-stage picker is the one field beyond name/content, so it rides the
@@ -1054,8 +1091,12 @@ function PhraseEditor({
     try {
       if (existing) {
         await updatePhrase({ id: existing.id, name, content, subStageId });
+        // Match the delete path's feedback strength (A1-07): a save is a write
+        // like a delete, so it earns the same explicit confirmation toast.
+        showToast("已保存话术");
       } else {
         await createPhrase({ sceneId, name, content, subStageId });
+        showToast("已新增话术");
       }
       onClose();
     } catch (err) {

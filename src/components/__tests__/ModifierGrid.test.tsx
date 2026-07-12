@@ -9,6 +9,7 @@ vi.mock("@tauri-apps/api/core", () => ({
 }));
 
 import { usePromptStore } from "../../stores/promptStore";
+import { useToastStore } from "../../stores/toastStore";
 import { ModifierGrid } from "../ModifierGrid";
 
 const promptInitial = usePromptStore.getState();
@@ -35,6 +36,7 @@ describe("ModifierGrid — P3-6 minimal management entry", () => {
   beforeEach(() => {
     usePromptStore.setState(promptInitial, true);
     usePromptStore.setState({ modifiers });
+    useToastStore.setState({ flashTargetId: null });
     invokeMock.mockReset();
     invokeMock.mockResolvedValue({ ok: true });
   });
@@ -66,12 +68,23 @@ describe("ModifierGrid — P3-6 minimal management entry", () => {
     render(<ModifierGrid />);
     fireEvent.click(screen.getByLabelText("结构化输出"));
     await vi.waitFor(() => expect(recordCopy).toHaveBeenCalled());
+    // Second arg is the D-0 suppressHide flag — false in default 调用态.
     expect(recordCopy).toHaveBeenCalledWith(
       expect.objectContaining({
         targetType: "modifier",
         targetId: "mod-structured",
       }),
+      false,
     );
+  });
+
+  it("flashes the chip whose id matches the toast flashTargetId (A1-03)", () => {
+    useToastStore.setState({ flashTargetId: "mod-structured" });
+    render(<ModifierGrid />);
+    const chip = screen.getByLabelText("结构化输出");
+    // CSS Modules resolve to identity class names under vitest, so the flash
+    // class name is visible on the chip when its id is the flash target.
+    expect(chip.className).toContain("flash");
   });
 
   it("delete asks for confirmation before invoking delete_modifier", () => {
