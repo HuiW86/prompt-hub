@@ -70,7 +70,14 @@ jobs:
   # The bench script exits non-zero when P95 > 200ms, so its exit code IS the
   # gate — no extra assertion step needed.
   #
-  # RISK (first CI run unverified): the bench spawns a real Tauri window and
+  # CONFIRMED 2026-07-12 (first CI runs 29196232109 / 29196390026): the risk
+  # below is real — the runner's headless session yields "no samples collected
+  # (exit code null)", i.e. the Tauri window never comes up. The job is kept
+  # visible but non-blocking (continue-on-error) so a future runner fix can
+  # re-arm it; the enforced C1 gate remains `pnpm bench:hotkey-wake` on a real
+  # machine, whose exit code turns red locally when P95 > 200ms.
+  #
+  # RISK (confirmed above): the bench spawns a real Tauri window and
   # calls show()+set_focus(). GitHub's macos-14 runner is headless-ish (no
   # attached display / login session); Tauri window creation or the CGWindow
   # path may fail there even though it passes on developer machines. If this
@@ -79,6 +86,7 @@ jobs:
   # a signal to investigate the runner, not to block the PR reflexively.
   bench-c1:
     runs-on: macos-14
+    continue-on-error: true
     steps:
       - uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v7.0.0
       - uses: pnpm/action-setup@0ebf47130e4866e96fce0953f49152a61190b271 # v6.0.9
