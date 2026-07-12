@@ -271,6 +271,7 @@ pub fn run() {
             commands::update_phrase,
             commands::delete_phrase,
             commands::reorder_phrases,
+            commands::move_phrase,
             commands::create_scene,
             commands::update_scene,
             commands::delete_scene,
