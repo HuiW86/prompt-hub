@@ -12,6 +12,7 @@ import type {
   ImportSummary,
   Macro,
   Modifier,
+  MoveReceipt,
   OkAck,
   Phase,
   Phrase,
@@ -224,6 +225,22 @@ export const ipc = {
     subStageId: string | null,
     orderedIds: string[],
   ) => invoke<OkAck>("reorder_phrases", { sceneId, subStageId, orderedIds }),
+  // Cross-scene / cross-sub-stage move (ADR-022). Returns a MoveReceipt so the
+  // caller can reverse it via the same command (fromOrderIndex →
+  // targetOrderIndex refills the exact vacated slot). targetSubStageId null =
+  // the ungrouped partition; targetOrderIndex omitted = append at the end.
+  movePhrase: (args: {
+    id: string;
+    targetSceneId: string;
+    targetSubStageId: string | null;
+    targetOrderIndex?: number | null;
+  }) =>
+    invoke<MoveReceipt>("move_phrase", {
+      id: args.id,
+      targetSceneId: args.targetSceneId,
+      targetSubStageId: args.targetSubStageId,
+      targetOrderIndex: args.targetOrderIndex ?? null,
+    }),
 
   // ── Scene container direct editing (plan scene-substage-editing) —
   // Tauri-only. reorder is a single global order; delete refuses a non-empty

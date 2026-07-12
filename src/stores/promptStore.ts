@@ -10,6 +10,7 @@ import type {
   GroupKind,
   Macro,
   Modifier,
+  MoveReceipt,
   Phase,
   PromoteResult,
   RecentUsageEntry,
@@ -168,6 +169,17 @@ interface PromptState {
     subStageId: string | null,
     orderedIds: string[],
   ) => Promise<void>;
+  // Cross-scene / cross-sub-stage move (ADR-022). Returns the MoveReceipt so the
+  // caller can wire a short-lived 撤销 (re-invoke with the from* values). Like
+  // the other phrase mutations it re-pulls the scenes tree; rethrows so a failed
+  // move / undo surfaces an honest error toast. Passing targetOrderIndex refills
+  // an exact slot (the undo path); omitting it appends at the target's end.
+  movePhrase: (args: {
+    id: string;
+    targetSceneId: string;
+    targetSubStageId: string | null;
+    targetOrderIndex?: number | null;
+  }) => Promise<MoveReceipt>;
 
   // Direct scene + sub-stage structure editing (plan scene-substage-editing).
   // Same nested `scenes` tree as phrases, so each mutation re-pulls
@@ -781,6 +793,25 @@ export const usePromptStore = create<PromptState>()((set, get) => {
     reorderPhrases: async (sceneId, subStageId, orderedIds) => {
       await ipc.reorderPhrases(sceneId, subStageId, orderedIds);
       await refreshScenes();
+    },
+
+    // Await the receipt BEFORE re-pulling so the caller gets it even though the
+    // scenes tree refresh follows; rethrow on failure so a rejected move / undo
+    // reaches the UI's error toast instead of being swallowed.
+    movePhrase: async ({
+      id,
+      targetSceneId,
+      targetSubStageId,
+      targetOrderIndex,
+    }) => {
+      const receipt = await ipc.movePhrase({
+        id,
+        targetSceneId,
+        targetSubStageId,
+        targetOrderIndex,
+      });
+      await refreshScenes();
+      return receipt;
     },
 
     // Scene + sub-stage structure mutations share the phrase re-pull path: the
