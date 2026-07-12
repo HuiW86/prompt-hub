@@ -213,22 +213,39 @@ describe("ScenePanel view mode — in-place structure + content editing", () => 
     expect(call?.[1]).toMatchObject({ id: "phrase-1" });
   });
 
-  it("Enter mid-IME-composition does not commit a phrase edit", () => {
+  it("Cmd/Ctrl+Enter mid-IME-composition does not commit a phrase edit", () => {
     // Fix 1: the PhraseEditor name field must swallow the commit-Enter of an
     // in-flight IME composition instead of saving the phrase.
     render(<ScenePanel />);
     fireEvent.click(screen.getByLabelText("编辑 设计导出模块"));
     const nameField = screen.getByPlaceholderText("名称");
     fireEvent.change(nameField, { target: { value: "改名" } });
-    fireEvent.keyDown(nameField, { key: "Enter", isComposing: true });
+    fireEvent.keyDown(nameField, {
+      key: "Enter",
+      ctrlKey: true,
+      isComposing: true,
+    });
     expect(
       invokeMock.mock.calls.find((c) => c[0] === "update_phrase"),
     ).toBeUndefined();
-    // A normal Enter still commits.
-    fireEvent.keyDown(nameField, { key: "Enter" });
+    // A normal Cmd/Ctrl+Enter still commits (A1-08 unified submit key).
+    fireEvent.keyDown(nameField, { key: "Enter", ctrlKey: true });
     expect(
       invokeMock.mock.calls.find((c) => c[0] === "update_phrase"),
     ).toBeTruthy();
+  });
+
+  it("bare Enter in the phrase name field advances focus, not save (A1-08)", () => {
+    render(<ScenePanel />);
+    fireEvent.click(screen.getByLabelText("编辑 设计导出模块"));
+    const nameField = screen.getByPlaceholderText("名称");
+    const contentField = screen.getByPlaceholderText("话术内容");
+    fireEvent.change(nameField, { target: { value: "改名" } });
+    fireEvent.keyDown(nameField, { key: "Enter" });
+    expect(
+      invokeMock.mock.calls.find((c) => c[0] === "update_phrase"),
+    ).toBeUndefined();
+    expect(document.activeElement).toBe(contentField);
   });
 
   it("下移 swaps a phrase with its group neighbour via reorder_phrases", () => {

@@ -49,7 +49,7 @@ function seed(phrases: AlignmentPhrase[]) {
 describe("AlignmentPhrases — in-place editing (ADR-021)", () => {
   beforeEach(() => seed(twoPhrases));
 
-  it("Enter mid-IME-composition does not commit a new alignment phrase", () => {
+  it("Cmd/Ctrl+Enter mid-IME-composition does not commit a new alignment phrase", () => {
     // The shared PhraseFormEditor must swallow the commit-Enter of an in-flight
     // IME composition instead of creating the phrase.
     render(<AlignmentPhrases />);
@@ -60,15 +60,34 @@ describe("AlignmentPhrases — in-place editing (ADR-021)", () => {
     fireEvent.change(screen.getByPlaceholderText("话术内容"), {
       target: { value: "话术内容" },
     });
-    fireEvent.keyDown(nameField, { key: "Enter", isComposing: true });
+    fireEvent.keyDown(nameField, {
+      key: "Enter",
+      ctrlKey: true,
+      isComposing: true,
+    });
     expect(
       invokeMock.mock.calls.find((c) => c[0] === "create_alignment_phrase"),
     ).toBeUndefined();
-    // A normal Enter still commits.
-    fireEvent.keyDown(nameField, { key: "Enter" });
+    // A normal Cmd/Ctrl+Enter still commits (A1-08 unified submit key).
+    fireEvent.keyDown(nameField, { key: "Enter", ctrlKey: true });
     expect(
       invokeMock.mock.calls.find((c) => c[0] === "create_alignment_phrase"),
     ).toBeTruthy();
+  });
+
+  it("bare Enter in the name field advances focus to content, not submit (A1-08)", () => {
+    render(<AlignmentPhrases />);
+    fireEvent.click(screen.getByLabelText("新增对齐话术"));
+    const nameField = screen.getByPlaceholderText("名称");
+    const contentField = screen.getByPlaceholderText("话术内容");
+    fireEvent.change(nameField, { target: { value: "新话术" } });
+    fireEvent.change(contentField, { target: { value: "话术内容" } });
+    fireEvent.keyDown(nameField, { key: "Enter" });
+    // Bare Enter must not submit — it hands off to the content textarea.
+    expect(
+      invokeMock.mock.calls.find((c) => c[0] === "create_alignment_phrase"),
+    ).toBeUndefined();
+    expect(document.activeElement).toBe(contentField);
   });
 
   it("edits a phrase in place through the shared editor", () => {
@@ -77,7 +96,7 @@ describe("AlignmentPhrases — in-place editing (ADR-021)", () => {
     const nameField = screen.getByPlaceholderText("名称");
     expect((nameField as HTMLInputElement).value).toBe("默认协议");
     fireEvent.change(nameField, { target: { value: "改名协议" } });
-    fireEvent.keyDown(nameField, { key: "Enter" });
+    fireEvent.keyDown(nameField, { key: "Enter", ctrlKey: true });
     const call = invokeMock.mock.calls.find(
       (c) => c[0] === "update_alignment_phrase",
     );

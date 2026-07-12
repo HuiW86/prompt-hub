@@ -53,6 +53,7 @@ export function PhraseFormEditor({
   const [content, setContent] = useState(initialContent ?? "");
   const [saving, setSaving] = useState(false);
   const nameRef = useRef<HTMLInputElement>(null);
+  const contentRef = useRef<HTMLTextAreaElement>(null);
 
   useEffect(() => {
     nameRef.current?.focus();
@@ -71,15 +72,19 @@ export function PhraseFormEditor({
     }
   };
 
-  // IME guard shared by both fields: committing a pinyin/kana candidate fires an
-  // Enter whose isComposing is still true, and swallowing it would eat the
-  // composition instead of saving.
+  // Both fields commit on Cmd/Ctrl+Enter for one consistent submit key (A1-08).
+  // The name field's bare Enter advances focus to the content textarea instead
+  // of submitting — a single-line name almost always has a body still to fill,
+  // so a lone Enter that saved half a phrase was a foot-gun. IME guard shared by
+  // both: committing a pinyin/kana candidate fires an Enter whose isComposing is
+  // still true, and swallowing it would eat the composition instead.
   const onNameKeyDown = (e: ReactKeyboardEvent<HTMLInputElement>) => {
     if (e.key === "Escape") onClose();
     if (e.key === "Enter") {
       if (e.nativeEvent.isComposing) return;
       e.preventDefault();
-      void handleSave();
+      if (e.metaKey || e.ctrlKey) void handleSave();
+      else contentRef.current?.focus();
     }
   };
 
@@ -107,6 +112,7 @@ export function PhraseFormEditor({
         onKeyDown={onNameKeyDown}
       />
       <EditorInput
+        ref={contentRef}
         placeholder="话术内容"
         value={content}
         rows={3}

@@ -256,6 +256,7 @@ function DraftEditor({
   const [content, setContent] = useState(payload.content);
   const [saving, setSaving] = useState(false);
   const nameRef = useRef<HTMLInputElement>(null);
+  const contentRef = useRef<HTMLTextAreaElement>(null);
 
   useEffect(() => {
     nameRef.current?.focus();
@@ -294,11 +295,15 @@ function DraftEditor({
             // composition instead of saving.
             if (e.nativeEvent.isComposing) return;
             e.preventDefault();
-            void handleSave();
+            // Unified submit key (A1-08): bare Enter in the name field advances
+            // to the content field; Cmd/Ctrl+Enter commits from either field.
+            if (e.metaKey || e.ctrlKey) void handleSave();
+            else contentRef.current?.focus();
           }
         }}
       />
       <EditorInput
+        ref={contentRef}
         placeholder="内容"
         value={content}
         rows={3}
