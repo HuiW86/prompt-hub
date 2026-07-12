@@ -1,5 +1,6 @@
 use chrono::Utc;
 use rusqlite::{params, Connection, OptionalExtension};
+use serde::Serialize;
 use uuid::Uuid;
 
 use repo_core::error::{RepoError, RepoResult};
@@ -104,6 +105,112 @@ pub fn update_phrase(
         )?;
     }
     Ok(())
+}
+
+/// The pre-move position of a phrase, returned by `move_phrase` so the caller
+/// can reverse the move by re-invoking with these exact values (ADR-022 撤销
+/// receipt). `from_order_index` is the vacated slot; because the source
+/// partition keeps its gap, feeding it back as `target_order_index` restores the
+/// phrase to (almost) its original position — a re-occupied slot only ties, and
+/// the existing (created_at, rowid) tie-break sorts it stably.
+#[derive(Debug, Clone, Serialize)]
+#[serde(rename_all = "camelCase")]
+pub struct MoveReceipt {
+    pub phrase_id: String,
+    pub from_scene_id: String,
+    pub from_sub_stage_id: Option<String>,
+    pub from_order_index: i64,
+}
+
+/// Move a phrase to a different (scene, sub-stage) partition without touching its
+/// name / content / usage history (ADR-022 Option B). Single transaction:
+/// ① read the current scene_id / sub_stage_id / order_index (the undo receipt) —
+///    a missing phrase errors before any write.
+/// ② if `target_sub_stage_id` is Some, verify it belongs to `target_scene_id`
+///    (a sub-stage from another scene would silently mis-group the phrase).
+/// ③ write the new scene_id / sub_stage_id, with order_index taken from
+///    `target_order_index` (the undo refill path) or, when None, the destination
+///    partition's MAX+1 (a normal move appends at the end). The row still carries
+///    its OLD partition at MAX-evaluation time, so it is never counted in its own
+///    destination MAX — no off-by-one even for a same-partition no-op move.
+///
+/// Moving deliberately writes NO usage record and does NOT bump usage_count —
+/// only a copy is a use (ADR-011 note in ADR-022). The vacated source slot is
+/// left as a gap; the read path only ORDER BYs, so gaps are harmless.
+pub fn move_phrase(
+    conn: &Connection,
+    id: &str,
+    target_scene_id: &str,
+    target_sub_stage_id: Option<&str>,
+    target_order_index: Option<i64>,
+) -> RepoResult<MoveReceipt> {
+    let tx = conn.unchecked_transaction()?;
+
+    // ① Snapshot the source position for the receipt; missing phrase → error.
+    let receipt: Option<(String, Option<String>, i64)> = tx
+        .query_row(
+            "SELECT scene_id, sub_stage_id, order_index FROM phrases WHERE id = ?1",
+            params![id],
+            |row| Ok((row.get(0)?, row.get(1)?, row.get(2)?)),
+        )
+        .optional()?;
+    let (from_scene_id, from_sub_stage_id, from_order_index) = match receipt {
+        None => return Err(missing_phrase(id)),
+        Some(v) => v,
+    };
+
+    // ② A grouped target must name a sub-stage that actually lives in the target
+    // scene — otherwise the move would attach the phrase to a foreign scene's
+    // group. Rejected as a not-found sub-stage (mirrors reorder's cross-partition
+    // rejection). The FK on phrases.sub_stage_id alone would NOT catch this: a
+    // real sub-stage id of a DIFFERENT scene passes the FK but is still wrong.
+    if let Some(sub_stage_id) = target_sub_stage_id {
+        let belongs: bool = tx
+            .query_row(
+                "SELECT 1 FROM sub_stages WHERE id = ?1 AND scene_id = ?2",
+                params![sub_stage_id, target_scene_id],
+                |_| Ok(true),
+            )
+            .optional()?
+            .unwrap_or(false);
+        if !belongs {
+            return Err(RepoError::TargetNotFound {
+                table: "sub_stages".to_string(),
+                target_id: sub_stage_id.to_string(),
+            });
+        }
+    }
+
+    // ③ Land the phrase. target_order_index (undo refill) wins; otherwise append
+    // at the destination partition's end. The subquery evaluates the MAX while
+    // the row still carries its OLD partition, so it is never its own +1 basis.
+    match target_order_index {
+        Some(order_index) => {
+            tx.execute(
+                "UPDATE phrases SET scene_id = ?2, sub_stage_id = ?3, order_index = ?4
+                 WHERE id = ?1",
+                params![id, target_scene_id, target_sub_stage_id, order_index],
+            )?;
+        }
+        None => {
+            tx.execute(
+                "UPDATE phrases SET scene_id = ?2, sub_stage_id = ?3,
+                    order_index = (SELECT COALESCE(MAX(order_index) + 1, 0) FROM phrases
+                        WHERE scene_id = ?2
+                          AND (sub_stage_id = ?3 OR (?3 IS NULL AND sub_stage_id IS NULL)))
+                 WHERE id = ?1",
+                params![id, target_scene_id, target_sub_stage_id],
+            )?;
+        }
+    }
+
+    tx.commit()?;
+    Ok(MoveReceipt {
+        phrase_id: id.to_string(),
+        from_scene_id,
+        from_sub_stage_id,
+        from_order_index,
+    })
 }
 
 /// Permanently remove a phrase (no is_default protection — phrases have none).
@@ -394,5 +501,181 @@ mod tests {
             matches!(err, RepoError::TargetNotFound { .. }),
             "got {err:?}"
         );
+    }
+
+    // ── move_phrase (ADR-022 cross-scene move) ────────────────────────────────
+
+    #[test]
+    fn move_rejects_nonexistent_phrase() {
+        let (_dir, conn) = migrated_conn();
+        let err = move_phrase(&conn, "ghost", "scene-research", None, None)
+            .expect_err("missing phrase");
+        assert!(
+            matches!(err, RepoError::TargetNotFound { ref table, .. } if table == "phrases"),
+            "got {err:?}"
+        );
+    }
+
+    #[test]
+    fn move_rejects_sub_stage_not_in_target_scene() {
+        let (_dir, conn) = migrated_conn();
+        // A real sub-stage, but of scene-plan — targeting scene-research with it
+        // must be rejected even though the FK on the id alone would pass.
+        add_sub_stage(&conn, "ss-plan-only", "scene-plan");
+        let p = create_phrase(&conn, "scene-plan", "P", "body", None).expect("p");
+        let err = move_phrase(&conn, &p.id, "scene-research", Some("ss-plan-only"), None)
+            .expect_err("sub-stage from another scene");
+        assert!(
+            matches!(err, RepoError::TargetNotFound { ref table, .. } if table == "sub_stages"),
+            "got {err:?}"
+        );
+        // The phrase is untouched — the rejection happened before any write.
+        let still = partition(&conn, "scene-plan", None)
+            .into_iter()
+            .find(|x| x.id == p.id)
+            .expect("still in source");
+        assert_eq!(still.scene_id, "scene-plan");
+    }
+
+    #[test]
+    fn move_appends_at_end_of_target_scene_ungrouped_partition() {
+        let (_dir, conn) = migrated_conn();
+        let before = partition(&conn, "scene-research", None).len() as i64;
+        let p = create_phrase(&conn, "scene-plan", "P", "body", None).expect("p");
+
+        let receipt = move_phrase(&conn, &p.id, "scene-research", None, None).expect("move");
+
+        // Receipt captures the source position.
+        assert_eq!(receipt.phrase_id, p.id);
+        assert_eq!(receipt.from_scene_id, "scene-plan");
+        assert!(receipt.from_sub_stage_id.is_none());
+        assert_eq!(receipt.from_order_index, p.order_index);
+
+        // Landed at the end of the destination's ungrouped partition.
+        let moved = partition(&conn, "scene-research", None)
+            .into_iter()
+            .find(|x| x.id == p.id)
+            .expect("now in scene-research");
+        assert_eq!(moved.scene_id, "scene-research");
+        assert!(moved.sub_stage_id.is_none());
+        assert_eq!(moved.order_index, before);
+        // Gone from the source scene.
+        assert!(partition(&conn, "scene-plan", None)
+            .iter()
+            .all(|x| x.id != p.id));
+    }
+
+    #[test]
+    fn move_into_grouped_partition_of_another_scene() {
+        let (_dir, conn) = migrated_conn();
+        add_sub_stage(&conn, "ss-r", "scene-research");
+        // Two phrases already in the target sub-stage, so the next slot is 2.
+        create_phrase(&conn, "scene-research", "R0", "b", Some("ss-r")).expect("r0");
+        create_phrase(&conn, "scene-research", "R1", "b", Some("ss-r")).expect("r1");
+        let p = create_phrase(&conn, "scene-plan", "P", "body", None).expect("p");
+
+        move_phrase(&conn, &p.id, "scene-research", Some("ss-r"), None).expect("move");
+
+        let moved = partition(&conn, "scene-research", Some("ss-r"))
+            .into_iter()
+            .find(|x| x.id == p.id)
+            .expect("landed in ss-r");
+        assert_eq!(moved.scene_id, "scene-research");
+        assert_eq!(moved.sub_stage_id.as_deref(), Some("ss-r"));
+        assert_eq!(moved.order_index, 2, "appended at target partition end");
+    }
+
+    #[test]
+    fn move_same_scene_cross_sub_stage() {
+        let (_dir, conn) = migrated_conn();
+        add_sub_stage(&conn, "ss-a", "scene-plan");
+        add_sub_stage(&conn, "ss-b", "scene-plan");
+        create_phrase(&conn, "scene-plan", "B0", "b", Some("ss-b")).expect("b0");
+        let p = create_phrase(&conn, "scene-plan", "P", "body", Some("ss-a")).expect("p");
+
+        // move_phrase also covers the same-scene cross-sub-stage case (A1-06).
+        move_phrase(&conn, &p.id, "scene-plan", Some("ss-b"), None).expect("move");
+
+        let moved = partition(&conn, "scene-plan", Some("ss-b"))
+            .into_iter()
+            .find(|x| x.id == p.id)
+            .expect("landed in ss-b");
+        assert_eq!(moved.order_index, 1, "appended after B0");
+        assert!(partition(&conn, "scene-plan", Some("ss-a"))
+            .iter()
+            .all(|x| x.id != p.id));
+    }
+
+    #[test]
+    fn move_into_ungrouped_with_none_target() {
+        let (_dir, conn) = migrated_conn();
+        add_sub_stage(&conn, "ss-x", "scene-plan");
+        let p = create_phrase(&conn, "scene-plan", "P", "body", Some("ss-x")).expect("p");
+        let before = partition(&conn, "scene-research", None).len() as i64;
+
+        move_phrase(&conn, &p.id, "scene-research", None, None).expect("move to ungrouped");
+
+        let moved = partition(&conn, "scene-research", None)
+            .into_iter()
+            .find(|x| x.id == p.id)
+            .expect("now ungrouped in scene-research");
+        assert!(moved.sub_stage_id.is_none());
+        assert_eq!(moved.order_index, before);
+    }
+
+    #[test]
+    fn move_undo_round_trip_restores_exact_position() {
+        let (_dir, conn) = migrated_conn();
+        add_sub_stage(&conn, "ss-a", "scene-plan");
+        // Three phrases in ss-a; move the MIDDLE one out, then undo with the
+        // receipt and assert it returns to its exact original slot.
+        let a0 = create_phrase(&conn, "scene-plan", "A0", "b", Some("ss-a")).expect("a0");
+        let a1 = create_phrase(&conn, "scene-plan", "A1", "b", Some("ss-a")).expect("a1");
+        let a2 = create_phrase(&conn, "scene-plan", "A2", "b", Some("ss-a")).expect("a2");
+        assert_eq!(a1.order_index, 1);
+
+        let receipt = move_phrase(&conn, &a1.id, "scene-research", None, None).expect("move out");
+        // Source partition kept its gap (a0=0, a2=2), a1 no longer present.
+        let src: Vec<String> = partition(&conn, "scene-plan", Some("ss-a"))
+            .into_iter()
+            .map(|p| p.id)
+            .collect();
+        assert_eq!(src, vec![a0.id.clone(), a2.id.clone()]);
+
+        // Undo = re-invoke with the receipt values, refilling the exact slot.
+        move_phrase(
+            &conn,
+            &receipt.phrase_id,
+            &receipt.from_scene_id,
+            receipt.from_sub_stage_id.as_deref(),
+            Some(receipt.from_order_index),
+        )
+        .expect("undo");
+
+        let restored = partition(&conn, "scene-plan", Some("ss-a"));
+        // Back in the original partition at order_index 1 — between a0 and a2.
+        let order: Vec<&str> = restored.iter().map(|p| p.id.as_str()).collect();
+        assert_eq!(order, vec![a0.id.as_str(), a1.id.as_str(), a2.id.as_str()]);
+        let back = restored
+            .iter()
+            .find(|p| p.id == a1.id)
+            .expect("a1 restored");
+        assert_eq!(back.order_index, 1);
+        assert_eq!(back.scene_id, "scene-plan");
+        assert_eq!(back.sub_stage_id.as_deref(), Some("ss-a"));
+    }
+
+    #[test]
+    fn move_does_not_bump_usage_or_touch_content() {
+        let (_dir, conn) = migrated_conn();
+        let p = create_phrase(&conn, "scene-plan", "Named", "Body text", None).expect("p");
+        move_phrase(&conn, &p.id, "scene-research", None, None).expect("move");
+        let moved = partition(&conn, "scene-research", None)
+            .into_iter()
+            .find(|x| x.id == p.id)
+            .expect("moved");
+        assert_eq!(moved.name, "Named");
+        assert_eq!(moved.content, "Body text");
+        assert_eq!(moved.usage_count, 0, "move must not count as a use");
     }
 }

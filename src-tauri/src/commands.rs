@@ -592,6 +592,31 @@ pub fn reorder_phrases(
     Ok(OkAck { ok: true })
 }
 
+// Cross-scene / cross-sub-stage phrase move (ADR-022). Distinct from
+// update_phrase: a pure relocation that never touches name/content and returns a
+// MoveReceipt (pre-move scene/sub-stage/order_index) so the renderer can offer a
+// short-lived 撤销 by re-invoking with the receipt's from_* values as target_*
+// (target_order_index refills the exact vacated slot). Tauri-only — no MCP write
+// face. MoveReceipt serializes camelCase via its own serde derive.
+#[tauri::command]
+pub fn move_phrase(
+    state: State<'_, AppState>,
+    id: String,
+    target_scene_id: String,
+    target_sub_stage_id: Option<String>,
+    target_order_index: Option<i64>,
+) -> AppResult<repo_write::MoveReceipt> {
+    with_write_conn(&state, |c| {
+        repo_write::move_phrase(
+            c,
+            &id,
+            &target_scene_id,
+            target_sub_stage_id.as_deref(),
+            target_order_index,
+        )
+    })
+}
+
 // ── Scene / SubStage structural editing (plan scene-substage-editing) ─────────
 // omar-driven create / update / delete / reorder of Scene containers and their
 // SubStage groups. Tauri-only (no MCP write face). Scenes order globally; sub-

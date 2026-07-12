@@ -257,6 +257,17 @@ export interface PromoteResult {
   insertedAssetType: DraftTargetType;
 }
 
+// move_phrase undo receipt (ADR-022): the phrase's position BEFORE the move.
+// Re-invoking move_phrase with these as the target_* args (fromOrderIndex →
+// targetOrderIndex) reverses the move to its exact original slot. camelCase over
+// the wire via the Rust MoveReceipt's #[serde(rename_all = "camelCase")].
+export interface MoveReceipt {
+  phraseId: string;
+  fromSceneId: string;
+  fromSubStageId: string | null;
+  fromOrderIndex: number;
+}
+
 export interface UpdateAck {
   ok: boolean;
   updatedAt: string;

@@ -5,6 +5,7 @@ import {
   ArrowUp,
   Copy,
   Folder,
+  FolderInput,
   Inbox,
   Layers,
   Pencil,
@@ -20,7 +21,7 @@ import {
 
 import { useCopy } from "../hooks/useCopy";
 import { useRegionNav } from "../hooks/useRegionNav";
-import type { Phrase, SubStage } from "../ipc/types";
+import type { Phrase, SceneWithChildren, SubStage } from "../ipc/types";
 import { useAppStore } from "../stores/appStore";
 import { usePromptStore } from "../stores/promptStore";
 import {
@@ -99,9 +100,11 @@ export function ScenePanel() {
   const deleteSubStage = usePromptStore((s) => s.deleteSubStage);
   const reorderSubStages = usePromptStore((s) => s.reorderSubStages);
   const reorderPhrases = usePromptStore((s) => s.reorderPhrases);
+  const movePhrase = usePromptStore((s) => s.movePhrase);
   const copy = useCopy();
   const flashId = useToastStore((s) => s.flashTargetId);
   const showToast = useToastStore((s) => s.show);
+  const showWithAction = useToastStore((s) => s.showWithAction);
   const showError = useToastStore((s) => s.showError);
   const interactionMode = useSettingsStore((s) => s.interactionMode);
   const onRegionKeyDown = useRegionNav();
@@ -124,6 +127,8 @@ export function ScenePanel() {
   const [addPhraseFor, setAddPhraseFor] = useState<{
     subStageId: string | null;
   } | null>(null);
+  // The phrase whose card is swapped for the move selector (ADR-022 "移动到…").
+  const [movingPhraseId, setMovingPhraseId] = useState<string | null>(null);
 
   // The 待审 badge jumps here by bumping draftsViewRequestId.
   useEffect(() => {
@@ -162,6 +167,7 @@ export function ScenePanel() {
     setCreatingSubStage(false);
     setPhraseEditId(null);
     setAddPhraseFor(null);
+    setMovingPhraseId(null);
   }, [currentSceneId, draftsActive]);
 
   const handleDelete = async (id: string) => {
@@ -170,6 +176,53 @@ export function ScenePanel() {
       showToast("已永久删除");
     } catch (err) {
       showError(toUserMessage(err, "删除失败"));
+    }
+  };
+
+  // Commit a cross-scene / cross-sub-stage move (ADR-022). Resolve the human
+  // labels for the toast BEFORE the store re-pull mutates the tree, run the
+  // move, then arm a 撤销 toast whose action reverses it via the receipt
+  // (targetOrderIndex = fromOrderIndex refills the exact vacated slot). Undo
+  // lives only for the toast's lifetime (子决策 3); a failed move OR a failed
+  // undo surfaces an honest error toast rather than being swallowed.
+  const handleMovePhraseTo = async (
+    phrase: Phrase,
+    targetSceneId: string,
+    targetSubStageId: string | null,
+  ) => {
+    const destScene = scenes.find((sc) => sc.scene.id === targetSceneId);
+    const destSubName = targetSubStageId
+      ? (destScene?.subStages.find((s) => s.id === targetSubStageId)?.name ??
+        "子阶段")
+      : "未分组";
+    const destLabel = `${destScene?.scene.name ?? "场景"} / ${destSubName}`;
+    setMovingPhraseId(null);
+    try {
+      const receipt = await movePhrase({
+        id: phrase.id,
+        targetSceneId,
+        targetSubStageId,
+      });
+      showWithAction(`已移至 ${destLabel}`, {
+        label: "撤销",
+        onClick: () => {
+          void (async () => {
+            try {
+              await movePhrase({
+                id: receipt.phraseId,
+                targetSceneId: receipt.fromSceneId,
+                targetSubStageId: receipt.fromSubStageId,
+                targetOrderIndex: receipt.fromOrderIndex,
+              });
+              showToast("已撤销移动");
+            } catch (err) {
+              showError(toUserMessage(err, "撤销失败"));
+            }
+          })();
+        },
+      });
+    } catch (err) {
+      showError(toUserMessage(err, "移动失败"));
     }
   };
 
@@ -547,11 +600,13 @@ export function ScenePanel() {
                   renaming={renamingSubId === (g.subStage?.id ?? UNGROUPED_KEY)}
                   confirmingDelete={confirmingSubId === g.subStage?.id}
                   editingPhraseId={phraseEditId}
+                  movingPhraseId={movingPhraseId}
                   addingPhrase={addPhraseFor?.subStageId === subId}
                   flashId={flashId}
                   interactionMode={interactionMode}
                   sceneId={current.scene.id}
                   subStages={current.subStages}
+                  scenes={scenes}
                   onCopy={(p) =>
                     void copy(
                       p.content,
@@ -590,6 +645,11 @@ export function ScenePanel() {
                   onPhraseEditClose={() => setPhraseEditId(null)}
                   onPhraseMove={(id, dir) =>
                     void handleMovePhrase(subId, g.phrases, id, dir)
+                  }
+                  onPhraseMoveToStart={(id) => setMovingPhraseId(id)}
+                  onPhraseMoveToCancel={() => setMovingPhraseId(null)}
+                  onPhraseMoveToConfirm={(phrase, sceneId, subStageId) =>
+                    void handleMovePhraseTo(phrase, sceneId, subStageId)
                   }
                   onPhraseDelete={(id) => void handleDelete(id)}
                   onAddPhrase={() => setAddPhraseFor({ subStageId: subId })}
@@ -639,11 +699,14 @@ interface ViewColumnProps {
   renaming: boolean;
   confirmingDelete: boolean;
   editingPhraseId: string | null;
+  movingPhraseId: string | null;
   addingPhrase: boolean;
   flashId: string | null;
   interactionMode: InteractionMode;
   sceneId: string;
   subStages: SubStage[];
+  // Every scene, for the cross-scene move selector's Scene picker (ADR-022).
+  scenes: SceneWithChildren[];
   onCopy: (phrase: Phrase) => void;
   onRenameStart: () => void;
   onRenameCancel: () => void;
@@ -655,6 +718,13 @@ interface ViewColumnProps {
   onPhraseEdit: (id: string) => void;
   onPhraseEditClose: () => void;
   onPhraseMove: (id: string, dir: -1 | 1) => void;
+  onPhraseMoveToStart: (id: string) => void;
+  onPhraseMoveToCancel: () => void;
+  onPhraseMoveToConfirm: (
+    phrase: Phrase,
+    targetSceneId: string,
+    targetSubStageId: string | null,
+  ) => void;
   onPhraseDelete: (id: string) => void;
   onAddPhrase: () => void;
   onAddPhraseClose: () => void;
@@ -676,11 +746,13 @@ function ViewColumn({
   renaming,
   confirmingDelete,
   editingPhraseId,
+  movingPhraseId,
   addingPhrase,
   flashId,
   interactionMode,
   sceneId,
   subStages,
+  scenes,
   onCopy,
   onRenameStart,
   onRenameCancel,
@@ -692,6 +764,9 @@ function ViewColumn({
   onPhraseEdit,
   onPhraseEditClose,
   onPhraseMove,
+  onPhraseMoveToStart,
+  onPhraseMoveToCancel,
+  onPhraseMoveToConfirm,
   onPhraseDelete,
   onAddPhrase,
   onAddPhraseClose,
@@ -812,6 +887,16 @@ function ViewColumn({
             onClose={onPhraseEditClose}
             onError={onError}
           />
+        ) : movingPhraseId === p.id ? (
+          <PhraseMoveSelector
+            key={p.id}
+            phrase={p}
+            scenes={scenes}
+            onCancel={onPhraseMoveToCancel}
+            onConfirm={(targetSceneId, targetSubStageId) =>
+              onPhraseMoveToConfirm(p, targetSceneId, targetSubStageId)
+            }
+          />
         ) : (
           <ViewPhraseCard
             key={p.id}
@@ -823,6 +908,7 @@ function ViewColumn({
             onCopy={() => onCopy(p)}
             onEdit={() => onPhraseEdit(p.id)}
             onMove={(dir) => onPhraseMove(p.id, dir)}
+            onMoveTo={() => onPhraseMoveToStart(p.id)}
             onDelete={() => onPhraseDelete(p.id)}
           />
         ),
@@ -865,6 +951,7 @@ interface ViewPhraseCardProps {
   onCopy: () => void;
   onEdit: () => void;
   onMove: (dir: -1 | 1) => void;
+  onMoveTo: () => void;
   onDelete: () => void;
 }
 
@@ -885,6 +972,7 @@ function ViewPhraseCard({
   onCopy,
   onEdit,
   onMove,
+  onMoveTo,
   onDelete,
 }: ViewPhraseCardProps) {
   const [confirming, setConfirming] = useState(false);
@@ -980,6 +1068,16 @@ function ViewPhraseCard({
           >
             <Pencil size={13} aria-hidden strokeWidth={2} />
           </IconButton>
+          {/* ADR-022: cross-scene / cross-sub-stage move — swaps the card for a
+              layered Scene → SubStage selector. */}
+          <IconButton
+            aria-label={`移动 ${phrase.name} 到其他场景`}
+            data-nav-item
+            tabIndex={-1}
+            onClick={stop(onMoveTo)}
+          >
+            <FolderInput size={13} aria-hidden strokeWidth={2} />
+          </IconButton>
           <IconButton
             aria-label={`删除 ${phrase.name}`}
             data-nav-item
@@ -1043,6 +1141,111 @@ function InlineNameEditor({
           disabled={value.trim().length === 0}
         >
           保存
+        </Button>
+      </ActionCluster>
+    </div>
+  );
+}
+
+interface PhraseMoveSelectorProps {
+  phrase: Phrase;
+  scenes: SceneWithChildren[];
+  onCancel: () => void;
+  onConfirm: (targetSceneId: string, targetSubStageId: string | null) => void;
+}
+
+// Layered target selector for a cross-scene / cross-sub-stage move (ADR-022 子决策
+// 1). Step 1 picks the target Scene from ALL scenes; step 2 picks a SubStage of
+// that scene (including 未分组). Two selects rather than drag: the target scene's
+// board is hidden behind its tab at move time, so there is no drop target — the
+// selector is the only stable form (parity with ADR-021 button-move). Native
+// <select>s keep it keyboard-reachable and token-styled via .subStageSelect.
+function PhraseMoveSelector({
+  phrase,
+  scenes,
+  onCancel,
+  onConfirm,
+}: PhraseMoveSelectorProps) {
+  // Default the Scene picker to the phrase's current scene so a same-scene
+  // cross-sub-stage move (A1-06) is one field away; SubStage starts at 未分组.
+  const [sceneId, setSceneId] = useState(phrase.sceneId);
+  const [subValue, setSubValue] = useState(UNGROUPED_VALUE);
+
+  const targetScene = scenes.find((sc) => sc.scene.id === sceneId);
+  const orderedSubStages = [...(targetScene?.subStages ?? [])].sort(
+    (a, b) => a.orderIndex - b.orderIndex,
+  );
+
+  const targetSubStageId = subValue === UNGROUPED_VALUE ? null : subValue;
+  // A no-op move (same scene AND same grouping) would still hit the backend's
+  // MAX+1 append branch, dropping the card to its own partition's end and firing
+  // a misleading 「已移至」 toast (P2-1). Disable confirm on an unchanged target,
+  // matching the boundary-disabled reorder buttons' idiom.
+  const isNoop =
+    sceneId === phrase.sceneId &&
+    targetSubStageId === (phrase.subStageId ?? null);
+
+  const handleConfirm = () => {
+    if (isNoop) return;
+    onConfirm(sceneId, targetSubStageId);
+  };
+
+  return (
+    <div
+      className={styles.moveSelector}
+      role="group"
+      aria-label={`移动 ${phrase.name}`}
+      onKeyDown={(e) => {
+        if (e.key === "Escape") onCancel();
+      }}
+    >
+      <select
+        className={styles.subStageSelect}
+        aria-label="目标场景"
+        value={sceneId}
+        data-nav-item
+        tabIndex={-1}
+        onChange={(e) => {
+          // Changing the scene invalidates the previously-picked sub-stage
+          // (it belonged to the old scene), so reset to 未分组.
+          setSceneId(e.target.value);
+          setSubValue(UNGROUPED_VALUE);
+        }}
+      >
+        {scenes.map((sc) => (
+          <option key={sc.scene.id} value={sc.scene.id}>
+            {sc.scene.name}
+          </option>
+        ))}
+      </select>
+      <select
+        className={styles.subStageSelect}
+        aria-label="目标子阶段"
+        value={subValue}
+        data-nav-item
+        tabIndex={-1}
+        onChange={(e) => setSubValue(e.target.value)}
+      >
+        <option value={UNGROUPED_VALUE}>未分组</option>
+        {orderedSubStages.map((s) => (
+          <option key={s.id} value={s.id}>
+            {s.name}
+          </option>
+        ))}
+      </select>
+      <ActionCluster>
+        <Button intent="subtle" data-nav-item tabIndex={-1} onClick={onCancel}>
+          取消
+        </Button>
+        <Button
+          layer="task"
+          intent="primary"
+          data-nav-item
+          tabIndex={-1}
+          disabled={isNoop}
+          onClick={handleConfirm}
+        >
+          移动到此
         </Button>
       </ActionCluster>
     </div>

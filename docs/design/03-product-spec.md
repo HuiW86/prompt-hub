@@ -1,12 +1,12 @@
 ---
 type: product-spec
 project: prompt-hub
-version: v0.15
+version: v0.16
 created: 2026-05-18
 last_modified: 2026-07-12
 status: draft  # v0.10 起增量待 omar 人审；前序 v0.8 已 ratified
 author: co  # 🤝 人机共创（CLAUDE §5.2）
-related: [[01-spec]], [[05-design-spec]], [[06-prd]], [[012-lock-visual-quality-anchor]], [[019-supersede-flat-visual-anchor]], [[020-restore-protocol-dark-band]], [[021-scene-layered-editing]], [[013-alignment-phrases-tab-inclusion]], [[015-expose-mcp-write-pipeline]], [[017-enable-auto-update]], [[018-absorb-promptscape-design]]
+related: [[01-spec]], [[05-design-spec]], [[06-prd]], [[012-lock-visual-quality-anchor]], [[019-supersede-flat-visual-anchor]], [[020-restore-protocol-dark-band]], [[021-scene-layered-editing]], [[022-cross-scene-phrase-move]], [[013-alignment-phrases-tab-inclusion]], [[015-expose-mcp-write-pipeline]], [[017-enable-auto-update]], [[018-absorb-promptscape-design]]
 description: 手动 AI 编程仪表盘的 UI 契约——双形态架构/布局/点击路径/状态反馈/用户旅程/主形态 UI 草案；写 UI / 改交互时召回。版本叙事见 CHANGELOG
 ---
 
@@ -737,7 +737,7 @@ graph TD
   - **就地编辑（三层，v0.14 · [[021-scene-layered-editing]]，推翻 v0.11–v0.13「统一编辑态」契约）**：全局 editMode 已废除，编辑什么点什么（Tauri-only 不经 MCP，[[scene-substage-editing]] D3 沿用；历史谱系：[[scene-phrase-editing]] v1.4 / [[scene-substage-editing]] v1.6 的编辑态承载被本层级模型取代，删除语义与链路不变）——
     - **属性层**：卡头铅笔 → 属性面板（`ScenePropertiesEditor`）：name 必填 / icon（lucide 6 预设 + emoji 自由输入 + 「无」）/ color（6 预设 swatch + 清除；用户内容色只染场景自身图标，[[05-design-spec#12.4]]，ADR-021 子决策 2 待 omar 复核）/ rolePresets（chip + × 删除 + 回车添加，Enter 带 IME `isComposing` 守卫）；底部动作行收编 **场景前移/后移**（`reorder_scenes`）与**删除**（二次确认；非空 Scene 后端 `RepoError::SceneNotEmpty` 阻止并 toast，[[06-prd#6.4]]）。面板内控件走原生焦点序、不进 `data-nav-item` 漫游（模态编辑上下文，设计选择）；保存 payload 全字段透传 `update_scene`；卡头 meta 行消费 rolePresets chips
     - **结构层**：子阶段列头 hover / `:focus-within` 双通道显隐动作簇——✎ 行内改名（`update_sub_stage`，IME 守卫）/ ←→ 相邻交换（`reorder_sub_stages`）/ 🗑 二次确认删除（`delete_sub_stage`，**其下 Phrase 解绑为「无分组」**，[[06-prd#6.4]]）；网格尾「＋ 新增子阶段」ghost 列（`create_sub_stage`）
-    - **内容层**：话术卡 hover / `:focus-within` 动作簇——✎ 原位换行内编辑器（`update_phrase`）/ ↑↓ 组内相邻交换（`reorder_phrases`，per-(scene, sub_stage) 分区不跨组）/ 🗑 二次确认删除（`delete_phrase`）；每列底「＋ 添加话术」ghost 卡预填该列 subStageId（`create_phrase`）；**动作簇全部 `stopPropagation`，不触发整卡 copy 主动作**；改分组（跨列移动）走话术编辑器子阶段下拉，不做拖拽
+    - **内容层**：话术卡 hover / `:focus-within` 动作簇——✎ 原位换行内编辑器（`update_phrase`）/ ↑↓ 组内相邻交换（`reorder_phrases`，per-(scene, sub_stage) 分区不跨组）/ 🗑 二次确认删除（`delete_phrase`）；每列底「＋ 添加话术」ghost 卡预填该列 subStageId（`create_phrase`）；**动作簇全部 `stopPropagation`，不触发整卡 copy 主动作**；移动（跨 Scene / 跨子阶段）走动作簇「移动到…」分层选择器——先选目标 Scene 再选其子阶段（含「未分组」），目标 == 当前位置时确认禁用（防空移动），确认后 toast「已移至 X / Y」+ 撤销（凭 MoveReceipt 反向恢复原 Scene/子阶段/精确排序位，仅 toast 生命周期内有效，[[022-cross-scene-phrase-move]]）；话术编辑器子阶段下拉**保留**为就地改分组第二路径，**两径底层语义等价**（均落目标分区末尾，ADR-022 子决策 2）；移动不计 usage；一律不做拖拽
     - **排序一律按钮不拖拽**（ADR-021 子决策 1）：视图网格 copy 主动作与拖拽 affordance 互斥，原 v0.13 · P3-6 的 SubStage 结构编辑器 dnd 随编辑态移除，←→/↑↓ 按钮等价承接同一 IPC 链路（能力不回退）；order_index 分区语义（Scene 全局单序 / SubStage per-scene 单序 / 活动场景按 id 追踪）不变
   - **草稿卡片 promote 须 omar 显式点击**——无自动 promote 路径（守 [[06-prd#8.2]] N3 / [[02-constitution#D1]]）。promote / discard 是 omar 主导动作，外部 AI 不可触达（IPC 不经 MCP 暴露，[[06-prd#10.3]] 边界）
 
@@ -853,6 +853,24 @@ graph TD
 ---
 
 ## 修订记录
+
+### v0.16（2026-07-12）— ADR-022 涟漪：跨 Scene 话术移动
+
+回流 [[022-cross-scene-phrase-move]]（Accepted 2026-07-12，批次 B verifier 对抗审查 PASS）。🤝 共创起草，待 omar 人审。
+
+| 章节 | 改动 | 来源 |
+|------|------|------|
+| §13.3 区域 4 行为（内容层）| 话术卡动作簇新增「移动到…」→ 分层选择器（目标 Scene → 其子阶段/未分组；目标 == 当前位置时确认禁用，防空移动）；确认 toast「已移至 X / Y」+ 撤销（MoveReceipt 反向恢复原精确排序位，仅 toast 生命周期，子决策 3）；**双路径共存**：编辑器子阶段下拉保留可写，两径底层语义等价（均落目标分区末尾，子决策 2）；移动不计 usage（ADR-011 注记）；不做拖拽（子决策 1）| ADR-022 |
+
+### v0.15（2026-07-12）— D-0 涟漪：交互模式契约（调用态/整理态）
+
+回流 2026-07-12 UX 任务流审计裁决 D-0~D-2（[[2026-07-12-ux-taskflow-audit#§0]]）+ 批次 A 落地事实。🤝 共创起草，omar 已确认 diff 提案（含整理态复制 **usage 照计**）。
+
+| 章节 | 改动 | 来源 |
+|------|------|------|
+| §4.0.2 / §4.0.4 / §4.0.5 | 「复制即隐藏」加调用态限定；§4.0.5 加边界注「主形态整理态承接轻量整理，批量/结构性整理仍归辅形态」| D-0 |
+| §4.0.7（新增）| 交互模式契约：调用态/整理态两态语义表 + Header ModeToggle（segmented，`aria-pressed`）+ `interactionMode` 持久化 + 作用范围仅限 Scene 话术卡 + 反设计两条 | D-0~D-2 |
+| §4.3 / §4.4 | 频率表加「低频·窗口内（整理态）」行；状态反馈补保存成功 toast / discard 可撤销 / promote 落地 flash 三条 | 批次 A |
 
 ### v0.14（2026-07-06）— ADR-021 涟漪：Scene 编辑分层化，废除全局编辑态
 

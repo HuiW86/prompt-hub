@@ -480,6 +480,20 @@
   outline-offset: 0;
 }
 
+/* Cross-scene move selector (ADR-022): swaps in for a phrase card, stacking the
+   two target selects (Scene → SubStage) over a confirm/cancel action row. Mirrors
+   the phrase card's own inset so the column layout doesn't jump when it opens. */
+.moveSelector {
+  display: flex;
+  flex-direction: column;
+  gap: var(--s-2);
+  padding: var(--s-2_5);
+  background: var(--surface-1);
+  border: var(--hairline) solid var(--border-2);
+  border-radius: var(--r-3);
+  box-shadow: var(--shadow-1);
+}
+
 /* Trailing ghost column (task 5): a muted, dashed-bordered column holding the
    「＋ 新增子阶段」affordance, set apart from the real sub-stage columns. */
 .ghostColumn {

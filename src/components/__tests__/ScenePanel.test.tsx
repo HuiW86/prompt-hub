@@ -1033,3 +1033,197 @@ describe("ScenePanel view grid — action clusters are roving-nav items", () => 
     }
   });
 });
+
+// ── ADR-022: cross-scene / cross-sub-stage phrase move ────────────────────────
+// The phrase card action cluster gains a "移动到…" entry that swaps the card for
+// a layered Scene → SubStage selector; confirming invokes move_phrase and arms a
+// 撤销 toast whose action re-invokes move_phrase with the receipt's from* values.
+describe("ScenePanel — cross-scene phrase move (ADR-022)", () => {
+  // Two scenes so the selector has a real cross-scene target; scene-impl carries
+  // its own sub-stage so the SubStage step has a non-未分组 option.
+  const twoScenes: SceneWithChildren[] = [
+    scenes[0],
+    {
+      scene: {
+        id: "scene-impl",
+        name: "编码实现",
+        icon: "wrench",
+        orderIndex: 1,
+        visible: true,
+        rolePresets: [],
+        color: null,
+      },
+      subStages: [
+        { id: "ss-code", sceneId: "scene-impl", name: "编写", orderIndex: 0 },
+      ],
+      phrases: [],
+    },
+  ];
+
+  const receipt = {
+    phraseId: "phrase-1",
+    fromSceneId: "scene-plan",
+    fromSubStageId: "ss-generate",
+    fromOrderIndex: 0,
+  };
+
+  beforeEach(() => {
+    vi.useFakeTimers();
+    usePromptStore.setState(promptInitial, true);
+    useAppStore.setState(appInitial, true);
+    useToastStore.getState().clear();
+    useSettingsStore.setState({ interactionMode: "invoke" });
+    usePromptStore.setState({ scenes: twoScenes, pendingDraftCount: 0 });
+    invokeMock.mockReset();
+    invokeMock.mockImplementation((cmd: string) => {
+      if (cmd === "list_scenes_with_children")
+        return Promise.resolve(twoScenes);
+      if (cmd === "move_phrase") return Promise.resolve(receipt);
+      return Promise.resolve({ ok: true });
+    });
+  });
+
+  afterEach(() => {
+    vi.clearAllTimers();
+    vi.useRealTimers();
+  });
+
+  it("移动到… opens the layered Scene → SubStage selector", () => {
+    render(<ScenePanel />);
+    fireEvent.click(screen.getByLabelText("移动 设计导出模块 到其他场景"));
+    // Both target selects appear; the Scene picker lists every scene, the
+    // SubStage picker starts with 未分组.
+    expect(screen.getByLabelText("目标场景")).toBeInTheDocument();
+    const subSelect = screen.getByLabelText("目标子阶段");
+    expect(subSelect).toBeInTheDocument();
+    expect(subSelect).toHaveValue("__ungrouped__");
+  });
+
+  it("confirming a move invokes move_phrase with the picked scene + sub-stage", async () => {
+    render(<ScenePanel />);
+    fireEvent.click(screen.getByLabelText("移动 设计导出模块 到其他场景"));
+    // Pick the other scene; its sub-stage list refreshes to scene-impl's.
+    fireEvent.change(screen.getByLabelText("目标场景"), {
+      target: { value: "scene-impl" },
+    });
+    fireEvent.change(screen.getByLabelText("目标子阶段"), {
+      target: { value: "ss-code" },
+    });
+    fireEvent.click(screen.getByRole("button", { name: "移动到此" }));
+    await vi.waitFor(() => {
+      const call = invokeMock.mock.calls.find((c) => c[0] === "move_phrase");
+      expect(call?.[1]).toMatchObject({
+        id: "phrase-1",
+        targetSceneId: "scene-impl",
+        targetSubStageId: "ss-code",
+        targetOrderIndex: null,
+      });
+    });
+  });
+
+  it("switching the scene resets the sub-stage picker to 未分组", () => {
+    render(<ScenePanel />);
+    fireEvent.click(screen.getByLabelText("移动 设计导出模块 到其他场景"));
+    // Default scene is the phrase's own (scene-plan); pick its 生成 sub-stage.
+    fireEvent.change(screen.getByLabelText("目标子阶段"), {
+      target: { value: "ss-generate" },
+    });
+    expect(screen.getByLabelText("目标子阶段")).toHaveValue("ss-generate");
+    // Changing the scene invalidates that pick — it belonged to the old scene.
+    fireEvent.change(screen.getByLabelText("目标场景"), {
+      target: { value: "scene-impl" },
+    });
+    expect(screen.getByLabelText("目标子阶段")).toHaveValue("__ungrouped__");
+  });
+
+  it("a successful move arms a 撤销 toast that reverses via the receipt", async () => {
+    render(<ScenePanel />);
+    fireEvent.click(screen.getByLabelText("移动 设计导出模块 到其他场景"));
+    fireEvent.change(screen.getByLabelText("目标场景"), {
+      target: { value: "scene-impl" },
+    });
+    fireEvent.click(screen.getByRole("button", { name: "移动到此" }));
+
+    // The move resolves and the toast carries an 撤销 action.
+    await vi.waitFor(() => {
+      expect(useToastStore.getState().action?.label).toBe("撤销");
+    });
+    expect(useToastStore.getState().message).toContain("已移至");
+
+    // Clicking 撤销 re-invokes move_phrase with the receipt's from* values,
+    // refilling the exact vacated slot (targetOrderIndex = fromOrderIndex).
+    invokeMock.mockClear();
+    useToastStore.getState().action?.onClick();
+    await vi.waitFor(() => {
+      const undo = invokeMock.mock.calls.find((c) => c[0] === "move_phrase");
+      expect(undo?.[1]).toMatchObject({
+        id: "phrase-1",
+        targetSceneId: "scene-plan",
+        targetSubStageId: "ss-generate",
+        targetOrderIndex: 0,
+      });
+    });
+  });
+
+  it("a rejected move surfaces an honest error toast, no silent swallow", async () => {
+    invokeMock.mockImplementation((cmd: string) => {
+      if (cmd === "list_scenes_with_children")
+        return Promise.resolve(twoScenes);
+      if (cmd === "move_phrase")
+        return Promise.reject(new Error("TargetNotFound"));
+      return Promise.resolve({ ok: true });
+    });
+    render(<ScenePanel />);
+    fireEvent.click(screen.getByLabelText("移动 设计导出模块 到其他场景"));
+    fireEvent.click(screen.getByRole("button", { name: "移动到此" }));
+    await vi.waitFor(() => {
+      expect(useToastStore.getState().intent).toBe("error");
+    });
+    expect(useToastStore.getState().message).toBeTruthy();
+  });
+
+  it("取消 closes the selector without invoking move_phrase", () => {
+    render(<ScenePanel />);
+    fireEvent.click(screen.getByLabelText("移动 设计导出模块 到其他场景"));
+    fireEvent.click(screen.getByRole("button", { name: "取消" }));
+    expect(screen.queryByLabelText("目标场景")).not.toBeInTheDocument();
+    expect(
+      invokeMock.mock.calls.find((c) => c[0] === "move_phrase"),
+    ).toBeUndefined();
+  });
+
+  it("a no-op target (same scene + same grouping) disables confirm (P2-1)", () => {
+    render(<ScenePanel />);
+    fireEvent.click(screen.getByLabelText("移动 设计导出模块 到其他场景"));
+    // phrase-1 lives in scene-plan / ss-generate. The Scene picker already
+    // defaults to scene-plan; pick its OWN sub-stage to make the target a no-op.
+    fireEvent.change(screen.getByLabelText("目标子阶段"), {
+      target: { value: "ss-generate" },
+    });
+    const confirm = screen.getByRole("button", { name: "移动到此" });
+    expect(confirm).toBeDisabled();
+    // A click on the disabled no-op must not reach move_phrase.
+    fireEvent.click(confirm);
+    expect(
+      invokeMock.mock.calls.find((c) => c[0] === "move_phrase"),
+    ).toBeUndefined();
+    // Selecting a different grouping re-enables it (a real move is available).
+    fireEvent.change(screen.getByLabelText("目标子阶段"), {
+      target: { value: "__ungrouped__" },
+    });
+    expect(screen.getByRole("button", { name: "移动到此" })).toBeEnabled();
+  });
+
+  it("the 移动到… button is a roving-nav item (keyboard reachable)", () => {
+    const { container } = render(<ScenePanel />);
+    const region = container.querySelector(
+      "[data-region='scene-panel']",
+    ) as HTMLElement;
+    const navItems = Array.from(
+      region.querySelectorAll<HTMLElement>("[data-nav-item]"),
+    );
+    const moveBtn = screen.getByLabelText("移动 设计导出模块 到其他场景");
+    expect(navItems).toContain(moveBtn);
+    expect(moveBtn.getAttribute("tabindex")).toBe("-1");
+  });
+});
