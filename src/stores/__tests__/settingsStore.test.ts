@@ -27,4 +27,19 @@ describe("settingsStore", () => {
     togglePhaseVisibility("phase-diverge");
     expect(useSettingsStore.getState().hiddenPhaseIds).toEqual([]);
   });
+
+  it("defaults interactionMode to invoke (D-0)", () => {
+    expect(useSettingsStore.getState().interactionMode).toBe("invoke");
+  });
+
+  it("setInteractionMode / toggleInteractionMode switch the mode", () => {
+    const { setInteractionMode, toggleInteractionMode } =
+      useSettingsStore.getState();
+    setInteractionMode("organize");
+    expect(useSettingsStore.getState().interactionMode).toBe("organize");
+    toggleInteractionMode();
+    expect(useSettingsStore.getState().interactionMode).toBe("invoke");
+    toggleInteractionMode();
+    expect(useSettingsStore.getState().interactionMode).toBe("organize");
+  });
 });

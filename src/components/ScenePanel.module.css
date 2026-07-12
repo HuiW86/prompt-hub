@@ -451,6 +451,15 @@
   overflow: hidden;
 }
 
+/* 整理态 expanded preview (D-0): drop the 2-line clamp so the full phrase is
+   readable in place, replacing the truncated launcher view. */
+.phraseContentExpanded {
+  -webkit-line-clamp: unset;
+  line-clamp: unset;
+  overflow: visible;
+  white-space: pre-wrap;
+}
+
 /* Sub-stage picker inside the editor panel; native control, token-styled to
    match the Editor primitives. */
 .subStageSelect {

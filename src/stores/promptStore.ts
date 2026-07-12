@@ -42,7 +42,9 @@ interface PromptState {
   loadError: string | null;
 
   refreshAll: () => Promise<void>;
-  recordCopy: (input: RecordUsageInput) => Promise<void>;
+  // suppressHide=true keeps the window after the copy (D-0 整理态). usageCount is
+  // bumped and recents refresh regardless — hiding and statistics are decoupled.
+  recordCopy: (input: RecordUsageInput, suppressHide?: boolean) => Promise<void>;
   refreshDrafts: () => Promise<void>;
   // Returns the PromoteResult (new asset id + type) so the caller can flash the
   // landed asset for A1-03 (the draft leaves the inbox; the flash tells the user
@@ -372,8 +374,8 @@ export const usePromptStore = create<PromptState>()((set, get) => {
       }
     },
 
-    recordCopy: async (input) => {
-      const record = await ipc.recordUsage(input);
+    recordCopy: async (input, suppressHide) => {
+      const record = await ipc.recordUsage(input, suppressHide);
       set((state) =>
         bumpUsageCount(
           state,

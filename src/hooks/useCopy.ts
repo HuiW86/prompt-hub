@@ -2,6 +2,7 @@ import { useCallback } from "react";
 
 import type { RecordUsageInput } from "../ipc/types";
 import { usePromptStore } from "../stores/promptStore";
+import { useSettingsStore } from "../stores/settingsStore";
 import { useToastStore } from "../stores/toastStore";
 
 import { writeClipboard } from "./useClipboard";
@@ -20,7 +21,9 @@ import { writeClipboard } from "./useClipboard";
 export function useCopy() {
   const recordCopy = usePromptStore((s) => s.recordCopy);
   const showToast = useToastStore((s) => s.show);
-
+  // Hide suppression is global at the mode level (D-0): every copy in 整理态
+  // keeps the window, regardless of which region issued it. Read via getState in
+  // the callback so a mode toggle doesn't tear down callers' keydown effects.
   return useCallback(
     async function copy(
       content: string,
@@ -36,8 +39,10 @@ export function useCopy() {
         return;
       }
       showToast("已复制", flashId);
+      const suppressHide =
+        useSettingsStore.getState().interactionMode === "organize";
       try {
-        await recordCopy(input);
+        await recordCopy(input, suppressHide);
       } catch (err) {
         console.error("recordCopy failed", err);
       }

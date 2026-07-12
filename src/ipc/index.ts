@@ -37,8 +37,10 @@ export const ipc = {
   listRecentUsage: (limit: number) =>
     invoke<RecentUsageEntry[]>("list_recent_usage", { limit }),
   countTodayUsage: () => invoke<number>("count_today_usage"),
-  recordUsage: (input: RecordUsageInput) =>
-    invoke<UsageRecord>("record_usage", { input }),
+  // suppressHide=true keeps the window after the copy (D-0 整理态); omitted /
+  // false preserves 调用态 复制即隐藏.
+  recordUsage: (input: RecordUsageInput, suppressHide?: boolean) =>
+    invoke<UsageRecord>("record_usage", { input, suppressHide }),
   hideWindow: () => invoke<void>("hide_window"),
   showWindow: () => invoke<void>("show_window"),
   // True when the ⌥Space global shortcut registered at startup. Queried once at

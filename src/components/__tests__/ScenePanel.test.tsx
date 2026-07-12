@@ -15,6 +15,7 @@ vi.mock("@tauri-apps/api/core", () => ({
 
 import { useAppStore } from "../../stores/appStore";
 import { usePromptStore } from "../../stores/promptStore";
+import { useSettingsStore } from "../../stores/settingsStore";
 import { useToastStore } from "../../stores/toastStore";
 import { ScenePanel } from "../ScenePanel";
 
@@ -62,6 +63,7 @@ describe("ScenePanel scene card — view grid + properties entry", () => {
     useAppStore.setState(appInitial, true);
     usePromptStore.setState({ scenes, pendingDraftCount: 0 });
     useToastStore.getState().clear();
+    useSettingsStore.setState({ interactionMode: "invoke" });
     invokeMock.mockReset();
     invokeMock.mockResolvedValue({ ok: true });
   });
@@ -337,6 +339,60 @@ describe("ScenePanel view mode — in-place structure + content editing", () => 
     expect(
       invokeMock.mock.calls.find((c) => c[0] === "record_usage"),
     ).toBeUndefined();
+  });
+
+  it("调用态: whole-card click copies the phrase (T0 zero-regression)", async () => {
+    render(<ScenePanel />);
+    fireEvent.click(screen.getByRole("button", { name: "设计导出模块" }));
+    await vi.waitFor(() =>
+      expect(
+        invokeMock.mock.calls.find((c) => c[0] === "record_usage"),
+      ).toBeTruthy(),
+    );
+  });
+});
+
+// D-0 整理态: the whole-card click previews instead of copying, and copy demotes
+// to an explicit cluster button.
+describe("ScenePanel — 整理态 phrase card (D-0)", () => {
+  beforeEach(() => {
+    usePromptStore.setState(promptInitial, true);
+    useAppStore.setState(appInitial, true);
+    usePromptStore.setState({ scenes, pendingDraftCount: 0 });
+    useToastStore.getState().clear();
+    useSettingsStore.setState({ interactionMode: "organize" });
+    invokeMock.mockReset();
+    invokeMock.mockResolvedValue({ ok: true });
+  });
+
+  afterEach(() => {
+    useSettingsStore.setState({ interactionMode: "invoke" });
+  });
+
+  it("whole-card click previews (aria-expanded) and does NOT copy", () => {
+    render(<ScenePanel />);
+    const card = screen.getByRole("button", { name: "设计导出模块" });
+    expect(card).toHaveAttribute("aria-expanded", "false");
+    fireEvent.click(card);
+    // No copy fired — the click toggled the preview instead.
+    expect(
+      invokeMock.mock.calls.find((c) => c[0] === "record_usage"),
+    ).toBeUndefined();
+    expect(card).toHaveAttribute("aria-expanded", "true");
+    // A second click collapses it again.
+    fireEvent.click(card);
+    expect(card).toHaveAttribute("aria-expanded", "false");
+  });
+
+  it("copy demotes to an explicit cluster button", async () => {
+    render(<ScenePanel />);
+    // The explicit 复制 button exists only in 整理态.
+    fireEvent.click(screen.getByLabelText("复制 设计导出模块"));
+    await vi.waitFor(() =>
+      expect(
+        invokeMock.mock.calls.find((c) => c[0] === "record_usage"),
+      ).toBeTruthy(),
+    );
   });
 });
 
