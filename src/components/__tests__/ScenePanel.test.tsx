@@ -1192,6 +1192,28 @@ describe("ScenePanel — cross-scene phrase move (ADR-022)", () => {
     ).toBeUndefined();
   });
 
+  it("a no-op target (same scene + same grouping) disables confirm (P2-1)", () => {
+    render(<ScenePanel />);
+    fireEvent.click(screen.getByLabelText("移动 设计导出模块 到其他场景"));
+    // phrase-1 lives in scene-plan / ss-generate. The Scene picker already
+    // defaults to scene-plan; pick its OWN sub-stage to make the target a no-op.
+    fireEvent.change(screen.getByLabelText("目标子阶段"), {
+      target: { value: "ss-generate" },
+    });
+    const confirm = screen.getByRole("button", { name: "移动到此" });
+    expect(confirm).toBeDisabled();
+    // A click on the disabled no-op must not reach move_phrase.
+    fireEvent.click(confirm);
+    expect(
+      invokeMock.mock.calls.find((c) => c[0] === "move_phrase"),
+    ).toBeUndefined();
+    // Selecting a different grouping re-enables it (a real move is available).
+    fireEvent.change(screen.getByLabelText("目标子阶段"), {
+      target: { value: "__ungrouped__" },
+    });
+    expect(screen.getByRole("button", { name: "移动到此" })).toBeEnabled();
+  });
+
   it("the 移动到… button is a roving-nav item (keyboard reachable)", () => {
     const { container } = render(<ScenePanel />);
     const region = container.querySelector(

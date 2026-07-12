@@ -1176,9 +1176,18 @@ function PhraseMoveSelector({
     (a, b) => a.orderIndex - b.orderIndex,
   );
 
+  const targetSubStageId = subValue === UNGROUPED_VALUE ? null : subValue;
+  // A no-op move (same scene AND same grouping) would still hit the backend's
+  // MAX+1 append branch, dropping the card to its own partition's end and firing
+  // a misleading 「已移至」 toast (P2-1). Disable confirm on an unchanged target,
+  // matching the boundary-disabled reorder buttons' idiom.
+  const isNoop =
+    sceneId === phrase.sceneId &&
+    targetSubStageId === (phrase.subStageId ?? null);
+
   const handleConfirm = () => {
-    const subStageId = subValue === UNGROUPED_VALUE ? null : subValue;
-    onConfirm(sceneId, subStageId);
+    if (isNoop) return;
+    onConfirm(sceneId, targetSubStageId);
   };
 
   return (
@@ -1233,6 +1242,7 @@ function PhraseMoveSelector({
           intent="primary"
           data-nav-item
           tabIndex={-1}
+          disabled={isNoop}
           onClick={handleConfirm}
         >
           移动到此
