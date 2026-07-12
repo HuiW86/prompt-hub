@@ -20,7 +20,9 @@ pub use compositions::{
 pub use import::{import_json, ImportSummary};
 pub use macros::{create_macro, delete_macro, reorder_macros, update_macro};
 pub use modifiers::{create_modifier, delete_modifier, reorder_modifiers, update_modifier};
-pub use phrases::{create_phrase, delete_phrase, reorder_phrases, update_phrase};
+pub use phrases::{
+    create_phrase, delete_phrase, move_phrase, reorder_phrases, update_phrase, MoveReceipt,
+};
 pub use promote::{promote_draft, PromoteOutcome};
 pub use scenes::{create_scene, delete_scene, reorder_scenes, update_scene};
 pub use sub_stages::{create_sub_stage, delete_sub_stage, reorder_sub_stages, update_sub_stage};
