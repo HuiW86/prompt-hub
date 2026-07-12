@@ -11,6 +11,7 @@ import type {
   Macro,
   Modifier,
   Phase,
+  PromoteResult,
   RecentUsageEntry,
   RecordUsageInput,
   SceneWithChildren,
@@ -43,7 +44,13 @@ interface PromptState {
   refreshAll: () => Promise<void>;
   recordCopy: (input: RecordUsageInput) => Promise<void>;
   refreshDrafts: () => Promise<void>;
-  promoteDraft: (args: { id: string; groupKind?: string }) => Promise<void>;
+  // Returns the PromoteResult (new asset id + type) so the caller can flash the
+  // landed asset for A1-03 (the draft leaves the inbox; the flash tells the user
+  // where it went).
+  promoteDraft: (args: {
+    id: string;
+    groupKind?: string;
+  }) => Promise<PromoteResult>;
   // UI edit-save of a pending draft (PRD §10.3 update_draft). `payload` is the
   // FULL replacement body — callers hydrate via ipc.getDraft first so hidden
   // fields (schema_version / phase_id / scene_id / is_default) survive the edit.
@@ -390,7 +397,7 @@ export const usePromptStore = create<PromptState>()((set, get) => {
     },
 
     promoteDraft: async ({ id, groupKind }) => {
-      await ipc.promoteDraft({ id, groupKind });
+      const result = await ipc.promoteDraft({ id, groupKind });
       // The draft left the inbox and a new asset landed in one of the four real
       // tables. Refresh the inbox (list + badge) and silently re-pull the asset
       // slices so the promoted item shows on this summon without a loadState flash.
@@ -415,6 +422,8 @@ export const usePromptStore = create<PromptState>()((set, get) => {
         ...(sceneTicket === sceneRefreshSeq ? { scenes } : {}),
       });
       await get().refreshDrafts();
+      // Hand the new asset's id + type back so the caller can flash it (A1-03).
+      return result;
     },
 
     // Optimistic like updateMacro: re-derive the card's name/preview from the new

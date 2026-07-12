@@ -9,6 +9,7 @@ import type {
   DraftTargetType,
   GroupKind,
 } from "../ipc/types";
+import { useAppStore } from "../stores/appStore";
 import { usePromptStore } from "../stores/promptStore";
 import { useToastStore } from "../stores/toastStore";
 import { toUserMessage } from "../utils/errorMessage";
@@ -52,6 +53,17 @@ const PROMOTE_BLOCKED_HINT = "该类型暂无 UI 承载";
 // (modifier_ids body) is excluded — its edit stays blocked alongside promote.
 type EditablePayload = Exclude<DraftPayload, { target_type: "composition" }>;
 
+// After promote re-pulls alignmentPhrasesByPhase, find which phase the new
+// alignment phrase landed under so the PhaseBar can switch to it before the
+// flash (A1-03). Reads the live store — the re-pull has already committed.
+function phaseIdOfAlignment(assetId: string): string | null {
+  const byPhase = usePromptStore.getState().alignmentPhrasesByPhase;
+  for (const [phaseId, list] of Object.entries(byPhase)) {
+    if (list.some((a) => a.id === assetId)) return phaseId;
+  }
+  return null;
+}
+
 export function DraftInbox() {
   const drafts = usePromptStore((s) => s.drafts);
 
@@ -72,6 +84,7 @@ function DraftCard({ draft }: { draft: DraftSummary }) {
   const promoteDraft = usePromptStore((s) => s.promoteDraft);
   const discardDraft = usePromptStore((s) => s.discardDraft);
   const restoreDraft = usePromptStore((s) => s.restoreDraft);
+  const setActivePhase = useAppStore((s) => s.setActivePhase);
   const toast = useToastStore((s) => s.show);
   const toastAction = useToastStore((s) => s.showWithAction);
   const toastError = useToastStore((s) => s.showError);
@@ -89,8 +102,18 @@ function DraftCard({ draft }: { draft: DraftSummary }) {
     if (busy) return;
     setBusy(true);
     try {
-      await promoteDraft({ id: draft.id, groupKind });
-      toast(`已归入 ${TYPE_LABEL[draft.targetType]}`);
+      const result = await promoteDraft({ id: draft.id, groupKind });
+      // A1-03: the draft left the inbox and landed in a real region (Macro strip
+      // / Modifier aside / AlignmentPhrases band). Flash the landed asset so the
+      // user sees WHERE it went — the toast's flashTargetId drives the target
+      // region's flash. An alignment phrase renders only under its active phase,
+      // so switch the PhaseBar selection to its phase first, otherwise the flash
+      // target is off-screen.
+      if (result.insertedAssetType === "alignment_phrase") {
+        const phaseId = phaseIdOfAlignment(result.insertedAssetId);
+        if (phaseId) setActivePhase(phaseId);
+      }
+      toast(`已归入 ${TYPE_LABEL[draft.targetType]}`, result.insertedAssetId);
     } catch (err) {
       toastError(toUserMessage(err, "归档失败"));
     } finally {

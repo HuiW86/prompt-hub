@@ -14,6 +14,7 @@ vi.mock("@tauri-apps/api/core", () => ({
 
 import { invoke } from "@tauri-apps/api/core";
 
+import { useAppStore } from "../../stores/appStore";
 import { usePromptStore } from "../../stores/promptStore";
 import { useToastStore } from "../../stores/toastStore";
 import { DraftInbox } from "../DraftInbox";
@@ -47,7 +48,10 @@ function cardOf(draft: DraftSummary) {
 }
 
 describe("DraftInbox — composition promote stopgap (P0-5)", () => {
-  const promoteDraft = vi.fn().mockResolvedValue(undefined);
+  const promoteDraft = vi.fn().mockResolvedValue({
+    insertedAssetId: "asset-new",
+    insertedAssetType: "macro",
+  });
   const discardDraft = vi.fn().mockResolvedValue(undefined);
 
   beforeEach(() => {
@@ -127,7 +131,10 @@ describe("DraftInbox — composition promote stopgap (P0-5)", () => {
 });
 
 describe("DraftInbox — error feedback (P1-3)", () => {
-  const promoteDraft = vi.fn().mockResolvedValue(undefined);
+  const promoteDraft = vi.fn().mockResolvedValue({
+    insertedAssetId: "asset-new",
+    insertedAssetType: "macro",
+  });
   // Reject with a raw English IO-flavoured string, the shape that used to leak
   // straight into the toast before toUserMessage() funnelled catch sites.
   const discardDraft = vi
@@ -235,8 +242,76 @@ describe("DraftInbox — discard 撤销 (A1-04 / D-5)", () => {
   });
 });
 
+describe("DraftInbox — promote 落地 flash (A1-03)", () => {
+  beforeEach(() => {
+    useToastStore.getState().clear();
+    useAppStore.setState(useAppStore.getState(), true);
+    usePromptStore.setState(promptInitial, true);
+  });
+
+  it("flashes the landed asset via the toast flashTargetId", async () => {
+    const promoteDraft = vi.fn().mockResolvedValue({
+      insertedAssetId: "macro-landed",
+      insertedAssetType: "macro",
+    });
+    usePromptStore.setState({ drafts: [makeDraft("macro")], promoteDraft });
+    render(<DraftInbox />);
+    const card = cardOf(makeDraft("macro"));
+    fireEvent.click(within(card).getByRole("button", { name: /归档/ }));
+    await vi.waitFor(() => {
+      const toast = useToastStore.getState();
+      expect(toast.message).toBe("已归入 Macro");
+      expect(toast.flashTargetId).toBe("macro-landed");
+    });
+  });
+
+  it("switches the active phase before flashing a promoted alignment phrase", async () => {
+    const promoteDraft = vi.fn().mockImplementation(async () => {
+      // Mirror the store re-pull landing the new alignment phrase under phase-2.
+      usePromptStore.setState({
+        alignmentPhrasesByPhase: {
+          "phase-2": [
+            {
+              id: "ap-landed",
+              phaseId: "phase-2",
+              name: "新协议",
+              content: "内容",
+              isDefault: false,
+              usageCount: 0,
+              lastUsedAt: null,
+              createdAt: "2026-06-30T00:00:00Z",
+              notes: null,
+              deprecated: false,
+              orderIndex: 0,
+            },
+          ],
+        },
+      });
+      return {
+        insertedAssetId: "ap-landed",
+        insertedAssetType: "alignment_phrase" as const,
+      };
+    });
+    usePromptStore.setState({
+      drafts: [makeDraft("alignment_phrase")],
+      promoteDraft,
+    });
+    useAppStore.setState({ activePhaseId: "phase-1" });
+    render(<DraftInbox />);
+    const card = cardOf(makeDraft("alignment_phrase"));
+    fireEvent.click(within(card).getByRole("button", { name: /归档/ }));
+    await vi.waitFor(() => {
+      expect(useAppStore.getState().activePhaseId).toBe("phase-2");
+      expect(useToastStore.getState().flashTargetId).toBe("ap-landed");
+    });
+  });
+});
+
 describe("DraftInbox — promote 前编辑 (P3-2)", () => {
-  const promoteDraft = vi.fn().mockResolvedValue(undefined);
+  const promoteDraft = vi.fn().mockResolvedValue({
+    insertedAssetId: "asset-new",
+    insertedAssetType: "macro",
+  });
   const discardDraft = vi.fn().mockResolvedValue(undefined);
   const updateDraft = vi.fn().mockResolvedValue(undefined);
 
