@@ -23,7 +23,10 @@ import { useRegionNav } from "../hooks/useRegionNav";
 import type { Phrase, SubStage } from "../ipc/types";
 import { useAppStore } from "../stores/appStore";
 import { usePromptStore } from "../stores/promptStore";
-import { type InteractionMode, useSettingsStore } from "../stores/settingsStore";
+import {
+  type InteractionMode,
+  useSettingsStore,
+} from "../stores/settingsStore";
 import { useToastStore } from "../stores/toastStore";
 import { toUserMessage } from "../utils/errorMessage";
 

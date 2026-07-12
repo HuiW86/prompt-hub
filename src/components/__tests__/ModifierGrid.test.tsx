@@ -68,11 +68,13 @@ describe("ModifierGrid — P3-6 minimal management entry", () => {
     render(<ModifierGrid />);
     fireEvent.click(screen.getByLabelText("结构化输出"));
     await vi.waitFor(() => expect(recordCopy).toHaveBeenCalled());
+    // Second arg is the D-0 suppressHide flag — false in default 调用态.
     expect(recordCopy).toHaveBeenCalledWith(
       expect.objectContaining({
         targetType: "modifier",
         targetId: "mod-structured",
       }),
+      false,
     );
   });
 

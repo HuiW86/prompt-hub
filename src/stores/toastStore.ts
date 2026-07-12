@@ -76,8 +76,7 @@ export const useToastStore = create<ToastState>()((set, get) => {
     show: (message, flashTargetId, intent = "success") =>
       arm(message, flashTargetId ?? null, intent, null),
     showError: (message) => arm(message, null, "error", null),
-    showWithAction: (message, action) =>
-      arm(message, null, "success", action),
+    showWithAction: (message, action) => arm(message, null, "success", action),
     clear: () =>
       set((s) => ({
         message: null,

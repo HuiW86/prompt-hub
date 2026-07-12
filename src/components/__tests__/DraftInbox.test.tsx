@@ -224,7 +224,9 @@ describe("DraftInbox — discard 撤销 (A1-04 / D-5)", () => {
 
   it("surfaces a failed restore without throwing", async () => {
     vi.spyOn(console, "error").mockImplementation(() => {});
-    restoreDraft.mockRejectedValueOnce(new Error("io: slot taken (os error 5)"));
+    restoreDraft.mockRejectedValueOnce(
+      new Error("io: slot taken (os error 5)"),
+    );
     render(
       <>
         <DraftInbox />
@@ -265,32 +267,13 @@ describe("DraftInbox — promote 落地 flash (A1-03)", () => {
     });
   });
 
-  it("switches the active phase before flashing a promoted alignment phrase", async () => {
-    const promoteDraft = vi.fn().mockImplementation(async () => {
-      // Mirror the store re-pull landing the new alignment phrase under phase-2.
-      usePromptStore.setState({
-        alignmentPhrasesByPhase: {
-          "phase-2": [
-            {
-              id: "ap-landed",
-              phaseId: "phase-2",
-              name: "新协议",
-              content: "内容",
-              isDefault: false,
-              usageCount: 0,
-              lastUsedAt: null,
-              createdAt: "2026-06-30T00:00:00Z",
-              notes: null,
-              deprecated: false,
-              orderIndex: 0,
-            },
-          ],
-        },
-      });
-      return {
-        insertedAssetId: "ap-landed",
-        insertedAssetType: "alignment_phrase" as const,
-      };
+  it("switches the active phase before flashing a phase-scoped promoted asset", async () => {
+    // The store computes the landed asset's phaseId (confined there for B2) and
+    // hands it back; DraftInbox switches the PhaseBar to it before flashing.
+    const promoteDraft = vi.fn().mockResolvedValue({
+      insertedAssetId: "ap-landed",
+      insertedAssetType: "alignment_phrase",
+      phaseId: "phase-2",
     });
     usePromptStore.setState({
       drafts: [makeDraft("alignment_phrase")],

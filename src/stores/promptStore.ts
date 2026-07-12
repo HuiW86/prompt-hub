@@ -44,15 +44,20 @@ interface PromptState {
   refreshAll: () => Promise<void>;
   // suppressHide=true keeps the window after the copy (D-0 整理态). usageCount is
   // bumped and recents refresh regardless — hiding and statistics are decoupled.
-  recordCopy: (input: RecordUsageInput, suppressHide?: boolean) => Promise<void>;
+  recordCopy: (
+    input: RecordUsageInput,
+    suppressHide?: boolean,
+  ) => Promise<void>;
   refreshDrafts: () => Promise<void>;
-  // Returns the PromoteResult (new asset id + type) so the caller can flash the
-  // landed asset for A1-03 (the draft leaves the inbox; the flash tells the user
-  // where it went).
+  // Returns the PromoteResult (new asset id + type) plus, for phase-scoped
+  // assets (protocol-layer phrases), the phaseId the asset landed under — so the
+  // caller can switch the PhaseBar to it before flashing (A1-03). Keeping the
+  // phase lookup here confines the protocol-layer slice read to the store, off
+  // the task-layer/cross-layer components (B2).
   promoteDraft: (args: {
     id: string;
     groupKind?: string;
-  }) => Promise<PromoteResult>;
+  }) => Promise<PromoteResult & { phaseId: string | null }>;
   // UI edit-save of a pending draft (PRD §10.3 update_draft). `payload` is the
   // FULL replacement body — callers hydrate via ipc.getDraft first so hidden
   // fields (schema_version / phase_id / scene_id / is_default) survive the edit.
@@ -415,17 +420,28 @@ export const usePromptStore = create<PromptState>()((set, get) => {
           ipc.listAlignmentPhrases(),
           ipc.listCompositions(),
         ]);
+      const alignmentPhrasesByPhase = indexByPhase(alignments);
       set({
         macros,
         modifiers,
-        alignmentPhrasesByPhase: indexByPhase(alignments),
+        alignmentPhrasesByPhase,
         compositionsByPhase: indexCompositionsByPhase(compositions),
         // Only overwrite scenes if no newer scene re-pull has been issued since.
         ...(sceneTicket === sceneRefreshSeq ? { scenes } : {}),
       });
       await get().refreshDrafts();
-      // Hand the new asset's id + type back so the caller can flash it (A1-03).
-      return result;
+      // Locate the phase the landed asset belongs to (phase-scoped assets render
+      // only under their active phase). Confined to the store so no task-layer
+      // component reads the protocol-layer slice directly (B2).
+      let phaseId: string | null = null;
+      for (const [pid, list] of Object.entries(alignmentPhrasesByPhase)) {
+        if (list.some((a) => a.id === result.insertedAssetId)) {
+          phaseId = pid;
+          break;
+        }
+      }
+      // Hand the new asset's id + type (+ landed phase) back for the flash (A1-03).
+      return { ...result, phaseId };
     },
 
     // Optimistic like updateMacro: re-derive the card's name/preview from the new
