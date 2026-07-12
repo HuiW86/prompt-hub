@@ -82,7 +82,7 @@ fn prune(backups_dir: &Path) -> RepoResult<()> {
     }
 
     // Newest first, then drop everything past the cap.
-    entries.sort_by(|a, b| b.0.cmp(&a.0));
+    entries.sort_by_key(|entry| std::cmp::Reverse(entry.0));
     for (_, path) in entries.into_iter().skip(MAX_BACKUPS) {
         std::fs::remove_file(&path).map_err(RepoError::from)?;
     }
