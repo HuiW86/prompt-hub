@@ -17,6 +17,7 @@ import { invoke } from "@tauri-apps/api/core";
 import { usePromptStore } from "../../stores/promptStore";
 import { useToastStore } from "../../stores/toastStore";
 import { DraftInbox } from "../DraftInbox";
+import { Toast } from "../Toast";
 
 const promptInitial = usePromptStore.getState();
 
@@ -161,6 +162,76 @@ describe("DraftInbox — error feedback (P1-3)", () => {
     const toast = useToastStore.getState();
     expect(toast.intent).toBe("error");
     expect(toast.message).not.toContain("os error");
+  });
+});
+
+describe("DraftInbox — discard 撤销 (A1-04 / D-5)", () => {
+  const discardDraft = vi.fn().mockResolvedValue(undefined);
+  const restoreDraft = vi.fn().mockResolvedValue(undefined);
+
+  beforeEach(() => {
+    useToastStore.getState().clear();
+    usePromptStore.setState(promptInitial, true);
+    usePromptStore.setState({
+      drafts: [makeDraft("macro")],
+      discardDraft,
+      restoreDraft,
+    });
+    discardDraft.mockClear();
+    restoreDraft.mockClear();
+  });
+
+  it("discard raises an undo toast naming the draft, no confirm dialog", async () => {
+    render(<DraftInbox />);
+    const card = cardOf(makeDraft("macro"));
+    fireEvent.click(within(card).getByRole("button", { name: /丢弃/ }));
+
+    await vi.waitFor(() => {
+      const toast = useToastStore.getState();
+      expect(toast.message).toBe("已丢弃「示例 macro」");
+      expect(toast.action?.label).toBe("撤销");
+    });
+    expect(discardDraft).toHaveBeenCalledWith("draft-macro");
+  });
+
+  it("clicking 撤销 restores the draft", async () => {
+    render(
+      <>
+        <DraftInbox />
+        <Toast />
+      </>,
+    );
+    const card = cardOf(makeDraft("macro"));
+    fireEvent.click(within(card).getByRole("button", { name: /丢弃/ }));
+
+    const undo = await screen.findByRole("button", { name: "撤销" });
+    fireEvent.click(undo);
+    await vi.waitFor(() => {
+      expect(restoreDraft).toHaveBeenCalledWith("draft-macro");
+    });
+    // A successful restore replaces the undo toast with a confirmation.
+    await vi.waitFor(() => {
+      expect(useToastStore.getState().message).toBe("已恢复草稿");
+    });
+  });
+
+  it("surfaces a failed restore without throwing", async () => {
+    vi.spyOn(console, "error").mockImplementation(() => {});
+    restoreDraft.mockRejectedValueOnce(new Error("io: slot taken (os error 5)"));
+    render(
+      <>
+        <DraftInbox />
+        <Toast />
+      </>,
+    );
+    const card = cardOf(makeDraft("macro"));
+    fireEvent.click(within(card).getByRole("button", { name: /丢弃/ }));
+    fireEvent.click(await screen.findByRole("button", { name: "撤销" }));
+    await vi.waitFor(() => {
+      expect(useToastStore.getState().message).toBe("撤销失败");
+    });
+    expect(useToastStore.getState().message).not.toContain("os error");
+    vi.restoreAllMocks();
   });
 });
 

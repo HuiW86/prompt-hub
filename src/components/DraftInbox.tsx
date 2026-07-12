@@ -71,7 +71,9 @@ export function DraftInbox() {
 function DraftCard({ draft }: { draft: DraftSummary }) {
   const promoteDraft = usePromptStore((s) => s.promoteDraft);
   const discardDraft = usePromptStore((s) => s.discardDraft);
+  const restoreDraft = usePromptStore((s) => s.restoreDraft);
   const toast = useToastStore((s) => s.show);
+  const toastAction = useToastStore((s) => s.showWithAction);
   const toastError = useToastStore((s) => s.showError);
   const [picking, setPicking] = useState(false);
   const [busy, setBusy] = useState(false);
@@ -102,7 +104,22 @@ function DraftCard({ draft }: { draft: DraftSummary }) {
     setBusy(true);
     try {
       await discardDraft(draft.id);
-      toast("已丢弃草稿");
+      // D-5: discard is reversible (a status flip, not a delete), so it does not
+      // need a confirm dialog — instead the toast carries an 撤销 button for the
+      // life of the toast. Clicking it restores the draft to pending.
+      toastAction(`已丢弃「${draft.name}」`, {
+        label: "撤销",
+        onClick: () => {
+          void (async () => {
+            try {
+              await restoreDraft(draft.id);
+              toast("已恢复草稿");
+            } catch (err) {
+              toastError(toUserMessage(err, "撤销失败"));
+            }
+          })();
+        },
+      });
     } catch (err) {
       toastError(toUserMessage(err, "丢弃失败"));
     } finally {

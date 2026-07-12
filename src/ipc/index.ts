@@ -74,6 +74,8 @@ export const ipc = {
   updateDraft: (id: string, payload: DraftPayload) =>
     invoke<UpdateAck>("update_draft", { id, payload }),
   discardDraft: (id: string) => invoke<OkAck>("discard_draft", { id }),
+  // Reverse a discard (A1-04 / D-5): flips a discarded draft back to pending.
+  restoreDraft: (id: string) => invoke<OkAck>("restore_draft", { id }),
 
   // ── Macro direct editing (plan asset-editing §0 Q2/Q6) — Tauri-only ──
   createMacro: (args: { name: string; content: string; sceneId?: string }) =>

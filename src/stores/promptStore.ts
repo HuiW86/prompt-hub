@@ -49,6 +49,10 @@ interface PromptState {
   // fields (schema_version / phase_id / scene_id / is_default) survive the edit.
   updateDraft: (args: { id: string; payload: DraftPayload }) => Promise<void>;
   discardDraft: (id: string) => Promise<void>;
+  // Reverse a discard (A1-04 / D-5 撤销). Re-pulls the inbox so the restored
+  // draft rejoins the list + badge; rethrows so the caller can toast a failed
+  // restore (e.g. the dedup slot was re-staged in the interim).
+  restoreDraft: (id: string) => Promise<void>;
 
   // Direct macro editing (plan asset-editing §0 Q2/Q6). create awaits the
   // backend (needs the generated id + order_index); update/delete/reorder apply
@@ -435,6 +439,11 @@ export const usePromptStore = create<PromptState>()((set, get) => {
 
     discardDraft: async (id) => {
       await ipc.discardDraft(id);
+      await get().refreshDrafts();
+    },
+
+    restoreDraft: async (id) => {
+      await ipc.restoreDraft(id);
       await get().refreshDrafts();
     },
 

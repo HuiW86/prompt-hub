@@ -301,6 +301,15 @@ pub fn discard_draft(state: State<'_, AppState>, id: String) -> AppResult<OkAck>
     Ok(OkAck { ok: true })
 }
 
+// Reverse a discard (A1-04 / D-5 撤销). Flips a discarded draft back to pending;
+// rejects if the dedup slot was re-staged (RepoError::DuplicateDraft) or the row
+// is missing / already pending — the renderer surfaces the message.
+#[tauri::command]
+pub fn restore_draft(state: State<'_, AppState>, id: String) -> AppResult<OkAck> {
+    with_write_conn(&state, |c| c.mark_restored(&id))?;
+    Ok(OkAck { ok: true })
+}
+
 // ── Macro direct editing (plan asset-editing-and-adaptive-layout §0 Q2/Q6) ────
 // omar-driven create / update / delete / reorder of macro assets. Tauri-only:
 // the MCP server has no repo-write dependency and can only stage drafts.

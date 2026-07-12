@@ -249,6 +249,7 @@ pub fn run() {
             commands::promote_draft,
             commands::update_draft,
             commands::discard_draft,
+            commands::restore_draft,
             commands::create_macro,
             commands::update_macro,
             commands::delete_macro,

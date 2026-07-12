@@ -6,6 +6,9 @@
   top: var(--s-6);
   right: var(--s-8);
   z-index: 100;
+  display: flex;
+  align-items: center;
+  gap: var(--s-3);
   padding: var(--s-2) var(--s-3);
   background: var(--surface-2);
   border: var(--hairline) solid var(--border-3);
@@ -20,6 +23,38 @@
      ids) so a long error string wraps instead of stretching the toast. */
   max-width: var(--w-toast-max);
   overflow-wrap: anywhere;
+}
+
+.message {
+  min-width: 0;
+}
+
+/* Undo affordance (D-5). The toast surface is pointer-events:none so it never
+   blocks the dashboard; this button opts back in so it stays clickable. */
+.action {
+  flex: none;
+  padding: var(--s-0_5) var(--s-2);
+  border: var(--hairline) solid var(--border-3);
+  border-radius: var(--r-2);
+  background: var(--surface-1);
+  color: var(--accent);
+  font: var(--w-600) var(--t-13) / var(--lh-tight) var(--font-sans);
+  cursor: pointer;
+  pointer-events: auto;
+  appearance: none;
+  transition:
+    background-color var(--d-fast) var(--ease),
+    border-color var(--d-fast) var(--ease);
+}
+
+.action:hover {
+  background: var(--surface-2);
+  border-color: var(--accent);
+}
+
+.action:focus-visible {
+  outline: var(--border-thick) solid var(--accent);
+  outline-offset: var(--hairline);
 }
 
 /* Error intent (e.g. clipboard write failed). The palette has no red/danger
