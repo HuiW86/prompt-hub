@@ -61,6 +61,7 @@ describe("ScenePanel scene card — view grid + properties entry", () => {
     usePromptStore.setState(promptInitial, true);
     useAppStore.setState(appInitial, true);
     usePromptStore.setState({ scenes, pendingDraftCount: 0 });
+    useToastStore.getState().clear();
     invokeMock.mockReset();
     invokeMock.mockResolvedValue({ ok: true });
   });
@@ -289,6 +290,42 @@ describe("ScenePanel view mode — in-place structure + content editing", () => 
       name: "新话术",
       subStageId: "ss-generate",
     });
+  });
+
+  it("creating a phrase shows a success toast (A1-07)", async () => {
+    invokeMock.mockImplementation((cmd: string) => {
+      if (cmd === "list_scenes_with_children") return Promise.resolve(scenes);
+      if (cmd === "create_phrase") return Promise.resolve({ id: "phrase-new" });
+      return Promise.resolve({ ok: true });
+    });
+    render(<ScenePanel />);
+    fireEvent.click(screen.getByLabelText("在 生成 添加话术"));
+    fireEvent.change(screen.getByPlaceholderText("名称"), {
+      target: { value: "新话术" },
+    });
+    fireEvent.change(screen.getByPlaceholderText("话术内容"), {
+      target: { value: "内容" },
+    });
+    fireEvent.click(screen.getByRole("button", { name: "新增" }));
+    await waitForElementToBeRemoved(() =>
+      screen.queryByRole("button", { name: "新增" }),
+    );
+    expect(useToastStore.getState().message).toBe("已新增话术");
+    expect(useToastStore.getState().intent).toBe("success");
+  });
+
+  it("editing a phrase shows a success toast (A1-07)", async () => {
+    invokeMock.mockImplementation((cmd: string) => {
+      if (cmd === "list_scenes_with_children") return Promise.resolve(scenes);
+      return Promise.resolve({ ok: true });
+    });
+    render(<ScenePanel />);
+    fireEvent.click(screen.getByLabelText("编辑 设计导出模块"));
+    fireEvent.click(screen.getByRole("button", { name: "保存" }));
+    await waitForElementToBeRemoved(() =>
+      screen.queryByRole("button", { name: "保存" }),
+    );
+    expect(useToastStore.getState().message).toBe("已保存话术");
   });
 
   // ── Copy isolation: cluster clicks must not fire the card's copy action ────

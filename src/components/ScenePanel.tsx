@@ -1037,6 +1037,7 @@ function PhraseEditor({
 }: EditorProps) {
   const createPhrase = usePromptStore((s) => s.createPhrase);
   const updatePhrase = usePromptStore((s) => s.updatePhrase);
+  const showToast = useToastStore((s) => s.show);
   const existing = target.mode === "edit" ? target.phrase : null;
 
   // Sub-stage picker is the one field beyond name/content, so it rides the
@@ -1054,8 +1055,12 @@ function PhraseEditor({
     try {
       if (existing) {
         await updatePhrase({ id: existing.id, name, content, subStageId });
+        // Match the delete path's feedback strength (A1-07): a save is a write
+        // like a delete, so it earns the same explicit confirmation toast.
+        showToast("已保存话术");
       } else {
         await createPhrase({ sceneId, name, content, subStageId });
+        showToast("已新增话术");
       }
       onClose();
     } catch (err) {

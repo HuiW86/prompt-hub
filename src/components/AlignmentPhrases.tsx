@@ -109,11 +109,14 @@ export function AlignmentPhrases() {
   const handleCreate = async (name: string, content: string) => {
     if (activePhaseId == null) return;
     await createAlignmentPhrase({ phaseId: activePhaseId, name, content });
+    // Confirm the save with the same feedback strength as delete (A1-07).
+    showToast("已新增对齐话术");
     setAdding(false);
   };
 
   const handleUpdate = async (id: string, name: string, content: string) => {
     await updateAlignmentPhrase({ id, name, content });
+    showToast("已保存对齐话术");
     setEditingId(null);
   };
 

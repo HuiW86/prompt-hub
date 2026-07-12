@@ -1,4 +1,4 @@
-import { fireEvent, render, screen } from "@testing-library/react";
+import { fireEvent, render, screen, waitFor } from "@testing-library/react";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
 import type { AlignmentPhrase } from "../../ipc/types";
@@ -10,6 +10,7 @@ vi.mock("@tauri-apps/api/core", () => ({
 
 import { useAppStore } from "../../stores/appStore";
 import { usePromptStore } from "../../stores/promptStore";
+import { useToastStore } from "../../stores/toastStore";
 import { AlignmentPhrases } from "../AlignmentPhrases";
 
 const promptInitial = usePromptStore.getState();
@@ -102,6 +103,22 @@ describe("AlignmentPhrases — in-place editing (ADR-021)", () => {
     );
     expect(call).toBeTruthy();
     expect((call?.[1] as { name: string }).name).toBe("改名协议");
+  });
+
+  it("editing a phrase shows a success toast (A1-07)", async () => {
+    useToastStore.getState().clear();
+    render(<AlignmentPhrases />);
+    fireEvent.click(screen.getByLabelText("编辑 默认协议"));
+    fireEvent.change(screen.getByPlaceholderText("名称"), {
+      target: { value: "改名协议" },
+    });
+    fireEvent.keyDown(screen.getByPlaceholderText("名称"), {
+      key: "Enter",
+      ctrlKey: true,
+    });
+    await waitFor(() =>
+      expect(useToastStore.getState().message).toBe("已保存对齐话术"),
+    );
   });
 
   it("moves a phrase right via the swap button (no drag)", () => {
