@@ -60,18 +60,13 @@
 }
 
 .regionHeaderCount {
-  font-family: var(--font-mono);
-  font-size: var(--t-11);
-  font-weight: var(--w-500);
-  line-height: 1;
-  color: var(--aux);
-  font-variant-numeric: tabular-nums;
+  composes: ph-num from "../../styles/typography.module.css";
   white-space: nowrap;
 }
 
 .regionHeaderHint {
   font-family: var(--font-sans);
-  font-size: var(--t-12);
+  font-size: var(--t-13);
   font-weight: var(--w-400);
   line-height: 1;
   color: var(--fg-3);
@@ -156,17 +151,17 @@
 }
 
 .emptyTitle {
-  font: var(--w-600) var(--t-16) / var(--lh-tight) var(--font-sans);
-  letter-spacing: var(--tr-tight);
-  color: var(--fg-1);
+  composes: ph-page-title from "../../styles/typography.module.css";
 }
 
+/* Descendant selector outranks the composed preset, so this single-longhand
+   demotion is cascade-safe (see typography module header). */
 .emptyRow .emptyTitle {
-  font: var(--w-600) var(--t-13) / var(--lh-tight) var(--font-sans);
+  font-size: var(--t-14);
 }
 
 .emptyRow .emptyBody > div:not(.emptyTitle) {
-  font-size: var(--t-12);
+  font-size: var(--t-13);
 }
 
 .emptyAction {
@@ -271,6 +266,7 @@
 
 /* ── Button — text button incl. "add" entry (§10.2.2 / §10.7) ─────────── */
 .btn {
+  composes: ph-action from "../../styles/typography.module.css";
   display: inline-flex;
   align-items: center;
   justify-content: center;
@@ -284,7 +280,6 @@
   color: var(--fg-2);
   cursor: pointer;
   white-space: nowrap;
-  font: var(--w-500) var(--t-12) / 1 var(--font-sans);
   transition:
     color var(--d-fast) var(--ease),
     background-color var(--d-fast) var(--ease),
@@ -518,6 +513,6 @@
 }
 
 .confirmText {
-  font: var(--w-500) var(--t-11) / 1 var(--font-sans);
+  composes: ph-action from "../../styles/typography.module.css";
   color: var(--fg-1);
 }

@@ -25,8 +25,14 @@
   gap: var(--s-2);
   /* Inactive phases rest at --w-400; the active one carries --w-600 (spec §6).
      On the dark band this keeps --fg-2 (band-fg-muted) readable while letting
-     weight — not just fill — separate the active segment. */
-  font: var(--w-400) var(--t-13) / 1 var(--font-sans);
+     weight — not just fill — separate the active segment. The active/inactive
+     weight ramp is semantic here, so this stays longhand rather than composing
+     ph-action's fixed --w-500. preset-equivalent: ph-action (13/sans) minus the
+     fixed weight. */
+  font-family: var(--font-sans);
+  font-size: var(--t-13);
+  font-weight: var(--w-400);
+  line-height: var(--lh-tight);
   color: var(--fg-2);
   cursor: pointer;
   border: 0;
@@ -70,6 +76,7 @@
 }
 
 .num {
+  composes: ph-num from "../styles/typography.module.css";
   width: var(--s-4);
   height: var(--s-4);
   display: inline-flex;
@@ -77,7 +84,6 @@
   justify-content: center;
   border: var(--hairline) solid var(--border-2);
   border-radius: var(--r-1);
-  font: var(--w-500) var(--t-10) / 1 var(--font-mono);
   color: var(--fg-3);
 }
 
@@ -93,9 +99,7 @@
 }
 
 .shortcut {
-  font: var(--w-400) var(--t-11) / 1 var(--font-mono);
-  color: var(--aux);
-  font-variant-numeric: tabular-nums;
+  composes: ph-num from "../styles/typography.module.css";
 }
 
 .phase.active .shortcut {

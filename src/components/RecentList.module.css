@@ -73,13 +73,19 @@
   cursor: not-allowed;
 }
 
+/* Mono layer badge ("协议"/"任务" text, not a count) — no mono-label-badge
+   preset (ph-num is numeric/aux, its 1.2 line-height would collapse the pill's
+   1.6 shaping). Kept longhand. preset-equivalent: none (mono 10/600 label) */
 .badge {
   flex: none;
   display: inline-flex;
   align-items: center;
   padding: var(--s-0_5) var(--s-1_5);
   border-radius: var(--r-2);
-  font: var(--w-600) var(--t-10) / 1.6 var(--font-mono);
+  font-family: var(--font-mono);
+  font-size: var(--t-10);
+  font-weight: var(--w-600);
+  line-height: 1.6;
   white-space: nowrap;
 }
 
@@ -94,19 +100,21 @@
 }
 
 .itemName {
+  composes: ph-card-body from "../styles/typography.module.css";
   flex: 1;
   min-width: 0;
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
-  font: var(--w-400) var(--t-13) / 1 var(--font-sans);
+}
+
+/* Recent entry name reads at --fg-1, not the body --fg-2. */
+.itemName.itemName {
   color: var(--fg-1);
 }
 
 .itemTime {
+  composes: ph-num from "../styles/typography.module.css";
   flex: 0 0 auto;
-  font: var(--w-400) var(--t-11) / 1 var(--font-mono);
-  color: var(--aux);
-  font-variant-numeric: tabular-nums;
   white-space: nowrap;
 }

@@ -37,6 +37,7 @@
 }
 
 .tab {
+  composes: ph-action from "../styles/typography.module.css";
   flex: 1;
   min-width: 0;
   display: inline-flex;
@@ -49,7 +50,6 @@
   border-radius: var(--r-3);
   background: transparent;
   color: var(--fg-3);
-  font: var(--w-500) var(--t-12) / 1 var(--font-sans);
   cursor: pointer;
   user-select: none;
   white-space: nowrap;
@@ -88,9 +88,8 @@
 }
 
 .tabCount {
+  composes: ph-num from "../styles/typography.module.css";
   flex: none;
-  font: var(--w-500) var(--t-11) / 1 var(--font-mono);
-  font-variant-numeric: tabular-nums;
   opacity: var(--op-icon);
 }
 
@@ -111,6 +110,7 @@
 }
 
 .draftCount {
+  composes: ph-num from "../styles/typography.module.css";
   display: inline-flex;
   align-items: center;
   justify-content: center;
@@ -118,8 +118,11 @@
   padding: 0 var(--s-1);
   border-radius: var(--r-1);
   background: var(--surface-3);
+}
+
+/* Count badge sits on a filled chip, so it reads at --fg-2 not the rail's --aux. */
+.draftCount.draftCount {
   color: var(--fg-2);
-  font: var(--w-500) var(--t-10) / 1.6 var(--font-mono);
 }
 
 .sep {
@@ -208,22 +211,19 @@
 }
 
 .sceneName {
-  font: var(--w-600) var(--t-16) / var(--lh-tight) var(--font-sans);
-  letter-spacing: var(--tr-tight);
-  color: var(--fg-1);
+  composes: ph-page-title from "../styles/typography.module.css";
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
 }
 
 .sceneMeta {
+  composes: ph-note from "../styles/typography.module.css";
   display: flex;
   align-items: center;
   gap: var(--s-2);
   margin-top: var(--s-0_5);
   min-width: 0;
-  font: var(--w-400) var(--t-12) / 1 var(--font-sans);
-  color: var(--fg-3);
 }
 
 /* rolePresets chips trailing the phrase count — dim task-layer chips, clipped so
@@ -238,12 +238,11 @@
 
 /* Sub-stage count badge, docked right of the identity block (Promptscape). */
 .sceneSubCount {
+  composes: ph-note from "../styles/typography.module.css";
   display: inline-flex;
   align-items: center;
   gap: var(--s-1_5);
   flex: none;
-  font: var(--w-400) var(--t-12) / 1 var(--font-sans);
-  color: var(--fg-3);
 }
 
 .sceneHeadActions {
@@ -334,26 +333,29 @@
 
 /* Sub-stage sequence number (Promptscape 01/02… index per column). */
 .subStageIdx {
+  composes: ph-num from "../styles/typography.module.css";
   flex: none;
-  font: var(--w-600) var(--t-11) / 1 var(--font-mono);
+}
+
+/* Sub-stage index sits in the column header, one tier brighter than the --aux rail. */
+.subStageIdx.subStageIdx {
   color: var(--fg-3);
-  font-variant-numeric: tabular-nums;
 }
 
 /* Sub-stage name — normal-case sans, set apart from the mono index. */
 .subStageName {
+  composes: ph-region-header from "../styles/typography.module.css";
   min-width: 0;
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
-  font: var(--w-600) var(--t-13) / 1 var(--font-sans);
-  color: var(--fg-1);
 }
 
 /* Ungrouped phrases get a muted「未分组」header so the orphan column shares the
  * same header structure and baseline as real sub-stage columns — but demoted
- * (dim + regular weight, no index) so it never reads as an editable stage. */
-.subStageNameMuted {
+ * (dim + regular weight, no index) so it never reads as an editable stage.
+ * Doubled class so the demotion wins over the composed ph-region-header. */
+.subStageNameMuted.subStageNameMuted {
   color: var(--fg-3);
   font-weight: var(--w-400);
 }
@@ -463,16 +465,20 @@
 /* Sub-stage picker inside the editor panel; native control, token-styled to
    match the Editor primitives. */
 .subStageSelect {
+  composes: ph-card-body from "../styles/typography.module.css";
   width: 100%;
   height: var(--h-chip);
   padding: 0 var(--s-2);
   border: var(--hairline) solid var(--border-1);
   border-radius: var(--r-2);
   background: var(--surface-1);
-  color: var(--fg-1);
-  font: var(--w-400) var(--t-12) / 1 var(--font-sans);
   appearance: none;
   cursor: pointer;
+}
+
+/* Native select text reads at --fg-1 (input value), not the body --fg-2. */
+.subStageSelect.subStageSelect {
+  color: var(--fg-1);
 }
 
 .subStageSelect:focus-visible {
@@ -506,6 +512,7 @@
    new-sub-stage column button. A dashed, muted placeholder that firms up on
    hover / focus, echoing the empty-state CTA language without a filled surface. */
 .ghostAdd {
+  composes: ph-action from "../styles/typography.module.css";
   display: inline-flex;
   align-items: center;
   justify-content: center;
@@ -515,7 +522,6 @@
   border-radius: var(--r-3);
   background: transparent;
   color: var(--fg-3);
-  font: var(--w-500) var(--t-12) / 1 var(--font-sans);
   cursor: pointer;
   appearance: none;
   transition:

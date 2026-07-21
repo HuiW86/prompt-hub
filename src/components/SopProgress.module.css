@@ -18,13 +18,11 @@
 }
 
 .heading {
-  font: var(--w-600) var(--t-13) / 1 var(--font-sans);
-  color: var(--fg-1);
+  composes: ph-region-header from "../styles/typography.module.css";
 }
 
 .placeholder {
+  composes: ph-note from "../styles/typography.module.css";
   padding: var(--s-3) 0;
   text-align: center;
-  font: var(--w-400) var(--t-12) / var(--lh-body) var(--font-sans);
-  color: var(--fg-3);
 }

@@ -37,15 +37,22 @@
   border-right: var(--hairline) solid var(--border-1);
 }
 
+/* Mono uppercase nav-section head — no mono-meta-label preset exists
+   (ph-label is sans); kept as longhand. preset-equivalent: none (mono 11/600
+   uppercase meta) */
 .navHead {
   padding: var(--s-1) var(--s-2);
-  font: var(--w-600) var(--t-11) / 1 var(--font-mono);
+  font-family: var(--font-mono);
+  font-size: var(--t-11);
+  font-weight: var(--w-600);
+  line-height: var(--lh-tight);
   color: var(--fg-3);
   text-transform: uppercase;
   letter-spacing: var(--tr-meta);
 }
 
 .navItem {
+  composes: ph-action from "../styles/typography.module.css";
   display: flex;
   align-items: center;
   gap: var(--s-2);
@@ -54,7 +61,6 @@
   border-radius: var(--r-3);
   background: transparent;
   color: var(--fg-2);
-  font: var(--w-500) var(--t-13) / 1 var(--font-sans);
   text-align: left;
   cursor: pointer;
   appearance: none;
@@ -97,9 +103,7 @@
 }
 
 .contentTitle {
-  font: var(--w-600) var(--t-16) / var(--lh-tight) var(--font-sans);
-  letter-spacing: var(--tr-tight);
-  color: var(--fg-1);
+  composes: ph-page-title from "../styles/typography.module.css";
 }
 
 .close {
@@ -143,13 +147,11 @@
 }
 
 .fieldLabel {
-  font: var(--w-600) var(--t-12) / 1 var(--font-sans);
-  color: var(--fg-2);
+  composes: ph-label from "../styles/typography.module.css";
 }
 
 .fieldHint {
-  font: var(--w-400) var(--t-11) / var(--lh-body) var(--font-sans);
-  color: var(--fg-3);
+  composes: ph-note from "../styles/typography.module.css";
 }
 
 /* ── Theme-mode segmented control ───────────────────────────────────────────── */
@@ -159,6 +161,7 @@
 }
 
 .segItem {
+  composes: ph-action from "../styles/typography.module.css";
   display: inline-flex;
   align-items: center;
   gap: var(--s-1_5);
@@ -168,7 +171,6 @@
   border-radius: var(--r-3);
   background: var(--surface-1);
   color: var(--fg-2);
-  font: var(--w-500) var(--t-12) / 1 var(--font-sans);
   cursor: pointer;
   appearance: none;
   transition:
@@ -303,11 +305,17 @@
   transform: translateX(var(--s-4));
 }
 
+/* Mono status line ("上次检查…") — descriptive mono meta text with no matching
+   preset (ph-code is 13px content type, ph-num is numeric/aux). Kept longhand.
+   preset-equivalent: none (mono 12/400 meta) */
 .statusRow {
   display: flex;
   align-items: center;
   gap: var(--s-2);
-  font: var(--w-400) var(--t-12) / 1 var(--font-mono);
+  font-family: var(--font-mono);
+  font-size: var(--t-12);
+  font-weight: var(--w-400);
+  line-height: var(--lh-tight);
   color: var(--fg-2);
 }
 
@@ -323,6 +331,7 @@
 }
 
 .actionBtn {
+  composes: ph-action from "../styles/typography.module.css";
   display: inline-flex;
   align-items: center;
   gap: var(--s-1_5);
@@ -332,7 +341,6 @@
   border-radius: var(--r-3);
   background: var(--surface-1);
   color: var(--fg-1);
-  font: var(--w-500) var(--t-12) / 1 var(--font-sans);
   cursor: pointer;
   appearance: none;
   transition:

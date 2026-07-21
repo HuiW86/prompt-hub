@@ -2,6 +2,7 @@
  * Visible window is bounded by toastStore.VISIBLE_MS; CSS animates fade-in only.
  * Neutral surface + elevation (ADR-019: floating feedback, no task-green). */
 .toast {
+  composes: ph-action from "../styles/typography.module.css";
   position: fixed;
   top: var(--s-6);
   right: var(--s-8);
@@ -15,8 +16,6 @@
   border-radius: var(--r-3);
   box-shadow: var(--shadow-2);
   color: var(--fg-1);
-  /* line-height lifted off 1 so a wrapped multi-line error stays legible. */
-  font: var(--w-500) var(--t-13) / var(--lh-tight) var(--font-sans);
   animation: fadeIn var(--d-slow) var(--ease);
   pointer-events: none;
   /* Overflow guard (P1-3): cap width and break long unbroken tokens (paths,
@@ -32,19 +31,25 @@
 /* Undo affordance (D-5). The toast surface is pointer-events:none so it never
    blocks the dashboard; this button opts back in so it stays clickable. */
 .action {
+  composes: ph-action from "../styles/typography.module.css";
   flex: none;
   padding: var(--s-0_5) var(--s-2);
   border: var(--hairline) solid var(--border-3);
   border-radius: var(--r-2);
   background: var(--surface-1);
   color: var(--accent);
-  font: var(--w-600) var(--t-13) / var(--lh-tight) var(--font-sans);
   cursor: pointer;
   pointer-events: auto;
   appearance: none;
   transition:
     background-color var(--d-fast) var(--ease),
     border-color var(--d-fast) var(--ease);
+}
+
+/* Undo affordance sits one weight above the toast body (doubled class so it
+   wins over the composed ph-action --w-500). */
+.action.action {
+  font-weight: var(--w-600);
 }
 
 .action:hover {

@@ -43,15 +43,13 @@
 }
 
 .taskPill {
+  composes: ph-label from "../styles/typography.module.css";
   display: inline-flex;
   align-items: center;
   gap: var(--s-1);
   padding: var(--s-0_5) var(--s-2);
   border-radius: var(--r-2);
   background: var(--surface-2);
-  color: var(--fg-2);
-  font: var(--w-600) var(--t-11) / 1 var(--font-sans);
-  letter-spacing: var(--tr-meta);
 }
 
 .macroSlot {
@@ -102,7 +100,24 @@
   justify-content: center;
   height: 100vh;
   color: var(--fg-1);
-  font: var(--w-500) var(--t-16) / var(--lh-tight) var(--font-sans);
+}
+
+/* ph-page-title split per-class: composes is illegal on the grouped selector
+   above. State messages rest one weight below a page title. */
+.loading {
+  composes: ph-page-title from "../styles/typography.module.css";
+}
+
+.loading.loading {
+  font-weight: var(--w-500);
+}
+
+.error {
+  composes: ph-page-title from "../styles/typography.module.css";
+}
+
+.error.error {
+  font-weight: var(--w-500);
 }
 
 /* Neutral high-contrast error text (ADR-019: colour no longer carries

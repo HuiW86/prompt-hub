@@ -14,15 +14,13 @@
  * 任务层 pill (neutral chrome label; layer read from text, not hue). Sits in
  * the RegionHeader right slot so the header layout is unchanged (ADR-020). */
 .layerPill {
+  composes: ph-label from "../styles/typography.module.css";
   display: inline-flex;
   align-items: center;
   gap: var(--s-1);
   padding: var(--s-0_5) var(--s-2);
   border-radius: var(--r-2);
   background: var(--surface-2);
-  color: var(--fg-2);
-  font: var(--w-600) var(--t-11) / 1 var(--font-sans);
-  letter-spacing: var(--tr-meta);
   white-space: nowrap;
 }
 
@@ -62,16 +60,12 @@
 }
 
 .groupName {
-  font: var(--w-600) var(--t-11) / 1 var(--font-sans);
-  color: var(--fg-2);
+  composes: ph-label from "../styles/typography.module.css";
   text-transform: uppercase;
-  letter-spacing: var(--tr-meta);
 }
 
 .groupCount {
-  font: var(--w-500) var(--t-10) / 1 var(--font-mono);
-  color: var(--aux);
-  font-variant-numeric: tabular-nums;
+  composes: ph-num from "../styles/typography.module.css";
 }
 
 .chips {
@@ -110,13 +104,13 @@
 }
 
 .moveBtn {
+  composes: ph-action from "../styles/typography.module.css";
   height: var(--h-chip);
   padding: 0 var(--s-2);
   border: var(--hairline) solid var(--border-2);
   border-radius: var(--r-2);
   background: var(--surface-1);
   color: var(--fg-1);
-  font: var(--w-500) var(--t-11) / 1 var(--font-sans);
   white-space: nowrap;
   cursor: pointer;
   transition:

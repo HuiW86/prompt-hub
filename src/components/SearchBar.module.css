@@ -33,14 +33,17 @@
 }
 
 .input {
+  composes: ph-card-body from "../styles/typography.module.css";
   flex: 1;
   min-width: 0;
   background: transparent;
   border: 0;
   outline: 0;
+}
+
+/* Search input value reads at --fg-1, not the body --fg-2. */
+.input.input {
   color: var(--fg-1);
-  font: var(--w-400) var(--t-13) / 1 var(--font-sans);
-  font-family: var(--font-sans);
 }
 
 .input::placeholder {

@@ -105,10 +105,8 @@
 }
 
 .uses {
+  composes: ph-num from "../styles/typography.module.css";
   flex-shrink: 0;
-  font: var(--w-400) var(--t-11) / 1 var(--font-mono);
-  color: var(--aux);
-  font-variant-numeric: tabular-nums;
 }
 
 /* Card action overlay (ActionCluster / ConfirmInline) — domain placement.

@@ -33,10 +33,11 @@
   color: var(--fg-1);
 }
 
-/* Card body copy (Macro summary / phrase preview / Chip label / Input text). */
+/* Card body copy (Macro summary / phrase preview / Chip label / Input text).
+ * 14px body baseline (reshape D-3): primary reading tier. */
 .ph-card-body {
   font-family: var(--font-sans);
-  font-size: var(--t-13);
+  font-size: var(--t-14);
   font-weight: var(--w-400);
   line-height: var(--lh-body);
   letter-spacing: var(--tr-normal);
@@ -66,7 +67,7 @@
 /* EmptyState centered hint text. */
 .ph-empty {
   font-family: var(--font-sans);
-  font-size: var(--t-13);
+  font-size: var(--t-14);
   font-weight: var(--w-400);
   line-height: var(--lh-body);
   letter-spacing: var(--tr-normal);
@@ -74,12 +75,71 @@
   text-align: center;
 }
 
-/* Code snippets / Modifier raw text — mono. */
+/* Code snippets / Modifier raw text — mono. 13px: Modifier text is real
+ * content (methodology atoms), not decoration — it must read at body comfort
+ * (reshape D-3: clickable/readable ≥13). */
 .ph-code {
   font-family: var(--font-mono);
-  font-size: var(--t-12);
+  font-size: var(--t-13);
   font-weight: var(--w-400);
   line-height: var(--lh-body);
   letter-spacing: var(--tr-normal);
   color: var(--fg-2);
+}
+
+/* Page / Scene titles — the top of the scan hierarchy (reshape D-3: only
+ * page-level titles carry 16px; region/card tiers descend by weight). */
+.ph-page-title {
+  font-family: var(--font-sans);
+  font-size: var(--t-16);
+  font-weight: var(--w-600);
+  line-height: var(--lh-tight);
+  letter-spacing: var(--tr-tight);
+  color: var(--fg-1);
+}
+
+/* Clickable text (buttons, tabs, nav items, segmented controls) — 13px floor
+ * for every interactive label (reshape D-3; fixes the 12px .btn root cause).
+ * Color intentionally omitted: action color is stateful and carried by the
+ * control's intent classes (ghost/primary/accent), not by the role preset. */
+.ph-action {
+  font-family: var(--font-sans);
+  font-size: var(--t-13);
+  font-weight: var(--w-500);
+  line-height: var(--lh-tight);
+  letter-spacing: var(--tr-normal);
+}
+
+/* Section / pill labels (层 pills, Modifier group heads, editor field labels,
+ * settings group heads) — small caps-energy chrome labels. */
+.ph-label {
+  font-family: var(--font-sans);
+  font-size: var(--t-11);
+  font-weight: var(--w-600);
+  line-height: var(--lh-tight);
+  letter-spacing: var(--tr-meta);
+  color: var(--fg-2);
+}
+
+/* Descriptive footnotes (settings descriptions, sub-stage descriptors,
+ * secondary prose below a control) — quiet reading tier. */
+.ph-note {
+  font-family: var(--font-sans);
+  font-size: var(--t-12);
+  font-weight: var(--w-400);
+  line-height: var(--lh-body);
+  letter-spacing: var(--tr-normal);
+  color: var(--fg-3);
+}
+
+/* Numeric meta (usage counts, badges, positions) — mono + tabular so columns
+ * of counts align into a scannable rail. */
+.ph-num {
+  font-family: var(--font-mono);
+  font-size: var(--t-11);
+  font-weight: var(--w-500);
+  line-height: var(--lh-tight);
+  letter-spacing: var(--tr-normal);
+  color: var(--aux);
+  font-variant-numeric: tabular-nums;
 }

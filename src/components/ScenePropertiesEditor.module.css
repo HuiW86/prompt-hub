@@ -15,9 +15,12 @@
 }
 
 .label {
-  font: var(--w-600) var(--t-11) / 1 var(--font-sans);
-  letter-spacing: var(--tr-meta);
+  composes: ph-label from "../styles/typography.module.css";
   text-transform: uppercase;
+}
+
+/* Field labels sit one tier quieter (--fg-3) than the default pill label. */
+.label.label {
   color: var(--fg-3);
 }
 

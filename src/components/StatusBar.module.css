@@ -1,6 +1,10 @@
 /* StatusBar — 28px footer band, dense metadata + shortcut hints.
    Visual per Claude Design bundle styles.css §283-298 (ADR-012). */
 
+/* Dense footer band base type (12px), inherited by all hint items + the
+   .updater link. Kept longhand: the band is a fixed 28px (--h-statusbar) and
+   ph-action's 13px floor would crowd it; this is chrome density, not a
+   clickable label. preset-equivalent: ph-action minus the 13px floor. */
 .statusBar {
   display: flex;
   align-items: center;
@@ -9,7 +13,10 @@
   padding: 0 var(--s-3_5);
   border-top: var(--hairline) solid var(--border-1);
   background: var(--canvas);
-  font: var(--w-500) var(--t-12) / 1 var(--font-sans);
+  font-family: var(--font-sans);
+  font-size: var(--t-12);
+  font-weight: var(--w-500);
+  line-height: var(--lh-tight);
   color: var(--fg-2);
 }
 

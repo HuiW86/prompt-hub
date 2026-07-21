@@ -24,8 +24,14 @@
   outline-offset: calc(-1 * var(--border-thick));
 }
 
+/* Mono uppercase region label ("层") — no mono-meta-label preset exists
+   (ph-meta is sans, ph-num carries --aux + tabular-nums); kept as longhand.
+   preset-equivalent: none (mono 11/500 uppercase meta) */
 .label {
-  font: var(--w-500) var(--t-11) / 1 var(--font-mono);
+  font-family: var(--font-mono);
+  font-size: var(--t-11);
+  font-weight: var(--w-500);
+  line-height: var(--lh-tight);
   color: var(--fg-3);
   text-transform: uppercase;
   letter-spacing: var(--tr-meta);
@@ -34,7 +40,7 @@
 }
 
 .empty {
-  font: var(--w-400) var(--t-12) / 1 var(--font-sans);
+  composes: ph-note from "../styles/typography.module.css";
   color: var(--fg-3);
 }
 
@@ -99,12 +105,12 @@
 }
 
 .chipName {
+  composes: ph-action from "../styles/typography.module.css";
   min-width: 0;
   max-width: var(--w-chip-max);
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
-  font: var(--w-500) var(--t-12) / 1 var(--font-sans);
   color: var(--fg-1);
 }
 
@@ -133,16 +139,17 @@
 }
 
 .rowName {
+  composes: ph-action from "../styles/typography.module.css";
   min-width: 0;
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
-  font: var(--w-500) var(--t-12) / 1 var(--font-sans);
   color: var(--fg-1);
 }
 
 /* Ghost add entry — trailing dashed pill mirroring ScenePanel's ghostAdd. */
 .ghostAdd {
+  composes: ph-action from "../styles/typography.module.css";
   display: inline-flex;
   align-items: center;
   gap: var(--s-1);
@@ -156,7 +163,6 @@
   color: var(--fg-3);
   cursor: pointer;
   white-space: nowrap;
-  font: var(--w-500) var(--t-11) / 1 var(--font-sans);
   transition:
     border-color var(--d-fast) var(--ease),
     color var(--d-fast) var(--ease);

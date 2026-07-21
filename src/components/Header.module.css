@@ -43,7 +43,7 @@
 }
 
 .subtitle {
-  font: var(--w-400) var(--t-11) / var(--lh-tight) var(--font-sans);
+  composes: ph-note from "../styles/typography.module.css";
   color: var(--fg-3);
 }
 

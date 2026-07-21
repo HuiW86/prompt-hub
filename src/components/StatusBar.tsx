@@ -29,11 +29,15 @@ export function StatusBar() {
   const updaterStatus = useUpdaterStore((s) => s.status);
   const checkUpdate = useUpdaterStore((s) => s.check);
   const reopenOptIn = useUpdaterStore((s) => s.reopenOptIn);
+  // Failure surfaces here (not as a banner — UI reshape / ADR-023): the label
+  // names the failure and the button itself is the retry path.
   const updaterLabel = !updaterEnabled
     ? "更新已关闭"
     : updaterStatus === "checking"
       ? "检查中…"
-      : "检查更新";
+      : updaterStatus === "error"
+        ? "更新失败 · 重试"
+        : "检查更新";
 
   return (
     <footer
