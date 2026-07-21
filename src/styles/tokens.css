@@ -65,7 +65,8 @@
   --skeleton: #1f1f23;
   --skeleton-hi: #26262b;
 
-  /* Modal backdrop scrim (overlay dialogs only). */
+  /* Backdrop scrim — modal dialogs, and the desktop gap around the overlay
+     frame (App.css body) so the see-through inset reads as intentional. */
   --scrim: rgba(0, 0, 0, 0.45);
 
   /* Elevation — subtle drop-shadow (ADR-019, design-spec §8.2.1).

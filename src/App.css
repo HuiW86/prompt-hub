@@ -1,7 +1,15 @@
 html,
-body,
 #root {
   margin: 0;
   height: 100%;
   background: transparent;
+}
+
+/* Overlay-frame gap scrim: the Dashboard frame sits inset on this transparent
+ * window ([[01-spec]] §8), so the desktop shows through the gap. Dim it with
+ * the shared scrim so the gap reads as an intentional overlay, not a bezel. */
+body {
+  margin: 0;
+  height: 100%;
+  background: var(--scrim);
 }
