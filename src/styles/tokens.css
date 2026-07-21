@@ -315,6 +315,16 @@
   --w-settings-modal: 560px;
   --w-settings-nav: 140px;
 
+  /* Search overlay result column minimum — below this the 2-col grid drops to
+     one (audit A3-04). Distinct from --col-min-macro: results carry two-line
+     items (name + meta) and need more room than a macro bar. */
+  --col-min-result: 240px;
+
+  /* Inline phrase editor usable minimum (AlignmentPhrases). Split from
+     --col-min-substage (audit A3-05): that token is a grid drop threshold —
+     overloading it as a hard min-width made one value serve two semantics. */
+  --w-inline-editor: 184px;
+
   /* Toast width cap — long error strings wrap instead of stretching the toast
      across the viewport (P1-3 overflow guard). */
   --w-toast-max: 320px;
@@ -372,4 +382,21 @@ textarea {
 
 ::selection {
   background: var(--surface-3);
+}
+
+/* ============================================================
+   6. Reduced motion (reshape W6)
+   All motion is decorative — durations collapse to near-zero (not 0: some
+   engines skip animation events entirely at exactly 0) when the OS asks.
+   Wake/summon deliberately has NO entrance animation regardless (C1: any
+   fade on wake reads as latency against the 200ms budget).
+   ============================================================ */
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+  }
 }

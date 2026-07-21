@@ -11,6 +11,22 @@
   justify-content: center;
   padding: var(--s-6);
   background: var(--scrim);
+  animation: overlay-in var(--d-base) var(--ease);
+}
+
+/* Entrance (reshape W6): scrim fades, dialog rises 2% scale — one beat under
+   the C1 ceiling. Exit stays instant: dismissal must never lag the user. */
+@keyframes overlay-in {
+  from {
+    opacity: 0;
+  }
+}
+
+@keyframes modal-in {
+  from {
+    opacity: 0;
+    transform: scale(0.98);
+  }
 }
 
 .modal {
@@ -23,6 +39,7 @@
   border: var(--hairline) solid var(--border-2);
   border-radius: var(--r-frame);
   box-shadow: var(--shadow-2);
+  animation: modal-in var(--d-base) var(--ease);
 }
 
 /* ── Left nav ──────────────────────────────────────────────────────────────── */
@@ -30,8 +47,10 @@
   display: flex;
   flex-direction: column;
   gap: var(--s-1);
-  flex: 0 0 auto;
-  width: var(--w-settings-nav);
+  /* Shrinkable below the anchor width so a narrow window compresses the nav
+     instead of crushing the content pane (audit A3-03 / reshape W5). */
+  flex: 0 1 var(--w-settings-nav);
+  min-width: 0;
   padding: var(--s-3);
   background: var(--canvas);
   border-right: var(--hairline) solid var(--border-1);

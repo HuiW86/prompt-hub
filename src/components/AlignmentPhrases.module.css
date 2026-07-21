@@ -178,9 +178,11 @@
   outline-offset: 0;
 }
 
-/* Inline editor slot — the phrase form pops out of the row without collapsing;
-   the sub-stage column min keeps the name + content inputs usable. */
+/* Inline editor slot — the phrase form pops out of the row without collapsing.
+   Dedicated width token (audit A3-05 / reshape W5): the editor's usable input
+   minimum is its own semantic, no longer overloading the sub-stage grid's
+   column-drop threshold. */
 .inlineEditor {
   flex-shrink: 0;
-  min-width: var(--col-min-substage);
+  min-width: var(--w-inline-editor);
 }

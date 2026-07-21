@@ -15,6 +15,15 @@
   box-shadow: var(--shadow-2);
   overflow-y: auto;
   z-index: 1;
+  /* Entrance (reshape W6): quick fade — results must feel attached to typing,
+     so this rides --d-fast, not the modal's --d-base. No exit animation. */
+  animation: search-overlay-in var(--d-fast) var(--ease);
+}
+
+@keyframes search-overlay-in {
+  from {
+    opacity: 0;
+  }
 }
 
 .header {
@@ -35,7 +44,13 @@
 
 .groups {
   display: grid;
-  grid-template-columns: repeat(2, minmax(0, 1fr));
+  /* Adaptive columns (audit A3-04 / reshape W5): two columns on the full-width
+     overlay, degrading to one when the window narrows below the result-column
+     minimum instead of crushing both. min(…, 100%) guards a lone column. */
+  grid-template-columns: repeat(
+    auto-fit,
+    minmax(min(var(--col-min-result), 100%), 1fr)
+  );
   gap: var(--s-3_5);
 }
 
@@ -105,6 +120,9 @@
   display: flex;
   align-items: center;
   gap: var(--s-2);
+  /* min-width 0 lets the name ellipsize instead of shoving the fixed meta
+     rail out of the row (audit A3-04 tail / reshape W5). */
+  min-width: 0;
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
