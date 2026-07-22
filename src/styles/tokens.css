@@ -47,11 +47,20 @@
 
   --aux: #888780; /* meta text ONLY, never bg */
 
-  /* Neutral scale */
-  --canvas: #0e0e10;
-  --surface-1: #141417;
-  --surface-2: #1a1a1e;
-  --surface-3: #232328;
+  /* Brand — the violet hub mark, a FIXED identity color independent of the
+     user-selectable --accent swatches (UI reshape v2: the cockpit identity
+     must not change when the user re-picks a focus-ring color). Painted on:
+     logo, active phase marker, macro icon chips, heat signals. */
+  --brand: #8b7bff;
+  --brand-fg: #ffffff;
+  --brand-dim: rgba(139, 123, 255, 0.14); /* tinted fills on dark */
+  --brand-ghost: rgba(139, 123, 255, 0.32); /* borders / underline glow */
+
+  /* Neutral scale — deepened cockpit ramp (reshape v2) */
+  --canvas: #0b0b0d;
+  --surface-1: #151518;
+  --surface-2: #1c1c21;
+  --surface-3: #26262c;
 
   --border-1: #232328;
   --border-2: #2e2e34;
@@ -79,36 +88,12 @@
 }
 
 /* ============================================================
-   1a. LIGHT mode override (system preference + .light class)
-   Elevation direction follows the Promptscape handoff (ADR-018 补遗 P3-3):
-   muted-gray canvas, PURE WHITE raised cards (+ resting --shadow-1), then
-   surface-2/3 step back DOWN as nested muted fills / pressed states.
+   1a. LIGHT mode — EXPLICIT OPT-IN ONLY (reshape v2).
+   The cockpit is dark by identity: the summoned overlay separates from
+   whatever the desktop looks like (哲学三 时间分离). Light no longer follows
+   the OS preference — it applies only when the user picks it in settings
+   (.light root class). Elevation direction per ADR-018 补遗 P3-3.
    ============================================================ */
-@media (prefers-color-scheme: light) {
-  :root:not(.dark) {
-    --canvas: #f2f2f0; /* muted gray page bg — white cards lift off it */
-    --surface-1: #ffffff; /* raised card / container (pairs with --shadow-1) */
-    --surface-2: #ececea; /* nested muted fill (chips, tracks, card heads) */
-    --surface-3: #e0e0dc; /* strongest fill — selected / pressed / ::selection */
-
-    --border-1: #e2e2de;
-    --border-2: #cfcfca;
-    --border-3: #b6b6b0;
-
-    --fg-1: #18181b;
-    --fg-2: #44444a;
-    --fg-3: #6f6f75;
-    --fg-4: #a5a5a8;
-
-    --skeleton: #e8e8e5;
-    --skeleton-hi: #dededb;
-
-    /* Lighter alpha on light canvas — same elevation, softer shadow. */
-    --shadow-1: 0 1px 2px rgba(0, 0, 0, 0.08);
-    --shadow-2: 0 4px 12px rgba(0, 0, 0, 0.12);
-  }
-}
-
 :root.light {
   --canvas: #f2f2f0;
   --surface-1: #ffffff;
@@ -231,7 +216,9 @@
   --t-12: 12px;
   --t-13: 13px;
   --t-14: 14px;
+  --t-15: 15px; /* macro tile names — hero tier below page titles */
   --t-16: 16px;
+  --t-18: 18px; /* active phase display (protocol dock) */
   --t-20: 20px;
 
   /* Line heights */
@@ -307,8 +294,9 @@
   /* Task-layer absorption (Promptscape 2-col): Macro renders as a compact
      auto-fill strip capped to a couple of rows; Scene sub-stages flow as a
      responsive multi-column grid. */
-  --h-macro-strip: 184px;
-  --col-min-macro: 200px;
+  --h-macro-strip: 200px;
+  --h-macro-tile: 56px; /* hero command tiles (reshape v2) */
+  --col-min-macro: 220px;
   --col-min-substage: 184px;
 
   /* Settings overlay dialog — off-primary surface, larger than the 32px cap. */

@@ -31,13 +31,17 @@
   box-shadow: var(--shadow-1); /* resting lift off the muted canvas (P3-3) */
 }
 
+/* Reshape v2 — the wake: rows read as a timeline. A rail runs down the list's
+   left edge (::before on each row) with a tick dot per entry, so "使用即沉淀"
+   is visible as a trace instead of a plain list. */
 .item {
+  position: relative;
   display: flex;
   align-items: center;
   justify-content: space-between;
   gap: var(--s-3);
   width: 100%;
-  padding: var(--s-2) var(--s-3_5);
+  padding: var(--s-2) var(--s-3_5) var(--s-2) var(--s-6);
   background: transparent;
   border: 0;
   border-bottom: var(--hairline) solid var(--border-1);
@@ -50,6 +54,43 @@
     background-color var(--d-fast) var(--ease),
     transform var(--d-fast) var(--ease),
     box-shadow var(--d-fast) var(--ease);
+}
+
+/* Rail segment + tick dot. The rail is per-row so it survives scrolling and
+   row virtualization changes; adjacent segments join into one line. */
+.item::before {
+  content: "";
+  position: absolute;
+  left: var(--s-3);
+  top: 0;
+  bottom: 0;
+  width: var(--hairline);
+  background: var(--border-2);
+}
+
+.item::after {
+  content: "";
+  position: absolute;
+  left: calc(var(--s-3) - var(--s-0_5));
+  top: 50%;
+  width: var(--s-1);
+  height: var(--s-1);
+  margin-top: calc(-1 * var(--s-0_5));
+  border-radius: var(--r-1);
+  background: var(--fg-4);
+  transition: background-color var(--d-fast) var(--ease);
+}
+
+.item:first-child::before {
+  top: 50%;
+}
+
+.item:last-child::before {
+  bottom: 50%;
+}
+
+.item:hover::after {
+  background: var(--brand);
 }
 
 /* Promptscape hover language (P3-5): shadow + 1px rise on the row. */

@@ -47,9 +47,11 @@ export const useSettingsStore = create<SettingsState>()(
     (set, get) => ({
       globalHotkey: "Alt+Space",
       hiddenPhaseIds: [],
-      // Default light to match the Promptscape design (ADR-018 补遗): the
-      // light palette is the reference look; dark stays a user-selectable mode.
-      themeMode: "light",
+      // Reshape v2: DARK is the cockpit identity — the summoned overlay
+      // separates from whatever the desktop looks like (哲学三). Light stays a
+      // user-selectable mode ("system" also resolves dark: tokens.css no
+      // longer auto-follows the OS preference).
+      themeMode: "dark",
       accent: "neutral",
       // Default 调用态 so the tool opens as a launcher (D-0 / T0 zero-regression).
       interactionMode: "invoke",
@@ -80,6 +82,20 @@ export const useSettingsStore = create<SettingsState>()(
     }),
     {
       name: "prompt-hub-settings",
+      // v2 identity migration: v1 defaulted themeMode to "light", so every
+      // existing install carries a persisted "light" that was never an explicit
+      // user pick. Bumping to v2 resets the theme to the dark identity ONCE;
+      // choosing light in settings afterwards persists normally.
+      version: 2,
+      migrate: (persisted, version) => {
+        const state = persisted as {
+          themeMode: ThemeMode;
+          accent: Accent;
+          interactionMode: InteractionMode;
+        };
+        if (version < 2) return { ...state, themeMode: "dark" as ThemeMode };
+        return state;
+      },
       // globalHotkey + hiddenPhaseIds stay in-memory MVP state; appearance prefs
       // + the interaction mode are durable. settingsOpen is transient UI.
       partialize: (s) => ({

@@ -59,9 +59,15 @@
   white-space: nowrap;
 }
 
+/* Count badge (reshape v2): the sediment number gets a quiet chip shape so
+   usage data reads as an instrument readout, not stray text. */
 .regionHeaderCount {
   composes: ph-num from "../../styles/typography.module.css";
   white-space: nowrap;
+  padding: var(--s-0_5) var(--s-1_5);
+  border-radius: var(--r-2);
+  background: var(--surface-2);
+  border: var(--hairline) solid var(--border-1);
 }
 
 .regionHeaderHint {

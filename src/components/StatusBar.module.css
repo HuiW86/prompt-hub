@@ -46,7 +46,8 @@
 }
 
 .dotProto {
-  background: var(--fg-2);
+  /* Brand dot: the live phase indicator is an identity moment (reshape v2). */
+  background: var(--brand);
 }
 
 .dotIdle {

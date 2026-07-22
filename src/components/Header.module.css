@@ -18,8 +18,8 @@
   flex: 0 0 auto;
 }
 
-/* Brand mark carries the NEUTRAL accent (B2: emphasis surface, not a semantic
- * layer). --accent / --accent-fg swap with the appearance swatch. */
+/* Brand mark carries the FIXED violet brand (reshape v2) — the hub identity
+ * does not swap with the user's accent swatch. */
 .logo {
   display: inline-flex;
   align-items: center;
@@ -27,8 +27,8 @@
   width: var(--s-8);
   height: var(--s-8);
   border-radius: var(--r-4);
-  background: var(--accent);
-  color: var(--accent-fg);
+  background: var(--brand);
+  color: var(--brand-fg);
   flex: 0 0 auto;
 }
 

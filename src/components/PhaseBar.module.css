@@ -17,23 +17,25 @@
   outline-offset: calc(-1 * var(--border-thick));
 }
 
+/* Reshape v2 — the active phase is the HERO of the protocol dock: it grows
+   wider, its label jumps to the display tier (18px) and takes the brand
+   marker. Inactive phases recede into a quiet rail. "先定框" made physical:
+   the current collaboration frame dominates the dock at a glance. */
 .phase {
   flex: 1;
   display: flex;
   align-items: center;
   justify-content: center;
   gap: var(--s-2);
-  /* Inactive phases rest at --w-400; the active one carries --w-600 (spec §6).
-     On the dark band this keeps --fg-2 (band-fg-muted) readable while letting
-     weight — not just fill — separate the active segment. The active/inactive
-     weight ramp is semantic here, so this stays longhand rather than composing
-     ph-action's fixed --w-500. preset-equivalent: ph-action (13/sans) minus the
-     fixed weight. */
+  /* Inactive phases rest at --w-400; the active one carries --w-600 (spec §6)
+     at the display size. The active/inactive ramp is semantic here, so this
+     stays longhand. preset-equivalent: ph-action (13/sans) minus the fixed
+     weight. */
   font-family: var(--font-sans);
   font-size: var(--t-13);
   font-weight: var(--w-400);
   line-height: var(--lh-tight);
-  color: var(--fg-2);
+  color: var(--fg-3);
   cursor: pointer;
   border: 0;
   border-right: var(--hairline) solid var(--border-1);
@@ -41,8 +43,10 @@
   appearance: none;
   position: relative;
   transition:
-    background-color var(--d-fast) var(--ease),
-    color var(--d-fast) var(--ease);
+    background-color var(--d-base) var(--ease),
+    color var(--d-base) var(--ease),
+    flex-grow var(--d-base) var(--ease),
+    font-size var(--d-base) var(--ease);
 }
 
 .phase:last-child {
@@ -60,8 +64,10 @@
 }
 
 .phase.active {
-  background: var(--surface-2);
+  flex-grow: 2.2;
+  background: var(--brand-dim);
   color: var(--fg-1);
+  font-size: var(--t-18);
   font-weight: var(--w-600);
 }
 
@@ -72,7 +78,7 @@
   right: 0;
   bottom: calc(-1 * var(--hairline));
   height: var(--border-thick);
-  background: var(--accent);
+  background: var(--brand);
 }
 
 .num {
@@ -85,16 +91,20 @@
   border: var(--hairline) solid var(--border-2);
   border-radius: var(--r-1);
   color: var(--fg-3);
+  transition:
+    background-color var(--d-base) var(--ease),
+    color var(--d-base) var(--ease),
+    border-color var(--d-base) var(--ease);
 }
 
 .phase.active .num {
-  border-color: var(--accent);
-  color: var(--fg-1);
-  background: var(--surface-3);
+  border-color: var(--brand);
+  color: var(--brand-fg);
+  background: var(--brand);
 }
 
 .label {
-  /* Size/weight inherit from .phase so the active w-600 applies to the label. */
+  /* Size/weight inherit from .phase so the active display tier applies. */
   letter-spacing: var(--tr-tight);
 }
 

@@ -33,13 +33,16 @@
  * Resting --shadow-1 lifts the bar off the muted canvas (Promptscape macro
  * entry, ADR-018 补遗 P3-3); hover adds the shared 1px rise on top of the
  * CardSurface border-darken cue (Promptscape hover language, P3-5). */
+/* Reshape v2 — hero command tiles: the highest-frequency surface in the app
+   gets the largest interactive type below page titles, a brand icon chip and
+   real presence. 0-step reach should LOOK like the main event. */
 .macroCard {
   flex: 1 1 var(--col-min-macro);
   flex-direction: row;
   align-items: center;
-  gap: var(--s-2_5);
-  min-height: var(--h-phasebar);
-  padding: 0 var(--s-3);
+  gap: var(--s-3);
+  min-height: var(--h-macro-tile);
+  padding: 0 var(--s-3_5);
   box-shadow: var(--shadow-1);
   transition:
     border-color var(--d-fast) var(--ease),
@@ -50,6 +53,7 @@
 
 .macroCard:hover {
   transform: translateY(var(--lift-1));
+  border-color: var(--brand-ghost);
 }
 
 /* Main click-to-copy surface fills the bar; action controls overlay the right. */
@@ -86,12 +90,12 @@
   display: flex;
   align-items: center;
   justify-content: center;
-  width: var(--s-6);
-  height: var(--s-6);
+  width: var(--s-8);
+  height: var(--s-8);
   border-radius: var(--r-3);
-  background: var(--accent);
-  border: var(--hairline) solid var(--accent);
-  color: var(--accent-fg);
+  background: var(--brand);
+  border: var(--hairline) solid var(--brand);
+  color: var(--brand-fg);
   flex-shrink: 0;
 }
 
@@ -102,6 +106,12 @@
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
+}
+
+/* Hero tier: one step above card-title, doubled class beats the preset. */
+.name.name {
+  font-size: var(--t-15);
+  font-weight: var(--w-600);
 }
 
 .uses {
