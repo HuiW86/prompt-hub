@@ -7,6 +7,7 @@ import { Flame, GripVertical, Pencil, Plus, Trash2, Zap } from "lucide-react";
 import { useCopy } from "../hooks/useCopy";
 import { useRegionNav } from "../hooks/useRegionNav";
 import { usePromptStore } from "../stores/promptStore";
+import { useSettingsStore } from "../stores/settingsStore";
 import { useToastStore } from "../stores/toastStore";
 import { toUserMessage } from "../utils/errorMessage";
 import type { Macro } from "../ipc/types";
@@ -46,6 +47,19 @@ export function MacroGrid() {
 
   const [editing, setEditing] = useState<EditTarget>(null);
   const [confirmingId, setConfirmingId] = useState<string | null>(null);
+
+  // Cockpit (invoke) mode sorts tiles by heat — the grab-and-go moment wants
+  // the hottest entries in the first row (哲学四: usage data drives placement).
+  // Organize mode keeps the user-controlled order_index so drag-reorder stays
+  // meaningful (reshape v2 dual-layout).
+  const interactionMode = useSettingsStore((s) => s.interactionMode);
+  const displayItems = useMemo(
+    () =>
+      interactionMode === "invoke"
+        ? [...items].sort((a, b) => b.usageCount - a.usageCount)
+        : items,
+    [items, interactionMode],
+  );
 
   // "Hot" is a usage signal, not a position — compute the top-N by usageCount so
   // the flame survives the switch to user-controlled order (order_index ASC).
@@ -142,7 +156,7 @@ export function MacroGrid() {
           }}
         >
           <div className={styles.grid}>
-            {items.map((m, idx) => (
+            {displayItems.map((m, idx) => (
               <SortableMacroCard
                 key={m.id}
                 macro={m}

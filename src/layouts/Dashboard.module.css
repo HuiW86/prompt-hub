@@ -66,6 +66,53 @@
   min-height: 0;
 }
 
+/* ── Cockpit (调用态) arrangement — reshape v2 dual-layout ─────────────── */
+
+/* Hot zone column: macro tiles keep natural (capped) height, the recent wake
+   absorbs the rest of the column. */
+.cockpitMain {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  min-height: 0;
+}
+
+.cockpitMain > :first-child {
+  flex: 0 0 auto;
+  border-bottom: var(--hairline) solid var(--border-1);
+}
+
+.cockpitMain > :last-child {
+  flex: 1;
+  min-height: 0;
+}
+
+/* Context rail: active scene dominates, SOP pins to the bottom. */
+.cockpitRail {
+  display: flex;
+  flex-direction: column;
+  gap: var(--s-3);
+  height: 100%;
+  min-height: 0;
+}
+
+.cockpitRail > :first-child {
+  flex: 1;
+  min-height: 0;
+}
+
+.cockpitRail > :last-child {
+  flex: 0 0 auto;
+  margin: 0 var(--s-3_5) var(--s-3);
+}
+
+/* Atom tray: full-width dock above the status rail; the ModifierGrid card
+   caps its own height and scrolls internally. */
+.modifierTray {
+  flex: 0 0 auto;
+  border-top: var(--hairline) solid var(--border-1);
+}
+
 /* Resizable 3-column workbench (ADR-016 / react-resizable-panels v4).
  * Group owns column widths (user-draggable %, persisted); the grid retreats to
  * intra-region / row layout. Default proportions carry the prior 1.4/1/0.9. */
