@@ -43,3 +43,22 @@ describe("settingsStore", () => {
     expect(useSettingsStore.getState().interactionMode).toBe("organize");
   });
 });
+
+// ADR-024 regression: theme mode classes on the document root. "system" must
+// apply a real .system class (re-enabling the OS-preference media query) —
+// a silent no-op regressed 跟随系统 to always-dark once during reshape v2.
+import { describe as describe2, expect as expect2, it as it2 } from "vitest";
+import { useSettingsStore as store } from "../settingsStore";
+
+describe2("applyAppearance root classes (ADR-024)", () => {
+  it2("system mode applies .system; light/dark apply their classes", () => {
+    store.getState().setThemeMode("system");
+    expect2(document.documentElement.classList.contains("system")).toBe(true);
+    store.getState().setThemeMode("light");
+    expect2(document.documentElement.classList.contains("light")).toBe(true);
+    expect2(document.documentElement.classList.contains("system")).toBe(false);
+    store.getState().setThemeMode("dark");
+    expect2(document.documentElement.classList.contains("dark")).toBe(true);
+    expect2(document.documentElement.classList.contains("light")).toBe(false);
+  });
+});
