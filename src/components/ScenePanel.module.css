@@ -331,10 +331,15 @@
   opacity: 1;
 }
 
-/* Sub-stage sequence number (Promptscape 01/02… index per column). */
+/* Sub-stage sequence number — instrument chip (reshape v2), matching the
+   regionHeaderCount readout language. */
 .subStageIdx {
   composes: ph-num from "../styles/typography.module.css";
   flex: none;
+  padding: var(--s-0_5) var(--s-1_5);
+  border-radius: var(--r-2);
+  background: var(--surface-2);
+  border: var(--hairline) solid var(--border-1);
 }
 
 /* Sub-stage index sits in the column header, one tier brighter than the --aux rail. */
@@ -368,7 +373,7 @@
   display: flex;
   align-items: flex-start;
   gap: var(--s-2);
-  padding: var(--s-2_5);
+  padding: var(--s-3);
   background: var(--surface-2);
   border: var(--hairline) solid var(--border-1);
   border-radius: var(--r-3);
