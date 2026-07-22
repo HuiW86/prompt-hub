@@ -346,8 +346,8 @@ export function SettingsModal() {
               <div className={styles.field}>
                 <span className={styles.fieldLabel}>强调色</span>
                 <span className={styles.fieldHint}>
-                  仅作用于品牌标记、主操作与焦点环，不影响协议层 /
-                  任务层语义色。
+                  作用于焦点环与主操作按钮。品牌标记与身份色恒定为
+                  violet（ADR-024），不随强调色切换。
                 </span>
                 <div
                   className={styles.swatches}

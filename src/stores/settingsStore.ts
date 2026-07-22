@@ -19,9 +19,12 @@ const ACCENTS: Accent[] = ["neutral", "blue", "green", "violet", "amber"];
 function applyAppearance(themeMode: ThemeMode, accent: Accent) {
   if (typeof document === "undefined") return;
   const root = document.documentElement;
-  root.classList.remove("light", "dark");
+  root.classList.remove("light", "dark", "system");
+  // Dark is the identity default (ADR-024): bare root = dark. `.light` forces
+  // light; `.system` re-enables the OS-preference media query in tokens.css.
   if (themeMode === "light") root.classList.add("light");
   else if (themeMode === "dark") root.classList.add("dark");
+  else root.classList.add("system");
   for (const a of ACCENTS) root.classList.toggle(`accent-${a}`, a === accent);
 }
 
