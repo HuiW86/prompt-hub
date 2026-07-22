@@ -155,21 +155,36 @@
   --accent-fg: var(--canvas);
 }
 
+/* ADR-024 补遗（omar 反馈"强调色不起作用"）：非中性 swatch 同时接管 --brand
+   —— 强调色升级为"身份主题色"，一次切换重涂整个驾驶舱（logo / Macro 芯片 /
+   相位主角 / 时间线 / 焦点环）。neutral（默认）保持 violet 品牌身份。 */
 :root.accent-blue {
   --accent: var(--accent-swatch-blue);
   --accent-fg: #ffffff;
+  --brand: #4c8dff;
+  --brand-dim: rgba(76, 141, 255, 0.14);
+  --brand-ghost: rgba(76, 141, 255, 0.32);
 }
 :root.accent-green {
   --accent: var(--accent-swatch-green);
   --accent-fg: #ffffff;
+  --brand: #2f9e6e;
+  --brand-dim: rgba(47, 158, 110, 0.14);
+  --brand-ghost: rgba(47, 158, 110, 0.32);
 }
 :root.accent-violet {
   --accent: var(--accent-swatch-violet);
   --accent-fg: #ffffff;
+  --brand: #8b7bff;
+  --brand-dim: rgba(139, 123, 255, 0.14);
+  --brand-ghost: rgba(139, 123, 255, 0.32);
 }
 :root.accent-amber {
   --accent: var(--accent-swatch-amber);
   --accent-fg: #ffffff;
+  --brand: #e0962f;
+  --brand-dim: rgba(224, 150, 47, 0.14);
+  --brand-ghost: rgba(224, 150, 47, 0.32);
 }
 
 /* ============================================================

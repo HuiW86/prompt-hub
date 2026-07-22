@@ -346,8 +346,8 @@ export function SettingsModal() {
               <div className={styles.field}>
                 <span className={styles.fieldLabel}>强调色</span>
                 <span className={styles.fieldHint}>
-                  作用于焦点环与主操作按钮。品牌标记与身份色恒定为
-                  violet（ADR-024），不随强调色切换。
+                  身份主题色：驱动品牌标记、Macro 芯片、当前相位与焦点环，
+                  整舱换色。默认（中性）为 violet 品牌色。
                 </span>
                 <div
                   className={styles.swatches}
