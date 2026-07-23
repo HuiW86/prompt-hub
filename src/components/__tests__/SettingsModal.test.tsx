@@ -113,6 +113,26 @@ describe("SettingsModal — data page export/import", () => {
   });
 });
 
+describe("SettingsModal — appearance density", () => {
+  beforeEach(() => {
+    useSettingsStore.setState(settingsInitial, true);
+    useSettingsStore.setState({ settingsOpen: true });
+  });
+
+  it("紧凑 pick updates the store and marks the segment active", () => {
+    render(<SettingsModal />);
+    const compactBtn = screen.getByRole("button", { name: "紧凑" });
+    expect(compactBtn).toHaveAttribute("aria-pressed", "false");
+    fireEvent.click(compactBtn);
+    expect(useSettingsStore.getState().density).toBe("compact");
+    expect(compactBtn).toHaveAttribute("aria-pressed", "true");
+    expect(document.documentElement.classList.contains("compact")).toBe(true);
+    fireEvent.click(screen.getByRole("button", { name: "舒适" }));
+    expect(useSettingsStore.getState().density).toBe("comfortable");
+    expect(document.documentElement.classList.contains("compact")).toBe(false);
+  });
+});
+
 describe("SettingsModal — focus domain", () => {
   beforeEach(() => {
     usePromptStore.setState(promptInitial, true);

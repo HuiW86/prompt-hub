@@ -456,6 +456,41 @@
 }
 
 /* ============================================================
+   3c. Density — compact tier (opt-in via :root.compact).
+   The 640px-tall baseline window spends most of its height on structural
+   chrome (region headers, anchor rows, region padding); the compact tier
+   tightens ONLY those structure tokens so one screen carries more assets.
+   Type sizes stay untouched — density must not cost readability.
+   Comfortable (bare root) keeps the reshape-v2 acceptance baseline
+   pixel-identical; the class rides settingsStore like theme/accent.
+   Every override here must re-declare a token defined above with a
+   strictly smaller px value — locked by density-gate.test.ts.
+   ============================================================ */
+:root.compact {
+  /* Component anchor heights (§3a) */
+  --h-chip: 22px;
+  --h-phasebar: 36px;
+  --h-phrases: 36px;
+  --h-statusbar: 24px;
+  --h-quickfind: 32px;
+  --h-scene-row: 28px;
+  --h-region-header: 32px;
+  --h-macro-strip: 156px;
+  --h-macro-tile: 44px;
+
+  /* Sub-grid spacing (§3): primarily region horizontal padding and the
+     region-header inner gap. These two tokens also reach some off-primary
+     surfaces (settings modal insets, search overlay padding), which tighten
+     alongside — one density voice across the cockpit, by design. Generic
+     4×n scale tokens (--s-1…--s-20) stay untouched.
+     12px (not 10) — 10 crowded the Scene phrase cards: the card body keeps
+     its --s-3 inset, so the column padding + sub-stage header are the only
+     breathing room around the reading surface (omar 2026-07-23). */
+  --s-3_5: 12px;
+  --s-2_5: 8px;
+}
+
+/* ============================================================
    4. Motion
    Constitution C1: ≤200ms on primary; bundle caps animations at 200ms.
    ============================================================ */

@@ -14,6 +14,8 @@ import {
   Palette,
   RefreshCw,
   RotateCw,
+  Rows3,
+  Rows4,
   Sun,
   Upload,
   X,
@@ -23,6 +25,7 @@ import { useEffect, useRef, useState } from "react";
 import { ipc } from "../ipc";
 import {
   type Accent,
+  type Density,
   type ThemeMode,
   useSettingsStore,
 } from "../stores/settingsStore";
@@ -57,6 +60,12 @@ const THEME_OPTIONS: { value: ThemeMode; label: string; icon: typeof Sun }[] = [
   { value: "system", label: "跟随系统", icon: Monitor },
 ];
 
+const DENSITY_OPTIONS: { value: Density; label: string; icon: typeof Rows3 }[] =
+  [
+    { value: "comfortable", label: "舒适", icon: Rows3 },
+    { value: "compact", label: "紧凑", icon: Rows4 },
+  ];
+
 const ACCENT_OPTIONS: { value: Accent; label: string; dot: string }[] = [
   { value: "neutral", label: "中性", dot: styles.dotNeutral },
   { value: "blue", label: "蓝", dot: styles.dotBlue },
@@ -84,6 +93,8 @@ export function SettingsModal() {
   const setThemeMode = useSettingsStore((s) => s.setThemeMode);
   const accent = useSettingsStore((s) => s.accent);
   const setAccent = useSettingsStore((s) => s.setAccent);
+  const density = useSettingsStore((s) => s.density);
+  const setDensity = useSettingsStore((s) => s.setDensity);
 
   const enabled = useUpdaterStore((s) => s.enabled);
   const status = useUpdaterStore((s) => s.status);
@@ -335,6 +346,30 @@ export function SettingsModal() {
                       )}
                       aria-pressed={themeMode === value}
                       onClick={() => setThemeMode(value)}
+                    >
+                      <Icon size={13} strokeWidth={2} aria-hidden />
+                      {label}
+                    </button>
+                  ))}
+                </div>
+              </div>
+
+              <div className={styles.field}>
+                <span className={styles.fieldLabel}>密度</span>
+                <span className={styles.fieldHint}>
+                  紧凑档收紧行高与区块留白，一屏承载更多资产；字号不变。
+                </span>
+                <div className={styles.segment} role="group" aria-label="密度">
+                  {DENSITY_OPTIONS.map(({ value, label, icon: Icon }) => (
+                    <button
+                      key={value}
+                      type="button"
+                      className={cx(
+                        styles.segItem,
+                        density === value && styles.active,
+                      )}
+                      aria-pressed={density === value}
+                      onClick={() => setDensity(value)}
                     >
                       <Icon size={13} strokeWidth={2} aria-hidden />
                       {label}

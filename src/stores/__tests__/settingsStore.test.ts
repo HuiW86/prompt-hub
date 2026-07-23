@@ -28,6 +28,10 @@ describe("settingsStore", () => {
     expect(useSettingsStore.getState().hiddenPhaseIds).toEqual([]);
   });
 
+  it("defaults density to comfortable (reshape-v2 baseline)", () => {
+    expect(useSettingsStore.getState().density).toBe("comfortable");
+  });
+
   it("defaults interactionMode to invoke (D-0)", () => {
     expect(useSettingsStore.getState().interactionMode).toBe("invoke");
   });
@@ -61,4 +65,23 @@ describe2("applyAppearance root classes (ADR-024)", () => {
     expect2(document.documentElement.classList.contains("dark")).toBe(true);
     expect2(document.documentElement.classList.contains("light")).toBe(false);
   });
+
+  it2(
+    "compact density rides .compact on the root; comfortable removes it",
+    () => {
+      store.getState().setDensity("compact");
+      expect2(document.documentElement.classList.contains("compact")).toBe(
+        true,
+      );
+      // Theme/accent switches must not drop the density class.
+      store.getState().setThemeMode("light");
+      expect2(document.documentElement.classList.contains("compact")).toBe(
+        true,
+      );
+      store.getState().setDensity("comfortable");
+      expect2(document.documentElement.classList.contains("compact")).toBe(
+        false,
+      );
+    },
+  );
 });
