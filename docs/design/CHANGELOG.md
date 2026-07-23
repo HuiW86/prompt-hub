@@ -14,6 +14,20 @@ description: prompt-hub 设计文档体系变更日志——记录文档结构�
 
 ---
 
+## 2026-07-22 — light 主题按驾驶舱语言校准：身份色加深 + 选区可见性 + 主题双轨防漂移门
+
+### 变更内容
+
+- **代码事实**（分支 `reshape/ui-v2`）：tokens.css 新增 §1d「LIGHT-mode identity deepening」——浅色下五路身份色（neutral-violet / blue / green / violet / amber）换用同色相加深锚点（surface-1 白底 ≥4.4:1、作填充压白字 ≥4.4:1，暗色原值 2.2–2.9:1；canvas #f2f2f0 上 blue 4.39 / amber 4.01——仅作填充/焦点环色，不作 canvas 文字色，verifier 实算口径），`--accent`+`--brand` 同步接管（ADR-024 补遗「强调色=身份主题色」在 light 侧闭环）；`::selection` 由 `--surface-3` 直引改为 `--selection` token（浅色下原值对白底 ~1.1:1 几乎不可见，现为品牌色 22% 染色）；`--aux` 元信息灰浅色加深至 ~4.6:1；band token 不动（ADR-020 暗岛恒定，仍用亮 swatch）
+- **新增** `src/styles/theme-parity.test.ts`：解析 tokens.css，断言 `:root.light*` 与 `@media` 内 `:root.system*` 两套手工镜像逐 token 相等 + 四个 accent 类均有 light 加深块——锁死双轨漂移；测试 316→324 / lint / prettier / build 全绿
+- **待回流**：light 加深色值属 design-spec §2 色板契约，随 v0.15 draft 人审八步一并回流，不就地补丁
+
+### 变更原因
+
+HANDOFF 重塑 v2 余项「light 观感未按驾驶舱语言校」：v2 只调了深色，浅色下身份时刻（logo / 相位主角 / Macro 芯片 / 焦点环）发虚、选中文本不可见。
+
+---
+
 ## 2026-07-21 — ADR-024 深色驾驶舱身份：品牌 token + 协议舱主角化 + Macro 命令牌（重塑第二波）
 
 ### 变更内容

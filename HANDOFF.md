@@ -10,17 +10,18 @@ ADR-023 + ADR-024（含补遗）：v0.1.0 发布前完成 UI+组件架构系统�
 - **新排查项沉淀**：图标由 `generate_context!` 编译期嵌入二进制，改 `icons/` 不触发 cargo 重编译——需 `touch src-tauri/build.rs` 强制重编译才生效（本轮实测 0.39s 缓存 vs 10.45s 真编译）
 - **dev 环境重置**：上会话遗留 dev 进程链（含 Zustand 旧实例隐患）全部清杀后全新拉起
 - 重塑 v2 全量成果（W1–W6 / 身份 / 双布局 / 深化 / 外观闭环两轮）见 `4452f35` checkpoint 与 CHANGELOG，本轮零改动
+- **light 主题驾驶舱校准**（2026-07-22 夜间自主批次，原 Next 6）：tokens.css §1d 五路身份色浅色加深锚点（白底 ≥4.4:1）+ `::selection` token 化修浅色选区不可见 + `--aux` 浅色加深；新增 theme-parity.test.ts 锁 `:root.light`/`:root.system` 双轨镜像防漂移；316→324 全绿；色值回流 design-spec §2 随 v0.15 人审八步
 
 ## In Progress
 - dev server 后台跑动中（本会话任务 bczkwc45a，`target/debug/prompt-hub` 已嵌新图标）；未跟踪 `.codex/` + `AGENTS.md` 留置（归 omar）
 
 ## Next Actions
 1. **推送 origin**：`git push origin reshape/ui-v2`——`5438338`（图标）+ 本 checkpoint 尚未推送
-2. **真机全量验收**（1024×640 基线）：驾驶舱布局（点「调用」）+ 整舱换色（设置五色块）+ verifier NEEDS HUMAN 清单（elevation 手感 / overlay 入场 / 窄窗降级 / StatusBar 更新重试链路）+ scrim 45% + 批次 A NEEDS HUMAN 4 项 + 批次 B 移动/撤销链路——完成前不入对外发布说明 (carried from 2026-07-21)
+2. **真机全量验收**（1024×640 基线）：驾驶舱布局（点「调用」）+ 整舱换色（设置五色块）+ verifier NEEDS HUMAN 清单（elevation 手感 / overlay 入场 / 窄窗降级 / StatusBar 更新重试链路）+ scrim 45% + 批次 A NEEDS HUMAN 4 项 + 批次 B 移动/撤销链路 + **浅色主题走查（设置切「浅色」×五 accent：logo/相位/Macro 芯片/焦点环加深观感 + 选中文本可见，2026-07-22 校准）**——完成前不入对外发布说明 (carried from 2026-07-21)
 3. 验收通过后 `reshape/ui-v2` 并回 main（git merge --no-ff，含 ADR-023/024 全链）(carried from 2026-07-21)
 4. product-spec §4.0/§13.4 布局与 Tab 序契约回流 + design-spec §2/§8/§9 v2 身份回流（八步，draft 待人审）——App.test.tsx:202 cockpit 序断言是代码侧事实源 (carried from 2026-07-21)
 5. omar 人审批次：design-spec v0.15 draft + ADR-023/024 措辞 + **图标图形定稿追认（AI 代笔，实机已认可）** + product-spec v0.15/v0.16 + features v1.10/v1.11 + 01-spec v0.7 追认 + 旧账 ADR-021/scene.color (carried from 2026-07-06，扩)
-6. light 主题在 v2 身份下的细调（`src/styles/tokens.css :root.light` 段——v2 只做了深色，light 观感未按驾驶舱语言校）(carried from 2026-07-21)
+6. ~~light 主题在 v2 身份下的细调~~ **Done 2026-07-22**（见 Completed；浅色观感真机走查并入 Next 2 验收清单）
 7. 补焦点恢复"负路径"测试（src/components/__tests__/ScenePanelFocusRestore.test.tsx，verifier 建议，非阻塞）(carried from 2026-07-21)
 8. bench-c1 `continue-on-error` 处置 omar 复核 (carried from 2026-07-12)
 9. 上会话 3 commit（`a24c7c0`/`4b722c1`/`716bd4c`）补 verifier (carried from 2026-07-07)
@@ -44,7 +45,7 @@ ADR-023 + ADR-024（含补遗）：v0.1.0 发布前完成 UI+组件架构系统�
 - `.codex/` / `AGENTS.md` 归 omar (carried)
 
 ## Verify
-- `pnpm test` → 316/316（33 文件）
+- `pnpm test` → 324/324（33 文件，+8 theme-parity）
 - `pnpm lint` && `pnpm exec prettier --check .` && `pnpm build`
 - `cargo test --workspace --manifest-path src-tauri/Cargo.toml` → 0 failed（Rust 全程零 diff，本轮仅 touch 时间戳）
 - `cargo clippy --workspace --all-targets --manifest-path src-tauri/Cargo.toml -- -D warnings`

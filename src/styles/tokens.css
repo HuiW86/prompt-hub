@@ -78,6 +78,11 @@
      frame (App.css body) so the see-through inset reads as intentional. */
   --scrim: rgba(0, 0, 0, 0.45);
 
+  /* Text selection fill. Dark keeps the neutral lifted surface; light mode
+     re-tints it from the brand hue (§1d) — surface-3 on a white sheet is a
+     ~1.1:1 wash the eye cannot find. */
+  --selection: var(--surface-3);
+
   /* Elevation — subtle drop-shadow (ADR-019, design-spec §8.2.1).
      Apply on floating surfaces (card/banner/overlay/popover) and as the
      RESTING shadow of raised surface-1 containers (Promptscape, ADR-018
@@ -235,6 +240,94 @@
 :root.accent-amber {
   --band-accent: var(--accent-swatch-amber);
   --band-accent-fg: #ffffff;
+}
+
+/* ============================================================
+   1d. LIGHT-mode identity deepening (HANDOFF reshape-v2 余项).
+   The brand / accent hues in §1b are tuned for the dark cockpit — on a
+   light sheet they drop to ~2.2–2.9:1 and the identity moments (logo,
+   active phase, macro chips, focus ring) wash out. Light mode swaps in
+   deepened same-hue anchors: all ≥4.4:1 on surface-1 (#ffffff) and as
+   fills under white -fg; on canvas (#f2f2f0) blue is 4.39 and amber
+   4.01 — treat them as fill/ring hues there, not canvas text colors.
+   Band tokens are untouched: the band is a
+   mode-invariant dark island (ADR-020) and keeps the BRIGHT swatch hues.
+   NOTE: every `:root.light…` block here must have an identical
+   `:root.system…` twin inside the @media guard below — parity is locked
+   by theme-parity.test.ts, extend both or the gate fails.
+   ============================================================ */
+:root.light {
+  --brand: #5d4de0;
+  --brand-dim: rgba(93, 77, 224, 0.14);
+  --brand-ghost: rgba(93, 77, 224, 0.38);
+  --selection: rgba(93, 77, 224, 0.22);
+  --aux: #6f6e66; /* meta gray: 2.8:1 on light canvas → ~4.6:1 */
+}
+:root.light.accent-blue {
+  --accent: #2f6bdd;
+  --brand: #2f6bdd;
+  --brand-dim: rgba(47, 107, 221, 0.14);
+  --brand-ghost: rgba(47, 107, 221, 0.38);
+  --selection: rgba(47, 107, 221, 0.22);
+}
+:root.light.accent-green {
+  --accent: #1e7a55;
+  --brand: #1e7a55;
+  --brand-dim: rgba(30, 122, 85, 0.14);
+  --brand-ghost: rgba(30, 122, 85, 0.38);
+  --selection: rgba(30, 122, 85, 0.22);
+}
+:root.light.accent-violet {
+  --accent: #5d4de0;
+  --brand: #5d4de0;
+  --brand-dim: rgba(93, 77, 224, 0.14);
+  --brand-ghost: rgba(93, 77, 224, 0.38);
+  --selection: rgba(93, 77, 224, 0.22);
+}
+:root.light.accent-amber {
+  --accent: #b0640a;
+  --brand: #b0640a;
+  --brand-dim: rgba(176, 100, 10, 0.14);
+  --brand-ghost: rgba(176, 100, 10, 0.38);
+  --selection: rgba(176, 100, 10, 0.22);
+}
+
+@media (prefers-color-scheme: light) {
+  :root.system {
+    --brand: #5d4de0;
+    --brand-dim: rgba(93, 77, 224, 0.14);
+    --brand-ghost: rgba(93, 77, 224, 0.38);
+    --selection: rgba(93, 77, 224, 0.22);
+    --aux: #6f6e66; /* meta gray: 2.8:1 on light canvas → ~4.6:1 */
+  }
+  :root.system.accent-blue {
+    --accent: #2f6bdd;
+    --brand: #2f6bdd;
+    --brand-dim: rgba(47, 107, 221, 0.14);
+    --brand-ghost: rgba(47, 107, 221, 0.38);
+    --selection: rgba(47, 107, 221, 0.22);
+  }
+  :root.system.accent-green {
+    --accent: #1e7a55;
+    --brand: #1e7a55;
+    --brand-dim: rgba(30, 122, 85, 0.14);
+    --brand-ghost: rgba(30, 122, 85, 0.38);
+    --selection: rgba(30, 122, 85, 0.22);
+  }
+  :root.system.accent-violet {
+    --accent: #5d4de0;
+    --brand: #5d4de0;
+    --brand-dim: rgba(93, 77, 224, 0.14);
+    --brand-ghost: rgba(93, 77, 224, 0.38);
+    --selection: rgba(93, 77, 224, 0.22);
+  }
+  :root.system.accent-amber {
+    --accent: #b0640a;
+    --brand: #b0640a;
+    --brand-dim: rgba(176, 100, 10, 0.14);
+    --brand-ghost: rgba(176, 100, 10, 0.38);
+    --selection: rgba(176, 100, 10, 0.22);
+  }
 }
 
 /* ============================================================
@@ -405,7 +498,7 @@ textarea {
 }
 
 ::selection {
-  background: var(--surface-3);
+  background: var(--selection);
 }
 
 /* ============================================================
