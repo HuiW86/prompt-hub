@@ -21,6 +21,7 @@ description: prompt-hub 设计文档体系变更日志——记录文档结构�
 - **代码事实**（分支 `reshape/density-compact`，自 `reshape/ui-v2` 切出）：tokens.css 新增 §3c「Density — compact tier」——`:root.compact` 收紧结构 token（锚点高度 §3a 九项：scene-row 32→28 / phrases 44→36 / region-header 40→32 / macro-tile 56→44 / macro-strip 200→156 / phasebar 44→36 / statusbar 28→24 / quickfind 36→32 / chip 24→22；子网格间距两项：`--s-3_5` 14→12（首版 10，omar 真机反馈 Scene 话术卡拥挤后回调）/ `--s-2_5` 10→8），**字号与行高不动**（密度不牺牲可读性）；4×n 通用间距 scale 不动（承载密度之外的语义）
 - **settingsStore** 新增 `density: "comfortable" | "compact"`（默认舒适 = v2 验收基线像素不变），随 theme/accent 同机制走 root 类 + localStorage persist（constitution A2，无需 persist version bump——default merge 补齐旧状态缺失键）；设置 → 外观新增「密度」段控件（舒适/紧凑）
 - **新增** `src/styles/density-gate.test.ts`：源级断言 compact 覆盖项必须是 base `:root` 已有 token、必须为严格更小的 px 值、禁触 `--t-*`/`--lh-*`——锁死"越改越大/孤儿覆盖/偷改字号"三类回归；测试 324→330 / lint / prettier / build 全绿
+- **话术卡解剖改形**（omar 2026-07-23 追加裁决）：Scene 话术卡静息态**只显标题**，正文预览（原 2 行 line-clamp）从卡面移除——名称即把手，内容仅在整理态整卡点击展开时上屏（D-0 预览语义保留且强化：预览 = 唯一的内容呈现时刻）；承载量提升来自卡片解剖而非只靠间距收紧，此项**不分密度档**生效；涉 product-spec 卡片解剖契约，随八步回流
 - **动机**：640px 基线高度中结构佣金（区头 × 6、锚点行高、区块 padding）占比过高，omar 反馈"页面承载内容不够多"；紧凑档实测约省 20% 纵向结构开销
 - **待回流**：密度档属 product-spec 外观设置契约 + design-spec token 层，随人审八步回流，不就地补丁
 
