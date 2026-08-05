@@ -54,12 +54,12 @@
 
 ## Verify
 
-- `pnpm test` → 330/330（34 文件）
+- `pnpm test` → 331/331（34 文件；+1 = updater UA 断言）
 - `pnpm lint` && `pnpm exec prettier --check .` && `pnpm build`
 - `cargo test --workspace --manifest-path src-tauri/Cargo.toml` → 155 passed / 0 failed
 - `cargo clippy --workspace --all-targets --manifest-path src-tauri/Cargo.toml -- -D warnings`
 - `bash scripts/check-version.sh 0.1.0` → 三处版本一致
-- 以上均在合并后的 main（`475ec15`）实跑通过
+- 以上均在 main（`0033d42`）实跑通过
 
 ## Modified Files
 
