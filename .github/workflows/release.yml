@@ -1,10 +1,15 @@
 # Auto-update release pipeline (ADR-017).
 #
-# UNTESTABLE until Phase 0 keys exist — this is a reviewable first draft. It
-# cannot run end-to-end until: (1) a minisign keypair is generated and the
-# private key + password land in the `release-signing` Environment secrets,
-# (2) the Apple notarization creds land as secrets, (3) tauri.conf.json's
-# `plugins.updater.pubkey` placeholder is replaced with the real public key.
+# Phase 0 prerequisites are satisfied: the minisign keypair, the Apple
+# notarization creds, and tauri.conf.json's real `plugins.updater.pubkey` are all
+# in place. Never yet run end-to-end — the repository has no tag and no release,
+# so the first `v*.*.*` push is also this pipeline's first live exercise.
+#
+# Known deviation from the security model below: TAURI_SIGNING_PRIVATE_KEY and
+# its password currently live as REPOSITORY secrets, not `release-signing`
+# Environment secrets. Any workflow in this repo can therefore reference them
+# without passing the reviewer gate. Move them to the Environment before the
+# first publish.
 #
 # Security model (ADR-017 §5.5):
 #   - Trigger is tag-push ONLY. workflow_dispatch / repository_dispatch /

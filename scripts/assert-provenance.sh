@@ -19,9 +19,17 @@ fail() {
 mver="$(jq -r '.version' "$manifest")"
 [ "$mver" = "$want" ] || fail "latest.json version '$mver' != tag '$want'"
 
-# 2. every platform entry has a signature and a URL whose basename exists in dist
+# 2. the manifest must actually describe something. An empty platforms map makes
+#    the loop below iterate zero times, so every downstream check would pass
+#    vacuously and ship a manifest no updater can resolve.
+[ "$(jq -r '.platforms | length' "$manifest")" -gt 0 ] || fail "latest.json has no platform entries"
+
+# 3. every platform entry has a signature and a URL whose basename exists in dist
 #    and carries the tag version; and a matching .sig file is present.
-while IFS=$'\t' read -r plat sig url; do
+# Fields are joined on US (0x1f), not tab: tab is an IFS whitespace class, so
+# `read` would collapse consecutive tabs and shift an empty signature's columns,
+# masking the real cause behind a confusing downstream error.
+while IFS=$'\x1f' read -r plat sig url; do
   [ -n "$sig" ] || fail "platform '$plat' has an empty signature"
   file="$(basename "$url")"
   case "$file" in
@@ -30,6 +38,19 @@ while IFS=$'\t' read -r plat sig url; do
   esac
   [ -f "$dist/$file" ] || fail "artifact '$file' referenced by latest.json is missing"
   [ -f "$dist/$file.sig" ] || fail "signature '$file.sig' is missing"
-done < <(jq -r '.platforms | to_entries[] | [.key, .value.signature, .value.url] | @tsv' "$manifest")
+done < <(jq -r '.platforms | to_entries[] | [.key, .value.signature, .value.url] | join("\u001f")' "$manifest")
+
+# 4. reverse direction: every updater package staged in dist must be claimed by
+#    latest.json. Checking only manifest → artifacts lets a partial manifest
+#    (one arch silently dropped by the sign loop) reach the draft release.
+shopt -s nullglob
+archives=("$dist"/*.app.tar.gz)
+shopt -u nullglob
+[ ${#archives[@]} -gt 0 ] || fail "no updater package (.app.tar.gz) present in $dist"
+for archive in "${archives[@]}"; do
+  name="$(basename "$archive")"
+  jq -e --arg n "$name" '[.platforms[].url | split("/") | last] | any(. == $n)' "$manifest" >/dev/null \
+    || fail "updater package '$name' is staged but not referenced by latest.json"
+done
 
 echo "provenance OK: tag '$want' ↔ latest.json ↔ artifacts all consistent"
