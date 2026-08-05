@@ -1,9 +1,9 @@
 ---
 type: learnings
 project: prompt-hub
-version: v0.3
+version: v0.4
 created: 2026-06-04
-last_modified: 2026-06-05
+last_modified: 2026-08-05
 status: living
 author: co  # 🤝 人机共创（CLAUDE §5.2），人审
 related:
@@ -15,6 +15,7 @@ related:
   - 008-enable-macos-private-api
   - 015-expose-mcp-write-pipeline
   - m0-4-macos-signing
+  - 2026-08-05-notarization-fail-open
 description: prompt-hub 走到 M0 收口为止，反复出现、被真实踩坑或决策验证过的判断，提炼成 7 条可迁移信条 + 技术栈速查。不是变更日志、不是工程 checklist；新会话/新成员进项目读 CLAUDE.md 之后接读，理解"这个项目用什么方式做判断"。
 ---
 
@@ -62,6 +63,7 @@ description: prompt-hub 走到 M0 收口为止，反复出现、被真实踩坑�
 
 **证据**：
 - **M0-4 签名公证**：把"私有 API 会被 Apple 公证拒绝"当最坏假设主动验证——`spctl: accepted / source=Notarized Developer ID` + release 包双击无黑屏 → 证伪。结论是"不阻塞功能开发、只阻塞对外发布"，于是没让它卡住主线。
+  ⚠️ **这条证据只成立于它自己的命题范围内，2026-08-05 被反向验证**：它证明的是"这个 app **能**被公证"，不是"发布流水线**会**去公证"。后者在近两个月里从未被验证，v0.1.0 首次打 tag 即产出未公证的包并绿灯进 draft。**证伪一个最坏假设之后，要检查结论是否被悄悄扩大到另一个执行环境**——完整因果链见 [[2026-08-05-notarization-fail-open]]。
 - **NSPanel key-window**（ADR-014）：borderless NSPanel 默认 `canBecomeKeyWindow=false` 收不到键盘，是个会"全做完才发现键盘全废"的坑。先验证 isa-swizzle 子类方案可行再铺开。
 - **已实机验证回流**（2026-06-05）：① dnd-kit 键盘 sensor 经 #6 手测通过（PhaseBar 点击解耦后窗口驻留 → AlignmentPhrase 管理面板增删改排序，commit `441764b`）；② `react-resizable-panels` 分隔条**指针拖拽 + localStorage 持久化**经 P4 手测通过（拖出比例 → 退出重进恢复，commit `a347d17`）；③ 分隔条**键盘 focus（Tab 聚焦 + ←→ 调宽）**经**全量重启后**实机确认通过（2026-06-05，先冷启动杜绝 HMR 中间态干扰再测）——至此 dnd 键盘层 + 分隔条指针/键盘三项全部实测闭环。这条印证了出口要预先写好——验证逐项落地、不一次性结案。
 - **附加教训**（2026-06-05）：P4 改动曾在真实 Tauri webview 抛运行时报错、被误判为 bug，全量重启后不复现——根因是 `Group`/`Panel` 在 **HMR 热替换**时挂载顺序错乱（jsdom 测不到、build/test 全绿也不代表 webview 不报错）。落点：resizable/布局类组件改动若 HMR 期间报错，先全量 reload 复核再判 bug，别急着 revert。

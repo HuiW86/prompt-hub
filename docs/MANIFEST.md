@@ -34,7 +34,7 @@ related:
 | 技术调研 | 2 | active（索引 + 1 份调研）|
 | 视觉原型 | 1 | v1 已归档至 archive/（2026-05-25）|
 | 项目 AI 上下文 | 2 | active |
-| 反思沉淀 | 1 | active（2026-06-04 新增 learnings v0.1）|
+| 反思沉淀 | 2 | active（2026-08-05 新增 postmortems/ 首份；2026-06-04 learnings v0.1）|
 | 工程护栏 | 5 | active（2026-07-01 新增 ci.yml + 登记 3 个源码级 gate 测试）|
 
 ---
@@ -167,13 +167,16 @@ related:
 
 ---
 
-## §11.5 反思沉淀（1 份 · 🤝 共创）
+## §11.5 反思沉淀（2 份 · 🤝 共创）
 
 > 方法论 v1.3 七层中的「反思层」产物——跨 ADR / 踩坑 / 决策抽出的共性判断，非 13 份核心设计文档之一。不走方法论 §7 八步；若某条信条与 constitution 抵触，须先走 ADR 修订 constitution。
+>
+> 两种粒度：`learnings.md` 是跨多次踩坑的长期信条，`postmortems/` 是单次事故的完整因果链（信条的候选来源）。
 
 | 路径 | 内容 | 状态 |
 |---|---|---|
 | `docs/learnings.md` | 7 条可迁移信条 + 技术栈速查（M0 阶段经验提炼） | active v0.1（2026-06-04）|
+| `docs/postmortems/2026-08-05-notarization-fail-open.md` | v0.1.0 公证被静默跳过复盘：fail-open 断言的三个同形实例 + 「能力≠行使」滑移 + 6 问自查清单 | closed v0.1（2026-08-05）|
 
 ---
 
