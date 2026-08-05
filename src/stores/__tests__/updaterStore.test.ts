@@ -43,6 +43,30 @@ describe("updaterStore", () => {
     expect(useUpdaterStore.getState().availableVersion).toBe("0.2.0");
   });
 
+  // ADR-017 §5.1: the A2 exemption covers current version + target and nothing
+  // else. reqwest's default User-Agent carries library versions — a precise
+  // fingerprint — so both requests must pin it. check() and downloadAndInstall()
+  // take headers separately, so dropping either one reopens the leak.
+  it("pins a fixed User-Agent on both the check and the download request", async () => {
+    checkMock.mockResolvedValue({ version: "0.2.0" });
+    useUpdaterStore.setState({ enabled: true, optInDecided: true });
+    await useUpdaterStore.getState().check();
+    expect(checkMock).toHaveBeenCalledWith({
+      headers: { "User-Agent": "prompt-hub-updater" },
+    });
+
+    relaunchMock.mockResolvedValue(undefined);
+    const downloadAndInstall = vi.fn(async () => {});
+    useUpdaterStore.setState({
+      status: "available",
+      update: { downloadAndInstall } as never,
+    });
+    await useUpdaterStore.getState().downloadAndInstall();
+    expect(downloadAndInstall).toHaveBeenCalledWith(expect.any(Function), {
+      headers: { "User-Agent": "prompt-hub-updater" },
+    });
+  });
+
   it("check() reports up-to-date when the plugin returns null", async () => {
     checkMock.mockResolvedValue(null);
     useUpdaterStore.setState({ enabled: true, optInDecided: true });

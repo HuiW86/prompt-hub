@@ -5,11 +5,11 @@
 # in place. Never yet run end-to-end — the repository has no tag and no release,
 # so the first `v*.*.*` push is also this pipeline's first live exercise.
 #
-# Known deviation from the security model below: TAURI_SIGNING_PRIVATE_KEY and
-# its password currently live as REPOSITORY secrets, not `release-signing`
-# Environment secrets. Any workflow in this repo can therefore reference them
-# without passing the reviewer gate. Move them to the Environment before the
-# first publish.
+# Secret scope (2026-08-05): TAURI_SIGNING_PRIVATE_KEY is an Environment secret
+# on `release-signing`, so only a job that declares that environment — and thus
+# passes the reviewer gate — can reference it. TAURI_SIGNING_PRIVATE_KEY_PASSWORD
+# is still a repository secret; harmless on its own (useless without the key),
+# but move it for symmetry.
 #
 # Security model (ADR-017 §5.5):
 #   - Trigger is tag-push ONLY. workflow_dispatch / repository_dispatch /
@@ -117,10 +117,15 @@ jobs:
   sign:
     needs: build
     runs-on: macos-latest
-    # Required-reviewer gate: configure a protected Environment named
-    # `release-signing` (Settings → Environments) with a reviewer who is NOT the
-    # tag author. The minisign key is an Environment secret, so it is only
-    # injected after manual approval.
+    # Required-reviewer gate: the protected Environment `release-signing` holds
+    # the minisign key, so it is injected only after manual approval.
+    #
+    # ADR-017 §5.5 wants a reviewer who is NOT the tag author; this repository
+    # has exactly one collaborator, so approval is necessarily self-approval and
+    # the gate stops being a second pair of eyes. That is the solo-maintainer
+    # fallback the same section anticipates, and it is NOT free: the compensating
+    # control is mandatory local verification of the built artifacts before
+    # publishing the draft. See docs/release-runbook.md.
     environment: release-signing
     steps:
       - uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v7.0.0
@@ -191,11 +196,20 @@ jobs:
         env:
           GH_TOKEN: ${{ github.token }}
         run: |
+          # Release notes live in the repo so they get reviewed like anything
+          # else. Missing notes must not fail the build — the draft still needs
+          # a human pass before publishing, and the placeholder says so.
+          notes="docs/release-notes/${GITHUB_REF_NAME}.md"
+          if [ -f "$notes" ]; then
+            set -- --notes-file "$notes"
+          else
+            set -- --notes "Draft — no ${notes} in the repo. Write the notes, then verify artifacts and publish."
+          fi
           # Assets: updater package (.app.tar.gz) + its minisig + latest.json
           # manifest, plus the direct-install .dmg (not in latest.json — new
           # users install from the dmg, the updater consumes .app.tar.gz).
           gh release create "${GITHUB_REF_NAME}" \
             --draft \
             --title "${GITHUB_REF_NAME}" \
-            --notes "Draft — verify artifact hashes, then publish to go live." \
+            "$@" \
             dist/*.dmg dist/*.app.tar.gz dist/*.app.tar.gz.sig dist/latest.json

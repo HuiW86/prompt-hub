@@ -5,6 +5,13 @@ import { persist } from "zustand/middleware";
 
 import { useToastStore } from "./toastStore";
 
+// ADR-017 §5.1: reqwest's default User-Agent carries its own library versions,
+// which would hand GitHub a precise version-combination fingerprint on every
+// check. Pin it to a fixed string — the A2 exemption covers current version +
+// target (carried by the endpoint template) and nothing beyond that. check()
+// and downloadAndInstall() take headers separately, so both must pass these.
+const UPDATER_HEADERS = { "User-Agent": "prompt-hub-updater" };
+
 export type UpdaterStatus =
   | "idle"
   | "checking"
@@ -70,7 +77,7 @@ export const useUpdaterStore = create<UpdaterState>()(
         try {
           // Downgrades stay disabled: we never set allowDowngrades / a custom
           // version comparator, so the plugin rejects older versions (§5.6).
-          const update = await check();
+          const update = await check({ headers: UPDATER_HEADERS });
           if (update) {
             set({
               status: "available",
@@ -113,24 +120,27 @@ export const useUpdaterStore = create<UpdaterState>()(
         let total = 0;
         let downloaded = 0;
         try {
-          await update.downloadAndInstall((event) => {
-            switch (event.event) {
-              case "Started":
-                total = event.data.contentLength ?? 0;
-                downloaded = 0;
-                set({ downloadProgress: total > 0 ? 0 : null });
-                break;
-              case "Progress":
-                downloaded += event.data.chunkLength;
-                if (total > 0) {
-                  set({ downloadProgress: Math.min(downloaded / total, 1) });
-                }
-                break;
-              case "Finished":
-                set({ downloadProgress: total > 0 ? 1 : null });
-                break;
-            }
-          });
+          await update.downloadAndInstall(
+            (event) => {
+              switch (event.event) {
+                case "Started":
+                  total = event.data.contentLength ?? 0;
+                  downloaded = 0;
+                  set({ downloadProgress: total > 0 ? 0 : null });
+                  break;
+                case "Progress":
+                  downloaded += event.data.chunkLength;
+                  if (total > 0) {
+                    set({ downloadProgress: Math.min(downloaded / total, 1) });
+                  }
+                  break;
+                case "Finished":
+                  set({ downloadProgress: total > 0 ? 1 : null });
+                  break;
+              }
+            },
+            { headers: UPDATER_HEADERS },
+          );
           // Restart into the freshly installed version. relaunch() needs the
           // process plugin + process:default capability (plugins-workspace
           // #2273), both wired in Phase 1.
