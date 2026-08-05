@@ -1,0 +1,81 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
+  prompt-hub app icon — vector source of truth.
+  Canvas 1024x1024 with transparent margin; squircle 824x824 centered (macOS grid).
+  Regenerate rasters: render this at 1024 PNG, then `pnpm tauri icon <png>`.
+  Mark: violet hub (brand #8b7bff, ADR-024) — tiered satellite nodes on diagonal spokes.
+-->
+<svg width="1024" height="1024" viewBox="0 0 1024 1024" xmlns="http://www.w3.org/2000/svg">
+  <defs>
+    <linearGradient id="bg" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#2b2b35"/>
+      <stop offset="0.55" stop-color="#1d1d23"/>
+      <stop offset="1" stop-color="#141418"/>
+    </linearGradient>
+    <radialGradient id="ambient" cx="0.5" cy="0.46" r="0.5">
+      <stop offset="0" stop-color="#8b7bff" stop-opacity="0.22"/>
+      <stop offset="0.6" stop-color="#8b7bff" stop-opacity="0.08"/>
+      <stop offset="1" stop-color="#8b7bff" stop-opacity="0"/>
+    </radialGradient>
+    <radialGradient id="node" cx="0.35" cy="0.3" r="0.9">
+      <stop offset="0" stop-color="#cdc5ff"/>
+      <stop offset="1" stop-color="#8b7bff"/>
+    </radialGradient>
+    <radialGradient id="core" cx="0.35" cy="0.3" r="0.9">
+      <stop offset="0" stop-color="#e2ddff"/>
+      <stop offset="1" stop-color="#a89bff"/>
+    </radialGradient>
+    <clipPath id="squircleClip">
+      <rect x="100" y="100" width="824" height="824" rx="186"/>
+    </clipPath>
+    <filter id="glow" x="-40%" y="-40%" width="180%" height="180%">
+      <feGaussianBlur stdDeviation="22"/>
+    </filter>
+  </defs>
+
+  <!-- squircle background -->
+  <rect x="100" y="100" width="824" height="824" rx="186" fill="url(#bg)"/>
+  <g clip-path="url(#squircleClip)">
+    <rect x="100" y="100" width="824" height="824" fill="url(#ambient)"/>
+    <!-- top inner highlight (subtle elevation, ADR-019) -->
+    <rect x="102" y="102" width="820" height="820" rx="184" fill="none"
+          stroke="rgba(255,255,255,0.07)" stroke-width="3"/>
+  </g>
+
+  <!-- hub mark: center ring+core, 5 tiered satellites (2 hollow), diagonal rhythm -->
+  <g transform="translate(496,504) scale(1.1)">
+    <!-- soft glow behind the mark -->
+    <g filter="url(#glow)" opacity="0.45" stroke="#8b7bff" fill="#8b7bff">
+      <circle r="88" fill="none" stroke-width="23"/>
+      <line x1="88" y1="0" x2="212" y2="0" stroke-width="25"/>
+      <circle cx="256" cy="0" r="44" stroke="none"/>
+      <line x1="30" y1="-83" x2="79" y2="-216" stroke-width="17"/>
+      <circle cx="90" cy="-246" r="32" stroke="none"/>
+      <line x1="-72" y1="50" x2="-172" y2="121" stroke-width="17"/>
+      <circle cx="-197" cy="138" r="30" stroke="none"/>
+    </g>
+
+    <g stroke="#8b7bff" stroke-linecap="round">
+      <!-- primary spoke E -->
+      <line x1="88" y1="0" x2="212" y2="0" stroke-width="25"/>
+      <!-- secondary spoke NNE -->
+      <line x1="30" y1="-83" x2="79" y2="-216" stroke-width="17"/>
+      <!-- secondary spoke SW -->
+      <line x1="-72" y1="50" x2="-172" y2="121" stroke-width="17"/>
+      <!-- tertiary spokes WNW / SSE (to hollow nodes) -->
+      <line x1="-83" y1="-30" x2="-174" y2="-64" stroke-width="13" opacity="0.85"/>
+      <line x1="37" y1="80" x2="81" y2="167" stroke-width="13" opacity="0.85"/>
+    </g>
+
+    <!-- center: ring + solid core -->
+    <circle r="88" fill="none" stroke="#a496ff" stroke-width="23"/>
+    <circle r="42" fill="url(#core)"/>
+
+    <!-- satellites, tiered -->
+    <circle cx="256" cy="0" r="44" fill="url(#node)"/>
+    <circle cx="90" cy="-246" r="32" fill="url(#node)"/>
+    <circle cx="-197" cy="138" r="30" fill="url(#node)"/>
+    <circle cx="-197" cy="-72" r="22" fill="none" stroke="#8b7bff" stroke-width="15" opacity="0.9"/>
+    <circle cx="87" cy="182" r="18" fill="none" stroke="#8b7bff" stroke-width="13" opacity="0.9"/>
+  </g>
+</svg>

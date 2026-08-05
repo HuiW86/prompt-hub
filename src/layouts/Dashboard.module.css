@@ -43,15 +43,13 @@
 }
 
 .taskPill {
+  composes: ph-label from "../styles/typography.module.css";
   display: inline-flex;
   align-items: center;
   gap: var(--s-1);
   padding: var(--s-0_5) var(--s-2);
   border-radius: var(--r-2);
   background: var(--surface-2);
-  color: var(--fg-2);
-  font: var(--w-600) var(--t-11) / 1 var(--font-sans);
-  letter-spacing: var(--tr-meta);
 }
 
 .macroSlot {
@@ -66,6 +64,53 @@
   gap: var(--s-3);
   height: 100%;
   min-height: 0;
+}
+
+/* ── Cockpit (调用态) arrangement — reshape v2 dual-layout ─────────────── */
+
+/* Hot zone column: macro tiles keep natural (capped) height, the recent wake
+   absorbs the rest of the column. */
+.cockpitMain {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  min-height: 0;
+}
+
+.cockpitMain > :first-child {
+  flex: 0 0 auto;
+  border-bottom: var(--hairline) solid var(--border-1);
+}
+
+.cockpitMain > :last-child {
+  flex: 1;
+  min-height: 0;
+}
+
+/* Context rail: active scene dominates, SOP pins to the bottom. */
+.cockpitRail {
+  display: flex;
+  flex-direction: column;
+  gap: var(--s-3);
+  height: 100%;
+  min-height: 0;
+}
+
+.cockpitRail > :first-child {
+  flex: 1;
+  min-height: 0;
+}
+
+.cockpitRail > :last-child {
+  flex: 0 0 auto;
+  margin: 0 var(--s-3_5) var(--s-3);
+}
+
+/* Atom tray: full-width dock above the status rail; the ModifierGrid card
+   caps its own height and scrolls internally. */
+.modifierTray {
+  flex: 0 0 auto;
+  border-top: var(--hairline) solid var(--border-1);
 }
 
 /* Resizable 3-column workbench (ADR-016 / react-resizable-panels v4).
@@ -102,7 +147,24 @@
   justify-content: center;
   height: 100vh;
   color: var(--fg-1);
-  font: var(--w-500) var(--t-16) / var(--lh-tight) var(--font-sans);
+}
+
+/* ph-page-title split per-class: composes is illegal on the grouped selector
+   above. State messages rest one weight below a page title. */
+.loading {
+  composes: ph-page-title from "../styles/typography.module.css";
+}
+
+.loading.loading {
+  font-weight: var(--w-500);
+}
+
+.error {
+  composes: ph-page-title from "../styles/typography.module.css";
+}
+
+.error.error {
+  font-weight: var(--w-500);
 }
 
 /* Neutral high-contrast error text (ADR-019: colour no longer carries

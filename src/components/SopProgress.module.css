@@ -1,14 +1,17 @@
-/* SopProgress — placeholder until phase 3 ships the real SOP navigator.
- * Dashed border preserved as visual cue for "draft/placeholder" state. */
+/* SopProgress — instrument card (reshape v2). The card itself is a solid
+ * raised surface like every other aside instrument; only the INNER slot keeps
+ * the dashed "placeholder" cue until phase 3 ships the real SOP navigator. */
 .sopProgress {
   display: flex;
   flex-direction: column;
   flex-shrink: 0;
   gap: var(--s-2);
+  margin: 0 var(--s-3_5) var(--s-3);
   padding: var(--s-3);
   background: var(--surface-1);
-  border: var(--hairline) dashed var(--border-2);
-  border-radius: var(--r-3);
+  border: var(--hairline) solid var(--border-1);
+  border-radius: var(--r-4);
+  box-shadow: var(--shadow-1);
 }
 
 /* B5-5: region-level Tab landing (03-product-spec §13.4). */
@@ -18,13 +21,13 @@
 }
 
 .heading {
-  font: var(--w-600) var(--t-13) / 1 var(--font-sans);
-  color: var(--fg-1);
+  composes: ph-region-header from "../styles/typography.module.css";
 }
 
 .placeholder {
-  padding: var(--s-3) 0;
+  composes: ph-note from "../styles/typography.module.css";
+  padding: var(--s-3);
   text-align: center;
-  font: var(--w-400) var(--t-12) / var(--lh-body) var(--font-sans);
-  color: var(--fg-3);
+  border: var(--hairline) dashed var(--border-2);
+  border-radius: var(--r-3);
 }

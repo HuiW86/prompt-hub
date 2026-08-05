@@ -15,6 +15,15 @@
   box-shadow: var(--shadow-2);
   overflow-y: auto;
   z-index: 1;
+  /* Entrance (reshape W6): quick fade — results must feel attached to typing,
+     so this rides --d-fast, not the modal's --d-base. No exit animation. */
+  animation: search-overlay-in var(--d-fast) var(--ease);
+}
+
+@keyframes search-overlay-in {
+  from {
+    opacity: 0;
+  }
 }
 
 .header {
@@ -26,20 +35,22 @@
 }
 
 .title {
-  font: var(--w-600) var(--t-16) / var(--lh-tight) var(--font-sans);
-  letter-spacing: var(--tr-tight);
-  color: var(--fg-1);
+  composes: ph-page-title from "../styles/typography.module.css";
 }
 
 .count {
-  font: var(--w-500) var(--t-11) / 1 var(--font-mono);
-  color: var(--aux);
-  font-variant-numeric: tabular-nums;
+  composes: ph-num from "../styles/typography.module.css";
 }
 
 .groups {
   display: grid;
-  grid-template-columns: repeat(2, minmax(0, 1fr));
+  /* Adaptive columns (audit A3-04 / reshape W5): two columns on the full-width
+     overlay, degrading to one when the window narrows below the result-column
+     minimum instead of crushing both. min(…, 100%) guards a lone column. */
+  grid-template-columns: repeat(
+    auto-fit,
+    minmax(min(var(--col-min-result), 100%), 1fr)
+  );
   gap: var(--s-3_5);
 }
 
@@ -50,8 +61,7 @@
 }
 
 .groupHead {
-  font: var(--w-600) var(--t-13) / 1 var(--font-sans);
-  color: var(--fg-1);
+  composes: ph-region-header from "../styles/typography.module.css";
 }
 
 .groupCount {
@@ -106,29 +116,33 @@
 }
 
 .itemName {
+  composes: ph-card-body from "../styles/typography.module.css";
   display: flex;
   align-items: center;
   gap: var(--s-2);
-  font: var(--w-400) var(--t-13) / 1 var(--font-sans);
-  color: var(--fg-1);
+  /* min-width 0 lets the name ellipsize instead of shoving the fixed meta
+     rail out of the row (audit A3-04 tail / reshape W5). */
+  min-width: 0;
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
 }
 
+/* Result name reads at --fg-1, not the body --fg-2. */
+.itemName.itemName {
+  color: var(--fg-1);
+}
+
 .itemScope {
+  composes: ph-num from "../styles/typography.module.css";
   padding: 0 var(--s-2);
   background: var(--surface-2);
   border-radius: var(--r-1);
-  font: var(--w-500) var(--t-11) / 1 var(--font-mono);
-  color: var(--aux);
 }
 
 .itemMeta {
+  composes: ph-num from "../styles/typography.module.css";
   flex-shrink: 0;
-  font: var(--w-400) var(--t-11) / 1 var(--font-mono);
-  color: var(--aux);
-  font-variant-numeric: tabular-nums;
 }
 
 .groupEmpty {

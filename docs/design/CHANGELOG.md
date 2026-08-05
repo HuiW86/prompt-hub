@@ -14,6 +14,50 @@ description: prompt-hub 设计文档体系变更日志——记录文档结构�
 
 ---
 
+## 2026-07-22 — light 主题按驾驶舱语言校准：身份色加深 + 选区可见性 + 主题双轨防漂移门
+
+### 变更内容
+
+- **代码事实**（分支 `reshape/ui-v2`）：tokens.css 新增 §1d「LIGHT-mode identity deepening」——浅色下五路身份色（neutral-violet / blue / green / violet / amber）换用同色相加深锚点（surface-1 白底 ≥4.4:1、作填充压白字 ≥4.4:1，暗色原值 2.2–2.9:1；canvas #f2f2f0 上 blue 4.39 / amber 4.01——仅作填充/焦点环色，不作 canvas 文字色，verifier 实算口径），`--accent`+`--brand` 同步接管（ADR-024 补遗「强调色=身份主题色」在 light 侧闭环）；`::selection` 由 `--surface-3` 直引改为 `--selection` token（浅色下原值对白底 ~1.1:1 几乎不可见，现为品牌色 22% 染色）；`--aux` 元信息灰浅色加深至 ~4.6:1；band token 不动（ADR-020 暗岛恒定，仍用亮 swatch）
+- **新增** `src/styles/theme-parity.test.ts`：解析 tokens.css，断言 `:root.light*` 与 `@media` 内 `:root.system*` 两套手工镜像逐 token 相等 + 四个 accent 类均有 light 加深块——锁死双轨漂移；测试 316→324 / lint / prettier / build 全绿
+- **待回流**：light 加深色值属 design-spec §2 色板契约，随 v0.15 draft 人审八步一并回流，不就地补丁
+
+### 变更原因
+
+HANDOFF 重塑 v2 余项「light 观感未按驾驶舱语言校」：v2 只调了深色，浅色下身份时刻（logo / 相位主角 / Macro 芯片 / 焦点环）发虚、选中文本不可见。
+
+---
+
+## 2026-07-21 — ADR-024 深色驾驶舱身份：品牌 token + 协议舱主角化 + Macro 命令牌（重塑第二波）
+
+### 变更内容
+
+- **新增** [024-dark-cockpit-identity](../adr/024-dark-cockpit-identity.md)：主形态恒定深色（light 降为显式设置，settingsStore persist v2 迁移一次性重置旧 light 默认）；`--brand`(#8b7bff) 恒定品牌 token 系（独立于用户 accent），用于 logo / 活动相位 / Macro 图标芯片 / 时间线焦点；推翻 ADR-018 补遗"light 为参考观感"锚点
+- **代码事实**（分支 `reshape/ui-v2`）：tokens 深化画布 ramp + `--t-15/--t-18` display 层级；PhaseBar 活动相位主角化（18px + flex-grow 2.2 + brand 下划线/序号章）；MacroGrid 命令牌化（56px 高 + 15px/600 名称 + brand 芯片 + hover brand 描边）；RecentList 时间线形态（左轨 + tick 点 + hover brand 点亮）；regionHeaderCount 仪表徽章化；StatusBar 相位点 brand 化；测试 314/314 / lint / prettier / build 全绿
+- **背景**：W1–W6 忠实落地既有克制体系后 omar 实机反馈"和原来一样"，授权表现层整体重构（换语言而非调参数）
+
+### 变更原因
+
+克制语言的表现力天花板不满足"优秀水位"；哲学三（时间分离）支持唤起态与桌面的恒定深色分离。
+
+---
+
+## 2026-07-21 — ADR-023 UI 重塑批次 W1–W6：排版角色体系 + 响应式底线 + 动效语言（design-spec v0.15）
+
+### 变更内容
+
+- **新增** [023-ui-reshape-before-release](../adr/023-ui-reshape-before-release.md)：v0.1.0 发布前完成 UI+组件架构系统性重塑（omar 会话内拍板：范围 = UI+架构 / 时机 = 重塑后再发；supersede 审计 D-6 的「批次 C/D 放发布后」排序，D-6 其余仍有效）
+- **新增** [ui-reshape](../plans/ui-reshape.md) v1.0：第一性诊断 + 设计北极星 + W1–W7 批次清单
+- **修改** [05-design-spec](05-design-spec.md) v0.14 → **v0.15（draft 待人审）**：§9 角色表扩充 5 preset（`ph-page-title`/`ph-action`/`ph-label`/`ph-note`/`ph-num`）；正文层 13→14（审计 D-3）；`ph-code` 12→13；v0.13 随注 3 的 mono 计数分叉由 `ph-num` 收编
+- **代码事实**（分支 `reshape/ui-v2`，commits `9161920`/`1fb7b1a`）：全仓 64 处 `font:` 简写清零迁移 composes（原批次 C 四步一次完成，映射即审计 §4）；可点击 12px 根因（`.btn`）修复；UpdaterBanner 失败态降级 StatusBar「更新失败 · 重试」；响应式底线三修（A3-03 SettingsModal nav 可缩 / A3-04 SearchOverlay auto-fit 降列 + itemName min-width / A3-05 token 语义拆分 `--col-min-result`+`--w-inline-editor`）；动效语言（SettingsModal/SearchOverlay 入场 + 全局 prefers-reduced-motion + 唤起路径明确零入场动画守 C1）；测试 309/309 全绿
+- **勘误**：审计遗留「暗 band 待复验」实机核验**非 bug**——2026-07-21 早间浅色带截图来自 `/Applications` 旧版实例，dev 版渲染正确（ADR-020 落地无恙）
+
+### 变更原因
+
+omar 真机反馈「体验/视觉不佳、改动零散」，ADR-023 决议以一次连贯重塑替代销账式补丁；W1–W6 为第一落地波（W4 组件架构并行进行中）。
+
+---
+
 ## 2026-07-12 — ADR-022 落地：批次 B 跨 Scene 话术移动（product-spec v0.16 / features v1.11）
 
 ### 变更内容

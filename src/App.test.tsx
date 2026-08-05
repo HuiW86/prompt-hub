@@ -18,6 +18,7 @@ import App from "./App";
 import { useAppStore } from "./stores/appStore";
 import { usePromptStore } from "./stores/promptStore";
 import { useSearchStore } from "./stores/searchStore";
+import { useSettingsStore } from "./stores/settingsStore";
 
 const fakePhases: Phase[] = [
   "发散",
@@ -110,6 +111,7 @@ describe("Dashboard end-to-end render", () => {
   beforeEach(() => {
     usePromptStore.setState(initialStore, true);
     useAppStore.setState(initialAppStore, true);
+    useSettingsStore.setState({ interactionMode: "invoke" });
     invokeMock.mockReset();
     invokeMock.mockImplementation((cmd: string) => {
       switch (cmd) {
@@ -198,7 +200,10 @@ describe("Dashboard end-to-end render", () => {
     expect(r.statusBar?.getAttribute("tabindex")).toBeNull();
   });
 
-  it("region DOM order matches 03-product-spec §13.4 Tab sequence", async () => {
+  it("region DOM order follows the cockpit Tab sequence in 调用态 (reshape v2)", async () => {
+    // Dual-layout (ADR-024 ripple): the default invoke mode arranges regions
+    // by usage priority — hot zone (macro → recent) before the scene context
+    // rail. 03-product-spec §13.4 order update pending human review.
     const { container } = render(<App />);
     await waitFor(() =>
       expect(
@@ -209,7 +214,29 @@ describe("Dashboard end-to-end render", () => {
       (el) => el.getAttribute("data-region"),
     );
     // SearchBar's wrapper has role=search (no data-region) and is first in the
-    // tree; the data-region landmarks below it must appear in the spec order.
+    // tree; the data-region landmarks below it must appear in cockpit order.
+    expect(ordered).toEqual([
+      "phase-bar",
+      "alignment-phrases",
+      "macro-grid",
+      "recent-list",
+      "scene-panel",
+      "sop-progress",
+      "status-bar",
+    ]);
+  });
+
+  it("region DOM order keeps the studio Tab sequence in 整理态", async () => {
+    useSettingsStore.setState({ interactionMode: "organize" });
+    const { container } = render(<App />);
+    await waitFor(() =>
+      expect(
+        container.querySelector("[data-region='phase-bar']"),
+      ).not.toBeNull(),
+    );
+    const ordered = Array.from(container.querySelectorAll("[data-region]")).map(
+      (el) => el.getAttribute("data-region"),
+    );
     expect(ordered).toEqual([
       "phase-bar",
       "alignment-phrases",

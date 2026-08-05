@@ -7,7 +7,10 @@ import styles from "./UpdaterBanner.module.css";
 // region, so it never enters the Tab cycle / data-region landmark set:
 //   1. first-launch opt-in prompt (default-off egress requires explicit consent)
 //   2. an available update (download + install is user-confirmed, never silent)
-//   3. a download-in-progress / error note
+//   3. a download-in-progress note
+// Check FAILURES deliberately do not banner (UI reshape / ADR-023): a failed
+// background check is low-priority chrome news — StatusBar's 检查更新 entry
+// carries the failure label and doubles as the retry path.
 export function UpdaterBanner() {
   const optInDecided = useUpdaterStore((s) => s.optInDecided);
   const status = useUpdaterStore((s) => s.status);
@@ -83,19 +86,6 @@ export function UpdaterBanner() {
         <span className={styles.actions}>
           <button className={styles.primary} disabled aria-busy="true">
             下载中…
-          </button>
-        </span>
-      </div>
-    );
-  }
-
-  if (status === "error") {
-    return (
-      <div className={styles.banner} role="alert">
-        <span className={styles.msg}>更新失败，请稍后重试</span>
-        <span className={styles.actions}>
-          <button className={styles.ghost} onClick={dismiss}>
-            关闭
           </button>
         </span>
       </div>

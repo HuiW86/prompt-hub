@@ -3,6 +3,7 @@
  * ghost reload button. Tokens only. */
 
 .error {
+  composes: ph-page-title from "../styles/typography.module.css";
   display: flex;
   flex-direction: column;
   align-items: center;
@@ -10,11 +11,16 @@
   gap: var(--s-3);
   height: 100vh;
   color: var(--fg-1);
-  font: var(--w-500) var(--t-16) / var(--lh-tight) var(--font-sans);
+}
+
+/* State message rests one weight below a page title (single-axis deviation). */
+.error.error {
+  font-weight: var(--w-500);
 }
 
 /* Ghost button matching primitives .btnGhost visual language. */
 .reload {
+  composes: ph-action from "../styles/typography.module.css";
   display: inline-flex;
   align-items: center;
   height: var(--h-chip);
@@ -23,7 +29,6 @@
   border-radius: var(--r-3);
   background: transparent;
   color: var(--fg-1);
-  font: var(--w-500) var(--t-13) / 1 var(--font-sans);
   cursor: pointer;
   appearance: none;
   transition:

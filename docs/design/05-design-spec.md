@@ -1,10 +1,10 @@
 ---
 type: design-spec
 project: prompt-hub
-version: v0.14
+version: v0.15
 created: 2026-05-18
-last_modified: 2026-07-06
-status: ratified  # v0.10 已 omar 审定（2026-06-21）；v0.11–v0.14 增量待人审
+last_modified: 2026-07-21
+status: ratified  # v0.10 已 omar 审定（2026-06-21）；v0.11–v0.15 增量待人审
 author: co  # 🤝 人机共创（CLAUDE §5.2）
 related: [[01-spec]], [[02-constitution]], [[03-product-spec]], [[012-lock-visual-quality-anchor]], [[019-supersede-flat-visual-anchor]], [[020-restore-protocol-dark-band]], [[021-scene-layered-editing]], [[CLAUDE-DESIGN]], [[015-expose-mcp-write-pipeline]], [[016-choose-dnd-and-resizable-layout]], [[018-absorb-promptscape-design]], [[asset-editing-and-adaptive-layout]]
 description: 手动 AI 编程仪表盘的视觉规范——tokens.css 单一真源 + 主题/elevation/组件视觉契约；写 CSS / 视觉时召回。版本叙事见 CHANGELOG
@@ -496,15 +496,22 @@ bundle / Claude Design 视觉锚点变更时（如 Linear 大版本视觉重做 
 
 | Preset | 用途 | font-size | font-weight | line-height | tracking | color |
 |--------|------|-----------|-------------|-------------|----------|-------|
+| `.ph-page-title` | 页面级标题（Scene 名 / overlay 标题 / Settings 标题）| `--t-16` | `--w-600` | `--lh-tight` | `--tr-tight` | `--fg-1` |
 | `.ph-region-header` | 区域标题（PhaseBar/Macro/Scene 头）| `--t-14` | `--w-600` | `--lh-tight` | `--tr-tight` | `--fg-1` |
 | `.ph-card-title` | Macro 卡片标题 / Scene row 标题 | `--t-14` | `--w-500` | `--lh-tight` | `--tr-normal` | `--fg-1` |
-| `.ph-card-body` | Macro 卡片摘要 / Phrase preview | `--t-13` | `--w-400` | `--lh-body` | `--tr-normal` | `--fg-2` |
-| `.ph-meta` | 使用次数 / 时间戳 / count badge | `--t-11` | `--w-400` | `--lh-tight` | `--tr-meta` | `--fg-3` |
+| `.ph-card-body` | Macro 卡片摘要 / Phrase preview / 正文阅读层 | `--t-14` | `--w-400` | `--lh-body` | `--tr-normal` | `--fg-2` |
+| `.ph-action` | 一切可点击文字（按钮/标签页/nav/分段控件）| `--t-13` | `--w-500` | `--lh-tight` | `--tr-normal` | **不带色**（状态色归控件 intent 类）|
+| `.ph-label` | pill/分组/字段标签（层 pill、Modifier 组头等）| `--t-11` | `--w-600` | `--lh-tight` | `--tr-meta` | `--fg-2` |
+| `.ph-meta` | 时间戳 / 大写 meta 文本 | `--t-11` | `--w-400` | `--lh-tight` | `--tr-meta` | `--fg-3` |
+| `.ph-note` | 描述性脚注（设置项描述 / 子阶段描述行）| `--t-12` | `--w-400` | `--lh-body` | `--tr-normal` | `--fg-3` |
+| `.ph-num` | 数字 meta（使用次数/序号/count badge，mono tabular）| `--t-11` | `--w-500` | `--lh-tight` | `--tr-normal` | `--aux`（`--font-mono` + tabular-nums）|
 | `.ph-hotkey` | ⌘K / ⌥Space 等快捷键 badge | `--t-11` | `--w-500` | `--lh-tight` | `--tr-normal` | `--fg-2`（`--font-mono`）|
-| `.ph-empty` | EmptyState 中央提示文字 | `--t-13` | `--w-400` | `--lh-body` | `--tr-normal` | `--fg-3`（center）|
-| `.ph-code` | 代码片段 / Modifier raw text | `--t-12` | `--w-400` | `--lh-body` | `--tr-normal` | `--fg-2`（`--font-mono`）|
+| `.ph-empty` | EmptyState 中央提示文字 | `--t-14` | `--w-400` | `--lh-body` | `--tr-normal` | `--fg-3`（center）|
+| `.ph-code` | 代码片段 / Modifier raw text | `--t-13` | `--w-400` | `--lh-body` | `--tr-normal` | `--fg-2`（`--font-mono`）|
 
 **hard rule**：组件 CSS 写 typography 时优先引 preset，不重复散写字段组合。preset 不够用时**新增 preset**而非裸写——新 preset 视为 design-spec 扩展，需 bump。
+
+> **v0.15 draft（reshape W1/W2，ADR-023，⏳ 待人审）**：新增 5 角色（page-title / action / label / note / num），正文层 13→14（`ph-card-body`/`ph-empty`/body 基线，对应审计 D-3「正文 14」）、`ph-code` 12→13（Modifier 文本是内容不是装饰）。全仓 64 处 `font:` 简写清零迁移至 composes；可点击文字 12px 根因（primitives `.btn`）由 `ph-action` 修复（D-3「可点击 ≥13」）。v0.13 随注 3 的「mono 计数分叉」由 `.ph-num` 正式收编为角色，不再是豁免；`.ph-code` 有了消费者。有语义的偏差保留为 longhand + `preset-equivalent` 注释（现例：PhaseBar 权重梯度、SettingsModal mono navHead）。
 
 > **v0.13 已落地**（P3-7）：7 个 preset 全量落盘 **`src/styles/typography.module.css`（真源）**，组件经 CSS Modules `composes` 引用（longhand 写法，允许 composing class 覆盖单轴）。落地随注三条：
 > 1. **覆盖 preset 属性须加倍类名**——Vite 将 typography module 发射在 bundle 中段，等 specificity 本地覆盖不保序（dev/build 顺序不同）；现例 `primitives .emptyRow.emptyRow`
