@@ -59,12 +59,16 @@ ADR-017 §5.5 要求审批人不是 tag 作者。本仓库只有一个协作者�
 
 2. **核对 `latest.json`**：`version` 与 tag 一致；`platforms` 含 `darwin-aarch64` 与 `darwin-x86_64` 两项；每个 `url` 指向本次 release 的资产且文件名带版本号。CI 的 `scripts/assert-provenance.sh` 已自动断言这些，本步是人工复核而非主防线。
 
-3. **核对签名与公证**：
+3. **核对签名与公证**——分开验，两者会独立失败：
 
    ```bash
-   codesign --verify --deep --strict --verbose=2 <路径>/prompt-hub.app
-   spctl -a -vvv -t install <路径>/prompt-hub.app     # 正式包必须通过；本地未公证构建会 reject
+   codesign --verify --deep --strict --verbose=2 <路径>/prompt-hub.app   # 签名
+   xcrun stapler validate <路径>/prompt-hub.app                          # 公证票据
+   xcrun stapler validate <路径>/prompt-hub_<版本>_<target>.dmg
+   spctl -a -vvv -t exec <路径>/prompt-hub.app                           # Gatekeeper 实判
    ```
+
+   **任何一条 reject 都必须当真，不要归因于本地环境。** 签名与公证是两件事：签名只需要证书，公证需要把包提交 Apple 并把票据 staple 回来，`codesign` 全绿而 `stapler` 说 `does not have a ticket stapled` 是完全可能的组合——v0.1.0 第一次打 tag 时正是如此（Tauri 凭据变量名不匹配，公证被静默跳过，CI 照样绿）。本文旧版在此处写着「本地未公证构建会 reject」，把唯一的真信号预先解释成了噪音；**一个失败模式被提前开脱的检查，不是检查**。CI 的 `Assert notarized + stapled` 现已把同样的断言前移到构建期，本步是人工复核。
 
 4. **核对内嵌公钥**：`src-tauri/tauri.conf.json` 的 `plugins.updater.pubkey` 必须与签名所用私钥配对。公钥内容即 `~/.tauri/prompt-hub.key.pub` 的原文（该 `.pub` 文件本身已是 base64，不要再解一层码）。**不配对 = 发布后全体用户的更新校验失败**。
 

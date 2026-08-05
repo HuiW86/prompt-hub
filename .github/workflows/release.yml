@@ -2,8 +2,9 @@
 #
 # Phase 0 prerequisites are satisfied: the minisign keypair, the Apple
 # notarization creds, and tauri.conf.json's real `plugins.updater.pubkey` are all
-# in place. Never yet run end-to-end — the repository has no tag and no release,
-# so the first `v*.*.*` push is also this pipeline's first live exercise.
+# in place. First live exercise was the v0.1.0 tag on 2026-08-05: signing,
+# minisign, provenance and the draft release all worked; notarization silently
+# did not (see the credential note on the build step). Nothing was published.
 #
 # Secret scope (2026-08-05): TAURI_SIGNING_PRIVATE_KEY is an Environment secret
 # on `release-signing`, so only a job that declares that environment — and thus
@@ -73,20 +74,57 @@ jobs:
       # already-signed+notarized .app (tauri-bundler bundle ordering), so the
       # .app inside the dmg is the same notarized bundle; the dmg itself is
       # signed + notarized + stapled by the same Apple creds.
+      # Credential contract (tauri.app/distribute/sign/macos, verified 2026-08-05):
+      # the App Store Connect method reads exactly APPLE_API_ISSUER +
+      # APPLE_API_KEY (the *Key ID string*) + APPLE_API_KEY_PATH (a path to the
+      # .p8). There is no APPLE_API_KEY_ID variable — v0.1.0's first tag passed
+      # that name and put the .p8 body in APPLE_API_KEY, so Tauri could not
+      # assemble a credential set, silently SKIPPED notarization, and still went
+      # green. Hence the secret→variable mapping below is deliberately crossed:
+      # our APPLE_API_KEY_ID secret holds the Key ID, our APPLE_API_KEY secret
+      # holds the .p8 body.
       - name: Build + notarize
         env:
           APPLE_API_ISSUER: ${{ secrets.APPLE_API_ISSUER }}
-          APPLE_API_KEY_ID: ${{ secrets.APPLE_API_KEY_ID }}
-          APPLE_API_KEY: ${{ secrets.APPLE_API_KEY }}
+          APPLE_API_KEY: ${{ secrets.APPLE_API_KEY_ID }}
+          APPLE_API_KEY_PATH: ${{ runner.temp }}/AuthKey.p8
+          APPLE_API_KEY_P8: ${{ secrets.APPLE_API_KEY }}
           APPLE_CERTIFICATE: ${{ secrets.APPLE_CERTIFICATE }}
           APPLE_CERTIFICATE_PASSWORD: ${{ secrets.APPLE_CERTIFICATE_PASSWORD }}
           APPLE_SIGNING_IDENTITY: ${{ secrets.APPLE_SIGNING_IDENTITY }}
           APPLE_TEAM_ID: ${{ secrets.APPLE_TEAM_ID }}
         run: |
+          set -euo pipefail
+          # The secret may hold the .p8 verbatim or base64-wrapped. Normalize,
+          # then let openssl decide: an unparseable key fails here rather than
+          # degrading into another silent skip.
+          printf '%s' "$APPLE_API_KEY_P8" > "$APPLE_API_KEY_PATH"
+          if ! grep -q 'BEGIN PRIVATE KEY' "$APPLE_API_KEY_PATH"; then
+            base64 -d < "$APPLE_API_KEY_PATH" > "$APPLE_API_KEY_PATH.pem"
+            mv "$APPLE_API_KEY_PATH.pem" "$APPLE_API_KEY_PATH"
+          fi
+          openssl pkey -in "$APPLE_API_KEY_PATH" -noout
+          test -n "$APPLE_API_KEY" && test -n "$APPLE_API_ISSUER"
+
           pnpm tauri build \
             --target ${{ matrix.target }} \
             --bundles app,dmg \
             --config '{"bundle":{"createUpdaterArtifacts":false}}'
+
+      # The gate that was missing. Notarization failing OPEN is the whole reason
+      # an unnotarized v0.1.0 reached draft: the step above is named for an
+      # outcome nothing verified. Assert the outcome on the artifact itself —
+      # a stapled ticket and a Gatekeeper accept — so a skipped or failed
+      # notarization can never again produce a green build.
+      - name: Assert notarized + stapled
+        run: |
+          set -euo pipefail
+          app="src-tauri/target/${{ matrix.target }}/release/bundle/macos/prompt-hub.app"
+          dmg="$(ls src-tauri/target/${{ matrix.target }}/release/bundle/dmg/*.dmg)"
+          xcrun stapler validate "$app"
+          xcrun stapler validate "$dmg"
+          spctl -a -vvv -t exec "$app"
+          codesign --verify --deep --strict --verbose=2 "$app"
 
       - name: Pack notarized .app for handoff
         run: |
