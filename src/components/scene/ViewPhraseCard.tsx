@@ -28,12 +28,15 @@ export interface ViewPhraseCardProps {
   onDelete: () => void;
 }
 
-// A view-mode phrase card. Its whole-card click is mode-aware (D-0):
+// A view-mode phrase card. At rest it shows the TITLE ONLY — the prompt body
+// stays off the card face (omar 2026-07-23: the name is the handle; content on
+// every card burned the screen's carrying capacity). Whole-card click is
+// mode-aware (D-0):
 //  • 调用态 — the card copies (primary action, zero-regression T0), so every
 //    action-cluster button stops propagation to never trigger a copy.
-//  • 整理态 — the card toggles a full-content preview (line-clamp off) instead
-//    of copying, so the user can read a phrase while organizing without grabbing
-//    the clipboard or being hidden; copy demotes to an explicit cluster button.
+//  • 整理态 — the card toggles the full-content preview (the only moment the
+//    body renders), so the user can read a phrase while organizing without
+//    grabbing the clipboard; copy demotes to an explicit cluster button.
 // Delete is a two-step inline confirm held in local state so one card's confirm
 // never bleeds into another's.
 export function ViewPhraseCard({

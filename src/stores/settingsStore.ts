@@ -3,6 +3,11 @@ import { persist } from "zustand/middleware";
 
 export type ThemeMode = "light" | "dark" | "system";
 export type Accent = "neutral" | "blue" | "green" | "violet" | "amber";
+// Density tier. 舒适 (comfortable): the default — keeps the reshape-v2
+// acceptance baseline untouched. 紧凑 (compact): tightens structural tokens
+// (anchor heights + region padding, tokens.css §3c) so the 640px baseline
+// window carries more assets per screen. Type sizes never change with density.
+export type Density = "comfortable" | "compact";
 // D-0 interaction mode. 调用态 (invoke): the default — whole-card click copies
 // and the window hides after (T0 zero-regression). 整理态 (organize): whole-card
 // click on a Scene phrase previews instead of copying, copy is an explicit
@@ -16,7 +21,11 @@ export type InteractionMode = "invoke" | "organize";
 // `.accent-*` swaps the NEUTRAL accent token (B2: never the protocol/task layers).
 const ACCENTS: Accent[] = ["neutral", "blue", "green", "violet", "amber"];
 
-function applyAppearance(themeMode: ThemeMode, accent: Accent) {
+function applyAppearance(
+  themeMode: ThemeMode,
+  accent: Accent,
+  density: Density,
+) {
   if (typeof document === "undefined") return;
   const root = document.documentElement;
   root.classList.remove("light", "dark", "system");
@@ -26,6 +35,8 @@ function applyAppearance(themeMode: ThemeMode, accent: Accent) {
   else if (themeMode === "dark") root.classList.add("dark");
   else root.classList.add("system");
   for (const a of ACCENTS) root.classList.toggle(`accent-${a}`, a === accent);
+  // Bare root = comfortable; `.compact` swaps in the §3c structure tokens.
+  root.classList.toggle("compact", density === "compact");
 }
 
 interface SettingsState {
@@ -33,12 +44,14 @@ interface SettingsState {
   hiddenPhaseIds: string[];
   themeMode: ThemeMode;
   accent: Accent;
+  density: Density;
   interactionMode: InteractionMode;
   settingsOpen: boolean;
   setGlobalHotkey: (combo: string) => void;
   togglePhaseVisibility: (phaseId: string) => void;
   setThemeMode: (mode: ThemeMode) => void;
   setAccent: (accent: Accent) => void;
+  setDensity: (density: Density) => void;
   setInteractionMode: (mode: InteractionMode) => void;
   toggleInteractionMode: () => void;
   openSettings: () => void;
@@ -56,6 +69,8 @@ export const useSettingsStore = create<SettingsState>()(
       // longer auto-follows the OS preference).
       themeMode: "dark",
       accent: "neutral",
+      // Comfortable keeps the reshape-v2 baseline; compact is an explicit pick.
+      density: "comfortable",
       // Default 调用态 so the tool opens as a launcher (D-0 / T0 zero-regression).
       interactionMode: "invoke",
       settingsOpen: false,
@@ -68,11 +83,15 @@ export const useSettingsStore = create<SettingsState>()(
         })),
       setThemeMode: (themeMode) => {
         set({ themeMode });
-        applyAppearance(themeMode, get().accent);
+        applyAppearance(themeMode, get().accent, get().density);
       },
       setAccent: (accent) => {
         set({ accent });
-        applyAppearance(get().themeMode, accent);
+        applyAppearance(get().themeMode, accent, get().density);
+      },
+      setDensity: (density) => {
+        set({ density });
+        applyAppearance(get().themeMode, get().accent, density);
       },
       setInteractionMode: (interactionMode) => set({ interactionMode }),
       toggleInteractionMode: () =>
@@ -104,10 +123,15 @@ export const useSettingsStore = create<SettingsState>()(
       partialize: (s) => ({
         themeMode: s.themeMode,
         accent: s.accent,
+        density: s.density,
         interactionMode: s.interactionMode,
       }),
+      // Persisted v2 states written before the density tier lack the key; the
+      // persist default merge fills it from the initial state ("comfortable"),
+      // so no version bump is needed.
       onRehydrateStorage: () => (state) => {
-        if (state) applyAppearance(state.themeMode, state.accent);
+        if (state)
+          applyAppearance(state.themeMode, state.accent, state.density);
       },
     },
   ),
