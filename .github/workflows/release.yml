@@ -63,17 +63,20 @@ jobs:
 
       - run: pnpm install --frozen-lockfile
 
-      # Build + notarize the .app AND the .dmg. createUpdaterArtifacts is
-      # disabled here so the bundler does not try to minisign (no key in this
-      # job) — the .app.tar.gz updater package is signed later in the sign job,
-      # matching the ADR §6 order: notarize .app → package → tauri signer sign.
+      # Builds and notarizes the .app only. createUpdaterArtifacts is disabled
+      # here so the bundler does not try to minisign (no key in this job) — the
+      # .app.tar.gz updater package is signed later in the sign job, matching
+      # the ADR §6 order: notarize .app → package → tauri signer sign.
       #
       # The .dmg is a direct-install download only (NOT an updater artifact): it
-      # never enters latest.json and is never minisigned, so producing it here
-      # is safe. Tauri bundles `app` before `dmg` and the dmg reuses the
-      # already-signed+notarized .app (tauri-bundler bundle ordering), so the
-      # .app inside the dmg is the same notarized bundle; the dmg itself is
-      # signed + notarized + stapled by the same Apple creds.
+      # never enters latest.json and is never minisigned. Tauri bundles `app`
+      # before `dmg`, so the .app inside the dmg is the notarized+stapled one —
+      # but the bundler SIGNS the dmg without notarizing it. This comment used
+      # to claim the dmg was "signed + notarized + stapled by the same Apple
+      # creds"; the 2026-08-06 rerun disproved that (`stapler validate` on the
+      # dmg: "does not have a ticket stapled to it"). The dmg is what install.md
+      # tells users to download and double-click, so it gets its own submission
+      # in the next step.
       # Credential contract (tauri.app/distribute/sign/macos, verified 2026-08-05):
       # the App Store Connect method reads exactly APPLE_API_ISSUER +
       # APPLE_API_KEY (the *Key ID string*) + APPLE_API_KEY_PATH (a path to the
@@ -110,6 +113,29 @@ jobs:
             --target ${{ matrix.target }} \
             --bundles app,dmg \
             --config '{"bundle":{"createUpdaterArtifacts":false}}'
+
+      # The bundler leaves the dmg signed but unnotarized (see the note above),
+      # so submit it separately and staple the ticket. Stapling matters because
+      # a downloaded dmg carries the quarantine flag: with a stapled ticket
+      # Gatekeeper validates offline, without one it depends on a live lookup
+      # for a ticket that was never issued. Reuses the .p8 written to
+      # runner.temp by the previous step. Note the crossed names again:
+      # notarytool's --key wants the FILE and --key-id wants the ID string,
+      # which live in APPLE_API_KEY_PATH and APPLE_API_KEY respectively.
+      - name: Notarize + staple the dmg
+        env:
+          APPLE_API_ISSUER: ${{ secrets.APPLE_API_ISSUER }}
+          APPLE_API_KEY: ${{ secrets.APPLE_API_KEY_ID }}
+          APPLE_API_KEY_PATH: ${{ runner.temp }}/AuthKey.p8
+        run: |
+          set -euo pipefail
+          dmg="$(ls src-tauri/target/${{ matrix.target }}/release/bundle/dmg/*.dmg)"
+          xcrun notarytool submit "$dmg" \
+            --key "$APPLE_API_KEY_PATH" \
+            --key-id "$APPLE_API_KEY" \
+            --issuer "$APPLE_API_ISSUER" \
+            --wait
+          xcrun stapler staple "$dmg"
 
       # The gate that was missing. Notarization failing OPEN is the whole reason
       # an unnotarized v0.1.0 reached draft: the step above is named for an
