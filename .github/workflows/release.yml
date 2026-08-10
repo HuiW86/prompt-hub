@@ -168,13 +168,21 @@ jobs:
           src="$(ls "$dir"/*.dmg)"
           cp "$src" "prompt-hub_${version}_${{ matrix.target }}.dmg"
 
+      # Retention has to outlive the approval gate, and that gate has no time
+      # bound — it waits on a human. retention-days was 1, chosen to keep the
+      # unsigned artifacts around as briefly as possible; on 2026-08-07 the
+      # build went green, the reviewer approved three days later, and the sign
+      # job downloaded nothing because GitHub had already reclaimed them. A week
+      # covers a realistic approval delay and is still far short of the 90-day
+      # default. Artifacts here are notarized but NOT minisigned, so they cannot
+      # be passed off as an update regardless of how long they sit.
       - uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
         with:
           name: app-${{ matrix.target }}
           path: |
             app-${{ matrix.target }}.tgz
             prompt-hub_*_${{ matrix.target }}.dmg
-          retention-days: 1
+          retention-days: 7
           if-no-files-found: error
 
   # ── Job 2: sign + assemble latest.json + draft release. Gated. ──────────────
@@ -203,6 +211,33 @@ jobs:
       - uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c # v8.0.1
         with:
           path: artifacts
+
+      # download-artifact fails OPEN. With the build artifacts expired it logged
+      # "Found 0 artifact(s)" / "Total of 0 artifact(s) downloaded" and then
+      # "Download artifact has finished successfully", exit 0 (2026-08-10). The
+      # empty tree reached the next step, which died on `cp` with a bare "No
+      # such file or directory" — cause and symptom two steps apart. Same shape
+      # as the silent notarization skip: a step named for an outcome that
+      # nothing asserts (docs/postmortems/2026-08-05-notarization-fail-open.md).
+      # State the expectation where it can still be attributed.
+      - name: Assert build artifacts present
+        run: |
+          set -euo pipefail
+          version="${GITHUB_REF_NAME#v}"
+          missing=0
+          for target in aarch64-apple-darwin x86_64-apple-darwin; do
+            for file in "app-${target}.tgz" "prompt-hub_${version}_${target}.dmg"; do
+              path="artifacts/app-${target}/${file}"
+              if [ ! -f "$path" ]; then
+                echo "::error::missing $path"
+                missing=1
+              fi
+            done
+          done
+          if [ "$missing" -ne 0 ]; then
+            echo "::error::Build artifacts are absent. The likeliest cause is that they outlived retention-days while this job waited for approval — re-push the tag to rebuild, then approve promptly."
+            exit 1
+          fi
 
       # Package each notarized .app into its updater .app.tar.gz, then minisign
       # it. tauri signer reads the key from env. ::add-mask:: + no `set -x` keep
