@@ -28,6 +28,39 @@ bash scripts/check-version.sh <版本号>                       # 三处 version
 
 ---
 
+## §1.5 凭据本地自检（打 tag 之前，两秒）
+
+公证凭据是唯一「配错了也不会当场报错、要等六分钟 CI 才隐约看出不对」的东西，而且 CI 里 Apple 的原始错误会被 `***` 遮罩。**本地先问 Apple 一句**：
+
+```bash
+xcrun notarytool history \
+  --key   ~/Desktop/证书/AuthKey_<KeyID>.p8 \
+  --key-id <10 位 Key ID> \
+  --issuer <UUID>
+```
+
+返回历史列表即三值全对；返回 `HTTP status code: 403` 之类则直接给出 Apple 的原话（2026-08-05 的 403 就是这么定位到「License Agreement 未接受」的，耗时两秒）。
+
+**三值形状对照表**——三者形状互不相同，配错一眼可辨：
+
+| 参数 | 形状 | 例 |
+|---|---|---|
+| `--key` | **文件路径**（`.p8`，内容以 `-----BEGIN PRIVATE KEY-----` 开头） | `AuthKey_642AP44DVF.p8` |
+| `--key-id` | **10 位字符串** | `642AP44DVF` |
+| `--issuer` | **UUID**（8-4-4-4-12） | `69a6de8b-9069-47e3-e053-5b8c7c11a4d1` |
+
+仓库 secret 到工具变量的映射是**故意交叉**的，`release.yml` 两处注释均已说明，看着像 bug 不要顺手「改正」：
+
+| 仓库 secret | 实际存的东西 | 喂给谁 |
+|---|---|---|
+| `APPLE_API_KEY_ID` | Key ID 字符串 | Tauri 的 `APPLE_API_KEY`、`notarytool --key-id` |
+| `APPLE_API_KEY` | `.p8` 文件内容 | 写盘后给 `APPLE_API_KEY_PATH`、`notarytool --key` |
+| `APPLE_API_ISSUER` | UUID | 同名 |
+
+根源是 Tauri 的 `APPLE_API_KEY` 要的是 Key ID 而非密钥内容（已对 tauri.app/distribute/sign/macos 核实），与直觉相反。v0.1.0 首次打 tag 时按直觉配，Tauri 拼不出凭据组、静默跳过公证、构建照绿——完整因果见 [[2026-08-05-notarization-fail-open]]。
+
+---
+
 ## §2 打 tag 触发流水线
 
 ```bash
@@ -43,6 +76,17 @@ git push origin v<版本号>
 2. **sign**（环境 `release-signing`，需人工审批）：打包 `.app.tar.gz` → minisign 签名 → 组装 `latest.json` → 跑 provenance 断言 → 建 **draft** release。
 
 在 Actions 页面审批 sign job 之后才会注入密钥。
+
+**审批要尽快，最迟不超过 7 天。** build 产物以 `retention-days: 7` 上传，sign job 靠它们干活；审批拖过保留期，产物被 GitHub 回收，放行后 sign job 会拿到一棵空目录。这两个数字是耦合的却分散在配置两处：`release.yml` 的 `retention-days` 是硬上限，审批耗时由人决定、没有下游约束。2026-08-07 那次 build 全绿、3 天后才批，产物已过期——`download-artifact` 下载到 0 个文件仍报成功，直到下一步 `cp` 才炸。现已在 sign job 加 `Assert build artifacts present` 当场点名缺失文件，但**闸门只能让失败可读，救不回产物**：过期后唯一出路是移 tag 重跑整条流水线（见下）。
+
+**改了 workflow 文件就必须移 tag，不能只 `gh run rerun`**——rerun 在 tag 指向的旧 commit 上重跑，拿不到新 workflow。仅改 secret 时 rerun 有效。移 tag：
+
+```bash
+git push origin :refs/tags/v<版本号>     # 删远端
+git tag -d v<版本号>                      # 删本地
+git tag -a v<版本号> -m "v<版本号>"       # 重打到新 commit
+git push origin v<版本号>
+```
 
 ---
 
