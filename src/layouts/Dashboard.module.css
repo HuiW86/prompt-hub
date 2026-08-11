@@ -52,9 +52,13 @@
   background: var(--surface-2);
 }
 
+/* 整理态 only: here Macro IS a strip above the Scene panorama, so the layout
+   injects the height cap the grid honours (--macro-strip-cap). 调用态 leaves it
+   unset, letting the grid fill the hot column. */
 .macroSlot {
   flex: 0 0 auto;
   min-height: 0;
+  --macro-strip-cap: var(--h-macro-strip);
   border-bottom: var(--hairline) solid var(--border-1);
 }
 
@@ -68,8 +72,14 @@
 
 /* ── Cockpit (调用态) arrangement — reshape v2 dual-layout ─────────────── */
 
-/* Hot zone column: macro tiles keep natural (capped) height, the recent wake
-   absorbs the rest of the column. */
+/* Hot zone column: area follows hit probability. Macro (the only 0-step reach,
+   already heat-sorted) absorbs the column; the recent wake pins to the bottom
+   at content height.
+
+   This was inverted before — Macro capped at 200px while the wake took flex:1 —
+   so a 13-tile library got clipped into a scroll while the wake sat on ~400px
+   of empty canvas. A grab-and-go surface that needs a scroll to show what it
+   holds has already half-failed the summon. */
 .cockpitMain {
   display: flex;
   flex-direction: column;
@@ -78,13 +88,16 @@
 }
 
 .cockpitMain > :first-child {
-  flex: 0 0 auto;
+  flex: 1 1 auto;
+  min-height: 0;
   border-bottom: var(--hairline) solid var(--border-1);
 }
 
+/* The wake is a footnote to Macro, not a second main region: content height,
+   capped so a long history can never squeeze the tiles back out. */
 .cockpitMain > :last-child {
-  flex: 1;
-  min-height: 0;
+  flex: 0 0 auto;
+  max-height: 38%;
 }
 
 /* Context rail: active scene dominates, SOP pins to the bottom. */

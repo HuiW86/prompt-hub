@@ -21,6 +21,7 @@ vi.mock("@tauri-apps/api/core", () => ({
 }));
 
 import { usePromptStore } from "../promptStore";
+import { RECENT_FETCH_LIMIT } from "../prompt/helpers";
 
 const initial = usePromptStore.getState();
 
@@ -1263,5 +1264,116 @@ describe("promptStore", () => {
     // Stale result discarded: the inbox stays drained.
     expect(usePromptStore.getState().drafts).toEqual([]);
     expect(usePromptStore.getState().pendingDraftCount).toBe(0);
+  });
+
+  // The wake collapses repeat copies of one asset (dedupeRecent). The unit
+  // tests in prompt/__tests__/helpers.test.ts cover the function; these pin the
+  // STORE seam. Without them, deleting both dedupeRecent() call sites and
+  // reverting the fetch width leaves the whole suite green — every other recent
+  // fixture in this file is empty or already distinct.
+  describe("recent wake dedupe", () => {
+    function dupRow(
+      id: string,
+      targetId: string,
+      timestamp: string,
+    ): RecentUsageEntry {
+      return {
+        record: {
+          id,
+          timestamp,
+          targetType: "macro",
+          targetId,
+          source: "macro_area",
+          modifierIds: null,
+          sopId: null,
+          sopStepOrder: null,
+          phaseId: null,
+        },
+        targetName: targetId,
+        targetContent: "...",
+      };
+    }
+
+    // Newest-first, matching list_recent_usage's ORDER BY timestamp DESC.
+    const duplicated = [
+      dupRow("r4", "macro-a", "2026-08-10T00:00:04Z"),
+      dupRow("r3", "macro-a", "2026-08-10T00:00:03Z"),
+      dupRow("r2", "macro-a", "2026-08-10T00:00:02Z"),
+      dupRow("r1", "macro-b", "2026-08-10T00:00:01Z"),
+    ];
+
+    it("refreshAll collapses repeat copies to the newest touch per asset", async () => {
+      mockListAll();
+      invokeMock.mockImplementation((cmd: string) => {
+        if (cmd === "list_recent_usage") return Promise.resolve(duplicated);
+        if (cmd === "count_today_usage") return Promise.resolve(0);
+        if (cmd === "list_phases") return Promise.resolve(fakePhases);
+        if (cmd === "list_alignment_phrases") return Promise.resolve([]);
+        if (cmd === "list_compositions") return Promise.resolve([]);
+        if (cmd === "list_macros") return Promise.resolve(fakeMacros);
+        if (cmd === "list_modifiers") return Promise.resolve([]);
+        if (cmd === "list_scenes_with_children") return Promise.resolve([]);
+        if (cmd === "list_drafts") return Promise.resolve([]);
+        if (cmd === "count_pending_drafts") return Promise.resolve(0);
+        return Promise.reject(new Error(`unexpected ${cmd}`));
+      });
+
+      await usePromptStore.getState().refreshAll();
+
+      expect(
+        usePromptStore.getState().recentUsage.map((e) => e.record.id),
+      ).toEqual(["r4", "r1"]);
+    });
+
+    it("refreshAll asks for a window wider than the wake displays", async () => {
+      mockListAll();
+      await usePromptStore.getState().refreshAll();
+
+      // Pinning the ARGUMENT, not just the result: fetching only RECENT_LIMIT
+      // rows would dedupe down to 1-2 visible items — the original bug.
+      expect(invokeMock).toHaveBeenCalledWith("list_recent_usage", {
+        limit: RECENT_FETCH_LIMIT,
+      });
+    });
+
+    it("recordCopy dedupes the refreshed wake too", async () => {
+      mockListAll();
+      await usePromptStore.getState().refreshAll();
+
+      const record: UsageRecord = {
+        id: "u-dedupe",
+        timestamp: "2026-08-10T00:00:04Z",
+        targetType: "macro",
+        targetId: "macro-a",
+        source: "macro_area",
+        modifierIds: null,
+        sopId: null,
+        sopStepOrder: null,
+        phaseId: null,
+      };
+      invokeMock.mockImplementation((cmd: string) => {
+        if (cmd === "record_usage") return Promise.resolve(record);
+        if (cmd === "list_recent_usage") return Promise.resolve(duplicated);
+        if (cmd === "count_today_usage") return Promise.resolve(4);
+        return Promise.reject(new Error(`unexpected ${cmd}`));
+      });
+
+      await usePromptStore.getState().recordCopy({
+        targetType: "macro",
+        targetId: "macro-a",
+        source: "macro_area",
+        modifierIds: null,
+        sopId: null,
+        sopStepOrder: null,
+        phaseId: null,
+      });
+
+      expect(
+        usePromptStore.getState().recentUsage.map((e) => e.record.id),
+      ).toEqual(["r4", "r1"]);
+      expect(invokeMock).toHaveBeenCalledWith("list_recent_usage", {
+        limit: RECENT_FETCH_LIMIT,
+      });
+    });
   });
 });

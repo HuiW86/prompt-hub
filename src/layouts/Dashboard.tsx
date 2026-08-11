@@ -120,9 +120,10 @@ export function Dashboard() {
             </Group>
             <SearchOverlay />
           </div>
-          {/* Atom tray: Modifier pool stays on-screen, docked low. */}
+          {/* Atom tray: Modifier pool stays on-screen, docked low. Full window
+              width, so the quadrant groups run side by side (dense). */}
           <div className={styles.modifierTray}>
-            <ModifierGrid />
+            <ModifierGrid dense />
           </div>
         </>
       ) : (

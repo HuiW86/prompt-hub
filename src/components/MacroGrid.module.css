@@ -16,17 +16,58 @@
   outline-offset: calc(-1 * var(--border-thick));
 }
 
-/* Compact strip at the top of the task column: macros flow as horizontal
- * one-line buttons (Promptscape "高频一键入口" — icon chip + name + uses),
- * wrapping into a couple of rows and scrolling past that. */
+/* Macros flow as horizontal one-line buttons (Promptscape "高频一键入口" —
+ * icon chip + name + uses), wrapping into rows.
+ *
+ * Height is the LAYOUT's call, not the component's: the grid fills whatever its
+ * parent grants and scrolls only past that. 调用态 hands it the whole hot column
+ * (0-step reach is the highest-hit surface on screen — it should not need a
+ * scroll to show the library); 整理态 pins it to a strip above the Scene
+ * panorama by injecting --macro-strip-cap. A hard cap here used to apply in
+ * BOTH modes, clipping the whole tile library into --h-macro-strip while the
+ * recent wake below sat on the rest of the column, most of it empty. */
 .grid {
   display: flex;
   flex-wrap: wrap;
+  align-content: flex-start;
   gap: var(--s-2_5);
   padding: var(--s-3_5);
+  flex: 1;
   overflow-y: auto;
   min-height: 0;
-  max-height: var(--h-macro-strip);
+  max-height: var(--macro-strip-cap, none);
+  /* Hidden-scrollbar surface like every other scroller here (AlignmentPhrases /
+     ScenePanel); the fade below is the affordance in its place. */
+  scrollbar-width: none;
+  /* Fade the bottom edge instead of guillotining a tile mid-row. The mask sits
+     on the scroll container, so it tracks the VISIBLE edge as the strip
+     scrolls. --h-scroll-fade resolves to this same --s-3_5 padding, so when the
+     grid fits, the ramp lands entirely on the padding and no real content is
+     dimmed. Keep those two in step: a ramp deeper than the padding bleeds onto
+     the last row permanently.
+     `black` here is an alpha stencil, not a colour choice — a mask reads only
+     the alpha channel, so there is no palette value to tokenise.
+     Prefixed alongside: unprefixed mask-image is WebKit 15.4+, and this app
+     renders in whatever WKWebView the host macOS ships. Without the fallback an
+     older host silently loses the fade and the hard cut comes back. */
+  -webkit-mask-image: linear-gradient(
+    to bottom,
+    black calc(100% - var(--h-scroll-fade)),
+    transparent 100%
+  );
+  mask-image: linear-gradient(
+    to bottom,
+    black calc(100% - var(--h-scroll-fade)),
+    transparent 100%
+  );
+  /* Keyboard focus must never land under the ramp: a Tab-scrolled tile would
+     otherwise stop flush with the bottom and have its focus ring faded out
+     (WCAG 2.4.11). Stop the scroll one ramp-height early instead. */
+  scroll-padding-block-end: var(--h-scroll-fade);
+}
+
+.grid::-webkit-scrollbar {
+  display: none;
 }
 
 /* Override CardSurface's vertical card shell into a compact horizontal bar.

@@ -1,13 +1,22 @@
-/* SopProgress — instrument card (reshape v2). The card itself is a solid
- * raised surface like every other aside instrument; only the INNER slot keeps
- * the dashed "placeholder" cue until phase 3 ships the real SOP navigator. */
+/* SopProgress — collapsed to a single row until phase 3 ships the real SOP
+ * navigator. It was a tall instrument card wrapping a dashed placeholder box,
+ * spending a large slice of the context rail on a region that cannot be used
+ * yet — space taken straight from the active Scene above it.
+ *
+ * What changed is the SHAPE, not the surface: this is still a raised surface-1
+ * card (background + hairline border + --r-4 + resting --shadow-1, the elevation
+ * contract every sibling instrument follows — RecentList .list, ModifierGrid
+ * .card; ADR-018 补遗 P3-3). Dropped: the column direction and the dashed inner
+ * box. When the navigator lands, restore flex-direction: column and give the
+ * row real content — the shell already matches its siblings. */
 .sopProgress {
   display: flex;
-  flex-direction: column;
-  flex-shrink: 0;
+  align-items: baseline;
+  justify-content: space-between;
   gap: var(--s-2);
+  flex-shrink: 0;
   margin: 0 var(--s-3_5) var(--s-3);
-  padding: var(--s-3);
+  padding: var(--s-2) var(--s-3);
   background: var(--surface-1);
   border: var(--hairline) solid var(--border-1);
   border-radius: var(--r-4);
@@ -20,14 +29,20 @@
   outline-offset: calc(-1 * var(--border-thick));
 }
 
+/* margin: 0 is load-bearing, not cosmetic. There is no global heading/paragraph
+   reset (App.css only resets html/body/#root), and as flex items these margins
+   never collapse — the UA defaults on <h3>/<p> would add ~26px to a row whose
+   whole point is to be short. Same explicit reset DraftInbox uses. */
 .heading {
   composes: ph-region-header from "../styles/typography.module.css";
+  margin: 0;
 }
 
+/* Inline "not yet" note. The dashed box is gone with the card: at one line the
+   muted text alone reads as "reserved", and a dashed border at this size looks
+   like a broken element rather than a placeholder. */
 .placeholder {
   composes: ph-note from "../styles/typography.module.css";
-  padding: var(--s-3);
-  text-align: center;
-  border: var(--hairline) dashed var(--border-2);
-  border-radius: var(--r-3);
+  flex: none;
+  margin: 0;
 }

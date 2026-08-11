@@ -428,6 +428,23 @@
   --col-min-macro: 220px;
   --col-min-substage: 184px;
 
+  /* Modifier bottom tray (调用态): a shallow band, since the quadrant groups
+     flow side by side across the full width instead of stacking. */
+  --h-modifier-tray: 132px;
+
+  /* Scroll-edge fade. A capped strip of opaque cards cut at an arbitrary offset
+     reads as a rendering fault, not as "there is more" — the last tile is
+     guillotined mid-row. Softening that edge says "continues" without adding
+     scrollbar chrome to a surface that hides it (MacroGrid / AlignmentPhrases /
+     ScenePanel all set scrollbar-width: none).
+
+     Pinned TO the region's bottom padding, not a standalone value: the fade ramp
+     must not be deeper than the padding, or it laps into the last row and dims
+     real content even when nothing overflows. Tracking --s-3_5 keeps that true
+     across the density tiers for free (14px comfortable / 12px compact) — a
+     literal here silently broke the moment compact tightened the padding. */
+  --h-scroll-fade: var(--s-3_5);
+
   /* Settings overlay dialog — off-primary surface, larger than the 32px cap. */
   --w-settings-modal: 560px;
   --w-settings-nav: 140px;
@@ -477,6 +494,7 @@
   --h-region-header: 32px;
   --h-macro-strip: 156px;
   --h-macro-tile: 44px;
+  --h-modifier-tray: 104px;
 
   /* Sub-grid spacing (§3): primarily region horizontal padding and the
      region-header inner gap. These two tokens also reach some off-primary
