@@ -14,6 +14,27 @@ description: prompt-hub 设计文档体系变更日志——记录文档结构�
 
 ---
 
+## 2026-08-10 — 调用态空间按命中率重分配（v0.1.1）
+
+### 变更内容
+
+- **动机**：omar 反馈调用态布局不合理。诊断为**面积分配与命中概率倒挂**——Macro（唯一 0 步动作、自带频次排序）被 `--h-macro-strip` 200px 硬 cap 砍掉 40%，需滚动才看得全 13 张；而「最近使用」拿 `flex: 1` 吃掉整列剩余，其中约 400px 是空白。一个唤起即用的界面，高频区需要滚动等于这次调用已失败一半
+- **cockpit 纵向翻转**（`Dashboard.module.css`）：`.cockpitMain > :first-child` 由 `flex: 0 0 auto` 改 `flex: 1 1 auto`（Macro 吃满热区），`:last-child` 由 `flex: 1` 改 `flex: 0 0 auto` + `max-height: 38%`（wake 按内容高度钉底）。实测 Macro 可见 3.5 张 → 8.5 张
+- **高度归还布局层**（`MacroGrid.module.css`）：`.grid` 的硬 cap 改为 `max-height: var(--macro-strip-cap, none)`，由 `.macroSlot` 在**整理态单独注入** `--h-macro-strip`。同一组件在两态下由父容器决定高度，不再component 内写死；整理态 strip 行为不变（已真机走查确认）
+- **滚动边界渐隐**：`.grid` 加 `mask-image` 底部渐隐 + `scroll-padding-block-end`，替代半张卡硬切（旧观感像渲染残缺）。`--h-scroll-fade` 定义为 `var(--s-3_5)` 而非字面量——渐隐带深于 padding 会永久压暗最后一行，绑定 token 使该失配在密度档切换时不可能发生
+- **最近使用按资产去重**（`helpers.ts` `dedupeRecent` + `RECENT_FETCH_LIMIT`）：连拷同一 Macro 5 次原本占满 5 条，信息量为零（频次 Macro 卡自己就显示）。改为拉 40 行原始记录、折叠到 5 个**不同**资产。已知取舍：单资产刷满取数窗口时 wake 会欠填（已钉特征测试，结构解法是 SQL 侧 `GROUP BY` 去重）
+- **SOP 进度收成单行**：占位区命中率为 0，原 ~180px instrument card 的空间来自其上的活动 Scene。**不删只压**——它是 Tab 六区之一且受「同屏可见」约束（[[02-constitution]] 哲学二 / [[03-product-spec#13.4]]）。连带修复：Scene 空子阶段 03/04 的「添加话术」原被挤出可视区，现完整露出
+- **Modifier 托盘横排**：全宽 dock 里象限竖排浪费横向空间，`dense` 变体改为并排（仅 cockpit，整理态 aside 仍竖排）
+- **评审修复**（`/review` 三专家并行 + 变异测试）：SopProgress 恢复 `--shadow-1`（surface-1 抬升契约 ADR-018 补遗 P3-3）+ `margin: 0`（无全局 heading reset，flex item margin 不折叠）；`mask-image` 补 `-webkit-` 前缀；`commands.rs` clamp 注释更正（渲染端已从 5 行改为 40 行窗口）；三处注释的事实错误订正
+- **测试** 331 → 345：新增 `prompt/__tests__/helpers.test.ts`（去重单元 + 跨表 id + 墓碑不合并 + 边界 + Rust clamp 上界断言）与 promptStore 三条集成用例。集成用例经**变异测试验证有效**——移除两处 `dedupeRecent()` 调用并回退取数宽度会让它们变红（此前 337 全绿）
+- **待回流**：[[03-product-spec#13.4]] 描述 SOP 为 instrument card 形态，实现已是单行 stub，随人审八步回流，不就地补丁
+
+### 变更原因
+
+omar 2026-08-10 指出调用态布局不合理。根因不是比例参数，是空间分配未随「唤起即用」的命中概率排序；同时暴露 `--h-macro-strip` 被两态共用这一结构问题。
+
+---
+
 ## 2026-07-22 — 紧凑密度档：一屏承载更多资产（结构 token 收紧，字号不动）
 
 ### 变更内容

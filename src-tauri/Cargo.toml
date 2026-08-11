@@ -3,7 +3,7 @@ members = ["crates/repo-core", "crates/repo-write", "crates/prompt-hub-mcp"]
 
 [package]
 name = "prompt-hub"
-version = "0.1.0"
+version = "0.1.1"
 description = "Manual-transmission desktop dashboard for prompt assets and human-AI alignment"
 authors = ["omar saleem <omarsaleem1232020@gmail.com>"]
 edition = "2021"
