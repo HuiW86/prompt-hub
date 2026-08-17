@@ -453,16 +453,41 @@ pub fn record_usage(conn: &Connection, input: RecordUsageInput) -> RepoResult<Us
     })
 }
 
+// The wake shows DISTINCT assets, so the dedupe has to happen before LIMIT:
+// copying one Macro 40 times in a row must not evict every other asset from the
+// list. ROW_NUMBER keeps each asset's latest touch and drops the rest, which
+// makes LIMIT count assets rather than raw rows.
+//
+// Partition key mirrors the identity rule the wake needs:
+//   - target_type scopes the id (ids are unique per table, not across tables);
+//   - `target_id IS NULL` is a discriminator bit so rows carrying no target id
+//     (composition usages have no asset row to point at) fall back to their own
+//     record id. SQLite's PARTITION BY groups all NULLs together, which would
+//     collapse unrelated composition uses into one; the bit also keeps a real
+//     target_id from ever colliding with the record id used as fallback.
+//
+// Performance caveat (same budget as count_today_usage below): the window
+// function scans every usage row instead of walking idx_usage_records_timestamp
+// for `limit` rows. Fine while usage_records < 10k; revisit when a wake refresh
+// shows up in a profile. Do NOT "fix" it by bounding the inner scan to the last
+// N rows — that just moves the eviction bug further out.
 pub fn list_recent_usage(conn: &Connection, limit: i64) -> RepoResult<Vec<RecentUsageEntry>> {
     // LEFT JOIN each possible target table so a single query returns name/content
     // alongside the usage row. SQLite COALESCE picks the right column per row.
     let mut stmt = conn.prepare(
-        "SELECT
+        "WITH ranked AS (
+            SELECT usage_records.*, ROW_NUMBER() OVER (
+                PARTITION BY target_type, target_id IS NULL, COALESCE(target_id, id)
+                ORDER BY timestamp DESC, id DESC
+            ) AS rn
+            FROM usage_records
+         )
+         SELECT
             u.id, u.timestamp, u.target_type, u.target_id, u.source, u.modifier_ids,
             u.sop_id, u.sop_step_order, u.phase_id,
             COALESCE(m.name, p.name, a.name, mo.name) AS target_name,
             COALESCE(m.content, p.content, a.content, mo.content) AS target_content
-         FROM usage_records u
+         FROM ranked u
          LEFT JOIN macros m
             ON u.target_type = 'macro' AND u.target_id = m.id
          LEFT JOIN phrases p
@@ -471,6 +496,7 @@ pub fn list_recent_usage(conn: &Connection, limit: i64) -> RepoResult<Vec<Recent
             ON u.target_type = 'alignment' AND u.target_id = a.id
          LEFT JOIN modifiers mo
             ON u.target_type = 'modifier' AND u.target_id = mo.id
+         WHERE u.rn = 1
          ORDER BY u.timestamp DESC
          LIMIT ?1",
     )?;
@@ -815,5 +841,75 @@ mod tests {
         }
         // Every entry has the target name populated by the JOIN.
         assert!(recent.iter().all(|e| e.target_name.is_some()));
+    }
+
+    // Raw inserts (not record_usage) so timestamps are exact and the fixture can
+    // express duplicates without sleeping between writes.
+    fn insert_usage(conn: &Connection, id: &str, ts: &str, ty: &str, target_id: Option<&str>) {
+        conn.execute(
+            "INSERT INTO usage_records (id, timestamp, target_type, target_id, source)
+             VALUES (?1, ?2, ?3, ?4, 'macro_area')",
+            params![id, ts, ty, target_id],
+        )
+        .expect("raw insert");
+    }
+
+    #[test]
+    fn list_recent_usage_collapses_repeats_so_limit_counts_distinct_assets() {
+        let conn = db::open_in_memory().expect("open db");
+        let macros = list_macros(&conn).expect("list");
+        let (a, b) = (&macros[0].id, &macros[1].id);
+        // B once, then four copies of A stacked on top. The repeats MUST be the
+        // newest rows: with B newest, a row-counting LIMIT 2 would keep it by
+        // accident and the fixture would pass against the unfixed query. Here
+        // the pre-fix result is two identical A lines and B — a distinct asset
+        // the wake should show — evicted by A's own history.
+        insert_usage(&conn, "b0", "2026-08-10T00:00:01Z", "macro", Some(b));
+        for (i, ts) in ["00:00:02", "00:00:03", "00:00:04", "00:00:05"]
+            .iter()
+            .enumerate()
+        {
+            insert_usage(
+                &conn,
+                &format!("a{i}"),
+                &format!("2026-08-10T{ts}Z"),
+                "macro",
+                Some(a),
+            );
+        }
+
+        let recent = list_recent_usage(&conn, 2).expect("recent");
+        let ids: Vec<Option<&str>> = recent
+            .iter()
+            .map(|e| e.record.target_id.as_deref())
+            .collect();
+        assert_eq!(ids, vec![Some(a.as_str()), Some(b.as_str())]);
+        // A survives as its LATEST touch, not the first one seen.
+        assert_eq!(recent[0].record.id, "a3");
+    }
+
+    #[test]
+    fn list_recent_usage_keeps_rows_without_target_id_distinct() {
+        let conn = db::open_in_memory().expect("open db");
+        // Composition usages carry no target_id. SQLite groups NULLs together,
+        // so without the discriminator bit these two collapse into one row.
+        insert_usage(&conn, "c1", "2026-08-10T00:00:01Z", "composition", None);
+        insert_usage(&conn, "c2", "2026-08-10T00:00:02Z", "composition", None);
+
+        let recent = list_recent_usage(&conn, 5).expect("recent");
+        assert_eq!(recent.len(), 2);
+    }
+
+    #[test]
+    fn list_recent_usage_scopes_identity_by_target_type() {
+        let conn = db::open_in_memory().expect("open db");
+        let shared = list_macros(&conn).expect("list")[0].id.clone();
+        // Ids are unique per table, not across tables: the same string under two
+        // target types is two different assets and must keep two slots.
+        insert_usage(&conn, "t1", "2026-08-10T00:00:01Z", "macro", Some(&shared));
+        insert_usage(&conn, "t2", "2026-08-10T00:00:02Z", "phrase", Some(&shared));
+
+        let recent = list_recent_usage(&conn, 5).expect("recent");
+        assert_eq!(recent.len(), 2);
     }
 }

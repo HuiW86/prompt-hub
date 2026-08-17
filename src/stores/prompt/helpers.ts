@@ -2,53 +2,21 @@ import type {
   AlignmentPhrase,
   Composition,
   DraftPayload,
-  RecentUsageEntry,
   UsageTargetType,
 } from "../../ipc/types";
 
 import type { PromptState } from "./types";
 
-// Distinct assets the wake surfaces.
-export const RECENT_LIMIT = 5;
-
-// Raw usage rows pulled from SQLite per refresh. Deliberately wider than
-// RECENT_LIMIT because the wake is deduped by asset below: copying one Macro
-// five times in a row used to fill the entire list with five identical lines,
-// which carries no information the tile's own usage count doesn't already show.
-//
-// A window buys headroom, it does not guarantee a full wake: the dedupe caps at
-// RECENT_LIMIT but can return FEWER. Copy one asset 40 times in a row and every
-// fetched row collapses into a single entry while distinct older assets sit at
-// row 41+, unreachable. Accepted for now — it under-fills, never shows wrong
-// data, and one copy of anything else restores a second row. The structural fix
-// is to dedupe in SQL (GROUP BY target_type, target_id with MAX(timestamp)) so
-// the LIMIT counts distinct assets; see the characterisation test in
-// __tests__/helpers.test.ts.
+// Distinct assets the wake surfaces, and the exact number of rows we ask
+// SQLite for. list_recent_usage dedupes by asset BEFORE its LIMIT (repo.rs
+// ROW_NUMBER window), so `limit` already counts distinct assets — the client
+// must not filter the response further or a SQL-side regression would be
+// silently absorbed here instead of showing up.
 //
 // Must stay <= RECENT_USAGE_LIMIT_MAX (100) in src-tauri/src/commands.rs, which
-// silently clamps rather than erroring. The bound is asserted in that test.
-export const RECENT_FETCH_LIMIT = 40;
-
-// Collapse repeat copies of the same asset to its most recent touch. Rows
-// arrive newest-first (list_recent_usage ORDER BY timestamp DESC), so the first
-// row seen per asset IS its latest use and later duplicates are dropped.
-// Rows whose target is gone (targetId null — asset deleted) can't be identified
-// as "the same asset", so each keeps its own slot rather than collapsing
-// unrelated tombstones into one.
-export function dedupeRecent(entries: RecentUsageEntry[]): RecentUsageEntry[] {
-  const seen = new Set<string>();
-  const out: RecentUsageEntry[] = [];
-  for (const entry of entries) {
-    const { targetType, targetId, id } = entry.record;
-    // targetType scopes the id: ids are unique per table, not across tables.
-    const key = targetId ? `${targetType}:${targetId}` : `record:${id}`;
-    if (seen.has(key)) continue;
-    seen.add(key);
-    out.push(entry);
-    if (out.length === RECENT_LIMIT) break;
-  }
-  return out;
-}
+// silently clamps rather than erroring. The bound is asserted in
+// __tests__/helpers.test.ts.
+export const RECENT_LIMIT = 5;
 
 export function indexByPhase(
   phrases: AlignmentPhrase[],

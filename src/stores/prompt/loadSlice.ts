@@ -2,8 +2,7 @@ import { ipc } from "../../ipc";
 import { toUserMessage } from "../../utils/errorMessage";
 
 import {
-  RECENT_FETCH_LIMIT,
-  dedupeRecent,
+  RECENT_LIMIT,
   indexByPhase,
   indexCompositionsByPhase,
 } from "./helpers";
@@ -65,7 +64,7 @@ export const createLoadSlice: StateCreatorSlice<
         ipc.listMacros(),
         ipc.listModifiers(),
         ipc.listScenesWithChildren(),
-        ipc.listRecentUsage(RECENT_FETCH_LIMIT),
+        ipc.listRecentUsage(RECENT_LIMIT),
         ipc.countTodayUsage(),
         ipc.listDrafts({ status: "pending" }),
         ipc.countPendingDrafts(),
@@ -77,7 +76,7 @@ export const createLoadSlice: StateCreatorSlice<
         macros,
         modifiers,
         scenes,
-        recentUsage: dedupeRecent(recent),
+        recentUsage: recent,
         todayCount,
         drafts,
         pendingDraftCount,

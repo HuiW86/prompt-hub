@@ -21,10 +21,10 @@ fn hide_after_copy(suppress_hide: Option<bool>) -> bool {
 }
 
 // Defense against a renderer sending an unbounded LIMIT (or LIMIT -1, which
-// SQLite treats as "all rows"). The renderer requests a 40-row window
-// (RECENT_FETCH_LIMIT) and dedupes it down to 5 distinct assets client-side, so
-// the ask is wider than what the wake displays. Lowering this below that window
-// silently truncates — the clamp does not error — and shrinks the deduped list.
+// SQLite treats as "all rows"). list_recent_usage dedupes by asset before its
+// LIMIT, so the renderer asks for exactly what the wake displays (RECENT_LIMIT,
+// 5). Lowering this below that ask silently truncates — the clamp does not
+// error — and shortens the wake.
 const RECENT_USAGE_LIMIT_MAX: i64 = 100;
 
 use crate::error::{AppError, AppResult};

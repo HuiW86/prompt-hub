@@ -14,6 +14,22 @@ description: prompt-hub 设计文档体系变更日志——记录文档结构�
 
 ---
 
+## 2026-08-16 — 最近使用去重下沉到 SQL（了结 2026-08-10 的已知取舍）
+
+### 变更内容
+
+- **`list_recent_usage` 在 LIMIT 之前按资产去重**（`repo-core/src/repo.rs`）：加 `ROW_NUMBER() OVER (PARTITION BY target_type, target_id IS NULL, COALESCE(target_id, id) ORDER BY timestamp DESC, id DESC)` + `WHERE rn = 1`，`limit` 从此计的是**不同资产**而非原始行。连拷同一 Macro 40 次不再挤掉其余资产（2026-08-10 记为「已知取舍：单资产刷满取数窗口时 wake 会欠填」的那条，现已消除）
+- **NULL 语义是这次的坑**：HANDOFF 原方案写的 `GROUP BY target_type, target_id` 会把所有 `target_id IS NULL` 的行归成一组——composition 用法本就不带 target_id，会被折叠成一条。分区键补 `target_id IS NULL` 判别位，既复刻客户端旧语义，也杜绝真实 target_id 与兜底 record id 撞车
+- **客户端去重整条删除**（`prompt/helpers.ts`）：`dedupeRecent` + `RECENT_FETCH_LIMIT` 移除，两处调用点（`loadSlice` / `recordingSlice`）改为直接取 `RECENT_LIMIT`(5) 行并原样渲染。**保留冗余过滤会在 SQL 回归时静默兜底**，与本项目连栽四次的 fail-open 同形，故选单一真相源
+- **测试口径迁移** 前端 345 → 335 / Rust 155 → 158：删去 10 条 `dedupeRecent` 单元用例（行为已不在前端），Rust 侧补三条——重复折叠且 LIMIT 计不同资产 / 无 target_id 行不合并 / 跨表同 id 不合并；promptStore 集成块由「recent wake dedupe」改为「recent wake fetch」，改钉两件事：只要 `RECENT_LIMIT` 行、返回什么就渲染什么（重新引入客户端过滤会让它变红）
+- **注释订正**：`commands.rs` 的 `RECENT_USAGE_LIMIT_MAX` 说明仍写着「渲染端取 40 行窗口再客户端折叠」，已同步；`repo.rs` 新注释按 `count_today_usage` 既有口径写明全表扫描代价（< 10k 行可接受），并显式禁止「给内层扫描加边界」这种把病灶推远的改法
+
+### 变更原因
+
+2026-08-10 引入客户端去重时即在特征测试里钉了结构解法（SQL 侧去重）。本轮兑现，同时消灭跨语言的双重去重语义。
+
+---
+
 ## 2026-08-10 — 调用态空间按命中率重分配（v0.1.1）
 
 ### 变更内容

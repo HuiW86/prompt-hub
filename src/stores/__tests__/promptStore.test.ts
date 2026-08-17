@@ -21,7 +21,7 @@ vi.mock("@tauri-apps/api/core", () => ({
 }));
 
 import { usePromptStore } from "../promptStore";
-import { RECENT_FETCH_LIMIT } from "../prompt/helpers";
+import { RECENT_LIMIT } from "../prompt/helpers";
 
 const initial = usePromptStore.getState();
 
@@ -1266,12 +1266,12 @@ describe("promptStore", () => {
     expect(usePromptStore.getState().pendingDraftCount).toBe(0);
   });
 
-  // The wake collapses repeat copies of one asset (dedupeRecent). The unit
-  // tests in prompt/__tests__/helpers.test.ts cover the function; these pin the
-  // STORE seam. Without them, deleting both dedupeRecent() call sites and
-  // reverting the fetch width leaves the whole suite green — every other recent
-  // fixture in this file is empty or already distinct.
-  describe("recent wake dedupe", () => {
+  // Collapsing repeat copies of one asset is SQLite's job (list_recent_usage
+  // ROW_NUMBER window; covered in repo.rs tests). These pin the STORE seam:
+  // the ask is exactly RECENT_LIMIT and the response is rendered verbatim.
+  // Re-adding a client-side filter would make a SQL regression invisible, and
+  // every other recent fixture in this file is empty or already distinct.
+  describe("recent wake fetch", () => {
     function dupRow(
       id: string,
       targetId: string,
@@ -1302,7 +1302,7 @@ describe("promptStore", () => {
       dupRow("r1", "macro-b", "2026-08-10T00:00:01Z"),
     ];
 
-    it("refreshAll collapses repeat copies to the newest touch per asset", async () => {
+    it("refreshAll renders the rows SQLite returned, unfiltered", async () => {
       mockListAll();
       invokeMock.mockImplementation((cmd: string) => {
         if (cmd === "list_recent_usage") return Promise.resolve(duplicated);
@@ -1320,23 +1320,25 @@ describe("promptStore", () => {
 
       await usePromptStore.getState().refreshAll();
 
+      // Duplicates are impossible from the real query; if they ever appear the
+      // wake must SHOW them rather than paper over the backend.
       expect(
         usePromptStore.getState().recentUsage.map((e) => e.record.id),
-      ).toEqual(["r4", "r1"]);
+      ).toEqual(["r4", "r3", "r2", "r1"]);
     });
 
-    it("refreshAll asks for a window wider than the wake displays", async () => {
+    it("refreshAll asks for exactly the number of rows the wake displays", async () => {
       mockListAll();
       await usePromptStore.getState().refreshAll();
 
-      // Pinning the ARGUMENT, not just the result: fetching only RECENT_LIMIT
-      // rows would dedupe down to 1-2 visible items — the original bug.
+      // Pinning the ARGUMENT: the query dedupes before its LIMIT, so asking for
+      // a wider window would only pull rows the wake throws away.
       expect(invokeMock).toHaveBeenCalledWith("list_recent_usage", {
-        limit: RECENT_FETCH_LIMIT,
+        limit: RECENT_LIMIT,
       });
     });
 
-    it("recordCopy dedupes the refreshed wake too", async () => {
+    it("recordCopy refreshes the wake on the same terms", async () => {
       mockListAll();
       await usePromptStore.getState().refreshAll();
 
@@ -1370,9 +1372,9 @@ describe("promptStore", () => {
 
       expect(
         usePromptStore.getState().recentUsage.map((e) => e.record.id),
-      ).toEqual(["r4", "r1"]);
+      ).toEqual(["r4", "r3", "r2", "r1"]);
       expect(invokeMock).toHaveBeenCalledWith("list_recent_usage", {
-        limit: RECENT_FETCH_LIMIT,
+        limit: RECENT_LIMIT,
       });
     });
   });

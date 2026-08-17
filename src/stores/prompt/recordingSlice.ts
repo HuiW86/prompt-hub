@@ -1,6 +1,6 @@
 import { ipc } from "../../ipc";
 
-import { RECENT_FETCH_LIMIT, bumpUsageCount, dedupeRecent } from "./helpers";
+import { RECENT_LIMIT, bumpUsageCount } from "./helpers";
 import type { PromptState, StateCreatorSlice } from "./types";
 
 export const createRecordingSlice: StateCreatorSlice<
@@ -15,9 +15,9 @@ export const createRecordingSlice: StateCreatorSlice<
     // the top of recents with target_name JOINed AND the StatusBar increments
     // in lockstep. Both are bounded queries — cheap.
     const [recent, todayCount] = await Promise.all([
-      ipc.listRecentUsage(RECENT_FETCH_LIMIT),
+      ipc.listRecentUsage(RECENT_LIMIT),
       ipc.countTodayUsage(),
     ]);
-    set({ recentUsage: dedupeRecent(recent), todayCount });
+    set({ recentUsage: recent, todayCount });
   },
 });
