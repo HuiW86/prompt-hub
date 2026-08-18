@@ -1,7 +1,7 @@
 ---
 type: adr
 project: prompt-hub
-status: Proposed
+status: Accepted
 description: 编辑体系统一——编辑器脱离宿主文档流改锚定 top layer；organize 升级为选择驱动的键盘处理模式（动作退出导航序列、直接按键、保存即推进）；附带复核 ADR-024 PhaseBar 主角化的布局漂移
 ---
 
@@ -10,8 +10,8 @@ description: 编辑体系统一——编辑器脱离宿主文档流改锚定 top
 ## 1. 标题与日期
 
 - **标题**：编辑器从「内联进宿主文档流」改为「锚定在宿主上的 top layer 浮层」；organize 从「带按钮的浏览模式」升级为「选择驱动的键盘处理模式」
-- **日期**：2026-08-14（2026-08-16 两轮复核后重写）
-- **决策者**：omar（**待审**）；起草：Claude（🤝 共创文档，见 [[CLAUDE#§5.2]]）
+- **日期**：2026-08-14（2026-08-16 两轮复核后重写；2026-08-17 omar 拍板）
+- **决策者**：omar（2026-08-17 通过，含子决策 6 单独点头）；起草：Claude（🤝 共创文档，见 [[CLAUDE#§5.2]]）
 - **影响范围**：
   - **代码**：`primitives/Editor.tsx`（新增 `AnchoredEditor` 壳）/ `PhraseFormEditor.tsx` / `hooks/useRegionNav.ts`（新增动作键层）/ `AlignmentPhrases.tsx` / `scene/ViewPhraseCard.tsx` + `scene/ViewColumn.tsx` + `scene/ScenePanel.tsx` / `MacroGrid.tsx` / `ScenePropertiesEditor.tsx` / `DraftInbox.tsx` / `RecentList.tsx` / `SearchOverlay.tsx` / `PhaseBar.module.css` / `tokens.css`（新增 `--z-*` 层级标尺）
   - **文档**：[[03-product-spec#13.3]] 各区域编辑契约 + [[03-product-spec#13.4]] 键盘契约 / [[05-design-spec]] overlay 层级 + 选中态规范 / [[07-features#3.8]] / [[11-test-spec]]
@@ -19,9 +19,11 @@ description: 编辑体系统一——编辑器脱离宿主文档流改锚定 top
 
 ## 2. Status
 
-`Proposed`（2026-08-14 起草；2026-08-16 经外部对抗审查 + 第一性原理复核两轮重写；待 omar 审）
+`Accepted`（2026-08-14 起草；2026-08-16 经外部对抗审查 + 第一性原理复核两轮重写；**2026-08-17 omar 拍板通过，六条子决策全数采纳**）
 
-> 子决策 6（PhaseBar 主角化复核）**推翻 ADR-024 已拍板的一个子项**，需 omar 单独点头；否决时可独立摘除，不影响 1-5。
+> 子决策 6（PhaseBar 主角化复核）**推翻 ADR-024 已拍板的一个子项**，故未夹带通过，2026-08-17 由 omar 单独点头后生效。[[024-dark-cockpit-identity]] 的 PhaseBar 子项自此被本 ADR 局部修订，其余身份设计（`--brand` 恒定色系、深色驾驶舱）不变。
+>
+> **落地进度**：P0（子决策 6）已实施 2026-08-17 —— `PhaseBar.module.css` 摘除 `flex-grow: 2.2` / `font-size: var(--t-18)` 及两者的 transition，活动相位改由 `--brand-dim` 底 + `--brand` 下划线 + 实底序号章 + `--w-600` 表达权重，格宽与字号恒定。P1–P3 待排。
 
 ### 修订记录
 

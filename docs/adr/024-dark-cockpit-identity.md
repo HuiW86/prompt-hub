@@ -1,7 +1,7 @@
 ---
 type: adr
 project: prompt-hub
-status: accepted
+status: Accepted
 description: 主形态视觉身份定为深色驾驶舱 + 恒定 violet 品牌色；light 降为显式设置项（推翻 ADR-018 补遗"light 为参考观感"锚点）
 ---
 

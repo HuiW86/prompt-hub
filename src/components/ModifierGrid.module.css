@@ -38,21 +38,6 @@
   overflow-y: auto;
 }
 
-/* Bottom-tray variant (调用态 dock). The tray spans the full window, so
-   stacking the quadrant groups vertically spent a tall band while leaving most
-   of the row empty — three chips in ~180px of height against ~1700px of unused
-   width. Groups flow side by side instead: same chips, one shallow band. */
-.cardDense {
-  flex-direction: row;
-  flex-wrap: wrap;
-  align-items: flex-start;
-  gap: var(--s-3) var(--s-6);
-  max-height: var(--h-modifier-tray);
-  /* The aside stack relies on the region gap below it; the tray is the last
-     thing above the status rail and owns its own bottom inset. */
-  margin-bottom: var(--s-3);
-}
-
 .group {
   display: flex;
   flex-direction: column;

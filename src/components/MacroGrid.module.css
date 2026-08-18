@@ -20,12 +20,10 @@
  * icon chip + name + uses), wrapping into rows.
  *
  * Height is the LAYOUT's call, not the component's: the grid fills whatever its
- * parent grants and scrolls only past that. 调用态 hands it the whole hot column
- * (0-step reach is the highest-hit surface on screen — it should not need a
- * scroll to show the library); 整理态 pins it to a strip above the Scene
- * panorama by injecting --macro-strip-cap. A hard cap here used to apply in
- * BOTH modes, clipping the whole tile library into --h-macro-strip while the
- * recent wake below sat on the rest of the column, most of it empty. */
+ * Panel grants and scrolls only past that. That share is now the user's own
+ * persisted drag (ADR-026 子决策 2), so the component needs no cap and no
+ * per-mode injection — the earlier --macro-strip-cap variable, set by the
+ * parent in one mode and left unset in the other, is retired. */
 .grid {
   display: flex;
   flex-wrap: wrap;
@@ -35,7 +33,6 @@
   flex: 1;
   overflow-y: auto;
   min-height: 0;
-  max-height: var(--macro-strip-cap, none);
   /* Hidden-scrollbar surface like every other scroller here (AlignmentPhrases /
      ScenePanel); the fade below is the affordance in its place. */
   scrollbar-width: none;

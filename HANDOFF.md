@@ -23,32 +23,35 @@ omar 走查发现协议层对齐话术编辑器被物理裁切（保存按钮不
 
 ## In Progress
 
-无代码改动。工作区仅新增一份 ADR 文档（另有 `.codex/` + `AGENTS.md` 未跟踪，归 omar）。
+ADR-025 起草轮无代码改动。**但本文件存档（18:31）之后另有一轮未存档的会话**：`4191b99` 完成了原 Next Action 第 6 项 `repo-core` SQL 去重（21:12），2026-08-17 复验全绿后已 fast-forward 合入 `main`，该条已销账。工作区干净（`.codex/` + `AGENTS.md` 未跟踪，归 omar）。
+
+⚠️ `main` 领先 `origin/main` 2 个 commit，尚未 push。
 
 ## Next Actions
 
-1. **omar 审 ADR-025**（`docs/adr/025-unified-anchored-editing.md`）。**子决策 6 需单独点头**——它推翻 `024-dark-cockpit-identity` 已拍板的 PhaseBar 主角化子项；否决时可独立摘除不影响 1-5
-2. **通过后 P0 立即落地**：`src/components/PhaseBar.module.css:45-49` 摘掉 `flex-grow` / `font-size` 的 transition，`:66-72` 的 `flex-grow: 2.2` + `font-size: var(--t-18)` 改为等宽 + 非 layout 手段表达权重。与其余五条零依赖，约 0.5 天
-3. **通过后 P1-a**：`src/styles/tokens.css` 加 `--z-*` 层级标尺 → `src/components/primitives/Editor.tsx` 新增 `AnchoredEditor`（原生 `popover="manual"` + 约 20 行 jsdom setup shim）+ 新建 `src/hooks/useAnchoredPosition.ts`（dashboard 矩形夹取 + 滚动祖先观察 + resize）→ **只接 `AlignmentPhrases.tsx`**，过验收门 G1 六项真机检查后才准迁其余五面
-4. **ADR-025 Accepted 后走契约回流八步**：`docs/design/03-product-spec.md` §13.3 各区域编辑契约 + §13.4 键盘契约；`docs/design/05-design-spec.md` overlay 层级 + 选中态 + 焦点环；`07-features` §3.8；`11-test-spec`
-5. **契约回流八步（旧账）**：`03-product-spec.md` §13.4 描述 SOP 为 instrument card，实现已是单行 stub（`src/components/SopProgress.tsx`）。合并既有欠账：§4.0/§13.4 + §4.0.7 卡片解剖（title-only）+ 外观设置（density）；design-spec §2/§8/§9 + §3c token 层 (carried from 2026-07-21)
-6. **`repo-core` 侧 SQL 去重**：`src-tauri/crates/repo-core/src/repo.rs:456` `list_recent_usage` 改 `GROUP BY target_type, target_id` + `MAX(timestamp)`，使 LIMIT 作用于不同资产，客户端 `dedupeRecent` 的 cap 退化为冗余。缺陷已钉在 `src/stores/prompt/__tests__/helpers.test.ts` 特征测试里 (carried from 2026-08-11)
-7. **`.cockpitMain > :last-child` 的 38% 无像素下限**（`src/layouts/Dashboard.module.css:100`）：640px 基线窗口下 wake 仅约 1 行可见。若 omar 认为过窄，加 `max(38%, <新 token>)` (carried from 2026-08-11)
-8. **重写 `docs/release-runbook.md` §3 第 1 项**：已按可执行三项实际执行（`Info.plist` 版本 / `codesign -dvvv` Authority+TeamID / `lipo -info` 架构 + 文件清单 diff），runbook 正文仍是旧的不可执行表述 (carried from 2026-08-10)
-9. **把 Ed25519 验签脚本写进 `docs/release-runbook.md` §3 第 4 项**：Python 内联验签（`base64` → 切 `alg/key_id/pk` → `blake2b-512` 预哈希 → `Ed25519PublicKey.verify`），无需 `brew install minisign` 且能验已安装旧客户端的内嵌公钥 (carried from 2026-08-11)
-10. **memory 层两条待 omar 点头**：新增 feedback「AI 主笔对外文档必须逐句反查代码」（与 `feedback_walkthrough_coverage` 同族，应互链）；更新 `feedback_decision_autonomy`（授权扩到"失败恢复时的路径选择"）(carried from 2026-08-05)
-11. **发布收尾（非阻塞）**：`gh secret set TAURI_SIGNING_PRIVATE_KEY_PASSWORD --env release-signing`；`latest.json` 最低版本字段落在 `release.yml` sign job 的 `jq -n` 处；落盘日志 tauri-plugin-log 立项 (carried from 2026-08-05)
-12. **`a24c7c0` / `4b722c1` / `716bd4c` 三 commit 补 verifier 对抗审查**——`a24c7c0`「float phrase actions」正是 hover 遮挡的来源 (carried from 2026-07-07)
-13. **omar 人审批次**：design-spec v0.15 draft + ADR-023/024 措辞 + 图标定稿追认 + product-spec v0.15/v0.16 + features v1.10/v1.11 + 01-spec v0.7 + 旧账 ADR-021/`scene.color` (carried from 2026-07-06)
-14. **可发现性裁决 ×4**：hover 动作簇微显 / 场景删除入口外露 / 整理态保窗 vs 改 D-0 契约 / title-only 后卡面无内容线索。**第 1 项现已由 ADR-025 子决策 3.3 给出方案**（动作簇改选中态跟随，hover 降为次要通路）——ADR 通过即销该项，其余三项仍待裁决 (carried from 2026-07-06)
-15. 补 `src/components/__tests__/ScenePanelFocusRestore.test.tsx` 焦点恢复负路径测试 (carried from 2026-07-21)
-16. `.github/workflows/ci.yml` bench-c1 `continue-on-error` 处置复核 (carried from 2026-07-12)
-17. P0-2 Composition 链路 ADR（P0-5 系于此，`src/components/DraftInbox.tsx:43-48`）(carried from 2026-07-06)
-18. **ops-spec §3 定时备份**（`src-tauri/crates/repo-core/src/backup.rs` 底座）/ P2 余 4 评估 / P1-5 Phase 可配置性 / Macro 网格末行 auto-fit (carried from 2026-07-06)
-19. `docs/design/CLAUDE-DESIGN.md` v0.2 重传 + v2 基调同步 (carried from 2026-07-02)
-20. 评审遗留补 design-spec 上游：ipc-contract 扩扫 / `--color-danger` / `--scrim` 语义回流（随人审八步）(carried from 2026-07-02)
-21. **`docs/design/06-prd.md` §6.1 soft-delete 矛盾** + `status: pre-code` 僵尸 / ai-dev-lifecycle 仓收尾。**与 ADR-025 子决策 5 直接相关**——真正可撤销的删除需要后端 `deleted_at` + `restore_*`，prd 已承诺 soft-delete 而实现是硬删除，这个矛盾要么落实要么撤销承诺 (carried from 2026-07-02)
-22. **gstack 待升级 0.16.3 → 1.61.0**（跨大版本），另有两项一次性配置提示（proactive / skill routing）(carried from 2026-08-11)
+1. ~~omar 审 ADR-025~~ ✅ **2026-08-17 通过，含子决策 6 单独点头**（ADR status → `Accepted`，CLAUDE §7 已同步）
+2. ~~P0 落地~~ ✅ **2026-08-17 已实施**：`PhaseBar.module.css` 摘 `flex-grow: 2.2` / `font-size: var(--t-18)` 及两者 transition，活动相位改由 `--brand-dim` 底 + `--brand` 下划线 + 实底序号章 + `--w-600` 表达；`--t-18` 已无引用方，注释标记为 unbound（未删，删 token 属 design-spec §3c 契约变更）。335 测试 / eslint / prettier 全绿。**待真机走查确认活动相位在等宽下仍足够醒目**
+3. ~~omar 审 ADR-026~~ ✅ **2026-08-18 通过并当日落地**：`Dashboard.tsx` 条件分支删除，两态共用一套布局；左列 Macro/Scene 改用户可拖拽（min 132px / 196px，像素非百分比）；`dense` 变体 + `--macro-strip-cap` + 三段 cockpit CSS 退役；两条模式分歧测试合并。335 测试 / lint / build 全绿。**真机待验两项**：(a) 640px 基线窗口下像素下限的实际表现（当前是推算：panorama 约 452px vs 需要 328px）；(b) 纵向 Separator 拖拽命中面积与光标反馈
+4. **ADR-026 契约回流八步（新账，优先）**：[[03-product-spec]] §4.0.4 UI 共用规则表（模块位置按固定布局重写，原表是 pre-reshape 口径）+ §4.0.7 补「模式不改布局」反设计一条 + §13.3 区域 4/5/6 位置字段 + §13.4 Tab 顺序追认；[[05-design-spec]] 纵向 Separator 视觉规格；[[07-features]]。**两项 ADR 显式不裁、留给本轮回流的**：`任务层` pill 去留（现按常显实现以保行为等价）、SOP stub 是否继续占正式区
+5. **P1-a（可开工）**：`src/styles/tokens.css` 加 `--z-*` 层级标尺 → `src/components/primitives/Editor.tsx` 新增 `AnchoredEditor`（原生 `popover="manual"` + 约 20 行 jsdom setup shim）+ 新建 `src/hooks/useAnchoredPosition.ts`（dashboard 矩形夹取 + 滚动祖先观察 + resize）→ **只接 `AlignmentPhrases.tsx`**，过验收门 G1 六项真机检查后才准迁其余五面
+6. **ADR-025 Accepted 后走契约回流八步**：`docs/design/03-product-spec.md` §13.3 各区域编辑契约 + §13.4 键盘契约；`docs/design/05-design-spec.md` overlay 层级 + 选中态 + 焦点环；`07-features` §3.8；`11-test-spec`
+7. **契约回流八步（旧账）**：`03-product-spec.md` §13.4 描述 SOP 为 instrument card，实现已是单行 stub（`src/components/SopProgress.tsx`）。合并既有欠账：§4.0/§13.4 + §4.0.7 卡片解剖（title-only）+ 外观设置（density）；design-spec §2/§8/§9 + §3c token 层 (carried from 2026-07-21)
+8. ~~`.cockpitMain > :last-child` 的 38% 无像素下限~~ ✅ **2026-08-18 随 ADR-026 消解**：该选择器整段删除（cockpit 布局不复存在），新的纵向 Panel 用像素下限（132px / 196px）而非百分比，同类问题不再复现 (was carried from 2026-08-11)
+9. **重写 `docs/release-runbook.md` §3 第 1 项**：已按可执行三项实际执行（`Info.plist` 版本 / `codesign -dvvv` Authority+TeamID / `lipo -info` 架构 + 文件清单 diff），runbook 正文仍是旧的不可执行表述 (carried from 2026-08-10)
+10. **把 Ed25519 验签脚本写进 `docs/release-runbook.md` §3 第 4 项**：Python 内联验签（`base64` → 切 `alg/key_id/pk` → `blake2b-512` 预哈希 → `Ed25519PublicKey.verify`），无需 `brew install minisign` 且能验已安装旧客户端的内嵌公钥 (carried from 2026-08-11)
+11. **memory 层两条待 omar 点头**：新增 feedback「AI 主笔对外文档必须逐句反查代码」（与 `feedback_walkthrough_coverage` 同族，应互链）；更新 `feedback_decision_autonomy`（授权扩到"失败恢复时的路径选择"）(carried from 2026-08-05)
+12. **发布收尾（非阻塞）**：`gh secret set TAURI_SIGNING_PRIVATE_KEY_PASSWORD --env release-signing`；`latest.json` 最低版本字段落在 `release.yml` sign job 的 `jq -n` 处；落盘日志 tauri-plugin-log 立项 (carried from 2026-08-05)
+13. **`a24c7c0` / `4b722c1` / `716bd4c` 三 commit 补 verifier 对抗审查**——`a24c7c0`「float phrase actions」正是 hover 遮挡的来源 (carried from 2026-07-07)
+14. **omar 人审批次**：design-spec v0.15 draft + ADR-023/024 措辞 + 图标定稿追认 + product-spec v0.15/v0.16 + features v1.10/v1.11 + 01-spec v0.7 + 旧账 ADR-021/`scene.color` (carried from 2026-07-06)
+15. **可发现性裁决 ×4**：hover 动作簇微显 / 场景删除入口外露 / 整理态保窗 vs 改 D-0 契约 / title-only 后卡面无内容线索。**第 1 项现已由 ADR-025 子决策 3.3 给出方案**（动作簇改选中态跟随，hover 降为次要通路）——ADR 通过即销该项，其余三项仍待裁决 (carried from 2026-07-06)
+16. 补 `src/components/__tests__/ScenePanelFocusRestore.test.tsx` 焦点恢复负路径测试 (carried from 2026-07-21)
+17. `.github/workflows/ci.yml` bench-c1 `continue-on-error` 处置复核 (carried from 2026-07-12)
+18. P0-2 Composition 链路 ADR（P0-5 系于此，`src/components/DraftInbox.tsx:43-48`）(carried from 2026-07-06)
+19. **ops-spec §3 定时备份**（`src-tauri/crates/repo-core/src/backup.rs` 底座）/ P2 余 4 评估 / P1-5 Phase 可配置性 / Macro 网格末行 auto-fit (carried from 2026-07-06)
+20. `docs/design/CLAUDE-DESIGN.md` v0.2 重传 + v2 基调同步 (carried from 2026-07-02)
+21. 评审遗留补 design-spec 上游：ipc-contract 扩扫 / `--color-danger` / `--scrim` 语义回流（随人审八步）(carried from 2026-07-02)
+22. **`docs/design/06-prd.md` §6.1 soft-delete 矛盾** + `status: pre-code` 僵尸 / ai-dev-lifecycle 仓收尾。**与 ADR-025 子决策 5 直接相关**——真正可撤销的删除需要后端 `deleted_at` + `restore_*`，prd 已承诺 soft-delete 而实现是硬删除，这个矛盾要么落实要么撤销承诺 (carried from 2026-07-02)
+23. **gstack 待升级 0.16.3 → 1.61.0**（跨大版本），另有两项一次性配置提示（proactive / skill routing）(carried from 2026-08-11)
 
 ## Dropped
 
@@ -56,7 +59,10 @@ omar 走查发现协议层对齐话术编辑器被物理裁切（保存按钮不
 
 ## Risks & Decisions
 
-- **ADR-025 尚未通过，不得开工**。P0 PhaseBar 虽只有约 10 行 CSS 且零依赖，但它推翻 ADR-024 已拍板子项，**不能以"改动小"为由绕过人审**
+- ~~ADR-025 尚未通过，不得开工~~ **2026-08-17 已通过**（含子决策 6）。教训留档：P0 PhaseBar 虽只有约 10 行 CSS 且零依赖，仍未以"改动小"为由绕过人审——**这条判断被证明是对的**，子决策 6 确实需要单独点头
+- **减法快车道已开（CLAUDE §5.1.1，2026-08-18）**：纯删除类 UI 改动不走八步。但**四条越界条款要认真对**——删的东西承载语义 / 删 token 条目 / 删区域功能字段 / 一次删三处以上，任一命中即回落八步。快车道是为降低"修缺陷"的成本，不是为绕过治理
+- ~~ADR-026 与 ADR-025 有编辑冲突面，建议 026 先落~~ **已按此顺序执行**：026 于 2026-08-18 落地，025 的 P1/P2 编辑面迁移从此在固定布局上做，省掉一次返工
+- **jsdom 验不了本轮改动的核心**：ADR-026 改的是空间分配与拖拽，335 条测试只能证明 DOM 顺序与渲染不炸。**布局类改动的绿灯不等于验收**——真机走查前不得写进对外发布说明（与整理模式 NEEDS HUMAN 同一处置）
 - **`codex exec` 在非 TTY 下会读 stdin**：不加 `</dev/null` 会一直等 EOF，表现为 5 分钟超时且 stderr 只有 `Reading additional input from stdin...`。另：用 `nohup ... &` 放后台会被 Bash 工具的任务收尾提前 kill，输出截断在工具调用阶段。**正确姿势是前台 + `</dev/null` + 长 timeout**
 - **给外部审查裁剪 prompt 会制造假阳性**：本轮为省时从 codex prompt 里删掉 3 个 CSS 文件，codex 随即断言「hover-lift 五文件清单未经证实」。**审查方读不到的东西会被当成不存在**——裁剪 prompt 等于制造事实指控
 - **ADR-025 新引入两笔债（已写进 §6 反向后果）**：(a) 裸字母动作键是新的冲突面，与 IME、未来 type-ahead、系统快捷键需持续避让；(b) 动作簇改选中态跟随后，未选中条目不再显示任何 affordance，首次使用有一次学习成本（缓解：hover 保留为次要通路）
@@ -77,10 +83,10 @@ omar 走查发现协议层对齐话术编辑器被物理裁切（保存按钮不
 
 - `pnpm exec prettier --check docs/adr/025-unified-anchored-editing.md` → 通过（本轮已验）
 - `node scripts/doc-governance/index.mjs --config doc-governance.config.mjs` → 基线 0 error / 6 warn
-- 本轮无代码改动，以下为恢复工作前的基线自检：
-  - `pnpm test` → 345/345（35 文件）
+- 恢复工作前的基线自检（数字为 `4191b99` 合入 main 后实测，2026-08-17）：
+  - `pnpm test` → 335/335（35 文件）
   - `pnpm lint && pnpm exec prettier --check . && pnpm build`
-  - `cargo test --workspace --manifest-path src-tauri/Cargo.toml` → 155 passed
+  - `cargo test --workspace --manifest-path src-tauri/Cargo.toml` → 158 passed
   - `cargo clippy --workspace --all-targets --manifest-path src-tauri/Cargo.toml -- -D warnings`
 - P0 落地后须跑：`pnpm bench:hotkey-wake` → P95 在 C1 预算内
 

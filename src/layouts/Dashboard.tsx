@@ -21,34 +21,39 @@ import { Toast } from "../components/Toast";
 import { UpdaterBanner } from "../components/UpdaterBanner";
 import { Button } from "../components/primitives";
 import { usePromptStore } from "../stores/promptStore";
-import { useSettingsStore } from "../stores/settingsStore";
 
 import styles from "./Dashboard.module.css";
 
-// Reshape v2 dual-layout: the interaction mode drives the ARRANGEMENT, not
-// just click behaviour (D-0 extended). Same six regions, two compositions:
-//   调用态 cockpit — the grab-and-go moment dominates: hot Macro tiles + the
-//     recent-usage wake take the wide column, the active Scene shrinks to a
-//     context rail, Modifier atoms dock as a bottom tray.
-//   整理态 studio — the asset panorama dominates: Macro strip atop the Scene
-//     panorama (task column), Modifier/Recent/SOP as the classic aside.
-// All regions stay on-screen in both modes (哲学二 同屏可见); only share of
-// screen and order change with the moment.
+// ONE spatial layout, both modes (ADR-026). `interactionMode` changes click
+// semantics and action affordances only — never where a region lives. The
+// former dual arrangement moved three of five regions across columns on every
+// toggle, which cost the spatial memory a dashboard exists to build, and it
+// broke three ratified contracts on the way (product-spec §4.0.7 scope /
+// §13.3 region-6 position / §13.4 Tab order).
+//
+// Region map (fixed): task column = Macro over Scene; aside = Modifier,
+// recent wake, SOP. DOM order resolves to the §13.4 Tab sequence.
+//
+// The one thing the old cockpit had right — Macro deserves more room than a
+// 200px strip (2026-08-10 hit-probability evidence) — survives as a draggable
+// split rather than a second layout: a binary mode cannot carry a continuous
+// spatial preference, so the preference goes to a continuous control.
 export function Dashboard() {
   const loadState = usePromptStore((s) => s.loadState);
   const loadError = usePromptStore((s) => s.loadError);
   const refreshAll = usePromptStore((s) => s.refreshAll);
-  const interactionMode = useSettingsStore((s) => s.interactionMode);
 
-  // Column widths are a local UI preference: persisted to localStorage (never
-  // SQLite, never uploaded — constitution A2). Each mode owns its split id so
-  // cockpit and studio remember their widths independently.
-  const studioLayout = useDefaultLayout({
-    id: "panorama-2col",
+  // Split sizes are a local UI preference: persisted to localStorage (never
+  // SQLite, never uploaded — constitution A2). One id per split, shared by both
+  // modes. The retired per-mode ids (panorama-2col / cockpit-2col) are left in
+  // storage unread: a stale UI preference falls back to the default, so a
+  // migration would cost more than it is worth (ADR-026 子决策 3).
+  const columnLayout = useDefaultLayout({
+    id: "dashboard-2col",
     storage: localStorage,
   });
-  const cockpitLayout = useDefaultLayout({
-    id: "cockpit-2col",
+  const taskLayout = useDefaultLayout({
+    id: "task-2row",
     storage: localStorage,
   });
 
@@ -68,8 +73,6 @@ export function Dashboard() {
     );
   }
 
-  const cockpit = interactionMode === "invoke";
-
   return (
     // role="main" (not "application") so VoiceOver / NVDA keep their landmark
     // and heading rotors. The dashboard is composed of standard landmarks
@@ -83,94 +86,74 @@ export function Dashboard() {
       <UpdaterBanner />
       <Header />
       <ProtocolBand />
-      {cockpit ? (
-        <>
-          <div className={styles.panorama}>
-            <Group
-              id="cockpit-2col"
-              className={styles.panoramaGroup}
-              defaultLayout={cockpitLayout.defaultLayout}
-              onLayoutChanged={cockpitLayout.onLayoutChanged}
-            >
-              <Panel
-                id="hot"
-                className={styles.panel}
-                defaultSize="62%"
-                minSize="42%"
-              >
-                {/* Hot zone: heat-sorted macro tiles + the usage wake. */}
-                <div className={styles.cockpitMain}>
-                  <MacroGrid />
-                  <RecentList />
-                </div>
-              </Panel>
-              <Separator className={styles.separator} />
-              <Panel
-                id="context"
-                className={styles.panel}
-                defaultSize="38%"
-                minSize="24%"
-              >
-                {/* Context rail: where am I — active scene + SOP position. */}
-                <div className={styles.cockpitRail}>
-                  <ScenePanel />
-                  <SopProgress />
-                </div>
-              </Panel>
-            </Group>
-            <SearchOverlay />
-          </div>
-          {/* Atom tray: Modifier pool stays on-screen, docked low. Full window
-              width, so the quadrant groups run side by side (dense). */}
-          <div className={styles.modifierTray}>
-            <ModifierGrid dense />
-          </div>
-        </>
-      ) : (
-        <div className={styles.panorama}>
-          <Group
-            id="panorama-2col"
-            className={styles.panoramaGroup}
-            defaultLayout={studioLayout.defaultLayout}
-            onLayoutChanged={studioLayout.onLayoutChanged}
+      <div className={styles.panorama}>
+        <Group
+          id="dashboard-2col"
+          className={styles.panoramaGroup}
+          defaultLayout={columnLayout.defaultLayout}
+          onLayoutChanged={columnLayout.onLayoutChanged}
+        >
+          <Panel
+            id="task"
+            className={styles.panel}
+            defaultSize="68%"
+            minSize="42%"
           >
-            <Panel
-              id="task"
-              className={styles.panel}
-              defaultSize="68%"
-              minSize="42%"
-            >
-              {/* Task column: 任务层 marker, Macro strip, then Scene panorama. */}
-              <div className={styles.taskCol}>
-                <div className={styles.taskLayerHead}>
-                  <span className={styles.taskPill}>
-                    <Box size={12} strokeWidth={2} aria-hidden />
-                    任务层
-                  </span>
-                </div>
-                <div className={styles.macroSlot}>
+            {/* Task column: 任务层 marker, then the Macro / Scene split. */}
+            <div className={styles.taskCol}>
+              <div className={styles.taskLayerHead}>
+                <span className={styles.taskPill}>
+                  <Box size={12} strokeWidth={2} aria-hidden />
+                  任务层
+                </span>
+              </div>
+              <Group
+                id="task-2row"
+                orientation="vertical"
+                className={styles.taskGroup}
+                defaultLayout={taskLayout.defaultLayout}
+                onLayoutChanged={taskLayout.onLayoutChanged}
+              >
+                {/* Default leans to Macro (0-step reach, heat-sorted). Both
+                    minimums are PIXELS, not percentages: a percentage floor
+                    keeps shrinking with the window, which is how the old
+                    cockpit wake ended up ~1 row tall at the 640px baseline. */}
+                <Panel
+                  id="macro"
+                  className={styles.panel}
+                  defaultSize="46%"
+                  minSize="132px"
+                >
                   <MacroGrid />
-                </div>
-                <ScenePanel />
-              </div>
-            </Panel>
-            <Separator className={styles.separator} />
-            <Panel
-              id="aside"
-              className={styles.panel}
-              defaultSize="32%"
-              minSize="20%"
-            >
-              <div className={styles.aside}>
-                <ModifierGrid />
-                <RecentList />
-                <SopProgress />
-              </div>
-            </Panel>
-          </Group>
-          <SearchOverlay />
-        </div>
-      )}
+                </Panel>
+                <Separator className={styles.separatorRow} />
+                <Panel
+                  id="scene"
+                  className={styles.panel}
+                  defaultSize="54%"
+                  minSize="196px"
+                >
+                  <ScenePanel />
+                </Panel>
+              </Group>
+            </div>
+          </Panel>
+          <Separator className={styles.separator} />
+          <Panel
+            id="aside"
+            className={styles.panel}
+            defaultSize="32%"
+            minSize="20%"
+          >
+            <div className={styles.aside}>
+              <ModifierGrid />
+              <RecentList />
+              <SopProgress />
+            </div>
+          </Panel>
+        </Group>
+        <SearchOverlay />
+      </div>
       <StatusBar />
       <Toast />
       <SettingsModal />

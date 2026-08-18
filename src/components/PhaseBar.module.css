@@ -17,10 +17,12 @@
   outline-offset: calc(-1 * var(--border-thick));
 }
 
-/* Reshape v2 — the active phase is the HERO of the protocol dock: it grows
-   wider, its label jumps to the display tier (18px) and takes the brand
-   marker. Inactive phases recede into a quiet rail. "先定框" made physical:
-   the current collaboration frame dominates the dock at a glance. */
+/* The active phase is the HERO of the protocol dock — but expressed WITHOUT
+   layout (ADR-025 子决策 6, revising ADR-024's reshape-v2 sub-item): cells stay
+   equal-width and the type size is constant, so switching phases never reflows
+   the row and mouse muscle memory holds. Weight comes from the brand-dim fill,
+   the brand underline, the filled ordinal chip and the fg ramp. Inactive phases
+   recede into a quiet rail. */
 .phase {
   flex: 1;
   display: flex;
@@ -28,9 +30,8 @@
   justify-content: center;
   gap: var(--s-2);
   /* Inactive phases rest at --w-400; the active one carries --w-600 (spec §6)
-     at the display size. The active/inactive ramp is semantic here, so this
-     stays longhand. preset-equivalent: ph-action (13/sans) minus the fixed
-     weight. */
+     at the SAME size. The active/inactive ramp is semantic here, so this stays
+     longhand. preset-equivalent: ph-action (13/sans) minus the fixed weight. */
   font-family: var(--font-sans);
   font-size: var(--t-13);
   font-weight: var(--w-400);
@@ -42,11 +43,11 @@
   background: transparent;
   appearance: none;
   position: relative;
+  /* Paint-only transitions. Animating flex-grow / font-size costs a layout +
+     text reflow every frame (Linear: never animate layout properties). */
   transition:
     background-color var(--d-base) var(--ease),
-    color var(--d-base) var(--ease),
-    flex-grow var(--d-base) var(--ease),
-    font-size var(--d-base) var(--ease);
+    color var(--d-base) var(--ease);
 }
 
 .phase:last-child {
@@ -64,10 +65,8 @@
 }
 
 .phase.active {
-  flex-grow: 2.2;
   background: var(--brand-dim);
   color: var(--fg-1);
-  font-size: var(--t-18);
   font-weight: var(--w-600);
 }
 
@@ -104,7 +103,7 @@
 }
 
 .label {
-  /* Size/weight inherit from .phase so the active display tier applies. */
+  /* Size/weight inherit from .phase — size is now constant across states. */
   letter-spacing: var(--tr-tight);
 }
 

@@ -14,6 +14,64 @@ description: prompt-hub 设计文档体系变更日志——记录文档结构�
 
 ---
 
+## 2026-08-18（二）— ADR-026 Accepted + 当日落地：模式不再重排布局
+
+### 变更内容
+
+- **[[026-fixed-spatial-layout]] `Proposed` → `Accepted`**（omar 当日拍板），代码同批实施
+- **`Dashboard.tsx` 删除 `cockpit ?` 条件分支**（-45 行）：两态共用一套空间。区域图固定为——任务列 = Macro 在上 / Scene 在下；aside = Modifier / 最近使用 / SOP。DOM 顺序解析为 §13.4 的 Tab 序列，**三处契约违规归零且未改动任何契约条文**
+- **纵向拖拽取代第二套布局**（子决策 2）：左列新增 `Group id="task-2row" orientation="vertical"`，Macro 默认 46% / Scene 54%。2026-08-10 的命中率收益（Macro 不再被 200px cap 砍）由此保住，但不再需要为它保留一整套布局——**二值的「模式」承担不了连续的空间偏好**
+- **最小值用像素不用百分比**：Macro min `132px` / Scene min `196px`。旧 wake 的 `max-height: 38%` 无像素下限，窗口一小就退化到约 1 行可见（[[HANDOFF]] 挂账项）；本次是同类问题的第二次出场，**按 ADR §6 要求一并解掉而不是复制它**
+- **连带退役**：`.cockpitMain` / `.cockpitRail` / `.modifierTray` / `.macroSlot` 四段 CSS；`ModifierGrid` 的 `dense` prop 与 `.cardDense`（底部 tray 专用变体）；`--macro-strip-cap`（「父容器按态给子组件注入高度」的间接层）
+- **持久化键合一**：`panorama-2col` + `cockpit-2col` → `dashboard-2col`，新增 `task-2row`。旧键留在 localStorage 不读不清——纯 UI 偏好读不到即回落默认值，写迁移的成本高于价值
+- **测试反向修正**：`App.test.tsx` 两条按模式分别断言 region order 的用例合并为一条 `it.each`，两态断言同一序列；`:205` 的「§13.4 order update pending human review」注释删除。**原测试锁的是应当消失的行为——测试保护偏差，是偏差活得比它的理由更久的方式**
+- **两个 token 转为 unbound 但未删**：`--h-modifier-tray`（tray 已移除）、`--h-macro-strip`（仅剩 ModifierGrid 一个消费者，名字已失真）。删 tokens.css 条目属 [[05-design-spec]] §3c 契约变更，命中 CLAUDE §5.1.1 的越界条款，走八步不走快车道
+
+### 验证
+
+`pnpm test` 335/335 · `pnpm lint` 0 · `prettier --check src/` 通过 · `pnpm build` 通过 · doc-governance 0 error。**未验**：像素下限在 640px 基线窗口的表现是推算（panorama 约 452px，扣标记行后余约 424px > 328px），须真机确认；纵向 Separator 的拖拽命中面积与光标反馈同样待走查。
+
+### 变更原因
+
+见同日第一条与 [[026-fixed-spatial-layout]] §3。核心是：dual-layout 从未进过任何决策文档，却越过三处已批准契约——回到契约即可，无需修改契约。
+
+---
+
+## 2026-08-18 — ADR-026 起草（固定空间布局）+ 减法快车道 + ADR status 大小写归一
+
+### 变更内容
+
+- **新增 [[026-fixed-spatial-layout]]（`Proposed`，待 omar 审）**：提议 `interactionMode` 停止驱动区域重排，两态共用一套空间布局。**起因不是审美分歧，是三处契约越界**——(a) [[03-product-spec#4.0.7]] 明写「作用范围：点击语义变更仅限 Scene 话术卡」，实现扩张为整页编排（`Dashboard.tsx:28-36` 注释自陈 "D-0 extended"）；(b) §13.3 区域 6 规定 Modifier 位于「aside 列顶部」，调用态实现为底部通栏 tray；(c) §13.4 Tab 顺序为 Macro/Scene/最近，调用态实现为 Macro/最近/Scene。第三条已被 `App.test.tsx:218` 与 `:239` 两条断言分别固化，其 `:205-206` 注释写着「§13.4 order update pending human review」——**测试在保护偏差本身**
+- **溯源结论**：dual-layout **从未进过任何决策文档**。[[023-ui-reshape-before-release]] 只裁「发布前做系统性重塑」与「范围 = UI + 组件架构」，通篇未涉布局形态；`docs/plans/ui-reshape.md` 全文 grep「调用态/整理态/arrangement」零命中。它只存在于一行代码注释里
+- **核心置换（子决策 2）**：不是"废掉调用态保留整理态"——2026-08-10 命中率收益（Macro 可见 3.5→8.5 张）只存在于调用态，必须保住。做法是把纵向分配从「按模式二值切换」改为「用户拖拽 + 持久化」，复用 [[016-choose-dnd-and-resizable-layout]] 的 Group/Panel。**二值的"模式"承担不了连续的空间偏好；交给连续控件后，两套布局的存在理由自行消失**
+- **CLAUDE.md 新增 §5.1.1 减法快车道**（omar 拍板）：纯删除类 UI 改动（解释性文案 / 装饰 / 未实现占位 / 动效，四类封闭清单）不走方法论 §7 八步，只记 CHANGELOG 一行。四条越界回落条款：删的东西承载语义 / 删 token 条目 / 删区域功能字段 / 一次删三处以上
+- **ADR status 大小写归一**：023、024 的 frontmatter `accepted` → `Accepted`，与其余 23 份对齐。doc-governance 未报，但任何按 status 过滤的脚本都会漏掉这两条
+
+### 变更原因
+
+2026-08-17 外部独立前端评价的复盘。评价中经代码核实成立的部分收敛为 ADR-026；**未纳入其主张的「Modifier 标协议层违反 B2」**——经核实不成立，[[020-restore-protocol-dark-band]] §3 已澄清 B2 只管结构分离、不约束标签。§5.1.1 则回应复盘的元结论：八步对新增与删除施加同等仪式成本，使修缺陷比加区域更贵，理性选择就是继续新增。
+
+---
+
+## 2026-08-17 — ADR-025 通过（六条全数）+ P0 落地：PhaseBar 去掉布局漂移
+
+### 变更内容
+
+- **[[025-unified-anchored-editing]] `Proposed` → `Accepted`**（omar 拍板）。**子决策 6 单独点头**——它局部修订 [[024-dark-cockpit-identity]] 已拍板的 PhaseBar 主角化子项，ADR §2 明写「不夹带通过」，故与 1-5 分开确认后才生效。ADR-024 其余身份设计（`--brand` 恒定色系、深色驾驶舱）不变
+- **P0 实施**（`src/components/PhaseBar.module.css`）：`.phase.active` 摘掉 `flex-grow: 2.2` 与 `font-size: var(--t-18)`，`.phase` 的 transition 摘掉 `flex-grow` / `font-size` 两项只留 `background-color` / `color`。**切相位不再重排 8 格宽度**，鼠标肌肉记忆位置恒定；动画也不再每帧触发 layout + 文本重排（Linear「永不动画 layout 属性」）
+- **权重改由非 layout 手段表达**：活动相位保留 `--brand-dim` 底 + `--brand` 下划线（`::after`）+ 实底序号章 + `--fg-1` + `--w-600`，四项均已存在，无需新增视觉语汇。字号恒定为 `--t-13`；字重仍走 spec §6 的 400/600 语义 ramp（等宽格内不移动格边界）
+- **`--t-18` 保留但已无引用方**（`tokens.css:350`），注释改为 `unbound — active-phase display tier retired by ADR-025 §6`。**未删 token**：删 tokens.css 条目属 [[05-design-spec]] §3c 契约变更，须走方法论 §7 八步，不就地补丁
+
+### 变更原因
+
+编辑器裁切缺陷（ADR-025 触发事件 A）与键盘停靠点爆炸（触发事件 B）两根病因已收敛成一份可审决策，本轮拍板放行。P0 与其余五条零依赖、约 10 行 CSS，ADR §6 即定为「今日、独立」，故随拍板同批落地，不被 P1-P3 的编辑体系进度绑架。
+
+### 验证
+
+`pnpm test` 335/335 · `pnpm lint` 0 · `prettier --check` 通过 · doc-governance 0 error。**未验**：等宽后活动相位的醒目度需真机走查确认（jsdom 验不了视觉权重）。
+
+---
+
 ## 2026-08-16 — 最近使用去重下沉到 SQL（了结 2026-08-10 的已知取舍）
 
 ### 变更内容

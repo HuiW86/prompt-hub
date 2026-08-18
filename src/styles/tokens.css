@@ -347,7 +347,7 @@
   --t-14: 14px;
   --t-15: 15px; /* macro tile names — hero tier below page titles */
   --t-16: 16px;
-  --t-18: 18px; /* active phase display (protocol dock) */
+  --t-18: 18px; /* unbound — active-phase display tier retired by ADR-025 §6 */
   --t-20: 20px;
 
   /* Line heights */
@@ -420,16 +420,20 @@
   --h-scene-row: 32px;
   --h-region-header: 40px;
 
-  /* Task-layer absorption (Promptscape 2-col): Macro renders as a compact
-     auto-fill strip capped to a couple of rows; Scene sub-stages flow as a
-     responsive multi-column grid. */
+  /* Task-layer absorption (Promptscape 2-col): Scene sub-stages flow as a
+     responsive multi-column grid.
+     --h-macro-strip no longer caps the Macro grid (ADR-026 gave that share to
+     the user's persisted drag); its one remaining consumer is the Modifier
+     card's max-height, so the NAME is now stale. Renaming is a design-spec §3c
+     token-contract change — left for the eight-step ripple, not patched here. */
   --h-macro-strip: 200px;
   --h-macro-tile: 56px; /* hero command tiles (reshape v2) */
   --col-min-macro: 220px;
   --col-min-substage: 184px;
 
-  /* Modifier bottom tray (调用态): a shallow band, since the quadrant groups
-     flow side by side across the full width instead of stacking. */
+  /* unbound — the Modifier bottom tray was removed by ADR-026 (region 6 sits in
+     the aside in both modes). Kept because deleting a tokens.css entry is a
+     design-spec §3c contract change (CLAUDE §5.1.1 boundary), not a subtraction. */
   --h-modifier-tray: 132px;
 
   /* Scroll-edge fade. A capped strip of opaque cards cut at an arbitrary offset

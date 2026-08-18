@@ -200,53 +200,43 @@ describe("Dashboard end-to-end render", () => {
     expect(r.statusBar?.getAttribute("tabindex")).toBeNull();
   });
 
-  it("region DOM order follows the cockpit Tab sequence in 调用态 (reshape v2)", async () => {
-    // Dual-layout (ADR-024 ripple): the default invoke mode arranges regions
-    // by usage priority — hot zone (macro → recent) before the scene context
-    // rail. 03-product-spec §13.4 order update pending human review.
-    const { container } = render(<App />);
-    await waitFor(() =>
-      expect(
-        container.querySelector("[data-region='phase-bar']"),
-      ).not.toBeNull(),
-    );
-    const ordered = Array.from(container.querySelectorAll("[data-region]")).map(
-      (el) => el.getAttribute("data-region"),
-    );
-    // SearchBar's wrapper has role=search (no data-region) and is first in the
-    // tree; the data-region landmarks below it must appear in cockpit order.
-    expect(ordered).toEqual([
-      "phase-bar",
-      "alignment-phrases",
-      "macro-grid",
-      "recent-list",
-      "scene-panel",
-      "sop-progress",
-      "status-bar",
-    ]);
-  });
-
-  it("region DOM order keeps the studio Tab sequence in 整理态", async () => {
-    useSettingsStore.setState({ interactionMode: "organize" });
-    const { container } = render(<App />);
-    await waitFor(() =>
-      expect(
-        container.querySelector("[data-region='phase-bar']"),
-      ).not.toBeNull(),
-    );
-    const ordered = Array.from(container.querySelectorAll("[data-region]")).map(
-      (el) => el.getAttribute("data-region"),
-    );
-    expect(ordered).toEqual([
-      "phase-bar",
-      "alignment-phrases",
-      "macro-grid",
-      "scene-panel",
-      "recent-list",
-      "sop-progress",
-      "status-bar",
-    ]);
-  });
+  // ADR-026: ONE region order, both modes — and it is the order 03-product-spec
+  // §13.4 ratified. This replaces two tests that asserted a DIFFERENT sequence
+  // per interaction mode; the invoke one pinned macro → recent → scene, which
+  // contradicted §13.4 and carried a "pending human review" note rather than a
+  // decision. Tests that hold a contract deviation in place are how a deviation
+  // outlives the reason for it.
+  it.each([
+    ["调用态", "invoke" as const],
+    ["整理态", "organize" as const],
+  ])(
+    "region DOM order follows the §13.4 Tab sequence in %s",
+    async (_label, mode) => {
+      useSettingsStore.setState({ interactionMode: mode });
+      const { container } = render(<App />);
+      await waitFor(() =>
+        expect(
+          container.querySelector("[data-region='phase-bar']"),
+        ).not.toBeNull(),
+      );
+      const ordered = Array.from(
+        container.querySelectorAll("[data-region]"),
+      ).map((el) => el.getAttribute("data-region"));
+      // SearchBar's wrapper has role=search (no data-region) and is first in
+      // the tree; the data-region landmarks below it carry the Tab order.
+      // ModifierGrid is deliberately absent — reference surface, not a §13.4
+      // working region (see its header comment).
+      expect(ordered).toEqual([
+        "phase-bar",
+        "alignment-phrases",
+        "macro-grid",
+        "scene-panel",
+        "recent-list",
+        "sop-progress",
+        "status-bar",
+      ]);
+    },
+  );
 
   it("renders all 8 phases inside the phase bar", async () => {
     const { container } = render(<App />);

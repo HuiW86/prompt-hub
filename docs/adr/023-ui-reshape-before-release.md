@@ -1,7 +1,7 @@
 ---
 type: adr
 project: prompt-hub
-status: accepted
+status: Accepted
 description: v0.1.0 发布前进行 UI+组件架构系统性重塑（推翻审计 D-6 的"批次 C/D 放发布后"排序）
 ---
 

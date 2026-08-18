@@ -117,6 +117,30 @@ pnpm bench:hotkey-wake                                    # show()+set_focus() R
 ### 5.1 变更必须走方法论 §7 八步
 任何 spec / prd / product-spec / design-spec 改动走 [[~/Vault/知识库/方案模板/产品文档体系方法论#§7]] 流程：锁定 diff → 影响半径 → 上游一致性 → bump → 涟漪更新 → features 回写 → ADR → AI 层同步。
 
+#### 5.1.1 减法快车道（2026-08-18 omar 拍板）
+
+**纯删除类 UI 改动不走八步**，只在 `docs/design/CHANGELOG.md` 记一行即可提交。
+
+适用范围（**四类，封闭清单**）：
+
+| 类别 | 例 |
+|---|---|
+| 删解释性文案 | 层标记 pill、区域副标题、无决策价值的计数 |
+| 删装饰 | 重复图标、冗余色块、纯修饰性描边 |
+| 删未实现占位 | 尚无实装的区域 stub |
+| 删动效 | 触发 layout 的 transition、无信息量的位移动画 |
+
+**边界（越界即回落八步）**：
+
+- ❌ 删的东西**承载语义或状态**（区分层级 / 表达选中 / 传递计数含义）→ 不是减法，是契约变更
+- ❌ 删 `tokens.css` 条目 → 属 [[05-design-spec]] §3c token 契约，走八步
+- ❌ 删区域、删功能、删数据字段 → 走 ADR
+- ❌ 一次删三处以上 → 已构成设计 pass，走八步
+
+**为什么开这条**：八步对"新增"与"删除"施加同等仪式成本，使得修一个 UI 缺陷比新增一个 UI 区域更贵，理性选择就是继续新增——这正是前端"什么都有道理但主角不明"的成本结构成因（2026-08-17 前端评价复盘）。快车道只降**减法**的成本，不降加法的。
+
+**留痕要求**：CHANGELOG 那一行必须写明删了什么 + 依据哪一类，否则半年后无法与"手滑删掉"区分。
+
 ### 5.2 文档主笔人分工
 - 🧑 人主笔：`docs/design/01-spec.md` / `docs/design/02-constitution.md`
 - 🤝 共创：`CLAUDE.md` / `docs/adr/*` / `docs/design/04-user-flows.md` / `docs/design/03-product-spec.md` / `docs/design/05-design-spec.md` / `docs/plans/prompt-hub-mvp.md`
@@ -150,7 +174,7 @@ AI 不得擅自起草人主笔文档（spec / constitution），可起草共创 
 3. **不要在 Macro 里展示 AlignmentPhrase**——违反 [[02-constitution#B2]]，破坏协议/任务分离
 4. **不要引入 Scene/Macro/Phase 的嵌套子层级**——违反 spec §8.4
 5. **不要把数据上传到任何外部服务**——违反 [[02-constitution#A2]]，话术含隐私指纹
-6. **不要给设计文档就地补丁**——必须走方法论 §7 八步上游回流
+6. **不要给设计文档就地补丁**——必须走方法论 §7 八步上游回流（唯一例外：§5.1.1 减法快车道，四类纯删除改动只记 CHANGELOG）
 7. **任何 dependency major version bump 必须开 ADR**——技术栈全部锁定见 [[09-tech-stack#§3]]，bump 流程见 [[09-tech-stack#§8]]
    - ✅ **已解锁**：D1（Tauri 2.x）/ D2（React 19.2）/ D3（rusqlite 0.32）/ D4（pnpm 10.x）/ D6（Zustand 5）/ D9（macos-private-api）/ D10（CSS Modules）/ D11（测试栈）；D5（Vite 7.x）+ D7（quick-shortcut plugin）由 D1 自动锁定
    - ⏳ **仍 pending**：D8（prompt-combiner 复用，[[005-prompt-combiner-reuse]] Proposed）— 等 omar 提供仓库后调研，不阻塞第一阶段 MVP
@@ -166,8 +190,9 @@ AI 不得擅自起草人主笔文档（spec / constitution），可起草共创 
 
 - **项目阶段**：S1 进行中，**M0 四项交付全绿**（含 M0-4 Developer ID 签名公证，runbook [[m0-4-macos-signing]]）；MCP 写管线 M-X.1–X.4 + 草稿收件箱 UI 已收口（ADR-015，明细见 [[07-features#§4]] 节奏表 2026-06-03 起各行）；资产编辑 AE P1–P4 收口，后随「UI 减负」Modifier/Composition 编辑 UI `withdrawn`、Tab cycle 回落 6 区（[[07-features#3.8]] + [[03-product-spec#13.4]]）；Promptscape 设计吸收落地（ADR-018 + 补遗-1，CHANGELOG 2026-06-25）；flat 视觉锚点被推翻转 subtle elevation（ADR-019，CHANGELOG 2026-06-26）
 - **文档体系**：13 核心 + L5 协作契约 2 + MANIFEST v1.10——product-spec v0.16 / design-spec v0.14 / features v1.11 / prd v0.12 / spec v0.7 / constitution v1.1 / tech-stack v1.3；L5 派生 [[CLAUDE-DESIGN]] v0.2（⚠️ 待 omar 重传）+ [[claude-design-prompts]] v0.1；全文件清单见 [[MANIFEST]] v1.10，版本叙事见 CHANGELOG
-- **ADR 进度**：001–022 共 19 Accepted + 1 Superseded + 1 Proposed + 1 Reserved——最新 022（cross-scene-phrase-move，2026-07-12 Accepted：独立 `move_phrase` + MoveReceipt 撤销 + 分层选择器，子决策 2 = 双路径共存）；021 子决策 scene.color 用户内容色**待 omar 复核**；012 Superseded by 019；005（prompt-combiner 复用）仍 Proposed 等 omar；011 Reserved（search UsageSource）；各决策与补遗明细见 `docs/adr/`
+- **ADR 进度**：001–026 共 23 Accepted + 1 Superseded + 1 Proposed + 1 Reserved——最新 **026（fixed-spatial-layout，2026-08-18 Accepted 并当日落地）**：`interactionMode` 停止驱动区域重排，两态共用一套空间，纵向分配改用户可拖拽；起因是实现层 dual-layout 越过 product-spec §4.0.7 作用范围 / §13.3 区域 6 位置 / §13.4 Tab 顺序三处已批准契约且从未开 ADR；025（unified-anchored-editing，2026-08-17 Accepted，**六条子决策全数通过**：编辑器改原生 `popover` top layer 锚定 + organize 升级为选择驱动的键盘处理模式 + 子决策 6 局部修订 ADR-024 的 PhaseBar 主角化；P0 当日落地，P1–P3 待排）；021 子决策 scene.color 用户内容色**待 omar 复核**；012 Superseded by 019；005（prompt-combiner 复用）仍 Proposed 等 omar；011 Reserved（search UsageSource，与 025 的 Modifier `macro_area` 借用同族）；各决策与补遗明细见 `docs/adr/`
 - **tech-stack**：**v1.3 ratified**——Tauri 2.x + React 19.2 + Zustand 5 + rusqlite 0.32 + pnpm 10.x + Vite 7.x + Vitest 4 + CSS Modules + macos-private-api + updater/process 插件，全栈拍板见 [[09-tech-stack#§3]]
 - **自动更新（ADR-017）**：客户端 Phase 1-3 + CI Phase 4 已 landed，dry-run 端到端验证通过（CHANGELOG 2026-06-19）；唯一待办 Phase 6 真机验收
 - **最近一轮改动（2026-07-12 UX 任务流批次 A+B + 模式契约回流）**：批次 A——D-0 显式整理模式落地（`interactionMode` 持久化 + Header ModeToggle + 整理态整卡=预览/复制显式化 + suppressHide 门控，usage 照计）+ promote 落地定位 / discard 可撤销 / 保存 toast / ⌘Enter 统一 / footer wrap，契约回流 product-spec v0.15 §4.0.7；批次 B——ADR-022 跨 Scene 话术移动（`move_phrase` + MoveReceipt 撤销 + 分层选择器，双路径语义等价），契约回流 product-spec v0.16 §13.3；两批均 verifier 对抗审查 PASS（前端 222→309 / cargo 147→155），NEEDS HUMAN 真机走查待验、确认前不入对外发布说明；明细见 CHANGELOG 2026-07-12 两条目 + [[2026-07-12-ux-taskflow-audit]] + [[HANDOFF]]
+- **最近一轮改动（2026-08-17/18 前端结构收口）**：外部独立前端评价触发的两轮裁决——ADR-025 六条全通过 + P0 落地（PhaseBar 去掉 `flex-grow`/`font-size` 的布局漂移）；ADR-026 通过并当日落地（模式不再重排布局，两态共用一套空间，Macro/Scene 改用户可拖拽 + 像素下限）。附带 CLAUDE §5.1.1 新增**减法快车道**（四类纯删除 UI 改动不走八步）。335 测试 / lint / build 全绿，但**布局与视觉权重两项 jsdom 验不了，真机走查前不入对外发布说明**；ADR-026 的契约回流八步是新账优先项，见 [[HANDOFF]]
 - **下一动作**：见 [[HANDOFF#Next-Actions]]（行动项单一真相源）

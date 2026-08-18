@@ -37,10 +37,10 @@ const GROUP_LABELS: Record<GroupKind, string> = {
 // a wrong promote-time pick, ADR-015 decision iii) and a confirmed hard delete.
 // Buttons are real focusables, so keyboard users reach them via Tab and the
 // reveal follows :focus-within.
-// `dense` picks the bottom-tray arrangement (quadrant groups side by side)
-// over the aside's vertical stack. It is a layout affordance only — same chips,
-// same management entries, same copy behaviour in both.
-export function ModifierGrid({ dense = false }: { dense?: boolean }) {
+// The `dense` bottom-tray variant is gone with the tray itself (ADR-026): this
+// block sits at the top of the aside in both interaction modes, which is where
+// product-spec §13.3 region 6 always said it belongs.
+export function ModifierGrid() {
   const modifiers = usePromptStore((s) => s.modifiers);
   const updateModifier = usePromptStore((s) => s.updateModifier);
   const deleteModifier = usePromptStore((s) => s.deleteModifier);
@@ -116,9 +116,7 @@ export function ModifierGrid({ dense = false }: { dense?: boolean }) {
           草稿促升添加
         </EmptyState>
       ) : (
-        <div
-          className={dense ? `${styles.card} ${styles.cardDense}` : styles.card}
-        >
+        <div className={styles.card}>
           {groups.map((g) => (
             <div key={g.kind} className={styles.group}>
               <div className={styles.groupHead}>
