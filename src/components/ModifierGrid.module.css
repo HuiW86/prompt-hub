@@ -34,7 +34,7 @@
   border: var(--hairline) solid var(--border-1);
   border-radius: var(--r-4);
   box-shadow: var(--shadow-1); /* resting lift off the muted canvas (P3-3) */
-  max-height: var(--h-macro-strip);
+  max-height: var(--h-modifier-card-max);
   overflow-y: auto;
 }
 

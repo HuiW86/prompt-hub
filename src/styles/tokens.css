@@ -422,11 +422,11 @@
 
   /* Task-layer absorption (Promptscape 2-col): Scene sub-stages flow as a
      responsive multi-column grid.
-     --h-macro-strip no longer caps the Macro grid (ADR-026 gave that share to
-     the user's persisted drag); its one remaining consumer is the Modifier
-     card's max-height, so the NAME is now stale. Renaming is a design-spec §3c
-     token-contract change — left for the eight-step ripple, not patched here. */
-  --h-macro-strip: 200px;
+     Renamed from --h-macro-strip in the ADR-026 eight-step ripple: the token
+     stopped capping the Macro grid when that share moved to the user's
+     persisted drag, leaving the Modifier reference card as its sole consumer.
+     The old name outlived its meaning by one release. */
+  --h-modifier-card-max: 200px;
   --h-macro-tile: 56px; /* hero command tiles (reshape v2) */
   --col-min-macro: 220px;
   --col-min-substage: 184px;
@@ -496,7 +496,7 @@
   --h-quickfind: 32px;
   --h-scene-row: 28px;
   --h-region-header: 32px;
-  --h-macro-strip: 156px;
+  --h-modifier-card-max: 156px;
   --h-macro-tile: 44px;
   --h-modifier-tray: 104px;
 
