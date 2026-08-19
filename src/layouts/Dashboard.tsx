@@ -116,8 +116,16 @@ export function Dashboard() {
               >
                 {/* Default leans to Macro (0-step reach, heat-sorted). Both
                     minimums are PIXELS, not percentages: a percentage floor
-                    keeps shrinking with the window, which is how the old
-                    cockpit wake ended up ~1 row tall at the 640px baseline. */}
+                    keeps shrinking with the window, so the region thins out
+                    exactly when space is scarcest — that is how the old
+                    cockpit wake ended up ~1 row tall.
+
+                    Both floors mean the same thing: ONE COMPLETE UNIT PLUS THE
+                    EDGE OF THE NEXT. The peeking next unit is itself the
+                    "there is more below" cue, which is why neither region
+                    needs a scroll shadow or arrow. Measured on device
+                    (2026-08-19), not derived from tokens — region chrome
+                    stacks in ways the token values alone don't predict. */}
                 <Panel
                   id="macro"
                   className={styles.panel}
@@ -127,11 +135,17 @@ export function Dashboard() {
                   <MacroGrid />
                 </Panel>
                 <Separator className={styles.separatorRow} />
+                {/* 288px = region header + tab row + card head (224) + first
+                    phrase card in full (→265) + the next card's edge (→288).
+                    The earlier 196px cleared the chrome but left ZERO phrases
+                    visible, and ScenePanel hides its scrollbar, so the region
+                    read as empty rather than scrollable — it failed ADR-026
+                    子决策 2's own wording ("下限保证 Scene 至少完整显示一个子阶段列"). */}
                 <Panel
                   id="scene"
                   className={styles.panel}
                   defaultSize="54%"
-                  minSize="196px"
+                  minSize="288px"
                 >
                   <ScenePanel />
                 </Panel>
