@@ -1,9 +1,9 @@
 ---
 type: features
 project: prompt-hub
-version: v1.11
+version: v1.12
 created: 2026-05-19
-last_modified: 2026-07-12
+last_modified: 2026-08-19
 status: in-progress  # S1 进行中（M0 四项全绿）；进度叙事见 §4 节奏表与 CHANGELOG
 author: ai  # 🤖 AI 主笔 + 人审（CLAUDE §5.2）
 audience: [human, ai]
@@ -168,6 +168,8 @@ related:
 | Dashboard 可拖列布局（react-resizable-panels v4 `Group`/`Panel`/`Separator` + localStorage 持久化）| P1 | `done` | v1.1 | 73 前端 / 手测 拖拽+持久化 ✓（键盘 focus 待补）| omar | [[asset-editing-and-adaptive-layout#P4]] |
 | Scene 编辑分层化（废除全局 editMode → 属性面板 `ScenePropertiesEditor`：name/icon/color/rolePresets 首获 UI 承载 + 场景前移/后移/删除收编；子阶段列头 / 话术卡 hover+`:focus-within` 就地动作簇 + ghost 新增入口；空子阶段列常显；排序拖拽→按钮等价）| P1 | `done` | v1.9 | 前端 222 全绿（ScenePanel 34 含 12 格实体×CRUD 矩阵/异步失败/键盘可达 + ScenePropertiesEditor 18）；真机观感待验 | omar | [[021-scene-layered-editing]] |
 | └ v1.9 分层化推翻上方 v1.4/v1.6 两行及 §3.12「Scene/SubStage 排序 UI」行的**编辑态 UI 承载**（能力零回退：同 IPC 链路，SubStage dnd → ←→ 按钮）——旧行保留作历史；契约见 [[03-product-spec#13.3]] 区域 4 v0.14 | — | — | — | — | — | — |
+| 固定空间布局（`interactionMode` 停止驱动区域重排；两态共用一套区域图 + 同一组持久化键；task 列新增用户可拖纵向分配 `task-2row`，Macro 46%/min `132px` · Scene 54%/min `196px`——**下限取像素不取百分比**）| P1 | `done` | v1.12 | 335 前端全绿（`App.test.tsx` 两条模式分歧断言合并为不分模式 `it.each`）+ **真机走查三项通过**（纵向下限 / Separator 命中与光标 / PhaseBar 等宽后活动相位）| omar | [[026-fixed-spatial-layout]] |
+| └ v1.12 本行**移除**上方 v1.1「Dashboard 可拖列布局」行的按态分列键（`panorama-2col` / `cockpit-2col` → `dashboard-2col`），并退役 `--h-macro-strip` 硬封顶（token 改名 `--h-modifier-card-max`）；能力零回退，列宽可拖与持久化不变。**新缺陷 3 项待裁**（Scene `196px` 为结构下限非可用下限 / Separator 约 9px 视觉死区 / `--brand-dim` 对比度 1.145:1），见 [[HANDOFF]] | — | — | — | — | — | — |
 
 ### 3.9 自动更新（ADR-017 / auto-update）
 

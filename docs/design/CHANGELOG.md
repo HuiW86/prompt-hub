@@ -14,6 +14,37 @@ description: prompt-hub 设计文档体系变更日志——记录文档结构�
 
 ---
 
+## 2026-08-19（三）— ADR-026 真机走查通过 + 契约回流八步
+
+### 变更内容
+
+- **真机走查三项全过**，`feat/fixed-spatial-layout` 已 `--ff-only` 合入 `main`（`f4bf5fc`）。走查手段：按窗口 ID 定向截图 + 像素行扫描测量 + 合成拖拽至极限
+  - **纵向下限实测生效**：拖到底，Macro 停 `133px` / Scene 停 `196px`，与声明值吻合——未复制旧 wake「38% 无下限」那笔债
+  - **Separator 命中与光标**：库按 `resizeTargetMinimumSize` 默认 `{coarse: 20, fine: 10}` 把 1px 视觉条撑至鼠标 10px / 触控 20px，hover 态即注入 `ns-resize`
+  - **PhaseBar 等宽后活动相位可辨**，识别由下划线 + 实底序号章 + `--w-600` 承担
+  - **ADR-026 核心主张拿到直接证据**：切模式前后像素扫描区域边界，三条竖列纵向边界完全相同、横向列分割恒在同一位置——**这正是 jsdom 验不了的部分**
+- **两处口径错误订正**（[[026-fixed-spatial-layout]] §2）：
+  - 「640px 基线窗口」**不可复现**——主形态窗口恒等于当前显示器尺寸（`src-tauri/src/lib.rs:24` `fit_to_active_monitor` 每次唤起重铺），`tauri.conf.json` 的 `800×600` 仅为占位
+  - 起草推算**高估 chrome 约 48px**。实测 `taskGroup = 窗口高 − 263`，640px 时为 `377px` 而非推算的 `424px`；结论不变（`377 > 329`）但余量减半。真正阈值：**窗口高 < 592px 才会挤压**，低于任何现实显示器
+- **契约回流八步**（[[03-product-spec]] v0.16→**v0.17** / [[05-design-spec]] v0.15→**v0.16** / [[07-features]] v1.11→**v1.12**）：
+  - product-spec §4.0.4 表格重写——原表为 pre-reshape 口径（「中部左侧 60%」「底部左右各 50%」），自 v0.11 起从未回流；§4.0.7 补反设计「模式切换不改区域位置/列宽/尺寸」；§13.2 结构图改纵向分配；§13.3 区域 5/6 位置由「底部左/右」订正为「aside 列中部/底部」；§13.4 Tab 顺序**追认**（本表自始有效，实现层曾颠倒并以「pending human review」挂账）
+  - design-spec §10.5 重写——v0.9 的「三列 42/30/28%」与「**全百分比免 px↔% 换算**」两处作废，后者被纵向维度直接证伪；补像素下限警示与实测校准；§10.3 `PanoramaSeparator` 扩为双向变体 + 补记「命中区不等于视觉宽度」
+- **`--h-macro-strip` → `--h-modifier-card-max` 改名**（含 `:root.compact` 层 + `ModifierGrid.module.css` 唯一消费者）：取消 Macro 封顶后旧名彻底失真，属 §3c token 契约变更，故走本次八步而非就地补丁——**上条 CHANGELOG 记的「转为 unbound 但未删」在此销账**。顺带订正文档长期写作 `184px` 而 tokens.css 实为 `200px` 的不一致
+
+### 走查发现的三项新缺陷（**未修，待 omar 单独裁**）
+
+均属新设计决策，不并入本次回流：
+
+1. **Scene `196px` 是结构下限而非可用下限**：压到底时区域内 0 条话术、子阶段行齐腰切断，且 `.phrases` 的 `overflow-y: auto` 被 `scrollbar-width: none` + `::-webkit-scrollbar{display:none}` 抹掉滚动条，**没有任何「下面还有」的提示**。对照 Macro `132px` 给出 1 整行 + 下一行露半截，两个下限质量不对等
+2. **Separator 约 9px 视觉死区**：命中区由 JS 撑到 10px，而 `.separatorRow:hover` 的高亮是 CSS 伪类只在真正压中 1px 时触发；库仅挂 `data-separator`、无 hover/active 状态属性可供 CSS 挂钩。表现为「光标已变 `ns-resize`、分隔线却没反应」
+3. **`--brand-dim` 底几乎不承担识别**：活动 `(29,36,53)` vs 非活动 `(24,24,27)`，对比度仅 **1.145:1**，远低于 WCAG 1.4.11 非文本 3:1。活动相位识别几乎全押在下划线上，而它 `bottom: calc(-1 * var(--hairline))` 骑在 band 底边框上——一旦被裁剪或遮挡，活动态即塌
+
+### 验证
+
+`pnpm test` 335/335 · `pnpm lint` 0 · `prettier --check .` 通过 · `pnpm build` 通过（合入前跑齐）。token 改名后 335 复跑全绿。
+
+---
+
 ## 2026-08-18（二）— ADR-026 Accepted + 当日落地：模式不再重排布局
 
 ### 变更内容

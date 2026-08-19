@@ -1,12 +1,12 @@
 ---
 type: product-spec
 project: prompt-hub
-version: v0.16
+version: v0.17
 created: 2026-05-18
-last_modified: 2026-07-12
+last_modified: 2026-08-19
 status: draft  # v0.10 起增量待 omar 人审；前序 v0.8 已 ratified
 author: co  # 🤝 人机共创（CLAUDE §5.2）
-related: [[01-spec]], [[05-design-spec]], [[06-prd]], [[012-lock-visual-quality-anchor]], [[019-supersede-flat-visual-anchor]], [[020-restore-protocol-dark-band]], [[021-scene-layered-editing]], [[022-cross-scene-phrase-move]], [[013-alignment-phrases-tab-inclusion]], [[015-expose-mcp-write-pipeline]], [[017-enable-auto-update]], [[018-absorb-promptscape-design]]
+related: [[01-spec]], [[05-design-spec]], [[06-prd]], [[012-lock-visual-quality-anchor]], [[019-supersede-flat-visual-anchor]], [[020-restore-protocol-dark-band]], [[021-scene-layered-editing]], [[022-cross-scene-phrase-move]], [[013-alignment-phrases-tab-inclusion]], [[015-expose-mcp-write-pipeline]], [[017-enable-auto-update]], [[018-absorb-promptscape-design]], [[026-fixed-spatial-layout]]
 description: 手动 AI 编程仪表盘的 UI 契约——双形态架构/布局/点击路径/状态反馈/用户旅程/主形态 UI 草案；写 UI / 改交互时召回。版本叙事见 CHANGELOG
 ---
 
@@ -67,17 +67,22 @@ description: 手动 AI 编程仪表盘的 UI 契约——双形态架构/布局/
 
 两种形态使用**同一套 UI 模块**，区别只在容器布局：
 
+> **v0.17 重写（涟漪 [[026-fixed-spatial-layout]]）**：本表原为 pre-reshape 口径（「中部左侧 60%」「底部左右各 50%」），自 v0.11 任务层 3→2 列后一直未回流。现按 reshape 后的**固定区域图**重写。位置字段以本表为准，[[05-design-spec#10.5]] 承载其视觉与尺寸规格。
+
 | 模块 | 主形态（快捷键全屏） | 辅形态（副屏常驻） |
 |------|-----------------|----------------|
-| 搜索框（[[06-prd#5.0-搜索区]]） | 顶部居中，中等大小 | 顶部居中，中等大小 |
-| 待审 badge（[[06-prd#10.3]]，v0.7 起） | 搜索框同行右端，仅 pending>0 显示 | 同左 |
-| 相位带（[[06-prd#5.1-相位带（Phase-Bar）]]） | 搜索框下方，8 个横排 | 搜索框下方，8 个横排 |
-| 对齐话术（AlignmentPhrases，[[013-alignment-phrases-tab-inclusion]]） | 相位带下方 chip 行（独立 region，v0.6 起）| 同左 |
-| Macro 区（[[06-prd#5.2-Macro-快捷区]]） | 中部左侧，60% 宽 | 中部左侧，60% 宽 |
-| Scene 区（[[06-prd#5.3-Scene-全景区]]） | 中部右侧，40% 宽 | 中部右侧，40% 宽 |
-| 最近使用（[[06-prd#5.5-最近使用区]]） | 底部左侧 | 底部左侧 |
-| SOP 导航（[[06-prd#5.6-SOP-导航区]]） | 底部右侧 | 底部右侧 |
+| Header（区域 0） | 最顶部 slim 行，内嵌搜索框 | 同左 |
+| 待审 badge（[[06-prd#10.3]]，v0.7 起） | Header 行右段，仅 pending>0 显示 | 同左 |
+| 相位带（[[06-prd#5.1-相位带（Phase-Bar）]]） | 协议层 band 上半，8 个**等宽**横排 | 同左 |
+| 对齐话术（AlignmentPhrases，[[013-alignment-phrases-tab-inclusion]]） | 协议层 band 下半 chip 行（独立 region，v0.6 起）| 同左 |
+| Macro 区（[[06-prd#5.2-Macro-快捷区]]） | **task 列上部**，与 Scene 共享用户可拖纵向分配 | 同左 |
+| Scene 区（[[06-prd#5.3-Scene-全景区]]） | **task 列下部**，同上 | 同左 |
+| Modifier 参考面（§13.3 aside 补充） | **aside 列顶部** | 同左 |
+| 最近使用（[[06-prd#5.5-最近使用区]]） | **aside 列中部** | 同左 |
+| SOP 导航（[[06-prd#5.6-SOP-导航区]]） | **aside 列底部** | 同左 |
 | 状态栏（[[06-prd#5.7-状态仪表区]]） | 最底部 | 最底部 |
+
+**区域图对 `interactionMode` 不变（[[026-fixed-spatial-layout]] 子决策 4）**：调用态与整理态共用**同一套空间**——区域位置、列宽、区域尺寸三者完全一致，模式只改点击语义与动作显隐（§4.0.7）。task/aside 两列宽度与 Macro/Scene 纵向分配均为**用户可拖 + 持久化**，两态共享同一组持久化键（不再按态分列）。
 
 差异点：
 - **主形态**：背景半透明、有"复制即隐藏"动画（仅调用态，见 §4.0.7）、ESC 关闭
@@ -126,12 +131,16 @@ description: 手动 AI 编程仪表盘的 UI 契约——双形态架构/布局/
 | 复制后窗口行为 | 200ms 自动隐藏 | **驻留**（suppressHide）；usage 照计——隐藏与使用统计解耦 |
 | 写操作（增删改排 / 草稿处置） | 窗口驻留 | 窗口驻留 |
 | ESC / 点击窗口外 | 隐藏 | 隐藏（不分态） |
+| 动作簇 | 不显（[[025-unified-anchored-editing]] 子决策 3.3 后为「仅选中项显」）| 选中项常显 |
+| 编辑入口 | 不外露 | 外露 |
+| **区域位置 / 列宽 / 区域尺寸** | **完全一致** | **完全一致** |
 
 **作用范围**：点击语义变更**仅限 Scene 话术卡**；Macro 区、最近使用区、搜索结果等复制入口不随模式变化（其整卡复制即调用意图，无歧义）。
 
 **反设计**：
 - ❌ 按来源（scene/search）区分隐藏行为——D-2 否决，来源无法表达意图
 - ❌ 整理态自动进入/自动退出——模式切换必须是用户显式动作（哲学六·受控离手）
+- ❌ **模式切换改变区域位置 / 列宽 / 区域尺寸**（v0.17 补 · [[026-fixed-spatial-layout]]）——`interactionMode` 是**语义开关，不是布局开关**。实现层曾以一行 `"D-0 extended"` 注释自行把作用范围扩张为整页区域编排（三区跨列 + 一区尺寸剧变 + 列宽基准更换），越过本节作用范围条款、§13.3 区域 6 位置与 §13.4 Tab 顺序三处已批准契约，且从未开 ADR。仪表盘的核心资产是空间记忆，二值的「模式」承担不了连续的空间偏好——空间分配的表达权归**用户可拖拽的持久化分配**，不归模式。
 
 ---
 
@@ -601,10 +610,11 @@ graph TD
         AP["对齐话术 chip 行<br/>相位带下方 · 独立 region<br/>当前 Phase 话术 · 点击即复制<br/>v0.6 起 / 追认 ADR-013"]
     end
 
-    subgraph 全景["全景 · 任务层 2 列（v0.11，user-resizable）"]
-        subgraph 任务列["task 列（≈68%）"]
-            M["Macro 区 §5.2<br/>顶部紧凑横条 · auto-fill 卡片<br/>封顶 184px 后滚动 · 按热度排序"]
-            SC["Scene 区 §5.3<br/>填充其余 · Tab 切换<br/>子阶段多列全景 + Phrase 卡<br/>含 📥 草稿 tab（Tab 行最左 · v0.7 起）"]
+    subgraph 全景["全景 · 任务层 2 列（v0.11，user-resizable；v0.17 区域图固定不随模式变）"]
+        subgraph 任务列["task 列（默认 68% · min 42%）"]
+            M["Macro 区 §5.2<br/>auto-fill 卡片 · 按热度排序<br/>纵向默认 46% · min 132px（v0.17）"]
+            SC["Scene 区 §5.3<br/>Tab 切换 · 子阶段多列全景 + Phrase 卡<br/>纵向默认 54% · min 196px（v0.17）<br/>含 📥 草稿 tab（Tab 行最左 · v0.7 起）"]
+            M -.用户可拖 Separator.- SC
         end
         subgraph 辅列["aside 列（≈32%）"]
             MOD["Modifier 原子库参考面（v0.13）<br/>四象限分组 chip · 点击复制<br/>hover 管理簇（移象限/删）· 非 Tab region"]
@@ -698,9 +708,10 @@ graph TD
 
 #### 区域 3：Macro 区（[[06-prd#5.2-Macro-快捷区]]）
 
-- **位置**：v0.11 起为**任务列（task 列）顶部紧凑横条**（原「中部左侧 60%」；涟漪 [[018-absorb-promptscape-design]] 任务层 3→2 列）
-- **尺寸**：auto-fill 网格（最小列 `--col-min-macro` 200px），高度封顶 `--h-macro-strip` 184px，超出滚动
-- **布局**：响应式 auto-fill 卡片横条（「高频一键入口」），Scene 区在其下方填充任务列剩余空间
+- **位置**：**task 列上部**（v0.11 起；原「中部左侧 60%」，涟漪 [[018-absorb-promptscape-design]] 任务层 3→2 列）。**不随 `interactionMode` 变化**（v0.17 · [[026-fixed-spatial-layout]]）
+- **尺寸**：auto-fill 网格（最小列 `--col-min-macro` 200px）；高度由**用户可拖的纵向分配**决定——默认占 task 列 46%，**下限 `132px`**，超出滚动。v0.17 起 `--h-macro-strip` 硬封顶**退役**（[[026-fixed-spatial-layout]] 子决策 2：高度不再由父容器按态注入；该 token 随之改名 `--h-modifier-card-max`。旧文「184px」与 tokens.css 实际值 `200px` 长期不一致，一并作废）
+- **布局**：响应式 auto-fill 卡片区（「高频一键入口」），下接 `Separator` 与 Scene 区共享 task 列高度
+- **纵向分配依据**：默认值偏向 Macro 是 2026-08-10 命中率实测的结论（可见卡片 3.5 → 8.5 张）；把它做成**连续可调**而非某一模式的专属布局，是 [[026-fixed-spatial-layout]] 的核心置换
 - **排序**：按 usage_count 自动降序，顶部 2-4 张为"热门 Macro"（边框加粗、火焰图标）
 - **每张卡片显示**：
   - 标题（14px 加粗）
@@ -713,8 +724,8 @@ graph TD
 
 #### 区域 4：Scene 区（[[06-prd#5.3-Scene-全景区]]）
 
-- **位置**：v0.11 起为**任务列 Macro 横条下方**，填充任务列剩余高度（原「中部右侧 40%」；涟漪 [[018-absorb-promptscape-design]]）
-- **尺寸**：占任务列剩余空间；视图态子阶段以 **auto-fit 自适应多列全景**呈现（`repeat(auto-fit, minmax(min(var(--col-min-substage), 100%), 1fr))`，v0.13 · P3-1：窄面板自动降列不挤压、少列拉伸填满不留空轨），每子阶段一列、Phrase 堆为 border 卡；**空子阶段列常显**（muted 列头 + 「＋ 添加话术」占位，v0.14 · [[021-scene-layered-editing]]——编辑态废除后空子阶段唯一的可见可管理入口）
+- **位置**：**task 列下部**（Macro 之下，v0.11 起；原「中部右侧 40%」，涟漪 [[018-absorb-promptscape-design]]）。**不随 `interactionMode` 变化**（v0.17 · [[026-fixed-spatial-layout]]）
+- **尺寸**：由用户可拖的纵向分配决定——默认占 task 列 54%，**下限 `196px`**（v0.17）；视图态子阶段以 **auto-fit 自适应多列全景**呈现（`repeat(auto-fit, minmax(min(var(--col-min-substage), 100%), 1fr))`，v0.13 · P3-1：窄面板自动降列不挤压、少列拉伸填满不留空轨），每子阶段一列、Phrase 堆为 border 卡；**空子阶段列常显**（muted 列头 + 「＋ 添加话术」占位，v0.14 · [[021-scene-layered-editing]]——编辑态废除后空子阶段唯一的可见可管理入口）
 - **顶部 Tab**：7-10 个 Scene 横排小标签（pill 样式，约 24px 高）
   - 当前激活 Tab：**绿色**（Scene 属任务层，selected 态按层取色 `--task-16` fill + `--task` border，见 [[05-design-spec#10.1]] / [[05-design-spec#13.1]]）——v0.7 修订：原「紫色」措辞早于 design-spec v0.7 ontology 系统，紫属协议层、用于 Scene = 跨层污染（[[05-design-spec#13.2]] / [[02-constitution#B2]]），故纠正为绿
   - 未激活 Tab：浅灰背景 + 灰色文字
@@ -743,8 +754,8 @@ graph TD
 
 #### 区域 5：最近使用区（[[06-prd#5.5-最近使用区]]）
 
-- **位置**：底部左侧
-- **尺寸**：占整宽 50%
+- **位置**：**aside 列中部**（Modifier 参考面之下、SOP 进度之上）——v0.17 订正（原「底部左侧」为 pre-reshape 旧账，v0.11 任务层 3→2 列后一直未回流）。**不随 `interactionMode` 变化**（[[026-fixed-spatial-layout]]）
+- **尺寸**：占 aside 列宽满宽，高度按内容
 - **内容**：最近 5 条复制记录（时间倒序），每条单行显示
 - **每条显示**：
   - 左侧：话术标题或预览（12px，过长截断）
@@ -755,8 +766,8 @@ graph TD
 
 #### 区域 6：SOP 进度（[[06-prd#5.6-SOP-导航区]]）
 
-- **位置**：底部右侧
-- **尺寸**：占整宽 50%
+- **位置**：**aside 列底部**（最近使用之下）——v0.17 订正（原「底部右侧」为 pre-reshape 旧账）。**不随 `interactionMode` 变化**（[[026-fixed-spatial-layout]]）
+- **尺寸**：占 aside 列满宽，高度按内容
 - **内容**：
   - 顶部一行：图标 + "SOP 进度 · {当前 SOP 名}"（12px）
   - 中部：进度条（5 段，已完成绿色实色、当前浅绿、未完成灰色，4px 高）
@@ -825,6 +836,10 @@ graph TD
 | `↑` `↓` `←` `→` | 在卡片间移动焦点 | 键盘党的扫视路径 |
 | `Tab` | 在区域间切换焦点（相位带 / 对齐话术 / Macro / Scene / 最近 / SOP） | 区域级导航（6 tab-reachable；Header 与设置弹窗为 chrome / 模态，不计入区域级循环；8 时代谱系见下方 v0.8 修订记录与 [[013-alignment-phrases-tab-inclusion]]）|
 
+> **Tab 顺序不随 `interactionMode` 变化（v0.17 追认 · [[026-fixed-spatial-layout]] 子决策 5）**：DOM 顺序恒为 `phase-bar → alignment-phrases → macro-grid → scene-panel → recent-list → sop-progress → status-bar`，与上表逐位一致。
+>
+> 此前实现层的调用态骨架把顺序改为「…Macro / **最近 / Scene** / SOP」，与本表颠倒；`App.test.tsx` 曾以两条断言分别锁死两态的不同顺序，并以一句「§13.4 order update pending human review」注释挂账半个多月。**待审注释不是决策，挂账不等于合规**——测试在保护偏差本身。两条分歧断言已合并为一条不分模式的 `it.each`，注释删除。本表顺序自始有效，本次为追认而非变更。
+
 > **v0.7 草稿收件箱键盘入口**：待审 badge（区域 8）是**纯状态指示器，不进 Tab cycle**（避免 badge 条件渲染导致 tab 数跳变；v0.7 时 6 tab-reachable，v0.8 升 8，v0.9 移除两编辑面板后回落 6）。草稿收件箱的键盘路径 = Tab 到 **Scene region** → `←`/`→` 到最左「📥 草稿」tab → 方向键选草稿卡 + 动作键 promote/discard。badge 的点击跳转是鼠标快捷增强，非唯一动作路径。**promote 不绑定单 `⏎` 误触**——须显式动作键确认，守 [[06-prd#8.2]] N3 / [[02-constitution#D1]] 从容闸门。
 
 ### 13.5 这个 UI 草案没解决的问题（v0.5 明示）
@@ -853,6 +868,20 @@ graph TD
 ---
 
 ## 修订记录
+
+### v0.17（2026-08-19）— ADR-026 涟漪：固定空间布局 + reshape 旧账回流
+
+> 涟漪源 [[026-fixed-spatial-layout]]（Accepted 2026-08-18，当日落地 commit `f16aeac`）。**本次不为偏差让路**——三处契约违规（§4.0.7 作用范围 / §13.3 区域 6 位置 / §13.4 Tab 顺序）已由实现回到契约而消除；本次改动是把 v0.11 reshape 后一直未回流的**事实**补正。
+
+- **§4.0.4 UI 共用规则表重写**：原表为 pre-reshape 口径（「中部左侧 60%」「底部左右各 50%」），自 v0.11 任务层 3→2 列后从未回流。改为固定区域图：Header / 协议 band（相位带 + 对齐话术）/ task 列（Macro 上 + Scene 下）/ aside 列（Modifier 顶 + 最近 中 + SOP 底）/ 状态栏。补记「区域图对 `interactionMode` 不变」与「两态共享同一组持久化键」
+- **§4.0.7 补反设计第 3 条**：❌ 模式切换改变区域位置 / 列宽 / 区域尺寸——`interactionMode` 是语义开关不是布局开关；模式差异清单补齐动作簇 / 编辑入口 / 区域几何三行
+- **§13.2 结构图**：Macro 删「封顶 184px 后滚动」，改记纵向默认 46% / min `132px`；Scene 补 54% / min `196px`；补 Separator 连线
+- **§13.3 区域 3**：`--h-macro-strip` 硬封顶退役（token 随之改名 `--h-modifier-card-max`，见 [[05-design-spec#2.2.1]]），高度改由用户可拖纵向分配决定；补记默认值偏向 Macro 的命中率依据（2026-08-10 实测 3.5→8.5 张）。顺带订正旧文「184px」与 tokens.css 实际 `200px` 的长期不一致
+- **§13.3 区域 4**：位置改「task 列下部」，补 54% / `196px` 下限
+- **§13.3 区域 5 / 区域 6 位置订正**：「底部左侧 / 底部右侧，各占整宽 50%」→「aside 列中部 / aside 列底部」（pre-reshape 旧账，与 §13.2 结构图已存在的描述不一致）
+- **§13.4 Tab 顺序追认**：本表顺序自始有效，实现层曾颠倒 Scene 与最近并以「pending human review」注释挂账；补记「不随 `interactionMode` 变化」与教训（待审注释不是决策，测试可以保护偏差）
+
+> **真机走查（2026-08-18）**：纵向下限、Separator 命中面积与光标、PhaseBar 等宽后活动相位醒目度三项均已实测确认，明细见 [[026-fixed-spatial-layout]] §2。走查另发现三项**新缺陷**（Scene `196px` 为结构下限非可用下限 / Separator 视觉反馈与命中区错配 / `--brand-dim` 对比度不足），属新设计决策，**不并入本次回流**，见 [[HANDOFF]]。
 
 ### v0.16（2026-07-12）— ADR-022 涟漪：跨 Scene 话术移动
 

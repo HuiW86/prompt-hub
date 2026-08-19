@@ -1,12 +1,12 @@
 ---
 type: design-spec
 project: prompt-hub
-version: v0.15
+version: v0.16
 created: 2026-05-18
-last_modified: 2026-07-21
-status: ratified  # v0.10 已 omar 审定（2026-06-21）；v0.11–v0.15 增量待人审
+last_modified: 2026-08-19
+status: ratified  # v0.10 已 omar 审定（2026-06-21）；v0.11–v0.16 增量待人审
 author: co  # 🤝 人机共创（CLAUDE §5.2）
-related: [[01-spec]], [[02-constitution]], [[03-product-spec]], [[012-lock-visual-quality-anchor]], [[019-supersede-flat-visual-anchor]], [[020-restore-protocol-dark-band]], [[021-scene-layered-editing]], [[CLAUDE-DESIGN]], [[015-expose-mcp-write-pipeline]], [[016-choose-dnd-and-resizable-layout]], [[018-absorb-promptscape-design]], [[asset-editing-and-adaptive-layout]]
+related: [[01-spec]], [[02-constitution]], [[03-product-spec]], [[012-lock-visual-quality-anchor]], [[019-supersede-flat-visual-anchor]], [[020-restore-protocol-dark-band]], [[021-scene-layered-editing]], [[CLAUDE-DESIGN]], [[015-expose-mcp-write-pipeline]], [[016-choose-dnd-and-resizable-layout]], [[018-absorb-promptscape-design]], [[026-fixed-spatial-layout]], [[asset-editing-and-adaptive-layout]]
 description: 手动 AI 编程仪表盘的视觉规范——tokens.css 单一真源 + 主题/elevation/组件视觉契约；写 CSS / 视觉时召回。版本叙事见 CHANGELOG
 ---
 
@@ -122,6 +122,7 @@ description: 手动 AI 编程仪表盘的视觉规范——tokens.css 单一真�
 | `--h-quickfind` | 36px | SearchBar 高度 |
 | `--h-scene-row` | 32px | ScenePanel 行高 |
 | `--h-region-header` | 40px | 共享 RegionHeader primitive 高度 |
+| `--h-modifier-card-max` | 200px | ModifierGrid 参考卡 max-height（超出内部滚动）。**v0.16 由 `--h-macro-strip` 改名**——[[026-fixed-spatial-layout]] 子决策 2 取消 Macro 硬封顶后，唯一消费者只剩 Modifier 卡，旧名已失真 |
 
 #### 2.2.2 Opacity token
 
@@ -593,7 +594,7 @@ bundle 派生的 3 个跨组件 chrome primitive：
 | `SearchBar` | aux | `--h-quickfind` 36px | border-only + focused outline `--accent` |
 | `PhaseBar` | protocol | `--h-phasebar` 44px | border-only segmented + active 段 `--surface-2` + 2px `--accent` 下边框（v0.12 中性，原 `--protocol`）|
 | `AlignmentPhrases` | protocol | `--h-phrases` 44px | chip 行（`--h-chip` 24px），每 chip border-only + clicked → flash 中性（`.flash` 解析 `--surface-3`）；dot 标记 `--accent` |
-| `MacroGrid` | task | 任务列顶部紧凑横条：auto-fill grid（最小列 `--col-min-macro` 200px）封顶 `--h-macro-strip` 184px 后滚动（v0.11 涟漪 [[018-absorb-promptscape-design]]，原 3-col）| 卡 resting `--shadow-1` + hover darken + `--lift-1` 抬起（§8.2.1）+ active `--surface-2`；**v0.13（P3-5）图标盒全量填 `--accent`/`--accent-fg`**（每卡皆有，玻璃感 `.iconChipHot` 已删），卡图标 Zap→`Flame`，**hot top-4 = Flame 实心填充（fill=currentColor）**、非 hot 描边 |
+| `MacroGrid` | task | task 列上部：auto-fill grid（最小列 `--col-min-macro` 200px）；**高度由用户可拖的纵向分配决定**（默认 46% / 下限 `132px`），超出滚动。**v0.16：`--h-macro-strip` 硬封顶退役**（[[026-fixed-spatial-layout]] 子决策 2——高度不再由父容器按态注入；该 token 随之改名 `--h-modifier-card-max`，见 §2.2.1；v0.11 涟漪 [[018-absorb-promptscape-design]]，原 3-col）| 卡 resting `--shadow-1` + hover darken + `--lift-1` 抬起（§8.2.1）+ active `--surface-2`；**v0.13（P3-5）图标盒全量填 `--accent`/`--accent-fg`**（每卡皆有，玻璃感 `.iconChipHot` 已删），卡图标 Zap→`Flame`，**hot top-4 = Flame 实心填充（fill=currentColor）**、非 hot 描边 |
 | `ScenePanel` | task | 视图态：子阶段多列全景 **auto-fit** grid `repeat(auto-fit, minmax(min(var(--col-min-substage), 100%), 1fr))`（v0.13 P3-1：窄面板自动降列不挤压、少列拉伸填满、窄于 184px 单列兜底；原 auto-fill/固定 4 列作废），每子阶段一列、phrase 堆为 border 卡；**未归组话术列头无条件渲染为「未分组」**（复用 subStage 头结构含序号，文案 muted `--fg-3`）；编辑态保留纵向行 | sceneCard resting `--shadow-1`；phrase 卡 border-only + hover `--lift-1` 抬起 + active `--surface-2` |
 | `RecentList` | aux | surface-1 卡片容器（v0.13 P3-3 升级：margin/border/`--r-4` 对齐同列 ModifierGrid 卡）+ 行列表 | 卡 resting `--shadow-1`；行 hover `--surface-2` + `--lift-1`、active `--surface-3`；meta time 右侧；**徽标中性化（v0.13 / ADR-020）**：「对齐话术」徽标撤 `--accent` 实底，与任务徽标同形中性描边、靠文字区分（§13.1）|
 | `ModifierGrid`（v0.13 回归，aside 参考面）| protocol（参考）| aside 列顶部紧凑卡（非 Tab cycle region）：四象限 groupKind 分组、每 modifier 一枚 `Chip`（click-to-copy，直写剪贴板不记 usage）| 卡 resting `--shadow-1`；chip hover `--lift-1`；RegionHeader right slot 挂「`Route` 协议层 · 参考」小型层标记 pill（ADR-020 层级编码）；**P3-6 最小管理簇**：chip hover/`:focus-within` 显隐 移象限菜单（`ArrowRightLeft`，列其余三象限）+ `ConfirmInline` 二次确认删除，键盘可达——是「参考 + 最小管理入口」，非 v1.3 移除的完整编辑面板 |
@@ -603,7 +604,7 @@ bundle 派生的 3 个跨组件 chrome primitive：
 | `PendingBadge`（v0.8）| aux | inline，高度 `--h-chip` 24px | lucide `Inbox` + count text，仅 N>0 渲染，详见 §10.4 |
 | `DraftInbox`（v0.8）| aux | Scene tab 行最左入口 + 列表面板 | tab 入口 lucide `Inbox` + 分隔，列表挂 `DraftCard`，详见 §10.4 |
 | `DraftCard`（v0.8）| aux（中性，promote 前不染 ontology）| 卡片 | border-only neutral + target_type 文字角标 + provenance + promote/discard，详见 §10.4 |
-| `PanoramaSeparator`（v0.9）| chrome（aux 中性）| 全景区列间分隔条（hairline 宽）| `--border-1` hairline baseline + hover 加深 `--border-3` + focus outline `--accent`；分隔条属 hairline 类**不加 elevation**（§8.2.1：shadow 仅浮层类）；仍**无渐变/玻璃感**，详见 §10.5 |
+| `PanoramaSeparator`（v0.9 / v0.16 双向）| chrome（aux 中性）| **两个变体**：列间竖分隔条（hairline 宽）+ **task 列内 Macro/Scene 横分隔条（hairline 高，v0.16）** | `--border-1` hairline baseline + hover 加深 `--border-3` + focus outline `--accent`；分隔条属 hairline 类**不加 elevation**（§8.2.1：shadow 仅浮层类）；仍**无渐变/玻璃感**。**拖拽命中区不等于视觉宽度**：`react-resizable-panels` 按 `resizeTargetMinimumSize` 把 1px 视觉条的命中区撑至**鼠标 10px / 触控 20px**，并在 hover 态即注入 `cursor: col-resize|ns-resize`。详见 §10.5 |
 | `Header`（v0.11）| chrome（中性强调）| 顶部 slim 行，gear `--h-quickfind` 36px | logo 方块染 `--accent`/`--accent-fg`（B2 中性强调面）+ 标题/副标 + 内嵌 `SearchBar`(flex-1) + gear `IconButton`；去设计稿头像（spec §8.2 无账号），详见 §10.8 / 涟漪 [[018-absorb-promptscape-design]] |
 | `ProtocolBand`（v0.11 / v0.13 暗 band）| protocol | 协议层容器 band（inset，`--r-frame`）| **v0.13（[[020-restore-protocol-dark-band]]）改 `--band-bg` 暗底 + band 作用域整体重映射中性 token**（§2.4.5），双主题恒为深底浅字；`Route` icon「协议层」pill；纯布局壳，PhaseBar+AlignmentPhrases 内容/数据不变，详见 §10.8.2 |
 | `SettingsModal`（v0.11）| chrome（中性强调）| 居中 overlay 弹窗（`--scrim` 遮罩，宽 `--w-settings-modal`）| 左导航(外观/更新) + 右内容；外观=主题三态分段控件 + 5 色强调 swatch；更新=opt-in 开关 + 状态行 + 检查/安装（复用 updaterStore）；焦点环/激活态用 `--accent`（中性强调，B2 安全），详见 §10.8 |
@@ -666,16 +667,33 @@ bundle 派生的 3 个跨组件 chrome primitive：
 
 ---
 
-### 10.5 全景区可拖列布局（v0.9 — 涟漪 [[asset-editing-and-adaptive-layout]] P4 / [[016-choose-dnd-and-resizable-layout]]）
+### 10.5 全景区可拖布局（v0.9 起 — 涟漪 [[asset-editing-and-adaptive-layout]] P4 / [[016-choose-dnd-and-resizable-layout]]；v0.16 重写 — 涟漪 [[026-fixed-spatial-layout]]）
 
-> Dashboard 全景区从固定 grid（`1.4fr / 1fr / 0.9fr`）改为 `react-resizable-panels` v4 `Group` / `Panel` / `PanoramaSeparator`：列宽用户可拖 + localStorage 持久化（默认 `42 / 30 / 28`%，min `22 / 18 / 18`%，全百分比免 px↔% 换算）。`Separator` 视觉契约见 §10.3。
+> Dashboard 全景区用 `react-resizable-panels` v4 `Group` / `Panel` / `PanoramaSeparator` 承载用户可拖的尺寸分配 + localStorage 持久化。**v0.16 起为两个维度**：
 
-**ADR-012 合规评估**（[[012-lock-visual-quality-anchor]] 约束下，本次涟漪结论：**不违反**）：
+| 维度 | Group id | 默认 | 下限 | 单位理由 |
+|---|---|---|---|---|
+| 横向 task \| aside | `dashboard-2col` | `68 / 32`% | `42 / 20`% | 百分比——两列同时缩放，比例下限即可保证两列都可见 |
+| **纵向 Macro \| Scene**（task 列内，v0.16 新增）| `task-2row` | `46 / 54`% | **`132px` / `196px`** | **像素**——百分比下限会随窗口一起缩水，见下方警示 |
+
+> **v0.16 沿革**：v0.9 的「三列 `42/30/28`%，min `22/18/18`%，**全百分比免 px↔% 换算**」已作废两处——列数自 v0.11 reshape 起为 2 列（[[018-absorb-promptscape-design]]），且「全百分比」这条理由被纵向维度**直接证伪**。
+
+> ⚠️ **纵向下限必须取像素，不得取百分比**：百分比下限随窗口高度一起缩水，窗口越小区域越薄——旧 cockpit 布局的 wake 区正是「38% 无像素下限」，在小窗口下塌到约一行高。[[026-fixed-spatial-layout]] 明确要求新增的纵向维度**不复制这笔债**。
+
+**实测校准（2026-08-18 真机走查，1470×956 窗口）**：
+
+- 主形态窗口**恒等于当前显示器尺寸**（`fit_to_active_monitor` 每次唤起重新铺满），`tauri.conf.json` 的 `800×600` 仅为占位，**不是可依赖的基线**
+- 结构 chrome 实测：panorama 上方 `195.5px`（frame inset 12 + Header 53 + 协议 band 129.5）、`任务层` 标记行 `26.5px`、下方 `41px`（状态栏 28 + hairline + inset 12）
+- ⇒ `taskGroup = 窗口高 − 263`；两下限合计 `132 + 1 + 196 = 329px` ⇒ **窗口高 < 592px 才会挤压**。现实显示器均高于此，下限不会触发
+- 拖至极限实测：Macro 停在 `133px`、Scene 停在 `196px`，**两个像素下限均真实生效**
+
+**ADR-012 合规评估**（[[012-lock-visual-quality-anchor]] 约束下，结论：**不违反**）：
 
 - **反设计清单**（§8）：分隔条仅 hairline border + hover 加深，属 hairline 类不加 elevation（§8.2.1）；**无渐变 / 玻璃感 / skeuomorphism** —— 守底线（v0.12：box-shadow 已解锁但分隔条不适用）。
-- **一屏全景**（[[03-product-spec#§4.1]]）：三列始终全部可见，拖动只改比例**不隐藏任何区域** —— 守哲学二。
-- **色块即本体**（[[02-constitution#B2]]）：列宽调整不动三色族，分隔条属 chrome 中性色、不染 ontology。
-- **结论**：列宽可调属「区域尺寸可调」，**非**「面板自由布局」（后者违反 B2，plan §1 非目标已排除）；布局偏好存 localStorage，不入 SQLite、不上传（守 [[02-constitution#A2]]）。故无需修订 §8 锚点，仅补本节 + §10.3 `PanoramaSeparator` 行。
+- **一屏全景**（[[03-product-spec#§4.1]]）：所有区域始终可见，拖动只改比例**不隐藏任何区域** —— 守哲学二。纵向维度同理，故设像素下限而非允许拖到 0。
+- **色块即本体**（[[02-constitution#B2]]）：尺寸调整不动三色族，分隔条属 chrome 中性色、不染 ontology。
+- **区域几何不随 `interactionMode` 变化**（v0.16 · [[026-fixed-spatial-layout]]）：两种交互模式共用同一套空间与**同一组持久化键**（旧的 `panorama-2col` / `cockpit-2col` 按态分列键已退役，旧键留存不读——纯 UI 偏好读不到即回落默认值，写迁移代码的成本高于其价值）。
+- **结论**：尺寸可调属「区域尺寸可调」，**非**「面板自由布局」（后者违反 B2，plan §1 非目标已排除）；布局偏好存 localStorage，不入 SQLite、不上传（守 [[02-constitution#A2]]）。故无需修订 §8 锚点，仅补本节 + §10.3 `PanoramaSeparator` 行。
 
 ---
 
@@ -957,6 +975,21 @@ bundle 派生的 3 个跨组件 chrome primitive：
 ---
 
 ## 修订记录
+
+### v0.16（2026-08-19）— ADR-026 涟漪：纵向可拖分配 + Separator 双向 + token 改名
+
+回流 [[026-fixed-spatial-layout]]（Accepted 2026-08-18，当日落地 commit `f16aeac`）。🤝 共创起草，待 omar 人审。
+
+- **§10.5 重写**：v0.9 的「三列 `42/30/28`%，min `22/18/18`%，**全百分比免 px↔% 换算**」两处作废——列数自 v0.11 reshape 起为 2 列；「全百分比」这条理由被新增的纵向维度直接证伪。改为两维度表（横向 `dashboard-2col` 百分比下限 / 纵向 `task-2row` **像素**下限），并补警示：**纵向下限必须取像素**，百分比下限随窗口缩水正是旧 cockpit wake「38% 无下限」塌成一行的成因
+- **§10.5 补实测校准**（2026-08-18 真机走查）：主形态窗口**恒等于显示器尺寸**（`fit_to_active_monitor` 每次唤起重铺），`tauri.conf.json` 的 `800×600` 仅占位不可依赖；结构 chrome 实测 195.5 / 26.5 / 41px ⇒ `taskGroup = 窗口高 − 263` ⇒ 窗口高 < 592px 才会挤压；拖至极限实测 Macro 停 `133px` / Scene 停 `196px`，两下限均真实生效
+- **§10.3 `PanoramaSeparator` 扩为双向**：新增 task 列内横分隔条变体；补记**拖拽命中区不等于视觉宽度**——库按 `resizeTargetMinimumSize` 把 1px 视觉条撑至鼠标 10px / 触控 20px，hover 态即注入 resize 光标
+- **§10.3 `MacroGrid`**：删 `--h-macro-strip` 硬封顶，高度改由用户可拖纵向分配决定
+- **§2.2.1 token 改名**：`--h-macro-strip` → **`--h-modifier-card-max`**（含 `:root.compact` 层）。取消 Macro 封顶后其唯一消费者只剩 `ModifierGrid .card` 的 max-height，旧名比其语义多活了一个版本；改名属 §3c token 契约变更，故走本次八步而非就地补丁
+- **§10.5 补「区域几何不随 `interactionMode` 变化」**：两态共用同一套空间与同一组持久化键，按态分列的 `panorama-2col` / `cockpit-2col` 退役（旧键留存不读）
+
+> ⚠️ 走查另发现三项**新缺陷**未纳入本版：Scene `196px` 为结构下限非可用下限（0 条话术且滚动条被 `scrollbar-width: none` 隐藏）；Separator 视觉反馈与命中区错配（`:hover` 仅 1px 生效 vs 命中区 10px）；`--brand-dim` 在暗 band 上活动/非活动对比度仅 **1.145:1**，远低于 WCAG 1.4.11 非文本 3:1，活动相位识别几乎全押下划线。三项属新设计决策，待 omar 单独裁，见 [[HANDOFF]]。
+
+> 📌 遗留：frontmatter 自 v0.15 起版本号已 bump 但**修订记录缺 v0.15 条目**（本次未补，不在 ADR-026 回流范围）。
 
 ### v0.14（2026-07-06）— ADR-021 涟漪：scene.color 用户内容色 + 就地动作簇视觉
 
