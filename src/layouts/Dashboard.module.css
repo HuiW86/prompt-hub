@@ -94,7 +94,16 @@
 }
 
 /* Row separator for the vertical Macro / Scene split — same hairline, laid
-   across instead of down. */
+   across instead of down.
+
+   Known and accepted (2026-08-19 walkthrough): the library expands the DRAG
+   hit region to 10px (mouse) and switches the cursor to ns-resize across all
+   of it, but :hover below only fires on the literal 1px line, so there is a
+   ~9px band where the cursor already responds and the line has not lit up.
+   Left alone deliberately — enlarging the hover target needs an absolutely
+   positioned ::before, whose transparent band would swallow clicks on the
+   Macro grid's last card row. The cursor is the primary affordance; this
+   highlight is a secondary confirmation of an exact hit. */
 .separatorRow {
   height: var(--hairline);
   background: var(--border-1);

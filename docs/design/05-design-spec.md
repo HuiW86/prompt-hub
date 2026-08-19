@@ -1,10 +1,10 @@
 ---
 type: design-spec
 project: prompt-hub
-version: v0.16
+version: v0.17
 created: 2026-05-18
 last_modified: 2026-08-19
-status: ratified  # v0.10 已 omar 审定（2026-06-21）；v0.11–v0.16 增量待人审
+status: ratified  # v0.10 已 omar 审定（2026-06-21）；v0.11–v0.17 增量待人审
 author: co  # 🤝 人机共创（CLAUDE §5.2）
 related: [[01-spec]], [[02-constitution]], [[03-product-spec]], [[012-lock-visual-quality-anchor]], [[019-supersede-flat-visual-anchor]], [[020-restore-protocol-dark-band]], [[021-scene-layered-editing]], [[CLAUDE-DESIGN]], [[015-expose-mcp-write-pipeline]], [[016-choose-dnd-and-resizable-layout]], [[018-absorb-promptscape-design]], [[026-fixed-spatial-layout]], [[asset-editing-and-adaptive-layout]]
 description: 手动 AI 编程仪表盘的视觉规范——tokens.css 单一真源 + 主题/elevation/组件视觉契约；写 CSS / 视觉时召回。版本叙事见 CHANGELOG
@@ -674,7 +674,7 @@ bundle 派生的 3 个跨组件 chrome primitive：
 | 维度 | Group id | 默认 | 下限 | 单位理由 |
 |---|---|---|---|---|
 | 横向 task \| aside | `dashboard-2col` | `68 / 32`% | `42 / 20`% | 百分比——两列同时缩放，比例下限即可保证两列都可见 |
-| **纵向 Macro \| Scene**（task 列内，v0.16 新增）| `task-2row` | `46 / 54`% | **`132px` / `196px`** | **像素**——百分比下限会随窗口一起缩水，见下方警示 |
+| **纵向 Macro \| Scene**（task 列内，v0.16 新增）| `task-2row` | `46 / 54`% | **`132px` / `288px`**（v0.17 由 `196px` 上调）| **像素**——百分比下限会随窗口一起缩水，见下方警示 |
 
 > **v0.16 沿革**：v0.9 的「三列 `42/30/28`%，min `22/18/18`%，**全百分比免 px↔% 换算**」已作废两处——列数自 v0.11 reshape 起为 2 列（[[018-absorb-promptscape-design]]），且「全百分比」这条理由被纵向维度**直接证伪**。
 
@@ -684,8 +684,9 @@ bundle 派生的 3 个跨组件 chrome primitive：
 
 - 主形态窗口**恒等于当前显示器尺寸**（`fit_to_active_monitor` 每次唤起重新铺满），`tauri.conf.json` 的 `800×600` 仅为占位，**不是可依赖的基线**
 - 结构 chrome 实测：panorama 上方 `195.5px`（frame inset 12 + Header 53 + 协议 band 129.5）、`任务层` 标记行 `26.5px`、下方 `41px`（状态栏 28 + hairline + inset 12）
-- ⇒ `taskGroup = 窗口高 − 263`；两下限合计 `132 + 1 + 196 = 329px` ⇒ **窗口高 < 592px 才会挤压**。现实显示器均高于此，下限不会触发
-- 拖至极限实测：Macro 停在 `133px`、Scene 停在 `196px`，**两个像素下限均真实生效**
+- ⇒ `taskGroup = 窗口高 − 263`；两下限合计 `132 + 1 + 288 = 421px` ⇒ **窗口高 < 684px 才会挤压**。常见最小显示器 1366×768 仍余 84px
+- ⚠️ `HotkeyBanner` / `UpdaterBanner` 同时出现时各再吃约 33px，阈值升至约 `750px`，与 768px 仅差 18px——**日后再加常驻横幅须重算本阈值**
+- 拖至极限实测：Macro 停在 `133px`、Scene 停在 `288px`（v0.17 上调后复测），**两个像素下限均真实生效**
 
 **ADR-012 合规评估**（[[012-lock-visual-quality-anchor]] 约束下，结论：**不违反**）：
 
@@ -976,6 +977,15 @@ bundle 派生的 3 个跨组件 chrome primitive：
 
 ## 修订记录
 
+### v0.17（2026-08-19）— 走查缺陷裁决：Scene 下限纠偏 + 承重件标注
+
+> 与 v0.16 同日。三项走查缺陷逐项裁决（裁决表见 [[026-fixed-spatial-layout]] §2），**只有第 1 项改契约**。
+
+- **§10.5 纵向下限 `196px` → `288px`**：非新设计决策，而是原值未满足 ADR-026 子决策 2 的验收条件（「至少完整显示一个子阶段列」，实测 `196px` 下 0 条话术）。新值 = 结构 224 + 首卡完整 265 + 次卡露边 288。**两区下限语义自此一致**——一个完整单元 + 下一个露半截
+- **§10.5 阈值同步**：挤压阈值由窗口高 `592px` 升至 **`684px`**；补警示——两条常驻横幅同时出现时约 `750px`，与 768px 仅差 18px，**再加横幅须重算**
+- **`.phase.active::after` 标注为承重件**（`PhaseBar.module.css` 就地注释）：`--brand-dim` 底实测对比度 `1.145:1`（活动 `(29,36,53)` vs 非活动 `(24,24,27)`），远低于 WCAG 1.4.11 非文本 3:1，**真正承载活动态的是这条下划线 + 实底序号章 + `--w-600`，底色才是装饰的那个**。不调色阶（会改动整个 band 视觉语言，违反 [[025-unified-anchored-editing]]「未新增任何视觉语汇」），改为封死误删路径——CLAUDE §5.1.1 减法快车道把「删装饰」列为免八步四类，而这条下划线外观上正像装饰，一旦被顺手删掉活动相位当场塌陷且无需评审
+- **`.separatorRow` 约 9px 视觉死区记为已知可接受**（`Dashboard.module.css` 就地注释）：命中区由库撑到 10px 且光标已切 `ns-resize`，而 `:hover` 只在压中那 1px 时亮。不修——扩 hover 需绝对定位 `::before`，其透明带会吞掉 Macro 末行卡片的点击；**光标是主 affordance，hairline 高亮是精确命中的次要确认**
+
 ### v0.16（2026-08-19）— ADR-026 涟漪：纵向可拖分配 + Separator 双向 + token 改名
 
 回流 [[026-fixed-spatial-layout]]（Accepted 2026-08-18，当日落地 commit `f16aeac`）。🤝 共创起草，待 omar 人审。
@@ -987,7 +997,7 @@ bundle 派生的 3 个跨组件 chrome primitive：
 - **§2.2.1 token 改名**：`--h-macro-strip` → **`--h-modifier-card-max`**（含 `:root.compact` 层）。取消 Macro 封顶后其唯一消费者只剩 `ModifierGrid .card` 的 max-height，旧名比其语义多活了一个版本；改名属 §3c token 契约变更，故走本次八步而非就地补丁
 - **§10.5 补「区域几何不随 `interactionMode` 变化」**：两态共用同一套空间与同一组持久化键，按态分列的 `panorama-2col` / `cockpit-2col` 退役（旧键留存不读）
 
-> ⚠️ 走查另发现三项**新缺陷**未纳入本版：Scene `196px` 为结构下限非可用下限（0 条话术且滚动条被 `scrollbar-width: none` 隐藏）；Separator 视觉反馈与命中区错配（`:hover` 仅 1px 生效 vs 命中区 10px）；`--brand-dim` 在暗 band 上活动/非活动对比度仅 **1.145:1**，远低于 WCAG 1.4.11 非文本 3:1，活动相位识别几乎全押下划线。三项属新设计决策，待 omar 单独裁，见 [[HANDOFF]]。
+> ⚠️ 走查另发现三项缺陷未纳入本版（Scene 下限 / Separator 死区 / `--brand-dim` 对比度），**已于 v0.17 逐项裁决**。
 
 > 📌 遗留：frontmatter 自 v0.15 起版本号已 bump 但**修订记录缺 v0.15 条目**（本次未补，不在 ADR-026 回流范围）。
 

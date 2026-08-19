@@ -1,7 +1,7 @@
 ---
 type: product-spec
 project: prompt-hub
-version: v0.17
+version: v0.18
 created: 2026-05-18
 last_modified: 2026-08-19
 status: draft  # v0.10 起增量待 omar 人审；前序 v0.8 已 ratified
@@ -613,7 +613,7 @@ graph TD
     subgraph 全景["全景 · 任务层 2 列（v0.11，user-resizable；v0.17 区域图固定不随模式变）"]
         subgraph 任务列["task 列（默认 68% · min 42%）"]
             M["Macro 区 §5.2<br/>auto-fill 卡片 · 按热度排序<br/>纵向默认 46% · min 132px（v0.17）"]
-            SC["Scene 区 §5.3<br/>Tab 切换 · 子阶段多列全景 + Phrase 卡<br/>纵向默认 54% · min 196px（v0.17）<br/>含 📥 草稿 tab（Tab 行最左 · v0.7 起）"]
+            SC["Scene 区 §5.3<br/>Tab 切换 · 子阶段多列全景 + Phrase 卡<br/>纵向默认 54% · min 288px（v0.18）<br/>含 📥 草稿 tab（Tab 行最左 · v0.7 起）"]
             M -.用户可拖 Separator.- SC
         end
         subgraph 辅列["aside 列（≈32%）"]
@@ -725,7 +725,7 @@ graph TD
 #### 区域 4：Scene 区（[[06-prd#5.3-Scene-全景区]]）
 
 - **位置**：**task 列下部**（Macro 之下，v0.11 起；原「中部右侧 40%」，涟漪 [[018-absorb-promptscape-design]]）。**不随 `interactionMode` 变化**（v0.17 · [[026-fixed-spatial-layout]]）
-- **尺寸**：由用户可拖的纵向分配决定——默认占 task 列 54%，**下限 `196px`**（v0.17）；视图态子阶段以 **auto-fit 自适应多列全景**呈现（`repeat(auto-fit, minmax(min(var(--col-min-substage), 100%), 1fr))`，v0.13 · P3-1：窄面板自动降列不挤压、少列拉伸填满不留空轨），每子阶段一列、Phrase 堆为 border 卡；**空子阶段列常显**（muted 列头 + 「＋ 添加话术」占位，v0.14 · [[021-scene-layered-editing]]——编辑态废除后空子阶段唯一的可见可管理入口）
+- **尺寸**：由用户可拖的纵向分配决定——默认占 task 列 54%，**下限 `288px`**（v0.18 修正，原 `196px` 见修订记录）；视图态子阶段以 **auto-fit 自适应多列全景**呈现（`repeat(auto-fit, minmax(min(var(--col-min-substage), 100%), 1fr))`，v0.13 · P3-1：窄面板自动降列不挤压、少列拉伸填满不留空轨），每子阶段一列、Phrase 堆为 border 卡；**空子阶段列常显**（muted 列头 + 「＋ 添加话术」占位，v0.14 · [[021-scene-layered-editing]]——编辑态废除后空子阶段唯一的可见可管理入口）
 - **顶部 Tab**：7-10 个 Scene 横排小标签（pill 样式，约 24px 高）
   - 当前激活 Tab：**绿色**（Scene 属任务层，selected 态按层取色 `--task-16` fill + `--task` border，见 [[05-design-spec#10.1]] / [[05-design-spec#13.1]]）——v0.7 修订：原「紫色」措辞早于 design-spec v0.7 ontology 系统，紫属协议层、用于 Scene = 跨层污染（[[05-design-spec#13.2]] / [[02-constitution#B2]]），故纠正为绿
   - 未激活 Tab：浅灰背景 + 灰色文字
@@ -869,6 +869,15 @@ graph TD
 
 ## 修订记录
 
+### v0.18（2026-08-19）— 走查缺陷裁决：Scene 下限纠偏
+
+> 与 v0.17 同日。三项走查缺陷逐项裁决完毕（裁决表与依据见 [[026-fixed-spatial-layout]] §2），其中**仅第 1 项需要改契约**。
+
+- **§13.2 / §13.3 区域 4：Scene 下限 `196px` → `288px`**。**这不是新设计决策，是 v0.17 记录的值没满足 [[026-fixed-spatial-layout]] 子决策 2 自己写下的验收条件**——该条要求「下限保证 Scene 至少完整显示一个子阶段列」，而 `196px` 实测下 Scene 显示 **0 条话术**：结构 chrome 清掉了，内容一条不剩，且 `ScenePanel` 隐藏滚动条（`scrollbar-width: none`），区域读起来像「空」而非「可滚动」
+- 新值经实测：区域头 + tab 行 + 卡头（224）+ 第一张话术卡完整（→265）+ 第二张卡露边（→288）。**两个区域的下限自此语义一致**——一个完整单元 + 下一个露半截；露出的半截即「下面还有」的提示，故不引入渐隐或箭头（不新增视觉语汇）
+- 连带：挤压阈值由窗口高 `592px` 升至 **`684px`**，仍低于常见最小显示器 768px（余 84px）；但两条常驻横幅同时出现时阈值约 `750px`，**日后再加横幅须重算**
+- 另两项**不改契约**：Separator 约 9px 视觉死区记为已知可接受（扩 hover 需绝对定位 `::before`，其透明带会吞掉 Macro 末行卡片点击；光标已是主 affordance）；`--brand-dim` 对比度 `1.145:1` 不调色，改为把 `.phase.active::after` 下划线**标注为承重件、禁止按装饰走减法快车道**（CLAUDE §5.1.1「删装饰」免八步，而这条下划线外观上正像装饰）
+
 ### v0.17（2026-08-19）— ADR-026 涟漪：固定空间布局 + reshape 旧账回流
 
 > 涟漪源 [[026-fixed-spatial-layout]]（Accepted 2026-08-18，当日落地 commit `f16aeac`）。**本次不为偏差让路**——三处契约违规（§4.0.7 作用范围 / §13.3 区域 6 位置 / §13.4 Tab 顺序）已由实现回到契约而消除；本次改动是把 v0.11 reshape 后一直未回流的**事实**补正。
@@ -881,7 +890,7 @@ graph TD
 - **§13.3 区域 5 / 区域 6 位置订正**：「底部左侧 / 底部右侧，各占整宽 50%」→「aside 列中部 / aside 列底部」（pre-reshape 旧账，与 §13.2 结构图已存在的描述不一致）
 - **§13.4 Tab 顺序追认**：本表顺序自始有效，实现层曾颠倒 Scene 与最近并以「pending human review」注释挂账；补记「不随 `interactionMode` 变化」与教训（待审注释不是决策，测试可以保护偏差）
 
-> **真机走查（2026-08-18）**：纵向下限、Separator 命中面积与光标、PhaseBar 等宽后活动相位醒目度三项均已实测确认，明细见 [[026-fixed-spatial-layout]] §2。走查另发现三项**新缺陷**（Scene `196px` 为结构下限非可用下限 / Separator 视觉反馈与命中区错配 / `--brand-dim` 对比度不足），属新设计决策，**不并入本次回流**，见 [[HANDOFF]]。
+> **真机走查（2026-08-19）**：纵向下限、Separator 命中面积与光标、PhaseBar 等宽后活动相位醒目度三项均已实测确认，明细见 [[026-fixed-spatial-layout]] §2。走查另发现三项缺陷，本版未并入，**已于 v0.18 逐项裁决**。
 
 ### v0.16（2026-07-12）— ADR-022 涟漪：跨 Scene 话术移动
 

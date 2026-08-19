@@ -27,49 +27,48 @@
 
 ## In Progress
 
-**ADR-026 已收口**：真机走查三项全过 → `feat/fixed-spatial-layout` 已 `git merge --ff-only` 合入 `main`（`f4bf5fc`）→ 契约回流八步完成（product-spec v0.17 / design-spec v0.16 / features v1.12 + `--h-macro-strip` 改名）。分支未删，保留备查。
+**ADR-026 全线收口**：真机走查三项全过 → 合入 `main` → 契约回流八步（product-spec v0.17 / design-spec v0.16 / features v1.12 + `--h-macro-strip` 改名）→ 已 commit 并 **push 到 `origin/main`**（`527a793..7d72561`，6 个 commit）→ 走查三项缺陷逐项裁决完毕。
 
-⚠️ **`main` 领先 `origin/main` 4 个 commit，全部未 push**（`d73e155` / `4191b99` / `f16aeac` / `f4bf5fc`），加本轮回流的未提交改动。
+裁决产生的改动已 commit（Scene 下限 `196px`→`288px` + 两处承重件/已知缺陷标注 + 三份契约再 bump 到 product-spec v0.18 / design-spec v0.17 / features v1.13），全套验证复跑全绿 + 真机复测 288px 达标。
 
-⚠️ **本轮回流改动尚未 commit**——涉 8 个文件（见 Modified Files），token 改名已跑 335 全绿，但 lint / prettier / build 未在回流全部完成后复跑。
+两条工作分支（feat/fixed-spatial-layout、docs/adr-026-contract-ripple）均未删，保留备查——写作不加反引号，避免 doc-governance 把分支名当代码路径误报。
 
 ⚠️ 工作区另有 `.codex/` + `AGENTS.md` 未跟踪（归 omar，保持）。
 
 ## Next Actions
 
-1. **走查三项新缺陷裁决（新账，最优先）**——2026-08-19 真机走查发现，均属新设计决策，**已明确不并入 ADR-026 回流**：
-   - **(a) Scene `196px` 是结构下限而非可用下限**：压到底时区域内 **0 条话术**、子阶段行齐腰切断；`.phrases` 虽有 `overflow-y: auto`，但 `ScenePanel.module.css:289-296` 用 `scrollbar-width: none` + `::-webkit-scrollbar{display:none}` 抹掉了滚动条，**没有任何「下面还有」的提示**。对照 Macro `132px` 给出 1 整行 + 下一行露半截（半截本身即提示），两个下限质量不对等。选项：抬高下限至能露一条话术 / 给隐藏滚动条补渐隐或箭头提示
-   - **(b) `.separatorRow` 约 9px 视觉死区**：命中区由库 `resizeTargetMinimumSize`（默认 `{coarse:20, fine:10}`）撑到 10px，而 `.separatorRow:hover` 的高亮是 CSS 伪类，只在真正压中那 1px 时触发；库仅挂 `data-separator`，**无 hover/active 状态属性可供 CSS 挂钩**。表现为「光标已变 `ns-resize`、分隔线却没反应」。最小改法：加 `::before` 把视觉热区扩到 ±5px
-   - **(c) `--brand-dim` 底几乎不承担识别**：活动 `(29,36,53)` vs 非活动 `(24,24,27)`，对比度仅 **1.145:1**，远低于 WCAG 1.4.11 非文本 3:1。活动相位识别几乎全押在下划线上，而它 `bottom: calc(-1 * var(--hairline))` 骑在 band 底边框上——一旦被裁剪或遮挡，活动态即塌。选项：调深 / 承认它只是装饰并在 design-spec 写明
-2. **`docs/design/05-design-spec.md` §3c「640px 基线窗口」口径错误**（new 2026-08-19）：compact 层的立论写着「The 640px-tall baseline window」，但主形态窗口**恒等于当前显示器尺寸**（`src-tauri/src/lib.rs:24` `fit_to_active_monitor` 每次唤起重铺），`tauri.conf.json` 的 `800×600` 仅为占位。该基线不可复现，compact 层的存在理由需要换一个真实依据重写。**未并入 ADR-026 回流**（属 compact 层立论，非本 ADR 契约）
-3. **ADR-026 显式不裁、仍待裁的两项** (carried 2026-08-18)：`Dashboard.tsx:145-150` 的 `任务层` pill 去留（现按常显实现以保行为等价；与 ProtocolBand「协议层」pill 成对，删一半会破坏层级编码对称性）、`src/components/SopProgress.tsx` stub 是否继续占正式区
-4. **ADR-025 P1-a（可开工）**：`src/styles/tokens.css` 加 `--z-*` 层级标尺 → `src/components/primitives/Editor.tsx` 新增 `AnchoredEditor`（原生 `popover="manual"` + 约 20 行 jsdom setup shim）+ 新建 `src/hooks/useAnchoredPosition.ts`（dashboard 矩形夹取 + 滚动祖先观察 + resize）→ **只接 `src/components/AlignmentPhrases.tsx`**，过验收门 G1 六项真机检查后才准迁其余五面。**现在在固定布局上做，不必返工** (carried from 2026-08-16)
-5. **ADR-025 契约回流八步**：`docs/design/03-product-spec.md` §13.3 各区域编辑契约 + §13.4 键盘契约；`docs/design/05-design-spec.md` overlay 层级 + 选中态 + 焦点环；`07-features` §3.8；`11-test-spec` (carried from 2026-08-16)
-6. **契约回流八步（旧账）**：`03-product-spec.md` §13.4 描述 SOP 为 instrument card，实现已是单行 stub（`src/components/SopProgress.tsx`）。合并既有欠账：§4.0/§13.4 + §4.0.7 卡片解剖（title-only）+ 外观设置（density）；design-spec §2/§8/§9 + §3c token 层。**§3c 剩两个 unbound token 待处置**（`--t-18` / `--h-modifier-tray`）——第三个 `--h-macro-strip` 已于 2026-08-19 ADR-026 回流中改名 `--h-modifier-card-max` 销账 (carried from 2026-07-21)
-7. **重写 `docs/release-runbook.md` §3 第 1 项**：已按可执行三项实际执行（`Info.plist` 版本 / `codesign -dvvv` Authority+TeamID / `lipo -info` 架构 + 文件清单 diff），runbook 正文仍是旧的不可执行表述 (carried from 2026-08-10)
-8. **把 Ed25519 验签脚本写进 `docs/release-runbook.md` §3 第 4 项**：Python 内联验签（`base64` → 切 `alg/key_id/pk` → `blake2b-512` 预哈希 → `Ed25519PublicKey.verify`），无需 `brew install minisign` 且能验已安装旧客户端的内嵌公钥 (carried from 2026-08-11)
-9. **memory 层两条待 omar 点头**：新增 feedback「AI 主笔对外文档必须逐句反查代码」（与 `feedback_walkthrough_coverage` 同族，应互链）；更新 `feedback_decision_autonomy`（授权扩到"失败恢复时的路径选择"） (carried from 2026-08-05)
-10. **发布收尾（非阻塞）**：`gh secret set TAURI_SIGNING_PRIVATE_KEY_PASSWORD --env release-signing`；`latest.json` 最低版本字段落在 `release.yml` sign job 的 `jq -n` 处；落盘日志 tauri-plugin-log 立项 (carried from 2026-08-05)
-11. **`a24c7c0` / `4b722c1` / `716bd4c` 三 commit 补 verifier 对抗审查**——`a24c7c0`「float phrase actions」正是 hover 遮挡的来源 (carried from 2026-07-07)
-12. **omar 人审批次**：design-spec v0.15 draft + ADR-023/024 措辞 + 图标定稿追认 + product-spec v0.15/v0.16 + features v1.10/v1.11 + 01-spec v0.7 + 旧账 ADR-021/`scene.color` (carried from 2026-07-06)
-13. **可发现性裁决 ×3**（原 ×4，第 1 项已随 ADR-025 子决策 3.3 销账）：场景删除入口外露 / 整理态保窗 vs 改 D-0 契约 / title-only 后卡面无内容线索 (carried from 2026-07-06)
-14. 补 `src/components/__tests__/ScenePanelFocusRestore.test.tsx` 焦点恢复负路径测试 (carried from 2026-07-21)
-15. `.github/workflows/ci.yml` bench-c1 `continue-on-error` 处置复核 (carried from 2026-07-12)
-16. P0-2 Composition 链路 ADR（P0-5 系于此，`src/components/DraftInbox.tsx:43-48`） (carried from 2026-07-06)
-17. **ops-spec §3 定时备份**（`src-tauri/crates/repo-core/src/backup.rs` 底座）/ P2 余 4 评估 / P1-5 Phase 可配置性 / Macro 网格末行 auto-fit (carried from 2026-07-06)
-18. `docs/design/CLAUDE-DESIGN.md` v0.2 重传 + v2 基调同步 (carried from 2026-07-02)
-19. 评审遗留补 design-spec 上游：ipc-contract 扩扫 / `--color-danger` / `--scrim` 语义回流（随人审八步） (carried from 2026-07-02)
-20. **`docs/design/06-prd.md` §6.1 soft-delete 矛盾** + `status: pre-code` 僵尸 / ai-dev-lifecycle 仓收尾。**与 ADR-025 子决策 5 直接相关**——真正可撤销的删除需要后端 `deleted_at` + `restore_*`，prd 已承诺 soft-delete 而实现是硬删除，这个矛盾要么落实要么撤销承诺 (carried from 2026-07-02)
-21. **gstack 待升级 0.16.3 → 1.61.0**（跨大版本），另有两项一次性配置提示（proactive / skill routing） (carried from 2026-08-11)
+1. **`docs/design/05-design-spec.md` §3c「640px 基线窗口」口径错误**（new 2026-08-19）：compact 层的立论写着「The 640px-tall baseline window」，但主形态窗口**恒等于当前显示器尺寸**（`src-tauri/src/lib.rs:24` `fit_to_active_monitor` 每次唤起重铺），`tauri.conf.json` 的 `800×600` 仅为占位。该基线不可复现，compact 层的存在理由需要换一个真实依据重写。**未并入 ADR-026 回流**（属 compact 层立论，非本 ADR 契约）
+2. **ADR-026 显式不裁、仍待裁的两项** (carried 2026-08-18)：`Dashboard.tsx:145-150` 的 `任务层` pill 去留（现按常显实现以保行为等价；与 ProtocolBand「协议层」pill 成对，删一半会破坏层级编码对称性）、`src/components/SopProgress.tsx` stub 是否继续占正式区
+3. **ADR-025 P1-a（可开工）**：`src/styles/tokens.css` 加 `--z-*` 层级标尺 → `src/components/primitives/Editor.tsx` 新增 `AnchoredEditor`（原生 `popover="manual"` + 约 20 行 jsdom setup shim）+ 新建 `src/hooks/useAnchoredPosition.ts`（dashboard 矩形夹取 + 滚动祖先观察 + resize）→ **只接 `src/components/AlignmentPhrases.tsx`**，过验收门 G1 六项真机检查后才准迁其余五面。**现在在固定布局上做，不必返工** (carried from 2026-08-16)
+4. **ADR-025 契约回流八步**：`docs/design/03-product-spec.md` §13.3 各区域编辑契约 + §13.4 键盘契约；`docs/design/05-design-spec.md` overlay 层级 + 选中态 + 焦点环；`07-features` §3.8；`11-test-spec` (carried from 2026-08-16)
+5. **契约回流八步（旧账）**：`03-product-spec.md` §13.4 描述 SOP 为 instrument card，实现已是单行 stub（`src/components/SopProgress.tsx`）。合并既有欠账：§4.0/§13.4 + §4.0.7 卡片解剖（title-only）+ 外观设置（density）；design-spec §2/§8/§9 + §3c token 层。**§3c 剩两个 unbound token 待处置**（`--t-18` / `--h-modifier-tray`）——第三个 `--h-macro-strip` 已于 2026-08-19 ADR-026 回流中改名 `--h-modifier-card-max` 销账 (carried from 2026-07-21)
+6. **重写 `docs/release-runbook.md` §3 第 1 项**：已按可执行三项实际执行（`Info.plist` 版本 / `codesign -dvvv` Authority+TeamID / `lipo -info` 架构 + 文件清单 diff），runbook 正文仍是旧的不可执行表述 (carried from 2026-08-10)
+7. **把 Ed25519 验签脚本写进 `docs/release-runbook.md` §3 第 4 项**：Python 内联验签（`base64` → 切 `alg/key_id/pk` → `blake2b-512` 预哈希 → `Ed25519PublicKey.verify`），无需 `brew install minisign` 且能验已安装旧客户端的内嵌公钥 (carried from 2026-08-11)
+8. **memory 层两条待 omar 点头**：新增 feedback「AI 主笔对外文档必须逐句反查代码」（与 `feedback_walkthrough_coverage` 同族，应互链）；更新 `feedback_decision_autonomy`（授权扩到"失败恢复时的路径选择"） (carried from 2026-08-05)
+9. **发布收尾（非阻塞）**：`gh secret set TAURI_SIGNING_PRIVATE_KEY_PASSWORD --env release-signing`；`latest.json` 最低版本字段落在 `release.yml` sign job 的 `jq -n` 处；落盘日志 tauri-plugin-log 立项 (carried from 2026-08-05)
+10. **`a24c7c0` / `4b722c1` / `716bd4c` 三 commit 补 verifier 对抗审查**——`a24c7c0`「float phrase actions」正是 hover 遮挡的来源 (carried from 2026-07-07)
+11. **omar 人审批次**：design-spec v0.15 draft + ADR-023/024 措辞 + 图标定稿追认 + product-spec v0.15/v0.16 + features v1.10/v1.11 + 01-spec v0.7 + 旧账 ADR-021/`scene.color` (carried from 2026-07-06)
+12. **可发现性裁决 ×3**（原 ×4，第 1 项已随 ADR-025 子决策 3.3 销账）：场景删除入口外露 / 整理态保窗 vs 改 D-0 契约 / title-only 后卡面无内容线索 (carried from 2026-07-06)
+13. 补 `src/components/__tests__/ScenePanelFocusRestore.test.tsx` 焦点恢复负路径测试 (carried from 2026-07-21)
+14. `.github/workflows/ci.yml` bench-c1 `continue-on-error` 处置复核 (carried from 2026-07-12)
+15. P0-2 Composition 链路 ADR（P0-5 系于此，`src/components/DraftInbox.tsx:43-48`） (carried from 2026-07-06)
+16. **ops-spec §3 定时备份**（`src-tauri/crates/repo-core/src/backup.rs` 底座）/ P2 余 4 评估 / P1-5 Phase 可配置性 / Macro 网格末行 auto-fit (carried from 2026-07-06)
+17. `docs/design/CLAUDE-DESIGN.md` v0.2 重传 + v2 基调同步 (carried from 2026-07-02)
+18. 评审遗留补 design-spec 上游：ipc-contract 扩扫 / `--color-danger` / `--scrim` 语义回流（随人审八步） (carried from 2026-07-02)
+19. **`docs/design/06-prd.md` §6.1 soft-delete 矛盾** + `status: pre-code` 僵尸 / ai-dev-lifecycle 仓收尾。**与 ADR-025 子决策 5 直接相关**——真正可撤销的删除需要后端 `deleted_at` + `restore_*`，prd 已承诺 soft-delete 而实现是硬删除，这个矛盾要么落实要么撤销承诺 (carried from 2026-07-02)
+20. **gstack 待升级 0.16.3 → 1.61.0**（跨大版本），另有两项一次性配置提示（proactive / skill routing） (carried from 2026-08-11)
 
 ## Dropped
 
-- 无。2026-08-19 一轮：旧第 1 项（真机走查）与第 2 项（ADR-026 契约回流八步）**完成销账**；旧第 5 项的 `--h-macro-strip` 子项随改名销账，该条目由三个 unbound token 缩为两个。新增 3 项（走查缺陷裁决 / §3c 640px 口径错误 / 原第 2 项尾部的两项待裁独立成条）。净计 21 项。
+- 无。2026-08-19 两轮合计：旧第 1 项（真机走查）、第 2 项（ADR-026 契约回流八步）、新第 1 项（走查三项缺陷裁决）**均完成销账**；旧第 5 项的 `--h-macro-strip` 子项随改名销账，该条目由三个 unbound token 缩为两个。新增 2 项（§3c 640px 口径错误 / 原第 2 项尾部两项待裁独立成条）。净计 20 项。
 
 ## Risks & Decisions
 
 - **jsdom 验不了本轮改动的核心（已解）**：ADR-026 改的是空间分配与拖拽，335 条测试只能证明 DOM 顺序与渲染不炸。2026-08-19 真机走查补上了这一层——**手段可复用**：按窗口 ID 定向截图（`screencapture -l<id>`）+ PIL 像素行扫描测边界 + CGEvent 合成拖拽至极限。切模式前后扫描边界完全相同，是 ADR-026 核心主张的直接证据
-- **走查会发现「通过」之外的东西**：三项验收全过，但同一轮走查另揪出三项新缺陷（Scene 下限无滚动提示 / Separator 视觉死区 / `--brand-dim` 对比度 1.145:1）。**验收项全绿 ≠ 该区域没问题**——验收只回答「我问的那三个问题」
+- **走查会发现「通过」之外的东西**：三项验收全过，但同一轮走查另揪出三项缺陷。**验收项全绿 ≠ 该区域没问题**——验收只回答「我问的那三个问题」
+- **「新设计决策」这顶帽子会掩盖 bug**：Scene `196px` 最初被我归为待裁的新设计决策，实则 ADR-026 子决策 2 白纸黑字写着「下限保证 Scene 至少完整显示一个子阶段列」——它是**验收条件未达成**，不是取舍分歧。**判定某事是否需要人裁之前，先回去读该决策自己写的验收条件**，否则会把 bug 排进决策队列慢慢等
+- **承重件必须显式标注，否则减法快车道会吃掉它**：`.phase.active::after` 下划线是活动相位的主要识别手段（底色对比度仅 `1.145:1`），但它**外观上就是装饰**，而 CLAUDE §5.1.1 把「删装饰」列为免八步四类之一——顺手一删活动态当场塌陷且无需评审。已就地注释 LOAD-BEARING。**同理适用于一切「看起来像装饰、实际承载状态」的元素**
+- **「已知缺陷不修」也要就地留注**：`.separatorRow` 的 9px 死区选择不修（扩 hover 会吞掉 Macro 末行点击），注释写进 CSS 而不只写进文档——否则后人会重新「发现」它，再踩一遍点击吞噬的坑
 - **减法快车道的边界比快车道本身重要**（CLAUDE §5.1.1）：四条越界条款——删的东西承载语义 / 删 tokens.css 条目 / 删区域功能字段 / 一次删三处以上，任一命中即回落八步。它是为降低「修缺陷」的成本，不是为绕过治理。`--h-macro-strip` 正是走这条路径销的账：先按快车道保留，再由 ADR-026 八步改名
 - **文档里的数字会和代码悄悄分叉**：本轮发现文档长期写 `--h-macro-strip: 184px` 而 tokens.css 实为 `200px`；§13.3 区域 5/6 的「底部左/右」是 v0.11 reshape 后挂了三个多月的旧账。**契约与实现一旦分叉，时间越久越分不清哪个是对的**
 - **教训留档：不以「改动小」为由绕过人审是对的**。ADR-025 P0 只有约 10 行 CSS 且零依赖，但子决策 6 推翻 ADR-024 已拍板子项，确实需要单独点头——如果当初夹带通过，ADR-024 会在无人察觉时被局部废止
@@ -93,15 +92,15 @@
 
 ## Verify
 
-本轮实测（2026-08-19，回流完成后复跑；合入 `main` 前亦全绿跑过一次）：
+本轮实测（2026-08-19，走查缺陷裁决落地后复跑；回流完成时与合入 `main` 前各全绿跑过一次）：
 
 - `pnpm test` → **335/335（35 文件）** ✅（`--h-macro-strip` → `--h-modifier-card-max` 改名后复跑，含 `density-gate.test.ts` 的 compact 层严格递减断言）
 - `pnpm lint` → 0 ✅
 - `pnpm exec prettier --check .` → 通过 ✅
-- `pnpm build` → 通过（1.10s）✅
+- `pnpm build` → 通过（1.12s）✅
 - `node scripts/doc-governance/index.mjs --config doc-governance.config.mjs` → **0 error / 7 warn**（全部为既有基线项：`useAnchoredPosition.ts` 前向引用待 P1-a 创建后自消 + `migrations/` / `mockups/` / `update-features.sh` 历史路径）
 
-**真机走查（2026-08-19，dev build，1470×956）**：纵向下限 / Separator 命中与光标 / PhaseBar 活动相位三项全过，明细见 [[026-fixed-spatial-layout]] §2。
+**真机走查（2026-08-19，dev build，1470×956）**：纵向下限 / Separator 命中与光标 / PhaseBar 活动相位三项全过，明细见 [[026-fixed-spatial-layout]] §2。**Scene 下限改 `288px` 后已真机复测**——separator 停在 626、Scene = `288px`，首张话术卡完整 + 次卡露边，达标。
 
 - `BENCH_ROUNDS=12 pnpm bench:hotkey-wake` → 沿用 2026-08-18 结果 **P95 14.594ms / p50 1.011ms** ✅（本轮无启动路径改动）
 
@@ -124,7 +123,7 @@
 - `src/components/ModifierGrid.tsx` / `src/components/ModifierGrid.module.css`
 - `src/styles/tokens.css` / `src/App.test.tsx`
 
-**本轮回流未提交**（9 文件，+197/−79）：
+**回流已提交并 push**（`8d2f685` + `7d72561`，9 文件 +207/−82）：
 
 - `docs/design/03-product-spec.md`（v0.16 → **v0.17**，7 处）
 - `docs/design/05-design-spec.md`（v0.15 → **v0.16**，5 处）
@@ -132,3 +131,11 @@
 - `docs/adr/026-fixed-spatial-layout.md`（§2 待验收块 → 实测结论；§6 同步）
 - `docs/design/CHANGELOG.md`（2026-08-19 条目）/ `CLAUDE.md`（§7 状态指针 + 版本号订正）/ `HANDOFF.md`
 - **代码**：`src/styles/tokens.css` + `src/components/ModifierGrid.module.css`（`--h-macro-strip` → `--h-modifier-card-max`，含 compact 层）
+
+**走查缺陷裁决**（10 文件，+140/−58）：
+
+- `src/layouts/Dashboard.tsx`（Scene `minSize` `196px` → `288px` + 下限语义注释）
+- `src/components/PhaseBar.module.css`（`.phase.active::after` 标注 **LOAD-BEARING**，禁止按装饰走减法快车道）
+- `src/layouts/Dashboard.module.css`（`.separatorRow` 9px 死区标注为已知可接受 + 不修的理由）
+- `docs/design/03-product-spec.md`（v0.17 → **v0.18**）/ `05-design-spec.md`（v0.16 → **v0.17**）/ `07-features.md`（v1.12 → **v1.13**）
+- `docs/adr/026-fixed-spatial-layout.md`（子决策 2 补「验收条件未达成」修正块 + §2 三项裁决表）/ `CHANGELOG.md` / `CLAUDE.md` / `HANDOFF.md`
