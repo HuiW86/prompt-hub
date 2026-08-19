@@ -79,6 +79,11 @@ export function Dashboard() {
     // (search, nav, sections, contentinfo); see review C-P1-1.
     <div
       className={styles.dashboard}
+      // Clamp target for anchored top-layer panels (useAnchoredPosition):
+      // the frame, not the viewport — the shell is inset with a radius, so a
+      // panel clamped to the viewport would hang over the rounded edge onto
+      // the desktop behind it.
+      data-dashboard-frame
       role="main"
       aria-label="prompt-hub dashboard"
     >

@@ -1,4 +1,10 @@
-import { type MouseEvent as ReactMouseEvent, useState } from "react";
+import {
+  Fragment,
+  type MouseEvent as ReactMouseEvent,
+  useCallback,
+  useRef,
+  useState,
+} from "react";
 import {
   ArrowLeft,
   ArrowRight,
@@ -25,6 +31,10 @@ import {
 import primitiveStyles from "./primitives/primitives.module.css";
 import styles from "./AlignmentPhrases.module.css";
 
+// Anchor key for the create form. Phrase ids are uuids, so a reserved literal
+// cannot collide with one.
+const GHOST_ADD_ANCHOR = "__ghost_add__";
+
 export function AlignmentPhrases() {
   const activePhaseId = useAppStore((s) => s.activePhaseId);
   const phrasesByPhase = usePromptStore((s) => s.alignmentPhrasesByPhase);
@@ -41,6 +51,7 @@ export function AlignmentPhrases() {
   const flashId = useToastStore((s) => s.flashTargetId);
   const showToast = useToastStore((s) => s.show);
   const showError = useToastStore((s) => s.showError);
+  const showWithAction = useToastStore((s) => s.showWithAction);
   const onRegionKeyDown = useRegionNav();
 
   const phrases =
@@ -53,6 +64,43 @@ export function AlignmentPhrases() {
   const [editingId, setEditingId] = useState<string | null>(null);
   const [adding, setAdding] = useState(false);
   const [confirmingId, setConfirmingId] = useState<string | null>(null);
+  // A discarded creation draft, restored by the undo toast (ADR-025 子决策 2).
+  // Edits need no equivalent — the original row is still in the DB.
+  const [restoredDraft, setRestoredDraft] = useState<{
+    name: string;
+    content: string;
+  } | null>(null);
+
+  // ADR-025 子决策 1: the editor now floats above its trigger instead of
+  // replacing it, so the chip has to stay mounted and hand over its element.
+  // Anchors are keyed by phrase id; the ghost-add button anchors the create
+  // form. Re-render alone must not lose them, hence a ref map rather than state
+  // — but the panel needs a render to position against a freshly mounted
+  // anchor, so registering one bumps a tick.
+  const anchorsRef = useRef(new Map<string, HTMLElement>());
+  const [, setAnchorTick] = useState(0);
+  // Ref callbacks are memoised per key. An inline `el => register(id, el)` would
+  // be a fresh function every render, and React detaches then re-attaches a ref
+  // whose identity changed — with a setState inside, that is an update loop.
+  const anchorCbsRef = useRef(
+    new Map<string, (el: HTMLElement | null) => void>(),
+  );
+  const anchorRef = useCallback((key: string) => {
+    let cb = anchorCbsRef.current.get(key);
+    if (!cb) {
+      cb = (el: HTMLElement | null) => {
+        if ((anchorsRef.current.get(key) ?? null) === el) return;
+        if (el) anchorsRef.current.set(key, el);
+        else anchorsRef.current.delete(key);
+        // The panel can only measure an anchor that is already in the DOM, so
+        // a newly registered one has to trigger one more render to be seen.
+        setAnchorTick((n) => n + 1);
+      };
+      anchorCbsRef.current.set(key, cb);
+    }
+    return cb;
+  }, []);
+  const anchorFor = (key: string) => anchorsRef.current.get(key) ?? null;
 
   // A phase switch strands any open editor over a list the user can no longer
   // see; a stale editingId simply matches nothing, but adding/confirming must be
@@ -111,7 +159,20 @@ export function AlignmentPhrases() {
     await createAlignmentPhrase({ phaseId: activePhaseId, name, content });
     // Confirm the save with the same feedback strength as delete (A1-07).
     showToast("已新增对齐话术");
+    setRestoredDraft(null);
     setAdding(false);
+  };
+
+  // Escape on a dirty create form throws away text that exists nowhere else,
+  // so the toast carries the only route back to it (ADR-025 子决策 2).
+  const handleDiscardDraft = (draft: { name: string; content: string }) => {
+    showWithAction("已放弃草稿", {
+      label: "撤销",
+      onClick: () => {
+        setRestoredDraft(draft);
+        setAdding(true);
+      },
+    });
   };
 
   const handleUpdate = async (id: string, name: string, content: string) => {
@@ -134,25 +195,27 @@ export function AlignmentPhrases() {
           {activePhaseId == null ? "未选相位" : "暂无对齐话术"}
         </span>
       ) : (
-        phrases.map((p, idx) =>
-          editingId === p.id ? (
-            <PhraseFormEditor
-              key={p.id}
-              layer="protocol"
-              className={styles.inlineEditor}
-              ariaLabel="编辑对齐话术"
-              initialName={p.name}
-              initialContent={p.content}
-              submitLabel="保存"
-              onSubmit={({ name, content }) =>
-                handleUpdate(p.id, name, content)
-              }
-              onClose={() => setEditingId(null)}
-            />
-          ) : (
+        phrases.map((p, idx) => (
+          // The chip stays mounted while editing — it is the anchor, and the
+          // row must not collapse a slot out from under the floating panel.
+          <Fragment key={p.id}>
+            {editingId === p.id && (
+              <PhraseFormEditor
+                layer="protocol"
+                anchor={anchorFor(p.id)}
+                ariaLabel="编辑对齐话术"
+                initialName={p.name}
+                initialContent={p.content}
+                submitLabel="保存"
+                onSubmit={({ name, content }) =>
+                  handleUpdate(p.id, name, content)
+                }
+                onClose={() => setEditingId(null)}
+              />
+            )}
             <PhraseChip
-              key={p.id}
               phrase={p}
+              anchorRef={anchorRef(p.id)}
               flash={flashId === p.id}
               confirming={confirmingId === p.id}
               canMoveLeft={idx > 0}
@@ -179,24 +242,33 @@ export function AlignmentPhrases() {
               onCancelDelete={() => setConfirmingId(null)}
               onConfirmDelete={() => void handleDelete(p.id)}
             />
-          ),
-        )
+          </Fragment>
+        ))
       )}
 
-      {/* Ghost add entry (ADR-021): opens the inline create editor in place. */}
-      {activePhaseId != null &&
-        (adding ? (
-          <PhraseFormEditor
-            layer="protocol"
-            className={styles.inlineEditor}
-            ariaLabel="新增对齐话术"
-            submitLabel="新增"
-            onSubmit={({ name, content }) => handleCreate(name, content)}
-            onClose={() => setAdding(false)}
-          />
-        ) : (
+      {/* Ghost add entry (ADR-021): the create editor anchors to this button,
+          which stays put so the row's trailing slot never jumps. */}
+      {activePhaseId != null && (
+        <>
+          {adding && (
+            <PhraseFormEditor
+              layer="protocol"
+              anchor={anchorFor(GHOST_ADD_ANCHOR)}
+              ariaLabel="新增对齐话术"
+              initialName={restoredDraft?.name}
+              initialContent={restoredDraft?.content}
+              submitLabel="新增"
+              onSubmit={({ name, content }) => handleCreate(name, content)}
+              onClose={() => {
+                setRestoredDraft(null);
+                setAdding(false);
+              }}
+              onDiscard={handleDiscardDraft}
+            />
+          )}
           <button
             type="button"
+            ref={anchorRef(GHOST_ADD_ANCHOR)}
             className={styles.ghostAdd}
             aria-label="新增对齐话术"
             data-nav-item
@@ -206,13 +278,16 @@ export function AlignmentPhrases() {
             <Plus size={12} aria-hidden strokeWidth={2} />
             <span>新增</span>
           </button>
-        ))}
+        </>
+      )}
     </section>
   );
 }
 
 interface PhraseChipProps {
   phrase: AlignmentPhrase;
+  /** Hands the chip element up so the anchored editor can pin to it. */
+  anchorRef: (el: HTMLElement | null) => void;
   flash: boolean;
   confirming: boolean;
   canMoveLeft: boolean;
@@ -233,6 +308,7 @@ interface PhraseChipProps {
 // confirm held by the parent so one chip's confirm never bleeds into another's.
 function PhraseChip({
   phrase,
+  anchorRef,
   flash,
   confirming,
   canMoveLeft,
@@ -252,7 +328,7 @@ function PhraseChip({
 
   if (confirming) {
     return (
-      <span className={styles.confirmSlot}>
+      <span ref={anchorRef} className={styles.confirmSlot}>
         <span className={styles.rowName}>{phrase.name}</span>
         <ConfirmInline
           text="永久删除？"
@@ -280,6 +356,7 @@ function PhraseChip({
 
   return (
     <div
+      ref={anchorRef}
       role="button"
       tabIndex={-1}
       className={cls}

@@ -3,7 +3,15 @@ export { RegionHeader } from "./RegionHeader";
 export { EmptyState } from "./EmptyState";
 export { CardSurface, ListRowSurface } from "./Surface";
 export { Button, IconButton } from "./Button";
-export { Input, EditorInput, EditorPanel, EditorActions } from "./Editor";
+export {
+  Input,
+  EditorInput,
+  EditorPanel,
+  EditorActions,
+  AnchoredEditor,
+  type AnchoredEditorProps,
+  type DismissReason,
+} from "./Editor";
 export {
   PhraseFormEditor,
   type PhraseFormValues,

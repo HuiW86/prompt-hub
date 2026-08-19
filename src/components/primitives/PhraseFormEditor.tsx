@@ -7,8 +7,16 @@ import {
 } from "react";
 
 import { Button } from "./Button";
-import { type Layer } from "./cx";
-import { EditorActions, EditorInput, EditorPanel, Input } from "./Editor";
+import { cx, type Layer } from "./cx";
+import {
+  AnchoredEditor,
+  type DismissReason,
+  EditorActions,
+  EditorInput,
+  EditorPanel,
+  Input,
+} from "./Editor";
+import styles from "./primitives.module.css";
 
 export interface PhraseFormValues {
   name: string;
@@ -28,8 +36,22 @@ export interface PhraseFormEditorProps {
   /** Save button copy — create forms read "新增", edit forms read "保存". */
   submitLabel: string;
   className?: string;
+  /**
+   * Opt into the anchored top-layer container (ADR-025 子决策 1): pass the
+   * trigger element to pin against, or `null` while its ref is still settling.
+   * OMITTING the prop keeps the legacy in-flow `EditorPanel` — that is what the
+   * five not-yet-migrated editing surfaces still use, pending the P1-b
+   * interface contract. Presence of the prop, not its value, selects the mode.
+   */
+  anchor?: HTMLElement | null;
   onSubmit: (values: PhraseFormValues) => Promise<void> | void;
   onClose: () => void;
+  /**
+   * Escape with unsaved changes (ADR-025 子决策 2). The caller owns the undo
+   * affordance because only it knows whether the draft was a creation (nothing
+   * in the DB to fall back on) or an edit (original row still intact).
+   */
+  onDiscard?: (draft: PhraseFormValues) => void;
 }
 
 // Shared name + content editor for the four-grid phrase editors (AlignmentPhrases
@@ -38,20 +60,26 @@ export interface PhraseFormEditorProps {
 // persistence. Enter in the name field commits; Cmd/Ctrl+Enter in the content
 // textarea commits; Escape closes. The optional extraFields slot lets a caller
 // inject additional controls (e.g. a sub-stage picker) without forking the form.
-export function PhraseFormEditor({
-  layer,
-  initialName,
-  initialContent,
-  ariaLabel,
-  extraFields,
-  submitLabel,
-  className,
-  onSubmit,
-  onClose,
-}: PhraseFormEditorProps) {
+export function PhraseFormEditor(props: PhraseFormEditorProps) {
+  const {
+    layer,
+    initialName,
+    initialContent,
+    ariaLabel,
+    extraFields,
+    submitLabel,
+    className,
+    anchor,
+    onSubmit,
+    onClose,
+    onDiscard,
+  } = props;
   const [name, setName] = useState(initialName ?? "");
   const [content, setContent] = useState(initialContent ?? "");
   const [saving, setSaving] = useState(false);
+  // Set when a dismissal was refused for failing validation, so the offending
+  // field can say why instead of the panel just stubbornly staying open.
+  const [showInvalid, setShowInvalid] = useState(false);
   const nameRef = useRef<HTMLInputElement>(null);
   const contentRef = useRef<HTMLTextAreaElement>(null);
 
@@ -60,6 +88,12 @@ export function PhraseFormEditor({
   }, []);
 
   const canSave = name.trim().length > 0 && content.trim().length > 0;
+  // Dirty is measured against the seed snapshot, never against "was this field
+  // focused" (ADR-025 子决策 2) — tabbing through a form must not make it dirty.
+  // Compared trimmed so a stray space is not mistaken for an edit.
+  const dirty =
+    name.trim() !== (initialName ?? "").trim() ||
+    content.trim() !== (initialContent ?? "").trim();
 
   const handleSave = async () => {
     if (!canSave || saving) return;
@@ -70,6 +104,31 @@ export function PhraseFormEditor({
     } catch {
       setSaving(false);
     }
+  };
+
+  // ADR-025 子决策 2 rules table. Only reachable in anchored mode: an in-flow
+  // editor has no "outside", and its Escape is handled by the field handlers.
+  const handleDismiss = (reason: DismissReason) => {
+    if (saving) return;
+    if (reason === "escape") {
+      if (dirty) onDiscard?.({ name, content });
+      onClose();
+      return;
+    }
+    // Clicking away is not a decision to throw work out — an empty name or
+    // body means we cannot save it either, so hold the panel open and point at
+    // the gap rather than silently dropping half a phrase.
+    if (!canSave) {
+      setShowInvalid(true);
+      (name.trim().length === 0 ? nameRef : contentRef).current?.focus();
+      return;
+    }
+    // Nothing changed — close without spending an IPC round trip.
+    if (!dirty) {
+      onClose();
+      return;
+    }
+    void handleSave();
   };
 
   // Both fields commit on Cmd/Ctrl+Enter for one consistent submit key (A1-08).
@@ -97,18 +156,21 @@ export function PhraseFormEditor({
     }
   };
 
-  return (
-    <EditorPanel
-      layer={layer}
-      role="group"
-      aria-label={ariaLabel}
-      className={className}
-    >
+  const nameMissing = showInvalid && name.trim().length === 0;
+  const contentMissing = showInvalid && content.trim().length === 0;
+
+  const fields = (
+    <>
       <Input
         ref={nameRef}
         placeholder="名称"
         value={name}
-        onChange={(e) => setName(e.target.value)}
+        aria-invalid={nameMissing || undefined}
+        className={cx(nameMissing && styles.fieldInvalid)}
+        onChange={(e) => {
+          setName(e.target.value);
+          setShowInvalid(false);
+        }}
         onKeyDown={onNameKeyDown}
       />
       <EditorInput
@@ -116,10 +178,20 @@ export function PhraseFormEditor({
         placeholder="话术内容"
         value={content}
         rows={3}
-        onChange={(e) => setContent(e.target.value)}
+        aria-invalid={contentMissing || undefined}
+        className={cx(contentMissing && styles.fieldInvalid)}
+        onChange={(e) => {
+          setContent(e.target.value);
+          setShowInvalid(false);
+        }}
         onKeyDown={onContentKeyDown}
       />
       {extraFields}
+      {showInvalid && (
+        <p role="status" className={styles.fieldHint}>
+          名称与内容都不能为空，补齐后才能保存
+        </p>
+      )}
       <EditorActions>
         <Button intent="subtle" onClick={onClose}>
           取消
@@ -133,6 +205,33 @@ export function PhraseFormEditor({
           {submitLabel}
         </Button>
       </EditorActions>
+    </>
+  );
+
+  // Presence of the prop selects the container — see the `anchor` doc comment.
+  if ("anchor" in props) {
+    return (
+      <AnchoredEditor
+        anchor={anchor ?? null}
+        open
+        layer={layer}
+        ariaLabel={ariaLabel}
+        className={className}
+        onDismiss={handleDismiss}
+      >
+        {fields}
+      </AnchoredEditor>
+    );
+  }
+
+  return (
+    <EditorPanel
+      layer={layer}
+      role="group"
+      aria-label={ariaLabel}
+      className={className}
+    >
+      {fields}
     </EditorPanel>
   );
 }

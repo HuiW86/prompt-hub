@@ -178,11 +178,8 @@
   outline-offset: 0;
 }
 
-/* Inline editor slot — the phrase form pops out of the row without collapsing.
-   Dedicated width token (audit A3-05 / reshape W5): the editor's usable input
-   minimum is its own semantic, no longer overloading the sub-stage grid's
-   column-drop threshold. */
-.inlineEditor {
-  flex-shrink: 0;
-  min-width: var(--w-inline-editor);
-}
+/* The inline editor slot is gone: ADR-025 子决策 1 moved the phrase form out of
+   this row and into a top-layer AnchoredEditor, leaving nothing in flow to
+   size. --w-inline-editor lives on as that panel's min-width (primitives
+   .anchoredEditor) — the semantic it was split out for in audit A3-05 is
+   unchanged, only its host moved. */

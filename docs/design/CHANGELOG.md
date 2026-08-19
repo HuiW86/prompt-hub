@@ -14,6 +14,32 @@ description: prompt-hub 设计文档体系变更日志——记录文档结构�
 
 ---
 
+## 2026-08-19（三）· 第三段 — ADR-025 P1-a：锚定编辑层落到对齐话术单点
+
+### 变更内容
+
+[[025-unified-anchored-editing]] 分期 **P1-a**（容器单点验证）落地。**只接对齐话术一处**，其余五个编辑面维持在流内 `EditorPanel`，等 G1 真机验收门六项通过后才准迁（ADR §6 分期条款）。
+
+- **`--z-*` 层级标尺**（`tokens.css` 新增 §3b-bis）：`--z-raised` / `--z-overlay` / `--z-popover` / `--z-toast` 四档，按「谁可以盖住谁」排序而非按组件。收编四处各自发明的硬编码——`ScenePanel`(2) / `SearchOverlay`(1) / `SettingsModal`(10) / `Toast`(100)。⚠️ 注释写明 `--z-popover` 在真机 **不起作用**（top layer 元素不参与 z-index），它只服务 jsdom shim 与未来的非 popover 浮层，免得后人误以为是它让浮层浮起来的
+- **`AnchoredEditor`**（`primitives/Editor.tsx` 新增）：原生 `popover="manual"` 进 top layer，**不 portal**——DOM 祖先链不变，[[020-restore-protocol-dark-band]] 那 20 个 token remap 靠继承活着
+- **`useAnchoredPosition`**（`src/hooks/` 新建）：下方优先 → 空间不足翻上 → 夹取到 **dashboard 矩形**（不是视口，外壳是 `inset: var(--s-3)` 的圆角浮框）→ 观察全部滚动祖先 + resize + 双向 `ResizeObserver`
+- **保存语义规则表**（子决策 2 完整落地）：点外+合法+dirty=保存关闭 / 点外+校验不过=**不关闭**并高亮失败字段 / 点外+未改动=直接关不发 IPC / `Esc`=放弃，创建态给撤销 toast 带回草稿原文。dirty 以初值快照比对，不以「是否聚焦过」判定
+- 对齐话术编辑时 **chip 不再被替换**——它现在是锚点，必须留在原地
+- `AlignmentPhrases.module.css` `.inlineEditor` 随之失去消费者，删除（`--w-inline-editor` 转为浮层 min-width，语义不变）
+
+### 两处 jsdom 验不了、靠读规范抓出来的事
+
+- **`[popover]` 的 UA sheet 声明 `color: CanvasText`，而声明值击败继承值**。ADR-025 选 top layer 正是为了保住 band 的 `--fg-1` remap，但 `color` 不是自定义属性——不显式重声明，浮层会在暗 band 上渲染系统黑字，**恰好是选 top layer 想避免的那个失败**。已在 `.anchoredEditor` 补 `color: var(--fg-1)`。jsdom 完全不带 popover 的 UA 样式表，这条永远测不出来，故 G1 项 1 必须真机验
+- **ADR §3 技术约束「jsdom 不支持 popover」经复核属实**（中途一度误判为已支持——当时读到的「原生支持」实为自己刚装上的 shim）。但 shim 需要的**不止 API**：jsdom 带了隐藏闭合 popover 的 UA 规则却无法求值 `:popover-open`，导致规则恒成立、已打开的浮层仍 `display: none`，既不可聚焦也对 role 查询不可见。shim 因此补了 inline `display`（实测只有 inline 样式能压过 UA sheet）
+
+### 验证
+
+`pnpm test` **352/352**（35→37 文件，新增 11 条锚定/规则表 + 6 条定位算术）· `pnpm lint` 0 · `prettier --check .` 通过 · `pnpm build` 通过 · `doc-governance` 0 error / 7 warn（既有基线，`useAnchoredPosition.ts` 前向引用随文件创建自消）。
+
+⚠️ **G1 六项真机验收门未跑，P1-b 不得开工**；jsdom 绿灯不构成 top layer / 继承 / 定位 / 焦点四项的证据。
+
+---
+
 ## 2026-08-19（三）· 后半 — 走查缺陷裁决：Scene 下限纠偏 + 承重件标注
 
 ### 变更内容

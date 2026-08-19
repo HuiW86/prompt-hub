@@ -308,7 +308,7 @@
 .subStage {
   position: sticky;
   top: 0;
-  z-index: 2;
+  z-index: var(--z-raised);
   display: flex;
   align-items: center;
   gap: var(--s-2);
