@@ -1,12 +1,12 @@
 ---
 type: manifest
 project: prompt-hub
-version: v1.13
+version: v1.14
 status: active
 created: 2026-05-24
 last_modified: 2026-08-20
 audience: [human, ai]
-description: prompt-hub 项目前期准备文件总清单——按方法论 v1.3 六层架构（L0 宪法 / L1 产品契约 / L2 工程规格 / L3 实施规格 / L4 索引 / L5 协作契约）+ ADR + 实施方案 + 视觉原型 + AI 上下文 + 工程护栏（CI/gate 测试）。AI 进项目读完 CLAUDE.md 后接读本文件能 1 分钟拿全貌；不写行数（参考性强但易过期）。v1.13：ADR-027 回流涟漪 + 冲突提示补丁——product-spec v0.21 / prd v0.13 / features v1.16 / test-spec v0.5，另修正 prd 行的**版本漂移**（本表记 v0.11，实际早已 v0.12）。⚠️ 其余行仍停在 2026-07-06 口径（未随 ADR-022/025/026 更新），属旧账
+description: prompt-hub 项目前期准备文件总清单——按方法论 v1.3 六层架构（L0 宪法 / L1 产品契约 / L2 工程规格 / L3 实施规格 / L4 索引 / L5 协作契约）+ ADR + 实施方案 + 视觉原型 + AI 上下文 + 工程护栏（CI/gate 测试）。AI 进项目读完 CLAUDE.md 后接读本文件能 1 分钟拿全貌；不写行数（参考性强但易过期）。v1.14：ADR-027 回流 + 冲突提示 + 密度层立论重写——product-spec v0.21 / design-spec v0.19 / prd v0.13 / features v1.16 / test-spec v0.5，另修正 prd 行的**版本漂移**（本表记 v0.11，实际早已 v0.12）。⚠️ 其余行仍停在 2026-07-06 口径（未随 ADR-022/025/026 更新），属旧账
 related:
   - CLAUDE
   - 02-constitution
@@ -54,7 +54,7 @@ related:
 |---|---|---|
 | `docs/design/03-product-spec.md` | UI 契约（双形态 / 布局 / 交互） | draft **v0.21**（2026-08-20 冲突提示：§13.3 区域 9 冲突形态 1→2 种；同日 v0.20 ADR-027 涟漪：§13.3 区域 9 新增快捷键页 + 设置持久化归属表 + §13.4 三行；同日 v0.19 ADR-025 涟漪：§13.3 新增「编辑容器统一契约」跨区域小节 + §13.4 两行快捷键；前 v0.18/v0.17 ADR-026 固定空间布局 / v0.16 ADR-022 跨 Scene 移动 / v0.15 交互模式 D-0 / v0.14 ADR-021 三层就地编辑；v0.10 起待 omar 人审，前序 v0.8 已 ratified）|
 | `docs/design/04-user-flows.md` | 用户流（边缘 / 异常 / 跨形态） | ratified |
-| `docs/design/05-design-spec.md` | 视觉/动效 token 体系 | ratified **v0.18**（2026-08-20 ADR-025 涟漪：新增 §2.6 层叠标尺 `--z-*` + §10.2.2 `AnchoredEditor` 接口契约；前 v0.17/v0.16 ADR-026 / v0.14 ADR-021 用户内容色 / v0.13 暗 band / v0.12 ADR-019 推翻 flat 锚点；v0.11 起增量待人审，v0.10 已 omar 审定）|
+| `docs/design/05-design-spec.md` | 视觉/动效 token 体系 | ratified **v0.19**（2026-08-20 密度层首次收录 + 立论重写（旧「640px 基准窗口」不存在）；同日 v0.18 ADR-025 涟漪：新增 §2.6 层叠标尺 `--z-*` + §10.2.2 `AnchoredEditor` 接口契约；前 v0.17/v0.16 ADR-026 / v0.14 ADR-021 用户内容色 / v0.13 暗 band / v0.12 ADR-019 推翻 flat 锚点；v0.11 起增量待人审，v0.10 已 omar 审定）|
 
 ---
 

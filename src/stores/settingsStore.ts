@@ -7,8 +7,11 @@ export type ThemeMode = "light" | "dark" | "system";
 export type Accent = "neutral" | "blue" | "green" | "violet" | "amber";
 // Density tier. 舒适 (comfortable): the default — keeps the reshape-v2
 // acceptance baseline untouched. 紧凑 (compact): tightens structural tokens
-// (anchor heights + region padding, tokens.css §3c) so the 640px baseline
-// window carries more assets per screen. Type sizes never change with density.
+// (anchor heights + region padding, tokens.css §3c) so a SMALL DISPLAY carries
+// more assets per screen — the window is always the full monitor height, so
+// there is no fixed baseline window to reason about; the constraint is the
+// smallest screen in use. Full rationale in tokens.css §3c. Type sizes never
+// change with density.
 export type Density = "comfortable" | "compact";
 // D-0 interaction mode. 调用态 (invoke): the default — whole-card click copies
 // and the window hides after (T0 zero-regression). 整理态 (organize): whole-card

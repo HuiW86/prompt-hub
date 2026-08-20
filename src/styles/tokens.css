@@ -526,10 +526,27 @@
 
 /* ============================================================
    3c. Density — compact tier (opt-in via :root.compact).
-   The 640px-tall baseline window spends most of its height on structural
-   chrome (region headers, anchor rows, region padding); the compact tier
-   tightens ONLY those structure tokens so one screen carries more assets.
-   Type sizes stay untouched — density must not cost readability.
+
+   Why this tier exists (rationale rewritten 2026-08-20, omar ruled KEEP).
+   The old text justified it with "the 640px-tall baseline window", which does
+   not exist: the overlay is re-fitted to the whole monitor on every wake
+   (fit_to_active_monitor in src-tauri/src/lib.rs), and tauri.conf.json's
+   800x600 is a placeholder. A tier defended by an unreproducible number is a
+   tier nobody can argue with later, so here is the real one:
+
+   The window is always the height of the display, so the variable is not the
+   window — it is the SMALLEST DISPLAY in use. Structural chrome is roughly
+   fixed (~263px around the task area, measured 2026-08-19), so its share of
+   the screen grows as the display shrinks. On a 1366x768 laptop the task area
+   is ~505px against 421px of hard minimums: 84px of slack, and only ~18px once
+   both persistent banners are up. Compact buys that slack back.
+
+   It tightens ONLY structure tokens — type sizes stay untouched, density must
+   not cost readability. Computed from the values below: 20px off the vertical
+   chrome framing the task area (phase bar 8 + alignment phrases 8 + status bar
+   4), 8px per region header inside it, and — where the gain compounds — the
+   repeating row units (Macro tile 56->44, Scene row 32->28).
+
    Comfortable (bare root) keeps the reshape-v2 acceptance baseline
    pixel-identical; the class rides settingsStore like theme/accent.
    Every override here must re-declare a token defined above with a
