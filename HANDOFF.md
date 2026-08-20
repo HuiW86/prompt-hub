@@ -16,6 +16,7 @@
 - **回流中修正 MANIFEST 两处既有漂移**：prd 行记 v0.11（实际早已 v0.12）；ADR 行记「21 / 18 Accepted」（实际 **27 / 24 Accepted**，按逐文件 `status:` 重列）
 - **G3 真机走查最终四项全通过**：项 1（改绑后新键活旧键死）/ 项 3（Dock reopen，两次）/ 项 4（重启后仍生效）首轮即通过（`eedcb5a`）；**项 2 首轮判「不可达」，补冲突提示后转为可观测并通过**——门项测不了，恰恰是因为产品在那里什么都不显示
 - **补完改键冲突的第二种提示并复测通过**（omar 拍板）：真机证明冲突有两种形态而只有一种能报错——**更常见的是按键压根没到**（占用方在系统层截走），此前既无错误也无反应。判据用「修饰键按下又抬起、期间没收到任何主键」，不用计时器。**G3 项 2 因此由「不可达」转为「通过」**，四项全绿。涟漪 product-spec **v0.21** / features **v1.16** / test-spec **v0.5** / MANIFEST **v1.13**
+- **修好 release-runbook §3 的两条**（发布前用得上，所以趁 build 跑的空档做）：①「与本地构建产物逐项比对」重写为四项**做得下去**的核对（`Info.plist` 版本 / `codesign -dvvv` 验 Authority+TeamID / `lipo -info` 架构 / 文件清单 diff）——旧表述按字面执行必然失败（本地与 CI 不可能逐字节相同），**必然失败的检查等于没有检查**；② 第 4 项补 Ed25519 内联验签脚本，**已对 v0.1.1 真实产物跑通并做了改一字节的负例**，只依赖 `cryptography` 不需装 minisign
 - **切 v0.2.0 并推 tag**（`92fce2a`）：版号取 minor 而非 patch，因为这批带**不可逆的数据库迁移**（`user_version` 11→12），版号该把「装上回不去」说出来；另有三处用户可察觉的改动（快捷键设置页 / 键盘循环 6→5 / 两枚层标签消失）。runbook §1 + §1.5 全过——含公证凭据实测（`notarytool history` 返回历史，上版状态 Accepted）、仓库仍 public（updater 直连的隐含前提）
 - **ADR-026 两项遗留裁决落地**（omar）：① 层标记 pill **减二留一**——删「协议层」「任务层」（位置+形状已冗余编码，文字属解释性 UI），留 `ModifierGrid`「协议层 · 参考」（aside 列唯一标识）。**三枚外观像一组，其中一枚承重**；② **SOP 退出 Tab cycle**，区域级 6 站→**5 站**——在屏（哲学二）与值一个键盘停靠点是两个主张，今天只有前者成立
 - **密度层立论重写并首次收录 design-spec**（omar 裁「留」）：旧理由「640px 基准窗口」不存在——窗口恒等于显示器高度。换成可复现的立论（约束来自最小屏；1366×768 上余量仅 84px、两条横幅时剩 18px），并补 §2.7 四条契约。**这是第三个「落地了但 design-spec 从没记过」的契约**（前两个：z 标尺、两个源码级 gate）
@@ -48,23 +49,21 @@
    ⚠️ **P2 落地时须兑现 product-spec §13.3 已标注的「P2 目标」**：`⌘Enter` 保存并推进到下一条（`PhraseFormEditor.tsx:196-206` 现只保存并关闭） (carried from 2026-08-20)
 3. **补 ADR-026 的 features 回写缺口**：`docs/design/07-features.md` §4 节奏表缺「固定空间布局」行、§6 变更日志缺 v1.12/v1.13 条目——v1.12 只写进了 §3.8 表。**已在 §4 表下留警示**。补账时须同步复核合计数（现记 **88**） (carried from 2026-08-20)
 4. **契约回流八步（旧账）**：`03-product-spec.md` §13.4 描述 SOP 为 instrument card 而 `src/components/SopProgress.tsx` 是单行 stub。合并既有欠账：§4.0/§13.4 + §4.0.7 卡片解剖（title-only）+ 外观设置（density）；design-spec §2/§8/§9 + §3c token 层。**§3c 剩两个 unbound token 待处置**（`--t-18` / `--h-modifier-tray`）。⚠️ `docs/MANIFEST.md` 其余行仍停在 2026-07-06 口径（本轮只推了 ADR-027 涉及的四份 + 修了两处漂移） (carried from 2026-07-21)
-5. **重写 `docs/release-runbook.md` §3 第 1 项**：改为已实际执行的可执行三项（`Info.plist` 版本 / `codesign -dvvv` 验 Authority+TeamID / `lipo -info` 架构 + 文件清单 diff），正文仍是旧的不可执行表述 (carried from 2026-08-10)
-6. **`docs/release-runbook.md` §3 第 4 项补 Ed25519 验签脚本**：Python 内联验签（`base64` → 切 `alg/key_id/pk` → `blake2b-512` 预哈希 → `Ed25519PublicKey.verify`），免 `brew install minisign` (carried from 2026-08-11)
-7. **memory 层剩一条待 omar 点头**：新增 feedback「AI 主笔对外文档必须逐句反查代码」（与 `feedback_walkthrough_coverage` / `feedback_gate_executability` 同族，应互链）。**本轮又添两例佐证**：ADR §2 混进估数 388/170；G3 项 2 门项前提未检验。原计划的「授权扩到失败恢复时的路径选择」仍未写入 `feedback_decision_autonomy` (carried from 2026-08-05)
-8. **发布收尾（非阻塞）**：`gh secret set TAURI_SIGNING_PRIVATE_KEY_PASSWORD --env release-signing`；`latest.json` 最低版本字段落在 `.github/workflows/release.yml` sign job 的 `jq -n` 处；落盘日志 tauri-plugin-log 立项 (carried from 2026-08-05)
-9. **`a24c7c0` / `4b722c1` / `716bd4c` 三 commit 补 verifier 对抗审查**——`a24c7c0`「float phrase actions」正是 `src/components/ScenePanel.module.css:420` hover 遮挡标题的来源 (carried from 2026-07-07)
-10. **omar 人审批次（本轮又增）**：product-spec v0.15→**v0.20** + design-spec v0.15→v0.18 + features v1.10→**v1.15** + **test-spec v0.2→v0.4（唯一从 `ratified` 降回 `draft` 的，建议优先过）** + **prd v0.13**（新增 §6.8-bis Setting）+ **ADR-027 全文** + ADR-023/024 措辞 + 图标定稿追认 + 01-spec v0.7 + 旧账 ADR-021/`scene.color` (carried from 2026-07-06)
-11. **可发现性裁决 ×3**：场景删除入口外露 / 整理态保窗 vs 改 D-0 契约 / title-only 后卡面无内容线索 (carried from 2026-07-06)
-12. 补 `src/components/__tests__/ScenePanelFocusRestore.test.tsx` 焦点恢复负路径测试。⚠️ 正路径已改走 `AnchoredEditor` teardown，写负路径时须对齐新机制 (carried from 2026-07-21)
-13. `.github/workflows/ci.yml` bench-c1 `continue-on-error` 处置复核 (carried from 2026-07-12)
-14. P0-2 Composition 链路 ADR（P0-5 系于此，`src/components/DraftInbox.tsx:43-48` 的 `PROMOTE_BLOCKED_HINT`） (carried from 2026-07-06)
-15. **ops-spec §3 定时备份**（`src-tauri/crates/repo-core/src/backup.rs` 底座）/ P2 余 4 评估 / P1-5 Phase 可配置性 / `src/components/MacroGrid.module.css` 网格末行 auto-fit (carried from 2026-07-06)
-16. **`docs/design/06-prd.md` §6.1 soft-delete 矛盾** + `status: pre-code` 僵尸 / ai-dev-lifecycle 仓收尾。**与 ADR-025 子决策 5 直接相关**——真正可撤销的删除需要后端 `deleted_at` + `restore_*`，prd 已承诺 soft-delete 而实现是硬删除。⚠️ 本轮 bump 到 v0.13 时**刻意没动 `status: pre-code`**（改 status 是治理信号，归本项） (carried from 2026-07-02)
-17. `docs/design/CLAUDE-DESIGN.md` v0.2 重传 + v2 基调同步 (carried from 2026-07-02)
-18. 评审遗留补 design-spec 上游：ipc-contract 扩扫 / `--color-danger` / `--scrim` 语义回流（随人审八步）。⚠️ ADR-027 新增的 `HotkeyRecorder.module.css` 报错色沿用了「琥珀代替 danger」的既有约定（palette 至今无 danger token），随本项一并处置 (carried from 2026-07-02)
-19. **gstack 待升级 0.16.3 → 1.61.0**（跨大版本），另有两项一次性配置提示（proactive / skill routing） (carried from 2026-08-11)
-20. **两份 ADR 超期未复核**（health pulse 第四次复报，均 `Last reviewed: 2026-07-02`，**49 天** > 45 天阈值）：`docs/adr/005-prompt-combiner-reuse.md`（Proposed，等 omar 提供仓库）/ `docs/adr/011-search-usagesource.md`（Reserved） (carried from 2026-08-19)
-21. **（低优先，可不做）1 逻辑点浮层偏移归因**：翻转态 `src/hooks/useAnchoredPosition.ts` 的 `top = a.top − OFFSET − p.height`，首次 `useLayoutEffect` 放置与后续重算之间差 1pt。亚感知、恒定、不累积，**记为已知量** (carried from 2026-08-20)
+5. **memory 层剩一条待 omar 点头**：新增 feedback「AI 主笔对外文档必须逐句反查代码」（与 `feedback_walkthrough_coverage` / `feedback_gate_executability` 同族，应互链）。**本轮又添两例佐证**：ADR §2 混进估数 388/170；G3 项 2 门项前提未检验。原计划的「授权扩到失败恢复时的路径选择」仍未写入 `feedback_decision_autonomy` (carried from 2026-08-05)
+6. **发布收尾（非阻塞）**：`gh secret set TAURI_SIGNING_PRIVATE_KEY_PASSWORD --env release-signing`；`latest.json` 最低版本字段落在 `.github/workflows/release.yml` sign job 的 `jq -n` 处；落盘日志 tauri-plugin-log 立项 (carried from 2026-08-05)
+7. **`a24c7c0` / `4b722c1` / `716bd4c` 三 commit 补 verifier 对抗审查**——`a24c7c0`「float phrase actions」正是 `src/components/ScenePanel.module.css:420` hover 遮挡标题的来源 (carried from 2026-07-07)
+8. **omar 人审批次（本轮又增）**：product-spec v0.15→**v0.20** + design-spec v0.15→v0.18 + features v1.10→**v1.15** + **test-spec v0.2→v0.4（唯一从 `ratified` 降回 `draft` 的，建议优先过）** + **prd v0.13**（新增 §6.8-bis Setting）+ **ADR-027 全文** + ADR-023/024 措辞 + 图标定稿追认 + 01-spec v0.7 + 旧账 ADR-021/`scene.color` (carried from 2026-07-06)
+9. **可发现性裁决 ×3**：场景删除入口外露 / 整理态保窗 vs 改 D-0 契约 / title-only 后卡面无内容线索 (carried from 2026-07-06)
+10. 补 `src/components/__tests__/ScenePanelFocusRestore.test.tsx` 焦点恢复负路径测试。⚠️ 正路径已改走 `AnchoredEditor` teardown，写负路径时须对齐新机制 (carried from 2026-07-21)
+11. `.github/workflows/ci.yml` bench-c1 `continue-on-error` 处置复核 (carried from 2026-07-12)
+12. P0-2 Composition 链路 ADR（P0-5 系于此，`src/components/DraftInbox.tsx:43-48` 的 `PROMOTE_BLOCKED_HINT`） (carried from 2026-07-06)
+13. **ops-spec §3 定时备份**（`src-tauri/crates/repo-core/src/backup.rs` 底座）/ P2 余 4 评估 / P1-5 Phase 可配置性 / `src/components/MacroGrid.module.css` 网格末行 auto-fit (carried from 2026-07-06)
+14. **`docs/design/06-prd.md` §6.1 soft-delete 矛盾** + `status: pre-code` 僵尸 / ai-dev-lifecycle 仓收尾。**与 ADR-025 子决策 5 直接相关**——真正可撤销的删除需要后端 `deleted_at` + `restore_*`，prd 已承诺 soft-delete 而实现是硬删除。⚠️ 本轮 bump 到 v0.13 时**刻意没动 `status: pre-code`**（改 status 是治理信号，归本项） (carried from 2026-07-02)
+15. `docs/design/CLAUDE-DESIGN.md` v0.2 重传 + v2 基调同步 (carried from 2026-07-02)
+16. 评审遗留补 design-spec 上游：ipc-contract 扩扫 / `--color-danger` / `--scrim` 语义回流（随人审八步）。⚠️ ADR-027 新增的 `HotkeyRecorder.module.css` 报错色沿用了「琥珀代替 danger」的既有约定（palette 至今无 danger token），随本项一并处置 (carried from 2026-07-02)
+17. **gstack 待升级 0.16.3 → 1.61.0**（跨大版本），另有两项一次性配置提示（proactive / skill routing） (carried from 2026-08-11)
+18. **两份 ADR 超期未复核**（health pulse 第四次复报，均 `Last reviewed: 2026-07-02`，**49 天** > 45 天阈值）：`docs/adr/005-prompt-combiner-reuse.md`（Proposed，等 omar 提供仓库）/ `docs/adr/011-search-usagesource.md`（Reserved） (carried from 2026-08-19)
+19. **（低优先，可不做）1 逻辑点浮层偏移归因**：翻转态 `src/hooks/useAnchoredPosition.ts` 的 `top = a.top − OFFSET − p.height`，首次 `useLayoutEffect` 放置与后续重算之间差 1pt。亚感知、恒定、不累积，**记为已知量** (carried from 2026-08-20)
 
 ## Dropped
 

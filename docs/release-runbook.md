@@ -94,12 +94,28 @@ git push origin v<版本号>
 
 ADR-017 §5.5 要求审批人不是 tag 作者。本仓库只有一个协作者，审批必然是自批，第二双眼睛不存在。**因此以下核对是硬性替代**，在 publish draft 之前完成：
 
-1. **下载 draft release 的全部资产**，与本地构建产物逐项比对。本地复刻 CI 构建命令：
+1. **下载 draft release 的全部资产并逐项核对**（v0.2.0 重写）：
 
    ```bash
-   pnpm tauri build --target aarch64-apple-darwin --bundles app,dmg \
-     --config '{"bundle":{"createUpdaterArtifacts":false}}'
+   gh release download v<版本号> -D /tmp/rel --clobber
+   cd /tmp/rel && tar xzf prompt-hub_<版本>_aarch64-apple-darwin.app.tar.gz
+
+   # ① 版本：包里的版本必须等于 tag，不是等于你以为的
+   /usr/libexec/PlistBuddy -c "Print :CFBundleShortVersionString" \
+     prompt-hub.app/Contents/Info.plist
+
+   # ② 签发者：Authority 与 TeamID 必须是自己的证书，不是 adhoc、不是别人的
+   codesign -dvvv prompt-hub.app 2>&1 | grep -E "Authority|TeamIdentifier"
+
+   # ③ 架构：aarch64 包必须是 arm64，x86_64 包必须是 x86_64（别拿错了架构发出去）
+   lipo -info prompt-hub.app/Contents/MacOS/prompt-hub
+
+   # ④ 文件清单：与上一版比，只应有预期内的增删
+   find prompt-hub.app -type f | sed "s|^prompt-hub.app/||" | sort > /tmp/rel/files-new.txt
+   diff /tmp/rel/files-prev.txt /tmp/rel/files-new.txt   # 首次发布时跳过
    ```
+
+   > **为什么不再写「与本地构建产物逐项比对」**（旧文表述，v0.2.0 前一直挂在这里）：**本地构建与 CI 构建不可能逐字节相同**——时间戳、构建路径、签名 nonce 都不同，`diff` 必然失败。一个按字面执行必然失败的检查，实际执行时只会被跳过或被随手解释掉，**等于没有检查**。上面四项是真正做得下去的：它们核的不是"字节相同"，而是"**这个包是不是我以为的那个包**"——版本对不对、谁签的、什么架构、里面有没有多出东西。
 
 2. **核对 `latest.json`**：`version` 与 tag 一致；`platforms` 含 `darwin-aarch64` 与 `darwin-x86_64` 两项；每个 `url` 指向本次 release 的资产且文件名带版本号。CI 的 `scripts/assert-provenance.sh` 已自动断言这些，本步是人工复核而非主防线。
 
@@ -114,7 +130,43 @@ ADR-017 §5.5 要求审批人不是 tag 作者。本仓库只有一个协作者�
 
    **任何一条 reject 都必须当真，不要归因于本地环境。** 签名与公证是两件事：签名只需要证书，公证需要把包提交 Apple 并把票据 staple 回来，`codesign` 全绿而 `stapler` 说 `does not have a ticket stapled` 是完全可能的组合——v0.1.0 第一次打 tag 时正是如此（Tauri 凭据变量名不匹配，公证被静默跳过，CI 照样绿）。本文旧版在此处写着「本地未公证构建会 reject」，把唯一的真信号预先解释成了噪音；**一个失败模式被提前开脱的检查，不是检查**。CI 的 `Assert notarized + stapled` 现已把同样的断言前移到构建期，本步是人工复核。
 
-4. **核对内嵌公钥**：`src-tauri/tauri.conf.json` 的 `plugins.updater.pubkey` 必须与签名所用私钥配对。公钥内容即 `~/.tauri/prompt-hub.key.pub` 的原文（该 `.pub` 文件本身已是 base64，不要再解一层码）。**不配对 = 发布后全体用户的更新校验失败**。
+4. **核对内嵌公钥与签名真实配对**：`src-tauri/tauri.conf.json` 的 `plugins.updater.pubkey` 必须与签名所用私钥配对。公钥内容即 `~/.tauri/prompt-hub.key.pub` 的原文（该 `.pub` 文件本身已是 base64，不要再解一层码）。**不配对 = 发布后全体用户的更新校验失败**。
+
+   **别只是肉眼比对两串 base64——直接验一次签**（v0.2.0 新增；已对 v0.1.1 的真实产物跑通，含改一字节的负例）：
+
+   ```bash
+   cd /tmp/rel && python3 - <<'PY'
+   import base64, hashlib, io, json, glob
+   from cryptography.hazmat.primitives.asymmetric.ed25519 import Ed25519PublicKey
+   from cryptography.exceptions import InvalidSignature
+
+   CONF = "/Users/apple/WeChatProjects/prompt-hub/src-tauri/tauri.conf.json"
+   for tarball in sorted(glob.glob("*.app.tar.gz")):
+       sig_lines = base64.b64decode(io.open(tarball + ".sig").read().strip()).decode().splitlines()
+       raw = base64.b64decode(sig_lines[1])
+       alg, key_id, sig = raw[:2], raw[2:10], raw[10:]
+
+       pub_file = base64.b64decode(json.load(io.open(CONF))["plugins"]["updater"]["pubkey"]).decode()
+       pk = base64.b64decode(pub_file.splitlines()[1])
+       if key_id != pk[2:10]:
+           print("FAIL key_id 不匹配:", tarball); continue
+
+       data = io.open(tarball, "rb").read()
+       # alg 'ED' = 预哈希（blake2b-512）；'Ed' = 直接签原文
+       msg = hashlib.blake2b(data, digest_size=64).digest() if alg == b"ED" else data
+       try:
+           Ed25519PublicKey.from_public_bytes(pk[10:]).verify(sig, msg)
+           print("OK  ", tarball)
+       except InvalidSignature:
+           print("FAIL", tarball)
+   PY
+   ```
+
+   **每个 `.app.tar.gz` 都要出现 `OK`。** 只依赖 `cryptography`（已随开发环境存在），**不需要 `brew install minisign`**——为验一次签名装一个工具，实际后果是这一步被跳过。
+
+   两处易错点，脚本里已处理：
+   - `.sig` 文件**本身是 base64**，解开之后才是 minisign 签名文件（四行：注释 / 签名 / trusted 注释 / 全局签名）
+   - 签名算法 `ED` 表示**对文件的 BLAKE2b-512 摘要签名**而非对原文签名（`Ed` 才是原文）。拿原文去验 `ED` 签名会得到"签名无效"，然后你会去查一个不存在的问题
 
 5. **核对 Actions log 无密钥回显**：仓库是 public，Actions log 公开可见。确认 `::add-mask::` 生效、无 `set -x`。
 
