@@ -94,7 +94,7 @@ related:
 | Phase 可配置编辑 | P1 | `planned` | v1.3 | 0% | omar | [[06-prd#6.5]] |
 | 数据导入导出（JSON） | P1 | `done` | v1.3 | repo-core export 3 test + repo-write import 5 test（含整库替换 / 含弃用行 / 拒不兼容 major / FK 原子回滚）；前端 SettingsModal 数据页（save/open dialog + 整库替换确认弹窗）；不导出 usage_records（决策 D2）/ 整库替换（决策 D1） | omar | [[06-prd#6.9]] |
 | 主形态界面布局可配置 | P1 | `planned` | v1.3 | 0% | omar | [[01-spec#2.9]] |
-| **全局唤起键可配置** | P1 | `done` | v1.3 | repo-core settings 4 test（seed 默认 / upsert 不重复行 / 缺行回落）+ commands 5 test（accelerator 校验：默认可注册 / 拒裸键 / 拒乱码 / 多修饰键 / seed 与解析器不脱节）+ repo-write 1 test（导入不清 settings）+ 前端 accelerator 8 test + HotkeyRecorder 7 test + settingsStore 4 test + HotkeyBanner 2 test。**注册/回滚与 Reopen 逃生口不可自动化**，归 G3 真机门 | omar | [[06-prd#5.8]] · [[06-prd]] §6.8-bis |
+| **全局唤起键可配置** | P1 | `done` | v1.3 | repo-core settings 4 test（seed 默认 / upsert 不重复行 / 缺行回落）+ commands 5 test（accelerator 校验：默认可注册 / 拒裸键 / 拒乱码 / 多修饰键 / seed 与解析器不脱节）+ repo-write 1 test（导入不清 settings）+ 前端 accelerator 8 test + HotkeyRecorder 7 test + settingsStore 4 test + HotkeyBanner 2 test。**注册/回滚与 Reopen 逃生口不可自动化**，归 G3 真机门 —— **2026-08-20 走查 3 通过 / 1 不可达**（项 2 门项前提本身不成立，见 [[11-test-spec#4.2]]）| omar | [[06-prd#5.8]] · [[06-prd]] §6.8-bis |
 
 ### 3.5 辅形态副屏（S5 / 第五阶段）
 
@@ -296,7 +296,7 @@ related:
 | UX 任务流批次 B（跨 Scene 移动，ADR-022）| v1.11 | 1 功能 | `done`（verifier 对抗审查 PASS；真机移动/撤销链路待验）|
 | 统一锚定编辑容器（ADR-025）| v1.14 | 1 功能 | `done`（P0+P1-a+P1-b 落地并合入 `main`；**P2 键盘动作层 + P3 合流 `planned`**，G2 未跑）|
 | S3 SOP 导航 | v1.2 | 3 功能 | `planned` |
-| S4 配置个性化 | v1.3 | **5 功能** | `in-progress`（2/5：数据导入导出 JSON `done`，真机待验；**全局唤起键可配置 `done`**，G3 未跑；配置入口 / Phase 编辑 / 布局可配置仍 `planned`）|
+| S4 配置个性化 | v1.3 | **5 功能** | `in-progress`（2/5：数据导入导出 JSON `done`，真机待验；**全局唤起键可配置 `done`**，G3 走查 3/4 通过；配置入口 / Phase 编辑 / 布局可配置仍 `planned`）|
 | S5 辅形态副屏 | v2.0 | 3 功能 | `planned` |
 | **合计** | — | **88 项** | — |
 
