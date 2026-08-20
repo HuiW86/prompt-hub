@@ -28,6 +28,14 @@ description: 选择 tauri-plugin-updater + GitHub Releases 作为自动更新机
 
 `Accepted`（2026-06-17）
 
+> **真机验收完成（2026-08-20，随 v0.2.0 首次真实发布）**。此前唯一未验收项——「publish 后用上一版客户端跑一次真实更新链路」——**在发布过一次之前物理上无法验**：draft 不被 GitHub 当作 `releases/latest`，端点始终 404。v0.1.1 是首个正式发布，v0.2.0 是首个可被上一版客户端发现的更新，因此本次是第一次有条件跑。
+>
+> 实测链路（已安装 `0.1.1` → `0.2.0`）：设置 › 更新 → 「检查更新」→ **「发现新版本 0.2.0」** → 「下载并安装」→ 进程重启（PID `80811`→`81316`）→ `/Applications/prompt-hub.app` 版本变为 **0.2.0**。
+>
+> 更新**后**复验，确认自动更新没有破坏签名链：`codesign --verify --strict` 通过 / `stapler validate` worked / `spctl -a -t exec` **accepted，`source=Notarized Developer ID`**。这一条值得单独记——更新是把新包解包替换到 `/Applications`，如果这一步弄坏了签名或丢了公证票据，Gatekeeper 会在**下一次冷启动**才发作，届时很难回溯到更新那一刻。
+>
+> 发布前的 §3 五项核对亦全过，其中 Ed25519 内嵌公钥验签对两个架构的 `.app.tar.gz` 均 `OK`（脚本见 [[release-runbook]] §3-4）。
+
 ## 3. Context
 
 - **触发事件**：M0 四项交付全绿、Developer ID 签名公证链路（M0-4）已就绪，应用已可分发给真实用户。但当前无任何更新通道——用户拿到 `.dmg` 后无法感知/获取新版本，只能手动重新下载安装。版本号 `0.1.0` 三处（package.json / tauri.conf.json / Cargo.toml）同步，但无 bump→分发闭环。
