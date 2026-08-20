@@ -39,7 +39,16 @@ description: prompt-hub 设计文档体系变更日志——记录文档结构�
 
 `pnpm test` **357/357**（新增 6 条：撤销草稿点外保存 / 取消走放弃规则 / 保存失败提示 / 拒绝按压锁住 / 拒绝按压逐次重置）· `tsc --noEmit` 0 · `pnpm lint` 0 · `prettier --check` 通过 · `pnpm build` 通过。四条 CRITICAL 的回归测试**已逐条反向验证**：临时还原修复后四条全红，证明测的是缺陷本身而非实现细节。
 
-⚠️ G1 六项真机验收门仍未跑，P1-b 依旧不得开工。
+### G1 真机走查（同日执行）
+
+| 项 | 结论 |
+|---|---|
+| 1 暗 band 浮层配色 / 3 保存·取消可见可点 / 4 焦点归还 | 通过 —— **omar 真机目视**。AI 侧两轮共 75 帧屏幕捕获未拍到浮层，这三项不含 AI 观测证据 |
+| 6 唤起性能 | 通过 —— `bench:hotkey-wake` p95 **15.3ms** / 200ms 预算，与签名后基线同档无回归 |
+| 2 chip 行滚动跟随 | **deferred → P1-b 门**。当前数据物理不可验：最多的相位只有 3 条话术，窗口满屏宽且 `decorations: false`，chip 行不溢出 |
+| 5 hover-lift 卡片定位 | **deferred → P1-b 门**。P1-a 只接对齐话术，Macro / Scene 仍是流内 `EditorPanel`，无浮层可开——G1 原文把迁移后才存在的对象写进了迁移前的门 |
+
+omar 拍板 **P1-b 放行**。代价记明：项 2 是 G1 中唯一覆盖 `useAnchoredPosition` 滚动祖先订阅的检查，该段 jsdom 与真机**双零覆盖**，而 P1-b 要迁的 Scene / Recent 列正是滚动容器。P1-b 收口前必须补，不得再 defer。
 
 ---
 

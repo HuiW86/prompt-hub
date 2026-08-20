@@ -27,7 +27,7 @@ description: 编辑体系统一——编辑器脱离宿主文档流改锚定 top
 >
 > **P1-a 已实施 2026-08-19**（`--z-*` 标尺 + `AnchoredEditor` + `useAnchoredPosition`，只接对齐话术一处）。当日交叉审查发现**子决策 2 的规则表有四处写了没落地**（撤销草稿点外静默丢弃 / 拒绝关闭期间被同一次按压绕过 / 「取消」按钮不走规则表 / 点外保存失败静音），已当日修复并补回归测试，不构成新决策。同时按 omar 裁决把 ADR §6 原定 P1-b 的**接口契约定义提前到 P1-a**（`AnchoredEditor` 删 `open`、`PhraseFormEditor` 新增必填 `presentation`、`AnchoredPosition.flipped` 删除），避免五个编辑面照着有陷阱的接口迁一遍。明细见 [[CHANGELOG]] 2026-08-19 第三、四段。
 >
-> ⚠️ **G1 六项真机验收门未跑，P1-b 不得开工**。P2–P3 待排。
+> **G1 走查已于 2026-08-19 执行**：项 1/3/4 omar 目视通过、项 6 实测通过、项 2/5 deferred 到 P1-b 门（明细与理由见 §6 走查结果表）。**omar 拍板 P1-b 可开工**，代价是滚动跟随那条链路带着零覆盖进入迁移。P2–P3 待排。
 
 ### 修订记录
 
@@ -315,6 +315,17 @@ dirty 判定以初始值快照比对，不以「是否聚焦过」判定。
 > 4. 关闭后焦点回到触发 chip
 > 5. 在 hover-lift 卡片（Macro / Scene）上开浮层，hover 进出时位置不跳
 > 6. `pnpm bench:hotkey-wake` P95 仍在 C1 预算内
+
+**G1 走查结果（2026-08-19）**——**未全过，两项 deferred，omar 拍板放行 P1-b**：
+
+| 项 | 结论 | 证据来源 |
+|---|---|---|
+| 1 / 3 / 4 | 通过 | **omar 真机目视确认**。AI 侧两轮共 75 帧屏幕捕获**未拍到浮层**，故这三项不含 AI 观测证据，仅凭人工走查结论 |
+| 6 | 通过 | `pnpm bench:hotkey-wake` p95 = **15.3ms** / C1 预算 200ms，与 2026-06-12 签名后基线 12.9–13.5ms 同档，无回归。AI 实测 |
+| 2 | **deferred → P1-b 门** | **当前数据下物理不可验**：8 个相位最多一个只有 3 条对齐话术，窗口 `decorations: false` 满屏宽拖不动，chip 行 `overflow-x: auto` 不溢出，无滚动可滚。要验须批量造 12+ 条临时话术 |
+| 5 | **deferred → P1-b 门** | **P1-a 阶段不适用**：本项要求在 hover-lift 的 Macro / Scene 卡片上开浮层，而 P1-a 只接对齐话术一处，那五个编辑面仍是流内 `EditorPanel`，无浮层可开。G1 原文把一个只有迁移后才存在的对象写进了迁移前的门 |
+
+> ⚠️ **项 2 是 G1 中唯一覆盖 `useAnchoredPosition` 的 `scrollableAncestors` 那段的检查**——滚动祖先订阅是整个定位实现里最易错、jsdom 又完全测不到的部分。它至今**零覆盖**（既无 jsdom 测试也无真机验证）。P1-b 迁移的五个编辑面中，Scene / Recent 列都是纵向滚动容器，届时这段代码将首次被真实使用。**P1-b 收口前必须补上，不得再 defer 一轮。**
 
 **P1-b · 容器迁移**：其余五个编辑面跟迁。迁移前先定 `AnchoredEditor` 与 `PhraseFormEditor` 的接口契约（`layer` / `extraFields` / `submitLabel` / 自定义 className 全覆盖），否则迁移工时不可信。
 
