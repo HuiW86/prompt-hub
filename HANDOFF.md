@@ -15,13 +15,14 @@
 - **契约回流八步完成**（含在 `52abb52`）：product-spec **v0.20** / prd **v0.13** / features **v1.15** / test-spec **v0.4** / MANIFEST **v1.12** + CHANGELOG 第三段 + CLAUDE §7 + ADR 反链逐项标 ✅
 - **回流中修正 MANIFEST 两处既有漂移**：prd 行记 v0.11（实际早已 v0.12）；ADR 行记「21 / 18 Accepted」（实际 **27 / 24 Accepted**，按逐文件 `status:` 重列）
 - **G3 真机走查 3 通过 / 1 不可达**（`eedcb5a`）：项 1（改绑后新键活旧键死）/ 项 3（Dock reopen，两次）/ 项 4（重启后仍生效）通过；**项 2 是门项写错了**，见 Next Actions 第 1 项
+- **omar 真机走查通过**（当日，自有数据库 + `⌥ Space` 默认绑定，未发现问题）——人工目视，覆盖范围未逐条记录；走查后确认真实库 `global_hotkey` 未被改动
 - **起草时更正了 HANDOFF 自己的两处记载**：「破 `settingsStore.ts:18` 的界」不成立（该注释主语是 appearance prefs，唤起键不是）；`settingsStore.globalHotkey` 是**死字段**（不在 `partialize`、零消费者，两条测试钉着一个没有读者的机制）
 
 ## In Progress
 
 无进行中改动。工作区干净。
 
-⚠️ **三个 commit 未 push**：`e1d684b` / `52abb52` / `eedcb5a`。
+`main` 与 `origin/main` **已同步**（`726c0ac..51e5bf9` 推送完毕）。
 
 ⚠️ 四份回流文档 + ADR **未经 omar 人审**（🤝 共创 / 🤖 AI 主笔），已并入下方人审批次。
 
@@ -33,7 +34,8 @@
    - `HotkeyUnavailable` 路径**仍必要且正确**（竞态、系统保留但非 Carbon 持有的组合键会走到它），只是**不是主要形态**，别误判成要删
    - 候选解法（需拍板）：录键态 N 秒无捕获 → 提示「这组键可能已被其他应用占用，它把按键截走了，本窗口收不到」。成本低，但引入一个计时器与一句新文案，属新增 UI 面
    - 顺带：**G3 项 2 需要重写**（[[11-test-spec#4.2]]），现门项描述的场景真机按不出来 (new 2026-08-20)
-2. **疑似缺陷待复核 — 全新 profile 首屏是浅色，而 ADR-024 定的身份默认是深色**：走查用隔离 `HOME` 起的实例，设置 › 外观里**「浅色」是选中态**，整个界面也是浅色。`settingsStore` 初始 `themeMode: "dark"`，`onRehydrateStorage` 本应打上 `.dark`。**未深查，可能是我看错高亮，也可能是首装真的落在浅色**。复现路径：`HOME=<空目录>` 跑 dev 二进制 + `pnpm dev`，截图见 `/tmp/ph-g3/g3-10-small.png`（/tmp 会被清理） (new 2026-08-20)
+2. **疑似缺陷待复核 — 全新 profile 首屏是浅色，而 ADR-024 定的身份默认是深色**：走查用隔离 `HOME` 起的实例，设置 › 外观里**「浅色」是选中态**，整个界面也是浅色。`settingsStore` 初始 `themeMode: "dark"`，`onRehydrateStorage` 本应打上 `.dark`。**未深查，可能是我看错高亮，也可能是首装真的落在浅色**。复现路径：`HOME=<空目录>` 跑 dev 二进制 + `pnpm dev`，截图见 `/tmp/ph-g3/g3-10-small.png`（/tmp 会被清理）。
+   ⚠️ **omar 当日走查「没有问题」不能销这一项**——他用的是**老 profile**（localStorage 里已有持久化的 themeMode），而本项只发生在**首装无持久化状态**的路径上。两者不是同一个场景 (new 2026-08-20)
 3. **`docs/design/05-design-spec.md` §3c compact 层立论重写**：正文写「The 640px-tall baseline window」，但窗口恒等于显示器高度（`src-tauri/src/lib.rs:24` `fit_to_active_monitor`），该基线不可复现。**compact 层的存在理由是产品判断，需 omar 定**，然后同步 `src/styles/tokens.css:480-500` 注释块。⚠️ `src/styles/density-gate.test.ts` 已在守「若有 compact 层则必须单调收紧」，但不回答「该不该有」 (carried from 2026-08-19)
 4. **ADR-026 显式不裁的两项待 omar 裁**：`src/layouts/Dashboard.tsx:145-150` 的「任务层」pill 去留（与 `ProtocolBand.module.css` 的「协议层」pill 成对，删一半破坏层级编码对称性）/ `src/components/SopProgress.tsx` stub 是否继续占正式区 (carried from 2026-08-18)
 5. **开 ADR-025 P2（无阻塞，可开工）**：键盘动作层，子决策 3.1–3.4 + 4。3.1 去掉动作簇 `data-nav-item`（`src/components/AlignmentPhrases.tsx` `PhraseChip` 6 停靠点→1、`src/components/scene/ViewPhraseCard.tsx` 7→1、`src/components/MacroGrid.tsx` 5→1）；3.2 键位表挂 `src/hooks/useRegionNav.ts:32`（⌘/⌥/⇧ 已让出）；3.3 动作簇改选中态跟随——**顺带解掉 `src/components/ScenePanel.module.css:420` hover 遮挡标题**。ADR §6 要求**先在对齐话术一个区域跑通全套键位再铺开**，验收门 G2（5 项）。⚠️「键位表应一次定死」。
