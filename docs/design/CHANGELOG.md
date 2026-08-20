@@ -45,10 +45,10 @@ description: prompt-hub 设计文档体系变更日志——记录文档结构�
 |---|---|
 | 1 暗 band 浮层配色 / 3 保存·取消可见可点 / 4 焦点归还 | 通过 —— **omar 真机目视**。AI 侧两轮共 75 帧屏幕捕获未拍到浮层，这三项不含 AI 观测证据 |
 | 6 唤起性能 | 通过 —— `bench:hotkey-wake` p95 **15.3ms** / 200ms 预算，与签名后基线同档无回归 |
-| 2 chip 行滚动跟随 | **deferred → P1-b 门**。当前数据物理不可验：最多的相位只有 3 条话术，窗口满屏宽且 `decorations: false`，chip 行不溢出 |
+| 2 chip 行滚动跟随 | **当日补验通过**（omar 指示先补再迁），拆两半取证：**A 半**订阅逻辑补 5 条 jsdom 测试（`useAnchoredPosition.test.ts` 6→11），并逐条反向验证——把 hook 改成「只订最近祖先」/「不过滤 overflow」/「泄漏 scroll 监听」，三种破坏各自只被对应一条测出；**B 半**真机跟随 omar 目视确认（造 14 条临时话术撑溢出 chip 行，验毕精确删除并与操作前整库备份逐字段比对，原 13 条零差异） |
 | 5 hover-lift 卡片定位 | **deferred → P1-b 门**。P1-a 只接对齐话术，Macro / Scene 仍是流内 `EditorPanel`，无浮层可开——G1 原文把迁移后才存在的对象写进了迁移前的门 |
 
-omar 拍板 **P1-b 放行**。代价记明：项 2 是 G1 中唯一覆盖 `useAnchoredPosition` 滚动祖先订阅的检查，该段 jsdom 与真机**双零覆盖**，而 P1-b 要迁的 Scene / Recent 列正是滚动容器。P1-b 收口前必须补，不得再 defer。
+omar 拍板 **P1-b 放行**。项 2 原判「物理不可验」只挡住了真机那一半，逻辑那一半一直可测却一直没测——`scrollableAncestors` 的 jsdom 零覆盖由此摘除。遗留认知：B 半是人工目视、不可回归，而 P1-b 迁的 Scene / Recent 是**纵向**滚动容器，跟随行为在纵轴上属首次真实使用，需在 P1-b 门重新目视。
 
 ---
 

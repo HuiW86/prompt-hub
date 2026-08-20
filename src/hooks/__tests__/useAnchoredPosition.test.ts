@@ -1,5 +1,5 @@
-import { renderHook } from "@testing-library/react";
-import { afterEach, describe, expect, it } from "vitest";
+import { act, renderHook } from "@testing-library/react";
+import { afterEach, describe, expect, it, vi } from "vitest";
 
 import { useAnchoredPosition } from "../useAnchoredPosition";
 
@@ -7,12 +7,37 @@ import { useAnchoredPosition } from "../useAnchoredPosition";
 // (0,0). The placement rules are pure arithmetic over those rects, though, so
 // stubbing them is enough to test the part that can actually be wrong: which
 // side the panel takes, and how it is clamped.
-function el(rect: Partial<DOMRect>): HTMLElement {
+//
+// The rect is mutable so a test can displace an element the way a scroll would
+// and check the hook notices — jsdom fires no scroll of its own, and elements
+// never actually move, so "the anchor slid" has to be staged by hand.
+interface FakeEl extends HTMLElement {
+  moveTo(patch: Partial<DOMRect>): void;
+}
+
+function el(
+  rect: Partial<DOMRect>,
+  parent: HTMLElement = document.body,
+): FakeEl {
   const node = document.createElement("div");
   const full = { top: 0, left: 0, right: 0, bottom: 0, width: 0, height: 0 };
-  node.getBoundingClientRect = () =>
-    ({ ...full, ...rect }) as unknown as DOMRect;
-  document.body.append(node);
+  let current = { ...full, ...rect };
+  node.getBoundingClientRect = () => current as unknown as DOMRect;
+  const fake = Object.assign(node, {
+    moveTo: (patch: Partial<DOMRect>) => {
+      current = { ...current, ...patch };
+    },
+  });
+  parent.append(fake);
+  return fake;
+}
+
+// An ancestor that can scroll. The hook decides by computed overflow, and jsdom
+// does reflect inline styles through getComputedStyle, so this is the real
+// predicate rather than a stub of it.
+function scroller(parent: HTMLElement = document.body) {
+  const node = el({}, parent);
+  node.style.overflow = "auto";
   return node;
 }
 
@@ -109,5 +134,97 @@ describe("useAnchoredPosition — placement (ADR-025 子决策 1)", () => {
     const panel = el({ width: 100, height: 50 });
     const { result } = renderHook(() => useAnchoredPosition(null, panel));
     expect(result.current).toBeNull();
+  });
+});
+
+// ADR-025 §3 技术约束: "锚点自身可能在滚动容器里". A panel that only listened
+// to resize would detach the moment the user scrolled the row it is pinned to —
+// the alignment-phrase chip row is overflow-x: auto and the Scene / Recent
+// columns scroll vertically.
+//
+// These tests cover the SUBSCRIPTION half only: which targets get listened to,
+// and that an event actually re-runs the placement. Whether the panel visually
+// stays glued during a real scroll is a layout question jsdom cannot answer, so
+// G1 项 2 was split — that half was confirmed by hand on 2026-08-19 and is not
+// reproducible here. Adding a case below protects the logic; it does not
+// re-verify the pixels.
+describe("useAnchoredPosition — following a moving anchor (ADR-025 子决策 1)", () => {
+  it("recomputes when a scrollable ancestor scrolls", () => {
+    const row = scroller();
+    const anchor = el({ top: 100, left: 200, bottom: 124, right: 300 }, row);
+    const panel = el({ width: 300, height: 100 });
+
+    const { result } = renderHook(() => useAnchoredPosition(anchor, panel));
+    expect(result.current).toEqual({ top: 132, left: 200 });
+
+    // The row scrolled 150px left, carrying the chip with it.
+    anchor.moveTo({ left: 50, right: 150 });
+    act(() => {
+      row.dispatchEvent(new Event("scroll"));
+    });
+
+    expect(result.current).toEqual({ top: 132, left: 50 });
+  });
+
+  it("listens to every scrollable ancestor, not just the nearest", () => {
+    // A chip lives inside the phrase row inside a scrolling column; scrolling
+    // EITHER one moves it, so subscribing only to the closest would leave the
+    // panel behind on the outer scroll.
+    const outer = scroller();
+    const inner = scroller(outer);
+    const anchor = el({ top: 100, left: 200, bottom: 124, right: 300 }, inner);
+    const panel = el({ width: 300, height: 100 });
+
+    const { result } = renderHook(() => useAnchoredPosition(anchor, panel));
+
+    anchor.moveTo({ top: 40, bottom: 64 });
+    act(() => {
+      outer.dispatchEvent(new Event("scroll"));
+    });
+
+    expect(result.current?.top).toBe(72);
+  });
+
+  it("skips ancestors that cannot scroll", () => {
+    const plain = el({});
+    const anchor = el({ top: 100, left: 200, bottom: 124, right: 300 }, plain);
+    const panel = el({ width: 300, height: 100 });
+    const spy = vi.spyOn(plain, "addEventListener");
+
+    renderHook(() => useAnchoredPosition(anchor, panel));
+
+    // Subscribing to everything up the chain would work but wastes listeners on
+    // every render of every anchored panel; the overflow test is the filter.
+    expect(spy.mock.calls.filter(([type]) => type === "scroll")).toHaveLength(
+      0,
+    );
+  });
+
+  it("recomputes on window resize", () => {
+    const anchor = el({ top: 100, left: 200, bottom: 124, right: 300 });
+    const panel = el({ width: 300, height: 100 });
+
+    const { result } = renderHook(() => useAnchoredPosition(anchor, panel));
+
+    anchor.moveTo({ left: 400, right: 500 });
+    act(() => {
+      window.dispatchEvent(new Event("resize"));
+    });
+
+    expect(result.current?.left).toBe(400);
+  });
+
+  it("stops listening once the panel is gone", () => {
+    const row = scroller();
+    const anchor = el({ top: 100, left: 200, bottom: 124, right: 300 }, row);
+    const panel = el({ width: 300, height: 100 });
+    const remove = vi.spyOn(row, "removeEventListener");
+
+    const { unmount } = renderHook(() => useAnchoredPosition(anchor, panel));
+    unmount();
+
+    // A leaked scroll listener would keep recomputing against a detached panel
+    // for the rest of the session, once per closed editor.
+    expect(remove.mock.calls.filter(([t]) => t === "scroll")).toHaveLength(1);
   });
 });
