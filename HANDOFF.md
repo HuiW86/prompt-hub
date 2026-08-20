@@ -14,7 +14,8 @@
 - **顺带修掉一个独立缺陷**：窗口 `visible: false`，此前**点 Dock 图标毫无反应**；Reopen 分支既是逃生口也是该 bug 的修复，真机两次复现确认
 - **契约回流八步完成**（含在 `52abb52`）：product-spec **v0.20** / prd **v0.13** / features **v1.15** / test-spec **v0.4** / MANIFEST **v1.12** + CHANGELOG 第三段 + CLAUDE §7 + ADR 反链逐项标 ✅
 - **回流中修正 MANIFEST 两处既有漂移**：prd 行记 v0.11（实际早已 v0.12）；ADR 行记「21 / 18 Accepted」（实际 **27 / 24 Accepted**，按逐文件 `status:` 重列）
-- **G3 真机走查 3 通过 / 1 不可达**（`eedcb5a`）：项 1（改绑后新键活旧键死）/ 项 3（Dock reopen，两次）/ 项 4（重启后仍生效）通过；**项 2 是门项写错了**，见 Next Actions 第 1 项
+- **G3 真机走查最终四项全通过**：项 1（改绑后新键活旧键死）/ 项 3（Dock reopen，两次）/ 项 4（重启后仍生效）首轮即通过（`eedcb5a`）；**项 2 首轮判「不可达」，补冲突提示后转为可观测并通过**——门项测不了，恰恰是因为产品在那里什么都不显示
+- **补完改键冲突的第二种提示并复测通过**（omar 拍板）：真机证明冲突有两种形态而只有一种能报错——**更常见的是按键压根没到**（占用方在系统层截走），此前既无错误也无反应。判据用「修饰键按下又抬起、期间没收到任何主键」，不用计时器。**G3 项 2 因此由「不可达」转为「通过」**，四项全绿。涟漪 product-spec **v0.21** / features **v1.16** / test-spec **v0.5** / MANIFEST **v1.13**
 - **omar 真机走查通过**（当日，自有数据库 + `⌥ Space` 默认绑定，未发现问题）——人工目视，覆盖范围未逐条记录；走查后确认真实库 `global_hotkey` 未被改动
 - **起草时更正了 HANDOFF 自己的两处记载**：「破 `settingsStore.ts:18` 的界」不成立（该注释主语是 appearance prefs，唤起键不是）；`settingsStore.globalHotkey` 是**死字段**（不在 `partialize`、零消费者，两条测试钉着一个没有读者的机制）
 
@@ -30,40 +31,37 @@
 
 ## Next Actions
 
-1. **裁决「冲突时界面毫无解释」的 UX 缺口**（本轮走查发现，**不在 ADR-027 已批范围**）：被占用的组合键由持有方在 OS 层注册并**消费**，录键器根本收不到——用户按下去，**本窗口毫无反应而另一个应用跳出来**，界面不给任何解释。实测证据：第二个实例占住 `⌥Space`，第一个实例录键态按 `⌥Space` → 第二个实例窗口弹出、录键器零输入。
-   - `HotkeyUnavailable` 路径**仍必要且正确**（竞态、系统保留但非 Carbon 持有的组合键会走到它），只是**不是主要形态**，别误判成要删
-   - 候选解法（需拍板）：录键态 N 秒无捕获 → 提示「这组键可能已被其他应用占用，它把按键截走了，本窗口收不到」。成本低，但引入一个计时器与一句新文案，属新增 UI 面
-   - 顺带：**G3 项 2 需要重写**（[[11-test-spec#4.2]]），现门项描述的场景真机按不出来 (new 2026-08-20)
-2. **疑似缺陷待复核 — 全新 profile 首屏是浅色，而 ADR-024 定的身份默认是深色**：走查用隔离 `HOME` 起的实例，设置 › 外观里**「浅色」是选中态**，整个界面也是浅色。`settingsStore` 初始 `themeMode: "dark"`，`onRehydrateStorage` 本应打上 `.dark`。**未深查，可能是我看错高亮，也可能是首装真的落在浅色**。复现路径：`HOME=<空目录>` 跑 dev 二进制 + `pnpm dev`，截图见 `/tmp/ph-g3/g3-10-small.png`（/tmp 会被清理）。
+1. **疑似缺陷待复核 — 全新 profile 首屏是浅色，而 ADR-024 定的身份默认是深色**：走查用隔离 `HOME` 起的实例，设置 › 外观里**「浅色」是选中态**，整个界面也是浅色。`settingsStore` 初始 `themeMode: "dark"`，`onRehydrateStorage` 本应打上 `.dark`。**未深查，可能是我看错高亮，也可能是首装真的落在浅色**。复现路径：`HOME=<空目录>` 跑 dev 二进制 + `pnpm dev`，截图见 `/tmp/ph-g3/g3-10-small.png`（/tmp 会被清理）。
    ⚠️ **omar 当日走查「没有问题」不能销这一项**——他用的是**老 profile**（localStorage 里已有持久化的 themeMode），而本项只发生在**首装无持久化状态**的路径上。两者不是同一个场景 (new 2026-08-20)
-3. **`docs/design/05-design-spec.md` §3c compact 层立论重写**：正文写「The 640px-tall baseline window」，但窗口恒等于显示器高度（`src-tauri/src/lib.rs:24` `fit_to_active_monitor`），该基线不可复现。**compact 层的存在理由是产品判断，需 omar 定**，然后同步 `src/styles/tokens.css:480-500` 注释块。⚠️ `src/styles/density-gate.test.ts` 已在守「若有 compact 层则必须单调收紧」，但不回答「该不该有」 (carried from 2026-08-19)
-4. **ADR-026 显式不裁的两项待 omar 裁**：`src/layouts/Dashboard.tsx:145-150` 的「任务层」pill 去留（与 `ProtocolBand.module.css` 的「协议层」pill 成对，删一半破坏层级编码对称性）/ `src/components/SopProgress.tsx` stub 是否继续占正式区 (carried from 2026-08-18)
-5. **开 ADR-025 P2（无阻塞，可开工）**：键盘动作层，子决策 3.1–3.4 + 4。3.1 去掉动作簇 `data-nav-item`（`src/components/AlignmentPhrases.tsx` `PhraseChip` 6 停靠点→1、`src/components/scene/ViewPhraseCard.tsx` 7→1、`src/components/MacroGrid.tsx` 5→1）；3.2 键位表挂 `src/hooks/useRegionNav.ts:32`（⌘/⌥/⇧ 已让出）；3.3 动作簇改选中态跟随——**顺带解掉 `src/components/ScenePanel.module.css:420` hover 遮挡标题**。ADR §6 要求**先在对齐话术一个区域跑通全套键位再铺开**，验收门 G2（5 项）。⚠️「键位表应一次定死」。
+2. **`docs/design/05-design-spec.md` §3c compact 层立论重写**：正文写「The 640px-tall baseline window」，但窗口恒等于显示器高度（`src-tauri/src/lib.rs:24` `fit_to_active_monitor`），该基线不可复现。**compact 层的存在理由是产品判断，需 omar 定**，然后同步 `src/styles/tokens.css:480-500` 注释块。⚠️ `src/styles/density-gate.test.ts` 已在守「若有 compact 层则必须单调收紧」，但不回答「该不该有」 (carried from 2026-08-19)
+3. **ADR-026 显式不裁的两项待 omar 裁**：`src/layouts/Dashboard.tsx:145-150` 的「任务层」pill 去留（与 `ProtocolBand.module.css` 的「协议层」pill 成对，删一半破坏层级编码对称性）/ `src/components/SopProgress.tsx` stub 是否继续占正式区 (carried from 2026-08-18)
+4. **ADR-025 P2 键盘动作层 —— omar 2026-08-20 明示「先记录着，暂时不需要做」**（技术上无阻塞，随时可开），子决策 3.1–3.4 + 4。3.1 去掉动作簇 `data-nav-item`（`src/components/AlignmentPhrases.tsx` `PhraseChip` 6 停靠点→1、`src/components/scene/ViewPhraseCard.tsx` 7→1、`src/components/MacroGrid.tsx` 5→1）；3.2 键位表挂 `src/hooks/useRegionNav.ts:32`（⌘/⌥/⇧ 已让出）；3.3 动作簇改选中态跟随——**顺带解掉 `src/components/ScenePanel.module.css:420` hover 遮挡标题**。ADR §6 要求**先在对齐话术一个区域跑通全套键位再铺开**，验收门 G2（5 项）。⚠️「键位表应一次定死」。
    **已议免重复讨论**：动作键层**不做可自定义**（三层键性质不同——全局唤起键该可配、结构导航键属平台约定、动作键冲突面在 app 内部）；键盘布局差异用 `e.code` 而非 `e.key`（ADR-027 的录键器已按此实现并有测试佐证）。表驱动写法同属暂缓。
    ⚠️ **P2 落地时须兑现 product-spec §13.3 已标注的「P2 目标」**：`⌘Enter` 保存并推进到下一条（`PhraseFormEditor.tsx:196-206` 现只保存并关闭） (carried from 2026-08-20)
-6. **补 ADR-026 的 features 回写缺口**：`docs/design/07-features.md` §4 节奏表缺「固定空间布局」行、§6 变更日志缺 v1.12/v1.13 条目——v1.12 只写进了 §3.8 表。**已在 §4 表下留警示**。补账时须同步复核合计数（现记 **88**） (carried from 2026-08-20)
-7. **契约回流八步（旧账）**：`03-product-spec.md` §13.4 描述 SOP 为 instrument card 而 `src/components/SopProgress.tsx` 是单行 stub。合并既有欠账：§4.0/§13.4 + §4.0.7 卡片解剖（title-only）+ 外观设置（density）；design-spec §2/§8/§9 + §3c token 层。**§3c 剩两个 unbound token 待处置**（`--t-18` / `--h-modifier-tray`）。⚠️ `docs/MANIFEST.md` 其余行仍停在 2026-07-06 口径（本轮只推了 ADR-027 涉及的四份 + 修了两处漂移） (carried from 2026-07-21)
-8. **重写 `docs/release-runbook.md` §3 第 1 项**：改为已实际执行的可执行三项（`Info.plist` 版本 / `codesign -dvvv` 验 Authority+TeamID / `lipo -info` 架构 + 文件清单 diff），正文仍是旧的不可执行表述 (carried from 2026-08-10)
-9. **`docs/release-runbook.md` §3 第 4 项补 Ed25519 验签脚本**：Python 内联验签（`base64` → 切 `alg/key_id/pk` → `blake2b-512` 预哈希 → `Ed25519PublicKey.verify`），免 `brew install minisign` (carried from 2026-08-11)
-10. **memory 层剩一条待 omar 点头**：新增 feedback「AI 主笔对外文档必须逐句反查代码」（与 `feedback_walkthrough_coverage` / `feedback_gate_executability` 同族，应互链）。**本轮又添两例佐证**：ADR §2 混进估数 388/170；G3 项 2 门项前提未检验。原计划的「授权扩到失败恢复时的路径选择」仍未写入 `feedback_decision_autonomy` (carried from 2026-08-05)
-11. **发布收尾（非阻塞）**：`gh secret set TAURI_SIGNING_PRIVATE_KEY_PASSWORD --env release-signing`；`latest.json` 最低版本字段落在 `.github/workflows/release.yml` sign job 的 `jq -n` 处；落盘日志 tauri-plugin-log 立项 (carried from 2026-08-05)
-12. **`a24c7c0` / `4b722c1` / `716bd4c` 三 commit 补 verifier 对抗审查**——`a24c7c0`「float phrase actions」正是 `src/components/ScenePanel.module.css:420` hover 遮挡标题的来源 (carried from 2026-07-07)
-13. **omar 人审批次（本轮又增）**：product-spec v0.15→**v0.20** + design-spec v0.15→v0.18 + features v1.10→**v1.15** + **test-spec v0.2→v0.4（唯一从 `ratified` 降回 `draft` 的，建议优先过）** + **prd v0.13**（新增 §6.8-bis Setting）+ **ADR-027 全文** + ADR-023/024 措辞 + 图标定稿追认 + 01-spec v0.7 + 旧账 ADR-021/`scene.color` (carried from 2026-07-06)
-14. **可发现性裁决 ×3**：场景删除入口外露 / 整理态保窗 vs 改 D-0 契约 / title-only 后卡面无内容线索 (carried from 2026-07-06)
-15. 补 `src/components/__tests__/ScenePanelFocusRestore.test.tsx` 焦点恢复负路径测试。⚠️ 正路径已改走 `AnchoredEditor` teardown，写负路径时须对齐新机制 (carried from 2026-07-21)
-16. `.github/workflows/ci.yml` bench-c1 `continue-on-error` 处置复核 (carried from 2026-07-12)
-17. P0-2 Composition 链路 ADR（P0-5 系于此，`src/components/DraftInbox.tsx:43-48` 的 `PROMOTE_BLOCKED_HINT`） (carried from 2026-07-06)
-18. **ops-spec §3 定时备份**（`src-tauri/crates/repo-core/src/backup.rs` 底座）/ P2 余 4 评估 / P1-5 Phase 可配置性 / `src/components/MacroGrid.module.css` 网格末行 auto-fit (carried from 2026-07-06)
-19. **`docs/design/06-prd.md` §6.1 soft-delete 矛盾** + `status: pre-code` 僵尸 / ai-dev-lifecycle 仓收尾。**与 ADR-025 子决策 5 直接相关**——真正可撤销的删除需要后端 `deleted_at` + `restore_*`，prd 已承诺 soft-delete 而实现是硬删除。⚠️ 本轮 bump 到 v0.13 时**刻意没动 `status: pre-code`**（改 status 是治理信号，归本项） (carried from 2026-07-02)
-20. `docs/design/CLAUDE-DESIGN.md` v0.2 重传 + v2 基调同步 (carried from 2026-07-02)
-21. 评审遗留补 design-spec 上游：ipc-contract 扩扫 / `--color-danger` / `--scrim` 语义回流（随人审八步）。⚠️ ADR-027 新增的 `HotkeyRecorder.module.css` 报错色沿用了「琥珀代替 danger」的既有约定（palette 至今无 danger token），随本项一并处置 (carried from 2026-07-02)
-22. **gstack 待升级 0.16.3 → 1.61.0**（跨大版本），另有两项一次性配置提示（proactive / skill routing） (carried from 2026-08-11)
-23. **两份 ADR 超期未复核**（health pulse 第四次复报，均 `Last reviewed: 2026-07-02`，**49 天** > 45 天阈值）：`docs/adr/005-prompt-combiner-reuse.md`（Proposed，等 omar 提供仓库）/ `docs/adr/011-search-usagesource.md`（Reserved） (carried from 2026-08-19)
-24. **（低优先，可不做）1 逻辑点浮层偏移归因**：翻转态 `src/hooks/useAnchoredPosition.ts` 的 `top = a.top − OFFSET − p.height`，首次 `useLayoutEffect` 放置与后续重算之间差 1pt。亚感知、恒定、不累积，**记为已知量** (carried from 2026-08-20)
+5. **补 ADR-026 的 features 回写缺口**：`docs/design/07-features.md` §4 节奏表缺「固定空间布局」行、§6 变更日志缺 v1.12/v1.13 条目——v1.12 只写进了 §3.8 表。**已在 §4 表下留警示**。补账时须同步复核合计数（现记 **88**） (carried from 2026-08-20)
+6. **契约回流八步（旧账）**：`03-product-spec.md` §13.4 描述 SOP 为 instrument card 而 `src/components/SopProgress.tsx` 是单行 stub。合并既有欠账：§4.0/§13.4 + §4.0.7 卡片解剖（title-only）+ 外观设置（density）；design-spec §2/§8/§9 + §3c token 层。**§3c 剩两个 unbound token 待处置**（`--t-18` / `--h-modifier-tray`）。⚠️ `docs/MANIFEST.md` 其余行仍停在 2026-07-06 口径（本轮只推了 ADR-027 涉及的四份 + 修了两处漂移） (carried from 2026-07-21)
+7. **重写 `docs/release-runbook.md` §3 第 1 项**：改为已实际执行的可执行三项（`Info.plist` 版本 / `codesign -dvvv` 验 Authority+TeamID / `lipo -info` 架构 + 文件清单 diff），正文仍是旧的不可执行表述 (carried from 2026-08-10)
+8. **`docs/release-runbook.md` §3 第 4 项补 Ed25519 验签脚本**：Python 内联验签（`base64` → 切 `alg/key_id/pk` → `blake2b-512` 预哈希 → `Ed25519PublicKey.verify`），免 `brew install minisign` (carried from 2026-08-11)
+9. **memory 层剩一条待 omar 点头**：新增 feedback「AI 主笔对外文档必须逐句反查代码」（与 `feedback_walkthrough_coverage` / `feedback_gate_executability` 同族，应互链）。**本轮又添两例佐证**：ADR §2 混进估数 388/170；G3 项 2 门项前提未检验。原计划的「授权扩到失败恢复时的路径选择」仍未写入 `feedback_decision_autonomy` (carried from 2026-08-05)
+10. **发布收尾（非阻塞）**：`gh secret set TAURI_SIGNING_PRIVATE_KEY_PASSWORD --env release-signing`；`latest.json` 最低版本字段落在 `.github/workflows/release.yml` sign job 的 `jq -n` 处；落盘日志 tauri-plugin-log 立项 (carried from 2026-08-05)
+11. **`a24c7c0` / `4b722c1` / `716bd4c` 三 commit 补 verifier 对抗审查**——`a24c7c0`「float phrase actions」正是 `src/components/ScenePanel.module.css:420` hover 遮挡标题的来源 (carried from 2026-07-07)
+12. **omar 人审批次（本轮又增）**：product-spec v0.15→**v0.20** + design-spec v0.15→v0.18 + features v1.10→**v1.15** + **test-spec v0.2→v0.4（唯一从 `ratified` 降回 `draft` 的，建议优先过）** + **prd v0.13**（新增 §6.8-bis Setting）+ **ADR-027 全文** + ADR-023/024 措辞 + 图标定稿追认 + 01-spec v0.7 + 旧账 ADR-021/`scene.color` (carried from 2026-07-06)
+13. **可发现性裁决 ×3**：场景删除入口外露 / 整理态保窗 vs 改 D-0 契约 / title-only 后卡面无内容线索 (carried from 2026-07-06)
+14. 补 `src/components/__tests__/ScenePanelFocusRestore.test.tsx` 焦点恢复负路径测试。⚠️ 正路径已改走 `AnchoredEditor` teardown，写负路径时须对齐新机制 (carried from 2026-07-21)
+15. `.github/workflows/ci.yml` bench-c1 `continue-on-error` 处置复核 (carried from 2026-07-12)
+16. P0-2 Composition 链路 ADR（P0-5 系于此，`src/components/DraftInbox.tsx:43-48` 的 `PROMOTE_BLOCKED_HINT`） (carried from 2026-07-06)
+17. **ops-spec §3 定时备份**（`src-tauri/crates/repo-core/src/backup.rs` 底座）/ P2 余 4 评估 / P1-5 Phase 可配置性 / `src/components/MacroGrid.module.css` 网格末行 auto-fit (carried from 2026-07-06)
+18. **`docs/design/06-prd.md` §6.1 soft-delete 矛盾** + `status: pre-code` 僵尸 / ai-dev-lifecycle 仓收尾。**与 ADR-025 子决策 5 直接相关**——真正可撤销的删除需要后端 `deleted_at` + `restore_*`，prd 已承诺 soft-delete 而实现是硬删除。⚠️ 本轮 bump 到 v0.13 时**刻意没动 `status: pre-code`**（改 status 是治理信号，归本项） (carried from 2026-07-02)
+19. `docs/design/CLAUDE-DESIGN.md` v0.2 重传 + v2 基调同步 (carried from 2026-07-02)
+20. 评审遗留补 design-spec 上游：ipc-contract 扩扫 / `--color-danger` / `--scrim` 语义回流（随人审八步）。⚠️ ADR-027 新增的 `HotkeyRecorder.module.css` 报错色沿用了「琥珀代替 danger」的既有约定（palette 至今无 danger token），随本项一并处置 (carried from 2026-07-02)
+21. **gstack 待升级 0.16.3 → 1.61.0**（跨大版本），另有两项一次性配置提示（proactive / skill routing） (carried from 2026-08-11)
+22. **两份 ADR 超期未复核**（health pulse 第四次复报，均 `Last reviewed: 2026-07-02`，**49 天** > 45 天阈值）：`docs/adr/005-prompt-combiner-reuse.md`（Proposed，等 omar 提供仓库）/ `docs/adr/011-search-usagesource.md`（Reserved） (carried from 2026-08-19)
+23. **（低优先，可不做）1 逻辑点浮层偏移归因**：翻转态 `src/hooks/useAnchoredPosition.ts` 的 `top = a.top − OFFSET − p.height`，首次 `useLayoutEffect` 放置与后续重算之间差 1pt。亚感知、恒定、不累积，**记为已知量** (carried from 2026-08-20)
 
 ## Dropped
 
-- 无。旧 23 项：**1 项完成销账**（旧第 1 项 ADR-027 起草——本轮不仅起草，连落地/回流/走查一并做完），其余全部承接；**新增 2 项**（冲突 UX 缺口 / 浅色首屏疑似缺陷）。净计 24 项。
+- 无。旧 23 项：**1 项完成销账**（ADR-027 起草——本轮不仅起草，连落地/回流/走查一并做完），其余全部承接；**新增 2 项后又当场销 1 项**——冲突 UX 缺口已由 omar 拍板并落地复测，只剩浅色首屏疑似缺陷。净计 **23 项**。
+- **ADR-025 P2 键盘动作层：omar 明示「先记录着，暂时不做」**——保留在 Next Actions 里，不是放弃，是排期外。
 
 ## Risks & Decisions
 
@@ -74,7 +72,8 @@
   1. **debug 裸二进制走 `devUrl`，不跑 vite 就是空窗口** —— 表现为截图全黑 + 键鼠全部失效，极易误判成「渲染不出来」或「权限没给」。**抓一个别的 app 的窗口做控制组**是分辨这一点的关键
   2. **`mouse.swift` 的 click 不设 `kCGMouseEventClickState`**，WebKit 不认作点击；而 hover 是好的，所以现象是「能悬停不能点」。已在 `/tmp/ph-g3/click.swift` 修好
   3. **CGEvent modifier flag 会泄漏到后续鼠标事件**：发完 `⌃⇧P` 再点击 = ctrl+click = 右键菜单，**原生菜单吞掉全部输入**，后续步骤静默失效。修法：鼠标事件显式 `e.flags = []`
-  4. **`screencapture -l` 会返回隐藏窗口的陈旧 backing store** —— 看着是正常实时截图，实际是上次可见时的画面。**每次截图前后都要用窗口列表确认在屏**
+  4. **`key.swift` 只打修饰键标志位，不发修饰键自身的按下/抬起事件** —— 人手按 `⌥Space` 会发那对事件，合成的不会。任何依赖「看见修饰键」的逻辑在合成事件下都会假阴性，**害得一次修复复测差点被判无效**。忠实版见 `/tmp/ph-g3/chord.swift`（先发修饰键 keydown → 主键 → 反序抬起）
+  5. **`screencapture -l` 会返回隐藏窗口的陈旧 backing store** —— 看着是正常实时截图，实际是上次可见时的画面。**每次截图前后都要用窗口列表确认在屏**
 - **唤起后第一次点击被吞掉用于取焦点**（new 2026-08-20）：非激活面板模型下，自动化点击序列**开头要补一次无害的空点**（Header 空白处，不是卡片本体）
 - **`pnpm bench:*` 会拿真实数据库跑**（new 2026-08-20）：bench 直接 spawn dev 二进制，用的是真实 `app_data_dir`，因此**本轮 bench 已把线上库迁到 `user_version` 12**（自动留了 `pre-migrate-*.db`）。旧版 `.app` 仍能开（migration 只前进不校验上界），但 **MCP 的 `open_read_only` 要求版本精确相等，旧 MCP 二进制会撞 `SchemaVersionMismatch`**。走查请用 `HOME=<隔离目录>`
 - **`user_version` 11→12 是 ADR-027 唯一不可逆项**：MCP 进程共享同库，**发版须同批**。反悔的正确做法是留空表 + 新开 migration 13 标废弃，而非降版本
@@ -107,14 +106,14 @@
 
 本轮实测（2026-08-20，`main` 上，`eedcb5a`）：
 
-- `pnpm test` → **395/395（39 文件）** ✅（373→395，+22 逐文件构成经 worktree 对拍）
+- `pnpm test` → **398/398（39 文件）** ✅（373→395→398；+22 那批的逐文件构成经 worktree 对拍）
 - `cargo test --workspace --manifest-path src-tauri/Cargo.toml` → **168** ✅（158→168）
 - `pnpm lint` / `pnpm exec tsc --noEmit` / `pnpm build` → 全绿 ✅
 - `cargo clippy --workspace --all-targets -- -D warnings` / `cargo fmt --check` → 全绿 ✅
 - `pnpm exec prettier --check src/ docs/ CLAUDE.md HANDOFF.md` → 通过 ✅
 - `node scripts/doc-governance/index.mjs --config doc-governance.config.mjs` → **0 error / 6 warn** ✅（warn 全是既有死链，无新增）
 - `pnpm bench:hotkey-wake` → p95 **13.708ms** ✅（C1 200ms 预算内，与签名后基线 12.9–14.2ms 持平）
-- **G3 真机走查** → 3 通过 / 1 不可达（明细见 [[11-test-spec#4.2]]）
+- **G3 真机走查** → **四项全通过**（项 2 补冲突提示后由不可达转通过，明细见 [[11-test-spec#4.2]]）
 
 **恢复工作前**：跑 `pnpm test` + doc-governance + prettier 确认基线。动代码须补 `pnpm lint` + `pnpm build` + `cargo test --workspace`；涉及主形态启动路径还须 `pnpm bench:hotkey-wake`（⚠️ 它会拿**真实数据库**跑，见 Risks）。
 

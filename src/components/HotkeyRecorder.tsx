@@ -14,6 +14,21 @@ import styles from "./HotkeyRecorder.module.css";
 // Shipped default, mirroring migration 0012 / settings::DEFAULT_GLOBAL_HOTKEY.
 const DEFAULT_HOTKEY = "Alt+Space";
 
+// Shown when the user pressed a chord we never received (omar 2026-08-20).
+//
+// This is the common conflict, and it does NOT surface as an error: whoever
+// already owns the chord registers it with the OS, which consumes the keypress
+// before any app sees it. So the user presses, this window sits there saying
+// "按下新的组合键…", and some other application reacts instead — with nothing
+// on screen to explain why. The G3 walkthrough reproduced exactly that.
+//
+// We can't observe the swallowed key, but we can observe its shadow: the
+// modifiers are ordinary key events and arrive normally, so a modifier that
+// goes down and comes back up while we captured nothing in between means the
+// main key went somewhere else.
+const SWALLOWED_HINT =
+  "没收到完整的组合键——它可能已被其他应用占用，占用方会在系统层截走按键，本窗口收不到。换一组试试。";
+
 // Global wake-chord editor (ADR-027). Redeems 03-product-spec §13.4's
 // "默认值，可配置", which shipped as a hardcoded chord in v0.5.
 //
@@ -30,7 +45,7 @@ export function HotkeyRecorder() {
   const setGlobalHotkey = useSettingsStore((s) => s.setGlobalHotkey);
 
   const [recording, setRecording] = useState(false);
-  const [error, setError] = useState<string | null>(null);
+  const [notice, setNotice] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
   // Focus returns here when recording ends, so the keyboard user is not
   // stranded after a capture.
@@ -39,15 +54,22 @@ export function HotkeyRecorder() {
   useEffect(() => {
     if (!recording) return;
 
+    // Per armed session: did a modifier go down, and did we handle anything at
+    // all since? Refs rather than state — these gate an event handler, and
+    // re-running the effect on every keystroke would tear the listener down
+    // mid-gesture.
+    let modifierDown = false;
+    let handledSomething = false;
+
     const commit = async (accelerator: string) => {
       setBusy(true);
       try {
         await setGlobalHotkey(accelerator);
-        setError(null);
+        setNotice(null);
       } catch (err) {
         // Rust owns the refusal reasons (unparseable / no modifier / already
         // claimed) and phrases them for the user; don't second-guess them here.
-        setError(toUserMessage(err, "快捷键设置失败，请换一组再试"));
+        setNotice(toUserMessage(err, "快捷键设置失败，请换一组再试"));
       } finally {
         setBusy(false);
       }
@@ -64,21 +86,40 @@ export function HotkeyRecorder() {
         return;
       }
       // Modifiers alone are the user mid-reach, not a chord yet: keep waiting.
-      if (isModifierCode(e.code)) return;
+      if (isModifierCode(e.code)) {
+        modifierDown = true;
+        return;
+      }
+      handledSomething = true;
 
       const accelerator = eventToAccelerator(e);
       if (!accelerator) {
         // Reachable only for a bare key. Stay armed so the user can simply add
         // a modifier and press again instead of re-entering the mode.
-        setError("快捷键必须包含至少一个修饰键（⌘ / ⌥ / ⌃ / ⇧）");
+        setNotice("快捷键必须包含至少一个修饰键（⌘ / ⌥ / ⌃ / ⇧）");
         return;
       }
       setRecording(false);
       void commit(accelerator);
     };
 
+    // The swallowed-chord probe. Fires on the modifier's release, not on a
+    // timer: a timer would also scold a user who is merely hesitating, while
+    // "held a modifier, let go, and we saw no key" is the actual signature of
+    // a chord that went to another application.
+    const onKeyUp = (e: KeyboardEvent) => {
+      if (!isModifierCode(e.code) || !modifierDown) return;
+      modifierDown = false;
+      if (handledSomething) return;
+      setNotice(SWALLOWED_HINT);
+    };
+
     window.addEventListener("keydown", onKeyDown, true);
-    return () => window.removeEventListener("keydown", onKeyDown, true);
+    window.addEventListener("keyup", onKeyUp, true);
+    return () => {
+      window.removeEventListener("keydown", onKeyDown, true);
+      window.removeEventListener("keyup", onKeyUp, true);
+    };
   }, [recording, setGlobalHotkey]);
 
   // Hand focus back once the capture ends, however it ended.
@@ -90,9 +131,9 @@ export function HotkeyRecorder() {
     setBusy(true);
     try {
       await setGlobalHotkey(DEFAULT_HOTKEY);
-      setError(null);
+      setNotice(null);
     } catch (err) {
-      setError(toUserMessage(err, "恢复默认失败，该组合键可能已被占用"));
+      setNotice(toUserMessage(err, "恢复默认失败，该组合键可能已被占用"));
     } finally {
       setBusy(false);
     }
@@ -114,7 +155,7 @@ export function HotkeyRecorder() {
           disabled={busy}
           aria-pressed={recording}
           onClick={() => {
-            setError(null);
+            setNotice(null);
             setRecording((armed) => !armed);
           }}
         >
@@ -129,9 +170,9 @@ export function HotkeyRecorder() {
           恢复默认
         </button>
       </div>
-      {error ? (
+      {notice ? (
         <span className={styles.error} role="alert">
-          {error}
+          {notice}
         </span>
       ) : null}
     </>

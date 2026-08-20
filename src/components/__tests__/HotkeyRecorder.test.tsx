@@ -76,6 +76,53 @@ describe("HotkeyRecorder", () => {
     expect(screen.getByRole("button", { name: "取消" })).toBeInTheDocument();
   });
 
+  // The common conflict never reaches us — the OS hands the chord to whoever
+  // registered it first and consumes the event. Without this hint the user
+  // presses, nothing happens here, and another app reacts with no explanation
+  // on screen (reproduced in the ADR-027 G3 walkthrough).
+  it("explains a chord that was swallowed by another app", () => {
+    render(<HotkeyRecorder />);
+    arm();
+
+    // What the OS actually delivers when ⌥Space belongs to someone else: the
+    // modifier goes down and comes back up, the main key never arrives.
+    fireEvent.keyDown(window, { code: "AltLeft", altKey: true });
+    fireEvent.keyUp(window, { code: "AltLeft" });
+
+    expect(screen.getByRole("alert")).toHaveTextContent(/可能已被其他应用占用/);
+    // Still armed: the user's next move is to try a different chord, not to
+    // re-enter the mode.
+    expect(screen.getByRole("button", { name: "取消" })).toBeInTheDocument();
+    expect(invokeMock).not.toHaveBeenCalled();
+  });
+
+  it("stays quiet when the chord did arrive", async () => {
+    invokeMock.mockResolvedValue("Alt+KeyK");
+    render(<HotkeyRecorder />);
+    arm();
+
+    fireEvent.keyDown(window, { code: "AltLeft", altKey: true });
+    fireEvent.keyDown(window, { code: "KeyK", altKey: true });
+    fireEvent.keyUp(window, { code: "AltLeft" });
+
+    await waitFor(() => expect(invokeMock).toHaveBeenCalled());
+    expect(screen.queryByRole("alert")).toBeNull();
+  });
+
+  // A bare key IS received, so the modifier rule is the accurate diagnosis —
+  // the swallow hint would send the user hunting for a conflict that isn't
+  // there.
+  it("does not mistake a bare key for a swallowed chord", () => {
+    render(<HotkeyRecorder />);
+    arm();
+
+    fireEvent.keyDown(window, { code: "ShiftLeft", shiftKey: true });
+    fireEvent.keyDown(window, { code: "KeyP" });
+    fireEvent.keyUp(window, { code: "ShiftLeft" });
+
+    expect(screen.getByRole("alert")).toHaveTextContent(/至少一个修饰键/);
+  });
+
   it("ESC cancels recording without changing the binding", () => {
     render(<HotkeyRecorder />);
     arm();
