@@ -1,12 +1,12 @@
 ---
 type: manifest
 project: prompt-hub
-version: v1.10
+version: v1.11
 status: active
 created: 2026-05-24
-last_modified: 2026-07-06
+last_modified: 2026-08-20
 audience: [human, ai]
-description: prompt-hub 项目前期准备文件总清单——按方法论 v1.3 六层架构（L0 宪法 / L1 产品契约 / L2 工程规格 / L3 实施规格 / L4 索引 / L5 协作契约）+ ADR + 实施方案 + 视觉原型 + AI 上下文 + 工程护栏（CI/gate 测试）。AI 进项目读完 CLAUDE.md 后接读本文件能 1 分钟拿全貌；不写行数（参考性强但易过期）。v1.10：§3/§4 版本列对齐盘面现状（product-spec/design-spec v0.14 / features v1.9）+ §8 ADR 计数 20→21（补 ADR-021 scene-layered-editing）
+description: prompt-hub 项目前期准备文件总清单——按方法论 v1.3 六层架构（L0 宪法 / L1 产品契约 / L2 工程规格 / L3 实施规格 / L4 索引 / L5 协作契约）+ ADR + 实施方案 + 视觉原型 + AI 上下文 + 工程护栏（CI/gate 测试）。AI 进项目读完 CLAUDE.md 后接读本文件能 1 分钟拿全貌；不写行数（参考性强但易过期）。v1.11：ADR-025 回流涟漪——四份文档版本列推到现值（product-spec v0.19 / design-spec v0.18 / features v1.14 / test-spec v0.3）+ 源码级 gate 登记 3→6。⚠️ 其余行仍停在 2026-07-06 口径（未随 ADR-022/025/026 更新），属旧账
 related:
   - CLAUDE
   - 02-constitution
@@ -35,7 +35,7 @@ related:
 | 视觉原型 | 1 | v1 已归档至 archive/（2026-05-25）|
 | 项目 AI 上下文 | 2 | active |
 | 反思沉淀 | 2 | active（2026-08-05 新增 postmortems/ 首份；2026-06-04 learnings v0.1）|
-| 工程护栏 | 5 | active（2026-07-01 新增 ci.yml + 登记 3 个源码级 gate 测试）|
+| 工程护栏 | 8 | active（ci.yml + **6 个源码级 gate**：token / b2-separation / ipc-contract / doc-refs / density / theme-parity + bench C1 退出码 gate。2026-08-20 校正——v1.10 记「3 个」时 `doc-refs` / `density` / `theme-parity` 尚未登记）|
 
 ---
 
@@ -52,9 +52,9 @@ related:
 
 | 路径 | 内容 | 状态 |
 |---|---|---|
-| `docs/design/03-product-spec.md` | UI 契约（双形态 / 布局 / 交互） | draft v0.14（2026-07-06 ADR-021 涟漪：§13.3 区域 4 三层就地编辑契约重写；前 v0.13 走查修缮 / v0.12 数据导入导出 / v0.11 scene-substage-editing 结构编辑器；v0.10 起待 omar 人审，前序 v0.8 已 ratified）|
+| `docs/design/03-product-spec.md` | UI 契约（双形态 / 布局 / 交互） | draft **v0.19**（2026-08-20 ADR-025 涟漪：§13.3 新增「编辑容器统一契约」跨区域小节 + §13.4 两行快捷键；前 v0.18/v0.17 ADR-026 固定空间布局 / v0.16 ADR-022 跨 Scene 移动 / v0.15 交互模式 D-0 / v0.14 ADR-021 三层就地编辑；v0.10 起待 omar 人审，前序 v0.8 已 ratified）|
 | `docs/design/04-user-flows.md` | 用户流（边缘 / 异常 / 跨形态） | ratified |
-| `docs/design/05-design-spec.md` | 视觉/动效 token 体系 | ratified v0.14（2026-07-06 ADR-021 涟漪：§12.4 用户内容色 scene.color；前 v0.13 走查修缮暗 band / v0.12 ADR-019 推翻 flat 锚点；v0.11–v0.14 增量待人审，v0.10 已 omar 审定）|
+| `docs/design/05-design-spec.md` | 视觉/动效 token 体系 | ratified **v0.18**（2026-08-20 ADR-025 涟漪：新增 §2.6 层叠标尺 `--z-*` + §10.2.2 `AnchoredEditor` 接口契约；前 v0.17/v0.16 ADR-026 / v0.14 ADR-021 用户内容色 / v0.13 暗 band / v0.12 ADR-019 推翻 flat 锚点；v0.11 起增量待人审，v0.10 已 omar 审定）|
 
 ---
 
@@ -63,7 +63,7 @@ related:
 | 路径 | 内容 | 状态 |
 |---|---|---|
 | `docs/design/06-prd.md` | 数据契约 / API / 状态机 / 错误码 | pre-code v0.11（2026-06-27 scene-substage-editing 涟漪：§6.4 +写入口归属指派；前 v0.10 ADR-017 C3 §8.3 updater 例外）|
-| `docs/design/07-features.md` | 79 功能矩阵 S1–S5 + AE + 自动更新 + Promptscape 吸收 + 结构编辑 + 数据导入导出 + 走查修缮 + Scene 编辑分层 | in-progress v1.9（2026-07-06 ADR-021：§3.8 Scene 编辑分层化 done + §4 节奏表 78→79；前 v1.8 走查修缮批次 12 功能 66→78 / v1.7 数据导入导出 / v1.6 scene-substage-editing）|
+| `docs/design/07-features.md` | **87** 功能矩阵 S1–S5 + AE + 自动更新 + Promptscape 吸收 + 结构编辑 + 数据导入导出 + 走查修缮 + Scene 编辑分层 + UX 任务流 A/B + 锚定编辑容器 | in-progress **v1.14**（2026-08-20 ADR-025：§3.8 统一锚定编辑容器 done + §4 节奏表 86→87；前 v1.13/v1.12 ADR-026 / v1.11 ADR-022 / v1.10 UX 批次 A / v1.9 ADR-021 Scene 编辑分层化）|
 | `docs/design/08-sitemap.md` | 资产对象树 + 区域地图 + 焦点导航 | ratified v0.2（2026-07-02 omar 人审通过；同日全量重写对齐 product-spec v0.13「单窗口一屏全景 + 浮层」现状；前 v0.1 视图清单已失真）|
 
 ---
@@ -74,7 +74,7 @@ related:
 |---|---|---|
 | `docs/design/09-tech-stack.md` | 全栈技术决议 | ratified v1.3（2026-06-19 ADR-017 涟漪：D14 自动更新 + §4.4 updater 子系统 + plugin-process 依赖锁）|
 | `docs/design/10-ops-spec.md` | 运维规格 | ratified v0.3（2026-06-17 ADR-017 C4：§5.2 telemetry 措辞澄清 + §9.4 反向指针）|
-| `docs/design/11-test-spec.md` | 测试规格 | ratified v0.2（2026-07-02 omar 人审通过；同日改写为实际测试盘面：前端 154 + Rust 135 + 4 源码级 gate + CI 双 job；前 v0.1 pre-code 规划）|
+| `docs/design/11-test-spec.md` | 测试规格 | draft **v0.3**（2026-08-20 全量刷新 📊 口径：前端 **373** + Rust **158** + **6** 源码级 gate + IPC **51** 命令，另加 §4.1 真机验收门 / jsdom `popover` shim，待人审；前 v0.2 2026-07-02 omar 人审通过，口径 154/135/4）|
 
 ---
 

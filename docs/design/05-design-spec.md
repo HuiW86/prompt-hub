@@ -1,12 +1,12 @@
 ---
 type: design-spec
 project: prompt-hub
-version: v0.17
+version: v0.18
 created: 2026-05-18
-last_modified: 2026-08-19
-status: ratified  # v0.10 已 omar 审定（2026-06-21）；v0.11–v0.17 增量待人审
+last_modified: 2026-08-20
+status: ratified  # v0.10 已 omar 审定（2026-06-21）；v0.11–v0.18 增量待人审
 author: co  # 🤝 人机共创（CLAUDE §5.2）
-related: [[01-spec]], [[02-constitution]], [[03-product-spec]], [[012-lock-visual-quality-anchor]], [[019-supersede-flat-visual-anchor]], [[020-restore-protocol-dark-band]], [[021-scene-layered-editing]], [[CLAUDE-DESIGN]], [[015-expose-mcp-write-pipeline]], [[016-choose-dnd-and-resizable-layout]], [[018-absorb-promptscape-design]], [[026-fixed-spatial-layout]], [[asset-editing-and-adaptive-layout]]
+related: [[01-spec]], [[02-constitution]], [[03-product-spec]], [[012-lock-visual-quality-anchor]], [[019-supersede-flat-visual-anchor]], [[020-restore-protocol-dark-band]], [[021-scene-layered-editing]], [[025-unified-anchored-editing]], [[CLAUDE-DESIGN]], [[015-expose-mcp-write-pipeline]], [[016-choose-dnd-and-resizable-layout]], [[018-absorb-promptscape-design]], [[026-fixed-spatial-layout]], [[asset-editing-and-adaptive-layout]]
 description: 手动 AI 编程仪表盘的视觉规范——tokens.css 单一真源 + 主题/elevation/组件视觉契约；写 CSS / 视觉时召回。版本叙事见 CHANGELOG
 ---
 
@@ -331,6 +331,24 @@ else if (mode === 'dark') root.classList.add('dark') // system 不加 class
 - HDR / 高对比度模式（Accessibility）
 - 切换动画（CSS transition `--canvas` / `--fg-1`）— **不在当前路径**
 
+### 2.6 层叠标尺（Stacking scale · v0.18 新增 — 涟漪 [[025-unified-anchored-editing]]）
+
+> **本节补的是一个长期空白**：v0.17 之前 design-spec 从未记载任何 z 层级契约，`SettingsModal`(10) / `SearchOverlay`(1) 各自硬编码 z-index 并已发生过语义碰撞。ADR-025 子决策 1 建立标尺并收编两处硬编码，本节将其升为 token 契约。来源 `tokens.css` §3b-bis。
+
+| Token | 值 | 用途 |
+|---|---|---|
+| `--z-raised` | `10` | 脱离常规流但仍属页面平面的抬起元素 |
+| `--z-overlay` | `20` | 覆盖内容的面（`SearchOverlay` 全景覆盖） |
+| `--z-modal` | `30` | 模态弹窗（`SettingsModal` + `--scrim` 遮罩） |
+| `--z-popover` | `40` | 锚定浮层（`AnchoredEditor`） |
+| `--z-toast` | `50` | 瞬时反馈，恒在最上 |
+
+**hard rule**：
+
+1. **禁止裸 z-index 字面量**——一切层叠必须引用本标尺（与 §10.2.2 hard rule 1 同源纪律，由 token-gate 卡在源码层）
+2. **`--z-modal` 的存在理由**：设置弹窗与搜索覆盖层曾共用 `--z-overlay`，两个语义不同的面压在同一档上，谁盖谁取决于 DOM 顺序而非设计意图。拆档后模态恒高于覆盖层
+3. ⚠️ **`--z-popover` 是防御性档位，不是生效机制**：top layer 元素（`popover` / `dialog`）**根本不参与 z-index**，它按定义绘制在所有层叠上下文之上。该 token 只在 top layer 不可用时兜底，**不要据此推断浮层靠 z-index 压住模态**——真正的机制见 §10.2.2 `AnchoredEditor`
+
 ---
 
 ## 3. 动画 Token
@@ -573,6 +591,7 @@ bundle 派生的 3 个跨组件 chrome primitive：
 | `IconButton` | 纯图标方块按钮（无文字标签的工具位：行内编辑 confirm/cancel、卡片悬浮动作）| 正方 `--s-5` 20px 或 `--h-chip` 24px / `--r-2` 3px / lucide 14px `--op-icon` 0.7 / border-only baseline | 层 neutral（默认）；危险动作（discard）hover 时 icon `--fg-2`，**不染红/不染 ontology**（§13.2）|
 | `Input` / `EditorInput` | 单行 / 多行文本输入 | `--surface-2` 底 / `--border-2` hairline / `--r-3` 4px / padding `--s-2` 8px / typography `.ph-card-body`；focus 走 §10.1 focused（`--border-thick` 2px `--accent` outline，offset 用 `var(--hairline)` 而非裸 `outline-offset: 1px`，见下 ⚠️ 缺口 2）| — |
 | `EditorPanel` | 行内编辑壳（name input + body input + 动作行）| `--surface-1` 底 / `--border-2` hairline / **`--r-3` 4px**（内嵌面板，非外层卡）/ 内边距 `--s-3` 12px / 内部用 `EditorInput` × N + `EditorActions` | 层 task\|protocol（决定 save 按钮归属层 + focus 强调）|
+| `AnchoredEditor`（v0.18 新增）| **锚定浮层编辑壳**——把 `EditorPanel` 抬进 top layer 并钉在触发元素上 | 承 `EditorPanel` 全部视觉契约，另加：`--shadow-2`（§8.2.1「仅 overlay / popover」档）/ `z-index: var(--z-popover)` 兜底（§2.6 hard rule 3）/ **`max-height` 由 JS 逐帧上报**（见下方 ⚠️）| 继承内层 `EditorPanel` 的层变体 |
 | `EditorActions` | 编辑壳底部动作行（cancel + save）| 右对齐 / gap `--s-2` 8px / save = `Button`(primary, 当层) / cancel = `Button`(subtle, neutral) | 继承父 `EditorPanel` 层 |
 | `Chip` | 单标签（AlignmentPhrase chip / Modifier 原子 chip）| 高 `--h-chip` 24px / `--r-2` 3px / padding-x `--s-2_25` 9px / typography `.ph-card-body`（v0.13：`--t-13`/`--w-400` 归位）/ **默认底 transparent**（border-only baseline，v0.13 撤默认填充）+ clicked flash（§11）/ **宽度封顶 `--w-chip-max` 200px**：超长名 ellipsis 截断 + 自动 `title` 全名（Chip 内部 `chipLabel` span 承载）| 层 protocol（AlignmentPhrases + ModifierGrid 两使用者）|
 | `ActionCluster` | 卡片悬浮动作组（多个 `IconButton` 横排）| gap `--s-1_5` 6px / 默认 hover/focus 时显（主形态不依赖 hover，键盘 focus 必显，§5）| — |
@@ -582,6 +601,17 @@ bundle 派生的 3 个跨组件 chrome primitive：
 1. 不允许组件自行实现 header / empty / kbd / card / list-row / button / icon-button / input / editor / chip 视觉，必须用 primitive（含变体）。实现见 `src/components/primitives/primitives.module.css`。
 2. primitive 变体只通过 `layer` / 形状 / 意图 参数表达，**不允许组件 override primitive 的边框/圆角/padding 散值**——需要新视觉时**扩展 primitive 变体**（走方法论 §7 bump），不就地补丁。
 3. 层变体守 §13.2（v0.12 后）：颜色不再绑层，`layer` 参数默认渲染中性强调；若某变体保留 ontology 强调色，应整组一致、不在同层内紫绿混用（视觉一致性，非违宪）。
+
+> **⚠️ `AnchoredEditor` / `PhraseFormEditor` 接口契约（v0.18 新增 — [[025-unified-anchored-editing]] P1-a/P1-b）**
+>
+> 这两个 primitive 的**接口形状本身是契约**，不是实现细节——它们有四个宿主，接口一松就四处走样。四条：
+>
+> 1. **`presentation` 必填，且是可辨识联合**：`{ presentation: "anchored"; anchor: HTMLElement | null }` | `{ presentation: "inline"; anchor?: never }`。**刻意不给默认值**——曾经默认 `inline` 时，漏传 anchor 会静默退化成一个看不出来的容器切换，调用点读不出自己用的是哪种形态
+> 2. **挂载即打开**：浮层生命周期由宿主的条件渲染决定，不额外暴露 `open` prop（两个真相源必然漂移）
+> 3. **`mode: "create" | "edit"` 决定 dirty 基准**：`edit` 以传入初值为基准，`create` 以空串为基准。dirty 判定用初始值快照，不用「是否聚焦过」
+> 4. **`contentPlaceholder` 可覆写**：共享表单的正文占位符默认「话术内容」，而 Macro / 草稿的正文不是话术——直接收编会造成文案回归
+>
+> **`max-height` 为什么不能写进 CSS**：面板高度上限是相对 **overlay frame**（`--r-frame` 内缩的 inset 浮动框）而非视口，CSS 里没有可引用的该矩形；`useAnchoredPosition` 测量后逐帧上报，超限时面板内部滚动。**只夹取原点不够**——高于 frame 的面板会被钉在顶部内缩处、footer（保存 / 取消）跑出画面下沿，这正是触发 ADR-025 的原始缺陷在另一块面板上原样复现。
 
 > **⚠️ v0.10 两个 token 缺口（待人审裁定，A 阶段实施前需定）**：
 > 1. **Button 圆角**：本节暂定 `Button` 用 `--r-4` 6px 圆角矩形。若设计意图是「真 pill / stadium 全高圆角」，现有 token 表（`--r-1`~`--r-frame`，最大 8px）无对应档，需新增 `--r-pill`（如 `999px` 或 `--h-chip` 半值）——属 tokens.css 扩展，走方法论 §7 bump。**默认建议**：用 `--r-4` 6px 圆角矩形即可，与卡片同档，避免引新 token。
@@ -608,6 +638,7 @@ bundle 派生的 3 个跨组件 chrome primitive：
 | `Header`（v0.11）| chrome（中性强调）| 顶部 slim 行，gear `--h-quickfind` 36px | logo 方块染 `--accent`/`--accent-fg`（B2 中性强调面）+ 标题/副标 + 内嵌 `SearchBar`(flex-1) + gear `IconButton`；去设计稿头像（spec §8.2 无账号），详见 §10.8 / 涟漪 [[018-absorb-promptscape-design]] |
 | `ProtocolBand`（v0.11 / v0.13 暗 band）| protocol | 协议层容器 band（inset，`--r-frame`）| **v0.13（[[020-restore-protocol-dark-band]]）改 `--band-bg` 暗底 + band 作用域整体重映射中性 token**（§2.4.5），双主题恒为深底浅字；`Route` icon「协议层」pill；纯布局壳，PhaseBar+AlignmentPhrases 内容/数据不变，详见 §10.8.2 |
 | `SettingsModal`（v0.11）| chrome（中性强调）| 居中 overlay 弹窗（`--scrim` 遮罩，宽 `--w-settings-modal`）| 左导航(外观/更新) + 右内容；外观=主题三态分段控件 + 5 色强调 swatch；更新=opt-in 开关 + 状态行 + 检查/安装（复用 updaterStore）；焦点环/激活态用 `--accent`（中性强调，B2 安全），详见 §10.8 |
+| `AnchoredEditor`（v0.18）| 继承内层 `EditorPanel` | 锚定在触发元素上的 top layer 浮层，宽随内容、**高受 frame 相对上限约束**后内部滚动 | 原生 `popover="manual"` 进 top layer（**不 portal 到 `body`**——DOM 祖先链不变，`ProtocolBand` 的 `--band-*` remap 照常继承，§2.4.5 用法 hard rule 得以成立）；`--shadow-2` + `--z-popover` 兜底；四个宿主共用（对齐话术 chip / Macro 卡 / Scene 话术卡 / 草稿卡「编辑」按钮），接口契约见 §10.2.2 |
 
 ---
 
@@ -976,6 +1007,18 @@ bundle 派生的 3 个跨组件 chrome primitive：
 ---
 
 ## 修订记录
+
+### v0.18（2026-08-20）— ADR-025 涟漪：层叠标尺 + 锚定浮层编辑壳
+
+> 涟漪源 [[025-unified-anchored-editing]]（Accepted 2026-08-17；P1-a + P1-b 于 2026-08-20 合入 `main`，merge `97858f7`）。🤝 共创起草，待 omar 人审。
+
+- **§2.6 新增「层叠标尺」章节**——补的是一个**长期空白**：v0.17 之前 design-spec 从未记载任何 z 层级契约，而 `SettingsModal`(10) / `SearchOverlay`(1) 各自硬编码 z-index 且**已发生语义碰撞**（两个不同语义的面压在同一档 `--z-overlay` 上，谁盖谁取决于 DOM 顺序而非设计意图）。标尺 `raised:10 / overlay:20 / modal:30 / popover:40 / toast:50` 收编两处硬编码，来源 `tokens.css` §3b-bis
+  - ⚠️ 同时写明 **`--z-popover` 是防御性档位不是生效机制**：top layer 元素根本不参与 z-index。不写清这一条，日后必然有人据此推断「浮层靠 z-index 压住模态」并在改动时踩空
+- **§10.2.2 新增 `AnchoredEditor` primitive 行** + **接口契约小节**（`presentation` 必填可辨识联合 / 挂载即打开不给 `open` prop / `mode` 定 dirty 基准 / `contentPlaceholder` 可覆写）。**接口形状在此升为契约而非实现细节**——它有四个宿主，接口一松就四处走样；P1-b 四个面照已收口的接口迁移，零返工
+- **§10.3 组件清单新增 `AnchoredEditor` 行**：记明「**不 portal 到 `body`**」这一关键约束——原生 `popover` 只改绘制与堆叠、不改 DOM 祖先链，`ProtocolBand` 的 `--band-*` remap（§2.4.5 用法 hard rule）因此照常继承。若改用 portal 方案，该 hard rule 当场失效
+- **`max-height` 的 CSS 不可表达性**（§10.2.2）：面板高度上限相对 **overlay frame** 而非视口，CSS 无可引用矩形，故由 `useAnchoredPosition` 逐帧上报。**只夹取原点不够**——高于 frame 的面板 footer 会跑出画面下沿，即触发本 ADR 的原始缺陷在另一块面板上原样复现
+
+**视觉验收**：G1 项 1（暗 band 内浮层配色正确，证明 top layer 未破坏 CSS 变量继承）与项 5（hover-lift 卡片上位置不跳）均已通过，其中项 5 取得逐像素证据——浮层区域 diff bbox `None`、最大通道差 `0`，同帧卡片区域最大通道差 `231`。明细见 ADR-025 §6。
 
 ### v0.17（2026-08-19）— 走查缺陷裁决：Scene 下限纠偏 + 承重件标注
 

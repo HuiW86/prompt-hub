@@ -407,7 +407,14 @@ dirty 判定以初始值快照比对，不以「是否聚焦过」判定。
 ## 相关链接
 
 - **触发本决策的文档**：[[03-product-spec#13.3]] 区域 2-bis 对齐话术；走查实证（2026-08-14）；键盘导航实测（2026-08-16）
-- **被本决策影响的文档**：[[03-product-spec]] §13.3 + §13.4 / [[05-design-spec]]（overlay 层级 + 选中态 + 焦点环）/ [[07-features#3.8]] / [[11-test-spec]] / [[CLAUDE#§7]]
+- **被本决策影响的文档**（✅ = 2026-08-20 回流八步已完成，落点版本号见括号）：
+  - ✅ [[03-product-spec]] **v0.19** — §13.3 新增「编辑容器统一契约」跨区域小节（容器形态 / 保存语义规则表 / Scene 属性面板例外 / 提交键 A1-08）+ 区域 2-bis·3·4·草稿卡四处改写 + §13.4 两行快捷键
+  - ✅ [[05-design-spec]] **v0.18** — 新增 §2.6 层叠标尺（`--z-*`）+ §10.2.2 `AnchoredEditor` primitive 与接口契约 + §10.3 组件清单
+  - ✅ [[07-features#3.8]] **v1.14** — 新增「统一锚定编辑容器」行 `done`（P0+P1-a+P1-b），§4 节奏表合计 86→87
+  - ✅ [[11-test-spec]] **v0.3** — 全量刷新 📊 口径（前端 373 / Rust 158 / gate 6 / IPC 51）+ 新增 §4.1 真机验收门 + §7.3 jsdom `popover` shim
+  - ✅ [[CLAUDE#§7]] — 状态指针版本号同步
+  - ⚠️ **回流时发现「`⌘Enter` 保存并推进到下一条」从未实现**（子决策 2 写了，`PhraseFormEditor.tsx:196-206` 只做保存并关闭，推进属 P2）。已在 product-spec 显式标注为「P2 目标、未落地」，**不写成现状**
+  - ⚠️ 回流时另发现 [[HANDOFF]] 的待办清单**漏记两笔**（保存语义规则表本身、容器形态本身），实际为七笔——与本 ADR §6「五个编辑面其实是四个」同类
 - **相关 ADR**：[[021-scene-layered-editing]]（就地原则不变；动作簇载体从 hover 改为选中态）/ [[022-cross-scene-phrase-move]]（其 Option C 否决理由 `022:57` 是撤回 DeleteReceipt 的直接依据）/ [[020-restore-protocol-dark-band]]（token remap 约束来源）/ [[024-dark-cockpit-identity]]（子决策 6 复核其 PhaseBar 子项）/ [[016-choose-dnd-and-resizable-layout]]（排序沿用既有链路）
 - **外部依据**：
   - [Apple HIG – Popovers](https://developer.apple.com/design/human-interface-guidelines/popovers) / [Sheets](https://developers.apple.com/design/human-interface-guidelines/components/presentation/sheets/)

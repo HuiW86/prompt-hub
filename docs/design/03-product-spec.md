@@ -1,12 +1,12 @@
 ---
 type: product-spec
 project: prompt-hub
-version: v0.18
+version: v0.19
 created: 2026-05-18
-last_modified: 2026-08-19
+last_modified: 2026-08-20
 status: draft  # v0.10 起增量待 omar 人审；前序 v0.8 已 ratified
 author: co  # 🤝 人机共创（CLAUDE §5.2）
-related: [[01-spec]], [[05-design-spec]], [[06-prd]], [[012-lock-visual-quality-anchor]], [[019-supersede-flat-visual-anchor]], [[020-restore-protocol-dark-band]], [[021-scene-layered-editing]], [[022-cross-scene-phrase-move]], [[013-alignment-phrases-tab-inclusion]], [[015-expose-mcp-write-pipeline]], [[017-enable-auto-update]], [[018-absorb-promptscape-design]], [[026-fixed-spatial-layout]]
+related: [[01-spec]], [[05-design-spec]], [[06-prd]], [[012-lock-visual-quality-anchor]], [[019-supersede-flat-visual-anchor]], [[020-restore-protocol-dark-band]], [[021-scene-layered-editing]], [[022-cross-scene-phrase-move]], [[025-unified-anchored-editing]], [[013-alignment-phrases-tab-inclusion]], [[015-expose-mcp-write-pipeline]], [[017-enable-auto-update]], [[018-absorb-promptscape-design]], [[026-fixed-spatial-layout]]
 description: 手动 AI 编程仪表盘的 UI 契约——双形态架构/布局/点击路径/状态反馈/用户旅程/主形态 UI 草案；写 UI / 改交互时召回。版本叙事见 CHANGELOG
 ---
 
@@ -658,6 +658,36 @@ graph TD
 
 ### 13.3 文字描述版（按区域）
 
+#### 编辑容器统一契约（v0.19 新增 · 涟漪 [[025-unified-anchored-editing]]）
+
+> **跨区域契约，优先于下文各区域的编辑描述**。所有资产编辑面共用一套容器与保存语义，下文各区域只描述该区特有的字段与动作。
+>
+> 落地范围：P0 / P1-a / P1-b 已实装（2026-08-20 合入 `main`）。**键盘动作层（P2）与合流（P3）未落地**，本节凡标注「P2」的条目是已批准但未实现的目标契约，不是现状。
+
+**a. 容器形态**：编辑器**不再插入宿主文档流**，改由原生 `popover` 渲染进 **top layer**、锚定在触发元素上（`AnchoredEditor`，见 [[05-design-spec#10.2.2]]）。宿主在编辑期间**保持挂载充当锚点**——卡片 / chip / 按钮不再被编辑器替换掉。三个后果：
+
+- 编辑器不被祖先 `overflow: hidden` 裁剪，也不受 hover-lift 的 `transform` 包含块影响
+- 宿主区域高度不随编辑跳变，一屏全景不被推挤（这是触发本次决策的原始缺陷）
+- 面板高度上限按 **overlay frame 相对**逐帧计算并上报（`maxHeight` + 面板内部滚动），超高面板的「保存 / 取消」不会跑出画面。**该上限不能写进 CSS**：外壳是 inset 浮动框而非视口
+
+**b. 保存语义规则表**（⚠️ 这是**数据丢失契约**，不只是容器契约）：
+
+| 场景 | 规则 |
+|---|---|
+| 点击浮层外部、内容合法且 dirty | 保存并关闭 |
+| 点击浮层外部、内容**校验不通过**（名称或正文为空） | **不关闭**，浮层保持打开并高亮失败字段——不因点了别处就丢掉半条话术 |
+| 点击浮层外部、内容未改动（not dirty） | 直接关闭，不发 IPC |
+| `Esc`、内容 dirty | 关闭并放弃；**创建态**给撤销 toast（编辑态原值仍在库中，无需 toast） |
+| `⌘Enter` | 保存并关闭；关闭后焦点归还触发元素 |
+
+dirty 判定以**初始值快照**比对，不以「是否聚焦过」判定。
+
+> **P2 目标（未落地）**：整理态下 `⌘Enter` = **保存并推进到下一条**（连续处理模型核心），最后一条不回卷；调用态维持保存并关闭。当前两态**一律是保存并关闭**。
+
+**c. 唯一例外 — Scene 属性面板点外拒绝关闭**（omar 2026-08-20 裁决）：`ScenePropertiesEditor`（区域 4 属性层）**不**照上表的点外规则，点外**既不保存也不关闭**。理由是它不是一次性属性微调而是**有界任务**（改名 + 换色 + 改角色预设 + 内嵌永久删除确认），HIG 里这个形状是 sheet 不是 popover。两个具体风险：删除确认框展开时点外会连确认框一起吞掉；顺手点中的颜色会在注意力离开的瞬间变成一次落库写入。其 `Esc` 相应改为**逐层退栈**——半截角色预设 → 删除确认 → 面板。代价是点外行为与另三处不一致，已知并接受。
+
+**d. 提交键统一到 A1-08**：裸 `Enter` 不落库。名称字段裸 `Enter` = **焦点推进到正文**，正文裸 `Enter` = 换行；提交一律 `⌘Enter`（`Ctrl+Enter` 等价）或点「保存」。**Macro 编辑器原先的裸 Enter 直接落库已废除**——旧行为能存下正文尚未写完的 Macro。单字段场景（角色预设 chip 添加等）的 `Enter` 仍带 IME `isComposing` 守卫。
+
 #### 区域 0：Header（v0.11 新增 · 涟漪 [[018-absorb-promptscape-design]]）
 
 - **位置**：最顶部 slim 行（UpdaterBanner 之下、协议层 band 之上）
@@ -704,6 +734,7 @@ graph TD
   - 单击 chip → 复制该 AlignmentPhrase → chip flash `--protocol-16` 一瞬 → 主形态自动隐藏
   - keyboard Tab → 整行作为 1 个 tab stop（不在 chip 内 Tab）
   - 切 Phase 时整行 chip 内容同步刷新
+  - **编辑（v0.19 · [[025-unified-anchored-editing]] P1-a 首个落点）**：chip 动作簇 ✎ → 锚定在该 chip 上的浮层编辑器。本区是**触发本次决策的原始缺陷现场**——chip 行高 `--h-phrases` 44px 且祖上有 `overflow: hidden`，流内编辑器的「保存 / 取消」被宿主尺寸吃掉不可达。容器与保存语义见本节「编辑容器统一契约」
   - **「设为默认」（v0.13 · P3-6）**：编辑态下每条**非默认**话术行加 Star「设为默认」按钮——单事务切换该 Phase 的默认话术（旧默认置 0 / 新默认置 1，并同步 `phases.default_alignment_phrase_id` 指针，IPC `set_default_alignment_phrase`）。此前默认话术只在 seed 里钉死（删除拒绝默认项、新建恒非默认），这是默认唯一可变更入口；`⌘1-8` 复制的即该默认话术（[[06-prd#6.5]]）
 
 #### 区域 3：Macro 区（[[06-prd#5.2-Macro-快捷区]]）
@@ -721,6 +752,7 @@ graph TD
   - 单击卡片 → 复制 → 自动隐藏窗口
   - 长按/右键 → 展开"拆解视图"（显示 expandFrom 的 Modifier）
   - 拖拽 → 调整顺序（切换为手动排序模式）
+  - **编辑（v0.19 · [[025-unified-anchored-editing]] P1-b）**：卡片动作簇 ✎ → 锚定在该卡上的浮层编辑器（name + content 两字段，走共享 `PhraseFormEditor`）。此前是卡内手搓表单，各自实现了一遍草稿状态 / autofocus / IME 护栏 / 提交键，已删除收编。**提交键随之统一到 A1-08**（见本节「编辑容器统一契约」d）；容器与保存语义同该契约 a / b
 
 #### 区域 4：Scene 区（[[06-prd#5.3-Scene-全景区]]）
 
@@ -739,16 +771,16 @@ graph TD
     - 标题行：draft name
     - 正文：preview（≤ 80 字符截断——v0.13 校正为代码 `DraftPayload::preview()` 口径，旧文 100 字有误）
     - 底部：provenance「claude-code · {model_hint}」（[[06-prd#10.1.3]]，model 缺失时仅显示来源 app）
-    - 右下动作（v0.13 起三枚）：**promote**（→ 归入正式资产表，跨表事务 [[06-prd#10.2]]，IPC `promote_draft`）/ **编辑**（v0.13 · P3-2：先经 IPC `get_draft` 水合全量 payload——list 只有 80 字有损 preview 而 `update_draft` 是全量替换写——再就地编辑 name+content 保存走 `update_draft`；schema_version/phase_id/scene_id 等隐藏字段原样保留，Modifier 四象限仍由 promote 时人选）/ **discard**（软删，IPC `discard_draft`）
+    - 右下动作（v0.13 起三枚）：**promote**（→ 归入正式资产表，跨表事务 [[06-prd#10.2]]，IPC `promote_draft`）/ **编辑**（v0.13 · P3-2：先经 IPC `get_draft` 水合全量 payload——list 只有 80 字有损 preview 而 `update_draft` 是全量替换写——再编辑 name+content 保存走 `update_draft`；schema_version/phase_id/scene_id 等隐藏字段原样保留，Modifier 四象限仍由 promote 时人选。**v0.19 起编辑器为锚定在该卡「编辑」按钮上的浮层**，此前是卡内手搓表单，已删除收编进共享 `PhraseFormEditor`；因草稿正文不是话术，正文占位符走 `contentPlaceholder` 覆写而非共享默认值）/ **discard**（软删，IPC `discard_draft`）
     - **composition promote 暂缓（v0.13 · P0-5 止血）**：targetType=composition 的草稿「归档」「编辑」按钮 disabled + 卡内可见提示「该类型暂无 UI 承载」（v0.9 移除 Composition 编辑面板后，promote 入库的 Composition 无任何查看/搜索/删除 UI 承载会变孤儿数据）；**discard 保持可用**。解锁条件 = Composition 重新获得 UI 承载（重挂面板或 ⌘N 子窗口落地）
 - **行为**：
   - 点击 Tab → 切换 Scene；点击 📥 草稿 tab → 进入收件箱视图
   - 点击 Phrase → 复制 → 自动隐藏窗口
   - 长按 Phrase → 升级为 Macro / 添加到 Composition 队列
   - **就地编辑（三层，v0.14 · [[021-scene-layered-editing]]，推翻 v0.11–v0.13「统一编辑态」契约）**：全局 editMode 已废除，编辑什么点什么（Tauri-only 不经 MCP，[[scene-substage-editing]] D3 沿用；历史谱系：[[scene-phrase-editing]] v1.4 / [[scene-substage-editing]] v1.6 的编辑态承载被本层级模型取代，删除语义与链路不变）——
-    - **属性层**：卡头铅笔 → 属性面板（`ScenePropertiesEditor`）：name 必填 / icon（lucide 6 预设 + emoji 自由输入 + 「无」）/ color（6 预设 swatch + 清除；用户内容色只染场景自身图标，[[05-design-spec#12.4]]，ADR-021 子决策 2 待 omar 复核）/ rolePresets（chip + × 删除 + 回车添加，Enter 带 IME `isComposing` 守卫）；底部动作行收编 **场景前移/后移**（`reorder_scenes`）与**删除**（二次确认；非空 Scene 后端 `RepoError::SceneNotEmpty` 阻止并 toast，[[06-prd#6.4]]）。面板内控件走原生焦点序、不进 `data-nav-item` 漫游（模态编辑上下文，设计选择）；保存 payload 全字段透传 `update_scene`；卡头 meta 行消费 rolePresets chips
+    - **属性层**：卡头铅笔 → 属性面板（`ScenePropertiesEditor`，v0.19 起为锚定在卡头铅笔上的 top layer 浮层，**点外拒绝关闭 + `Esc` 逐层退栈**，见本节「编辑容器统一契约」c）：name 必填 / icon（lucide 6 预设 + emoji 自由输入 + 「无」）/ color（6 预设 swatch + 清除；用户内容色只染场景自身图标，[[05-design-spec#12.4]]，ADR-021 子决策 2 待 omar 复核）/ rolePresets（chip + × 删除 + 回车添加，Enter 带 IME `isComposing` 守卫）；底部动作行收编 **场景前移/后移**（`reorder_scenes`）与**删除**（二次确认；非空 Scene 后端 `RepoError::SceneNotEmpty` 阻止并 toast，[[06-prd#6.4]]）。面板内控件走原生焦点序、不进 `data-nav-item` 漫游（模态编辑上下文，设计选择）；保存 payload 全字段透传 `update_scene`；卡头 meta 行消费 rolePresets chips
     - **结构层**：子阶段列头 hover / `:focus-within` 双通道显隐动作簇——✎ 行内改名（`update_sub_stage`，IME 守卫）/ ←→ 相邻交换（`reorder_sub_stages`）/ 🗑 二次确认删除（`delete_sub_stage`，**其下 Phrase 解绑为「无分组」**，[[06-prd#6.4]]）；网格尾「＋ 新增子阶段」ghost 列（`create_sub_stage`）
-    - **内容层**：话术卡 hover / `:focus-within` 动作簇——✎ 原位换行内编辑器（`update_phrase`）/ ↑↓ 组内相邻交换（`reorder_phrases`，per-(scene, sub_stage) 分区不跨组）/ 🗑 二次确认删除（`delete_phrase`）；每列底「＋ 添加话术」ghost 卡预填该列 subStageId（`create_phrase`）；**动作簇全部 `stopPropagation`，不触发整卡 copy 主动作**；移动（跨 Scene / 跨子阶段）走动作簇「移动到…」分层选择器——先选目标 Scene 再选其子阶段（含「未分组」），目标 == 当前位置时确认禁用（防空移动），确认后 toast「已移至 X / Y」+ 撤销（凭 MoveReceipt 反向恢复原 Scene/子阶段/精确排序位，仅 toast 生命周期内有效，[[022-cross-scene-phrase-move]]）；话术编辑器子阶段下拉**保留**为就地改分组第二路径，**两径底层语义等价**（均落目标分区末尾，ADR-022 子决策 2）；移动不计 usage；一律不做拖拽
+    - **内容层**：话术卡 hover / `:focus-within` 动作簇——✎ **锚定在该话术卡上的浮层编辑器**（`update_phrase`；v0.19 起，原为「原位换行内编辑器」即卡片被编辑器替换，见本节「编辑容器统一契约」a。卡片现保持挂载充当锚点；列尾「＋ 添加话术」ghost 卡的新建编辑器锚在该 ghost 按钮上）/ ↑↓ 组内相邻交换（`reorder_phrases`，per-(scene, sub_stage) 分区不跨组）/ 🗑 二次确认删除（`delete_phrase`）；每列底「＋ 添加话术」ghost 卡预填该列 subStageId（`create_phrase`）；**动作簇全部 `stopPropagation`，不触发整卡 copy 主动作**；移动（跨 Scene / 跨子阶段）走动作簇「移动到…」分层选择器——先选目标 Scene 再选其子阶段（含「未分组」），目标 == 当前位置时确认禁用（防空移动），确认后 toast「已移至 X / Y」+ 撤销（凭 MoveReceipt 反向恢复原 Scene/子阶段/精确排序位，仅 toast 生命周期内有效，[[022-cross-scene-phrase-move]]）；话术编辑器子阶段下拉**保留**为就地改分组第二路径，**两径底层语义等价**（均落目标分区末尾，ADR-022 子决策 2）；移动不计 usage；一律不做拖拽
     - **排序一律按钮不拖拽**（ADR-021 子决策 1）：视图网格 copy 主动作与拖拽 affordance 互斥，原 v0.13 · P3-6 的 SubStage 结构编辑器 dnd 随编辑态移除，←→/↑↓ 按钮等价承接同一 IPC 链路（能力不回退）；order_index 分区语义（Scene 全局单序 / SubStage per-scene 单序 / 活动场景按 id 追踪）不变
   - **草稿卡片 promote 须 omar 显式点击**——无自动 promote 路径（守 [[06-prd#8.2]] N3 / [[02-constitution#D1]]）。promote / discard 是 omar 主导动作，外部 AI 不可触达（IPC 不经 MCP 暴露，[[06-prd#10.3]] 边界）
 
@@ -833,6 +865,8 @@ graph TD
 | `⌘1` - `⌘8` | 直接切换到第 N 个相位 + 复制对齐话术 | 哲学七的极速通道 |
 | `⌘N` | 唤起 Composition 工作台子窗口 | 现场组装 |
 | `⌘,` | 打开设置弹窗（外观 + 更新，区域 9）| v0.11 起经 Header gear / `⌘,`（原「配置面板编辑 Scene/Phase/Modifier」措辞已废，资产编辑走各区就地编辑态）|
+| `⌘⏎` | **编辑器内提交**（保存并关闭，焦点归还触发元素）| v0.19 · 统一提交键 A1-08。裸 `⏎` 不落库——名称字段推进到正文、正文换行。P2 目标：整理态改为「保存并推进到下一条」，**未落地** |
+| `ESC`（编辑器内） | **放弃并关闭**编辑器（创建态给撤销 toast）| v0.19 · 不冒泡到「关闭仪表盘」。`ScenePropertiesEditor` 为**逐层退栈**：半截角色预设 → 删除确认 → 面板（见 §13.3 编辑容器统一契约 c）|
 | `↑` `↓` `←` `→` | 在卡片间移动焦点 | 键盘党的扫视路径 |
 | `Tab` | 在区域间切换焦点（相位带 / 对齐话术 / Macro / Scene / 最近 / SOP） | 区域级导航（6 tab-reachable；Header 与设置弹窗为 chrome / 模态，不计入区域级循环；8 时代谱系见下方 v0.8 修订记录与 [[013-alignment-phrases-tab-inclusion]]）|
 
@@ -868,6 +902,26 @@ graph TD
 ---
 
 ## 修订记录
+
+### v0.19（2026-08-20）— ADR-025 涟漪：统一锚定编辑容器 + 保存语义契约
+
+> 涟漪源 [[025-unified-anchored-editing]]（Accepted 2026-08-17，P0 当日落地；P1-a + P1-b 于 2026-08-20 合入 `main`，merge `97858f7`）。🤝 共创起草，待 omar 人审。
+>
+> **本次回流的七笔中有两笔是 HANDOFF 待办清单里漏记的**（保存语义规则表、容器形态本身）——清单从别处抄来时会漏，仍须逐文件核实。
+
+| 章节 | 改动 | 来源 |
+|------|------|------|
+| §13.3 **新增「编辑容器统一契约」小节** | 跨区域契约，优先于各区域编辑描述。四块：a 容器形态（原生 `popover` → top layer 锚定，宿主保持挂载充当锚点，`maxHeight` 按 frame 相对上报且不可写进 CSS）/ b **保存语义规则表五行**（点外保存、校验不过不关、未改动不发 IPC、Esc 放弃 + 创建态撤销 toast、`⌘Enter` 保存并关闭）/ c Scene 属性面板**点外拒绝关闭 + Esc 逐层退栈**的唯一例外 / d 提交键统一 A1-08 | ADR-025 子决策 1 / 2 + omar 2026-08-20 裁决 |
+| §13.3 区域 2-bis | 补编辑行为：chip 动作簇 ✎ → 锚定浮层；标注本区是**触发本决策的原始缺陷现场**（44px 行高 + 祖先 `overflow: hidden` 吃掉保存/取消） | ADR-025 §1 |
+| §13.3 区域 3 | 补编辑行为：卡内**手搓表单已删除**收编进共享 `PhraseFormEditor`；**裸 Enter 直接落库的旧行为废除**（能存下正文没写完的 Macro） | P1-b |
+| §13.3 区域 4 属性层 | `ScenePropertiesEditor` 改锚定浮层 + 点外拒绝关闭 + Esc 逐层退栈 | omar 裁决 |
+| §13.3 区域 4 内容层 | 「✎ **原位换行内编辑器**」→ 锚定浮层。**旧文与实现相反**：卡片曾被编辑器替换，现保持挂载充当锚点 | P1-b |
+| §13.3 区域 4 草稿卡 | 编辑器改锚定浮层；手搓表单删除收编；正文占位符走新增的 `contentPlaceholder` 覆写（草稿正文不是话术，直接收编会造成文案回归） | P1-b |
+| §13.4 快捷键表 | 新增 `⌘⏎`（编辑器内提交）与 `ESC`（编辑器内放弃，不冒泡到关闭仪表盘）两行 | 子决策 2 |
+
+**未落地项已显式标注，不写成现状**：「`⌘Enter` 保存并**推进到下一条**」属 P2 连续处理模型，`PhraseFormEditor` 现仅实现保存并关闭；键盘动作层（子决策 3.1–3.4）整体未落地。**验收依据**：G1 六项 + P1-b 门两项已全部通过，其中项 5 与项 2-B 取得 AI 侧逐像素证据（明细见 ADR-025 §6）。
+
+**遗留（不属本次涟漪）**：§13.4 表中 `⌥ Space`「默认值，**可配置**」是自 v0.5 起写入却从未实现的契约欠账——实现硬编码于 `src-tauri/src/lib.rs:165`。已立 ADR-027 处置，见 [[HANDOFF#Next-Actions]] 第 1 项。
 
 ### v0.18（2026-08-19）— 走查缺陷裁决：Scene 下限纠偏
 

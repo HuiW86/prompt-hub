@@ -1,9 +1,9 @@
 ---
 type: features
 project: prompt-hub
-version: v1.13
+version: v1.14
 created: 2026-05-19
-last_modified: 2026-08-19
+last_modified: 2026-08-20
 status: in-progress  # S1 进行中（M0 四项全绿）；进度叙事见 §4 节奏表与 CHANGELOG
 author: ai  # 🤖 AI 主笔 + 人审（CLAUDE §5.2）
 audience: [human, ai]
@@ -169,6 +169,8 @@ related:
 | Scene 编辑分层化（废除全局 editMode → 属性面板 `ScenePropertiesEditor`：name/icon/color/rolePresets 首获 UI 承载 + 场景前移/后移/删除收编；子阶段列头 / 话术卡 hover+`:focus-within` 就地动作簇 + ghost 新增入口；空子阶段列常显；排序拖拽→按钮等价）| P1 | `done` | v1.9 | 前端 222 全绿（ScenePanel 34 含 12 格实体×CRUD 矩阵/异步失败/键盘可达 + ScenePropertiesEditor 18）；真机观感待验 | omar | [[021-scene-layered-editing]] |
 | └ v1.9 分层化推翻上方 v1.4/v1.6 两行及 §3.12「Scene/SubStage 排序 UI」行的**编辑态 UI 承载**（能力零回退：同 IPC 链路，SubStage dnd → ←→ 按钮）——旧行保留作历史；契约见 [[03-product-spec#13.3]] 区域 4 v0.14 | — | — | — | — | — | — |
 | 固定空间布局（`interactionMode` 停止驱动区域重排；两态共用一套区域图 + 同一组持久化键；task 列新增用户可拖纵向分配 `task-2row`，Macro 46%/min `132px` · Scene 54%/min `288px`——**下限取像素不取百分比**；两区下限语义一致 = 一个完整单元 + 下一个露半截）| P1 | `done` | v1.12 | 335 前端全绿（`App.test.tsx` 两条模式分歧断言合并为不分模式 `it.each`）+ **真机走查三项通过**（纵向下限 / Separator 命中与光标 / PhaseBar 等宽后活动相位）| omar | [[026-fixed-spatial-layout]] |
+| 统一锚定编辑容器（编辑器脱离宿主文档流 → 原生 `popover` top layer 锚定；四个编辑面共用 `AnchoredEditor` + `PhraseFormEditor`；Macro / 草稿两份手搓表单删除收编，净删约 180 行；保存语义规则表五行；Scene 属性面板点外拒绝关闭 + Esc 逐层退栈为唯一例外；提交键统一 A1-08）| P1 | `done` | v1.14 | 373 前端全绿（新增 `AnchoredEditor` 17 / `useAnchoredPosition` 13，11 条 P1-b 新测逐条反向验证）+ **真机验收门 G1 六项 + P1-b 门两项全通过**，其中项 5 与项 2-B 取得逐像素证据 | omar | [[025-unified-anchored-editing]] |
+| └ v1.14 本行覆盖 ADR-025 的 **P0 + P1-a + P1-b**；**P2 键盘动作层（子决策 3.1–3.4 + 4）与 P3 合流未落地**，验收门 G2 五项未跑。清单纠偏：ADR 原写「其余五个编辑面」，逐文件核实后**只有 4 个**——`RecentList.tsx` 是只读复制列表、根本没有编辑器，被 §1 影响范围（P2 键盘层口径）误收进迁移清单。契约见 [[03-product-spec#13.3]] 编辑容器统一契约 v0.19 / [[05-design-spec#2.6]] + §10.2.2 v0.18 | — | — | — | — | — | — |
 | └ v1.12 本行**移除**上方 v1.1「Dashboard 可拖列布局」行的按态分列键（`panorama-2col` / `cockpit-2col` → `dashboard-2col`），并退役 `--h-macro-strip` 硬封顶（token 改名 `--h-modifier-card-max`）；能力零回退，列宽可拖与持久化不变。**走查 3 项缺陷 v1.13 已裁**：Scene 下限 `196px`→`288px`（非取舍，是未满足 ADR-026 子决策 2 的验收条件，实测 0 条话术）；Separator 9px 死区记为已知可接受（扩 hover 会吞点击）；`--brand-dim` 对比度 `1.145:1` 不调色，改为把 `.phase.active::after` 标注承重件防减法快车道误删 | — | — | — | — | — | — |
 
 ### 3.9 自动更新（ADR-017 / auto-update）
@@ -290,12 +292,15 @@ related:
 | 产品走查修缮批次（P0/P3 + ADR-020）| v1.7 | 12 功能 | `done`（12/12 实装 + 前端/后端测试全绿；另 7 项质量/治理不计数；真机视觉复核待补）|
 | UX 任务流批次 A（整理模式）| v1.10 | 6 功能 | `done`（6/6 实装 + verifier 对抗审查 PASS；NEEDS HUMAN 4 项真机待验）|
 | UX 任务流批次 B（跨 Scene 移动，ADR-022）| v1.11 | 1 功能 | `done`（verifier 对抗审查 PASS；真机移动/撤销链路待验）|
+| 统一锚定编辑容器（ADR-025）| v1.14 | 1 功能 | `done`（P0+P1-a+P1-b 落地并合入 `main`；**P2 键盘动作层 + P3 合流 `planned`**，G2 未跑）|
 | S3 SOP 导航 | v1.2 | 3 功能 | `planned` |
 | S4 配置个性化 | v1.3 | 4 功能 | `in-progress`（1/4：数据导入导出 JSON `done`，真机待验；配置入口 / Phase 编辑 / 布局可配置仍 `planned`）|
 | S5 辅形态副屏 | v2.0 | 3 功能 | `planned` |
-| **合计** | — | **86 项** | — |
+| **合计** | — | **87 项** | — |
 
 **注**：版本号语义为 prompt-hub 自身版本，与 prd / spec / methodology 各自独立。v1.0 = 第一阶段 MVP 可发布；v2.0 = 辅形态加入（双形态完整）。
+
+> ⚠️ **本表缺 ADR-026「固定空间布局」行**（v1.12 只写进了 §3.8 表，未回写本节奏表）——**既有欠账，本次未补**：属 [[HANDOFF#Next-Actions]] 旧账八步范围，omar 已定本轮只做 ADR-025 涟漪，不夹带。补账时须同步复核合计数。
 
 ---
 
@@ -339,6 +344,7 @@ related:
 | 2026-07-01 | v1.8 bump：新增 §3.12 产品走查修缮批次（12 功能 → `done`：Draft 促升前编辑 +get_draft IPC / composition promote 暂缓止血 / Modifier 移象限+删除管理簇 / AlignmentPhrase 设为默认 / Scene·SubStage 排序 UI / 复制失败可见+Toast intent 分级 / 更新失败 auto-manual 分级+Dashboard 重试 / 启动 DB 失败兜底对话框 / 暗 band 恢复 ADR-020 / light 明度重绘+resting elevation / Scene auto-fit+未分组列头 / 设计稿像素对齐包；另 7 项质量/治理不计数：测试 CI ci.yml / B2 源码 gate 恢复 / IPC 三方契约 gate / typography preset 落地+token 收敛 / primary 对比度修复+token-gate 新规 / focus 可见补齐 / bench C1 退出码）；§3.7 IPC 行注 5→6（+get_draft）；§4 节奏表加修缮批次行，合计 66→78 项。前端最终 151 测试 / cargo --workspace 全绿。涟漪 [[05-design-spec]] v0.13 / [[03-product-spec]] v0.13 / [[06-prd]] v0.12，暗 band 锚点 [[020-restore-protocol-dark-band]] | 2026-07-01 产品走查修缮批次收口涟漪 |
 | 2026-07-12 | v1.10 bump：新增 §3.13 UX 任务流批次 A（6 功能 → `done`：显式整理模式 D-0 / promote 落地定位 A1-03 / discard 可撤销 A1-04 / 保存 toast A1-07 / ⌘Enter 统一 A1-08 / footer wrap A3-02）；§4 节奏表加批次 A 行，合计 79→85 项（附带修正 §4 合计行 2026-07-06 漏更的 78→79）。前端 301 测试（+24）/ cargo --workspace 147 全绿，verifier 对抗审查 PASS；NEEDS HUMAN 4 项真机待验，确认前整理模式不入对外发布说明。涟漪 [[03-product-spec]] v0.15（新增 §4.0.7 交互模式契约 + §4.3 整理态行 + §4.4 三条新反馈）；同日 [[022-cross-scene-phrase-move]] Accepted（子决策 2 = 双路径共存，批次 B 启动）| 2026-07-12 UX 任务流审计批次 A 收口涟漪 |
 | 2026-07-12 | v1.11 bump：新增 §3.14 UX 任务流批次 B（1 功能 → `done`：跨 Scene/跨子阶段话术移动 `move_phrase` + MoveReceipt 撤销 + 分层选择器，A1-01/A1-06 收口）；§4 节奏表加批次 B 行，合计 85→86。前端 308→309 测试 / cargo 155 全绿，verifier 对抗审查 PASS（P2 空移动已修：同目标确认禁用）；真机移动/撤销链路待验。涟漪 [[03-product-spec]] v0.16 §13.3 移动动作契约（双路径语义等价显式记档） | [[022-cross-scene-phrase-move]] 批次 B 收口涟漪 |
+| 2026-08-20 | v1.14 bump：§3.8 新增「统一锚定编辑容器」→ `done`（ADR-025 的 P0+P1-a+P1-b）——编辑器脱离宿主文档流改原生 `popover` top layer 锚定，四个编辑面共用 `AnchoredEditor`+`PhraseFormEditor`；Macro / 草稿两份手搓表单删除收编（净删约 180 行，各自重复实现过草稿状态/autofocus/IME 护栏/提交键）；顺带修掉两处 P1-a 既存缺陷（超高面板 footer 出界 → `maxHeight` 按 frame 相对上报；焦点后代卸载后 Esc 失聪）。**零后端/IPC/schema 改动**。前端 373 全绿 / cargo 158 全绿；**真机验收门 G1 六项 + P1-b 门两项全通过**，项 5 与项 2-B 首取 AI 侧逐像素证据（P1-a 三轮 135 帧从未拍到浮层，改窗口 ID 定向 + 按需截图后一次拍中）。**清单纠偏**：ADR 原写「其余五个编辑面」，核实后只有 4 个（`RecentList` 无编辑器，属 P2 键盘层口径被误收）。§4 节奏表加 ADR-025 行，合计 86→87 项。**P2 键盘动作层 + P3 合流未落地**，G2 五项未跑。涟漪 [[03-product-spec]] v0.19（新增 §13.3 编辑容器统一契约 + §13.4 两行快捷键）/ [[05-design-spec]] v0.18（新增 §2.6 层叠标尺 + §10.2.2 `AnchoredEditor` 接口契约）/ [[11-test-spec]] v0.3 | [[025-unified-anchored-editing]] P1 收口涟漪 |
 | 2026-06-28 | v1.7 bump：§3.4「数据导入导出（JSON）」`planned`→`done`——repo-core `export.rs`（全保真聚合，独立无过滤 SELECT 以纳入弃用/隐藏行，data schema_version `1.1`，**不含 usage_records**=决策 D2）+ repo-write `import.rs`（**整库替换**=决策 D1，`defer_foreign_keys` 破 phases↔alignment_phrases FK 环，按 major 版本拒不兼容备份）；2 path-based Tauri IPC（`export_data`/`import_data`，前端 dialog 选路 + Rust `std::fs` 读写，避开 fs-plugin scope）；接 `tauri-plugin-dialog`（决策 D3）；SettingsModal 新增「数据」页（导出 save dialog / 导入 open dialog + 整库替换确认弹窗 + 完成后 `refreshAll`）。后端 export 3 + import 5 单测，前端 109 测试全绿（clippy/fmt/lint/prettier clean）；**真机导入导出待验**。B2 复检通过（导出/导入按表搬运，不混协议层与任务层）；A2 不出站（仅写用户选定本地路径）。涟漪 [[06-prd#6.9]] | 数据导入导出功能收口涟漪 |
 
 ---
