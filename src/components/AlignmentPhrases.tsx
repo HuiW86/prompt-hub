@@ -1,10 +1,4 @@
-import {
-  Fragment,
-  type MouseEvent as ReactMouseEvent,
-  useCallback,
-  useRef,
-  useState,
-} from "react";
+import { Fragment, type MouseEvent as ReactMouseEvent, useState } from "react";
 import {
   ArrowLeft,
   ArrowRight,
@@ -14,6 +8,7 @@ import {
   Trash2,
 } from "lucide-react";
 
+import { useAnchorRegistry } from "../hooks/useAnchorRegistry";
 import { useCopy } from "../hooks/useCopy";
 import { useRegionNav } from "../hooks/useRegionNav";
 import { useAppStore } from "../stores/appStore";
@@ -73,34 +68,8 @@ export function AlignmentPhrases() {
 
   // ADR-025 子决策 1: the editor now floats above its trigger instead of
   // replacing it, so the chip has to stay mounted and hand over its element.
-  // Anchors are keyed by phrase id; the ghost-add button anchors the create
-  // form. Re-render alone must not lose them, hence a ref map rather than state
-  // — but the panel needs a render to position against a freshly mounted
-  // anchor, so registering one bumps a tick.
-  const anchorsRef = useRef(new Map<string, HTMLElement>());
-  const [, setAnchorTick] = useState(0);
-  // Ref callbacks are memoised per key. An inline `el => register(id, el)` would
-  // be a fresh function every render, and React detaches then re-attaches a ref
-  // whose identity changed — with a setState inside, that is an update loop.
-  const anchorCbsRef = useRef(
-    new Map<string, (el: HTMLElement | null) => void>(),
-  );
-  const anchorRef = useCallback((key: string) => {
-    let cb = anchorCbsRef.current.get(key);
-    if (!cb) {
-      cb = (el: HTMLElement | null) => {
-        if ((anchorsRef.current.get(key) ?? null) === el) return;
-        if (el) anchorsRef.current.set(key, el);
-        else anchorsRef.current.delete(key);
-        // The panel can only measure an anchor that is already in the DOM, so
-        // a newly registered one has to trigger one more render to be seen.
-        setAnchorTick((n) => n + 1);
-      };
-      anchorCbsRef.current.set(key, cb);
-    }
-    return cb;
-  }, []);
-  const anchorFor = (key: string) => anchorsRef.current.get(key) ?? null;
+  // Anchors are keyed by phrase id; the ghost-add button anchors the create form.
+  const anchors = useAnchorRegistry();
 
   // A phase switch strands any open editor over a list the user can no longer
   // see; a stale editingId simply matches nothing, but adding/confirming must be
@@ -221,7 +190,7 @@ export function AlignmentPhrases() {
                 layer="protocol"
                 presentation="anchored"
                 mode="edit"
-                anchor={anchorFor(p.id)}
+                anchor={anchors.get(p.id)}
                 ariaLabel="编辑对齐话术"
                 initialName={p.name}
                 initialContent={p.content}
@@ -234,7 +203,7 @@ export function AlignmentPhrases() {
             )}
             <PhraseChip
               phrase={p}
-              anchorRef={anchorRef(p.id)}
+              anchorRef={anchors.ref(p.id)}
               flash={flashId === p.id}
               confirming={confirmingId === p.id}
               canMoveLeft={idx > 0}
@@ -274,7 +243,7 @@ export function AlignmentPhrases() {
               layer="protocol"
               presentation="anchored"
               mode="create"
-              anchor={anchorFor(GHOST_ADD_ANCHOR)}
+              anchor={anchors.get(GHOST_ADD_ANCHOR)}
               ariaLabel="新增对齐话术"
               initialName={restoredDraft?.name}
               initialContent={restoredDraft?.content}
@@ -289,7 +258,7 @@ export function AlignmentPhrases() {
           )}
           <button
             type="button"
-            ref={anchorRef(GHOST_ADD_ANCHOR)}
+            ref={anchors.ref(GHOST_ADD_ANCHOR)}
             className={styles.ghostAdd}
             aria-label="新增对齐话术"
             data-nav-item
