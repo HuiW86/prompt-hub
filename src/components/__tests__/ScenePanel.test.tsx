@@ -1,4 +1,5 @@
 import {
+  act,
   fireEvent,
   render,
   screen,
@@ -314,6 +315,35 @@ describe("ScenePanel view mode — in-place structure + content editing", () => 
     );
     expect(useToastStore.getState().message).toBe("已新增话术");
     expect(useToastStore.getState().intent).toBe("success");
+  });
+
+  it("abandoning a dirty create draft offers an undo that restores it", () => {
+    // ADR-025 P1-b: this column's create form is anchored now, so 子决策 2 的
+    // 规则表 applies — a creation abandoned by Escape exists nowhere else, and
+    // the toast carries the only route back to it. Restoring must re-open the
+    // SAME column, or an undone draft would silently change sub-stage.
+    render(<ScenePanel />);
+    fireEvent.click(screen.getByLabelText("在 生成 添加话术"));
+    fireEvent.change(screen.getByPlaceholderText("名称"), {
+      target: { value: "草稿名" },
+    });
+    fireEvent.change(screen.getByPlaceholderText("话术内容"), {
+      target: { value: "草稿内容" },
+    });
+
+    fireEvent.keyDown(document, { key: "Escape", bubbles: true });
+    expect(screen.queryByRole("group", { name: "新增话术" })).toBeNull();
+    expect(
+      invokeMock.mock.calls.find((c) => c[0] === "create_phrase"),
+    ).toBeUndefined();
+
+    const undo = useToastStore.getState().action;
+    expect(undo?.label).toBe("撤销");
+    act(() => undo?.onClick());
+
+    expect(screen.getByPlaceholderText("名称")).toHaveValue("草稿名");
+    expect(screen.getByPlaceholderText("话术内容")).toHaveValue("草稿内容");
+    expect(screen.getByLabelText("所属子阶段")).toHaveValue("ss-generate");
   });
 
   it("editing a phrase shows a success toast (A1-07)", async () => {

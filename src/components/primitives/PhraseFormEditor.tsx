@@ -36,6 +36,12 @@ interface PhraseFormEditorBaseProps {
   /** Seed values for the fields — an existing row, or a restored draft. */
   initialName?: string;
   initialContent?: string;
+  /**
+   * Body-field placeholder. Defaults to the phrase wording; Macro and draft
+   * bodies are not 话术, and inheriting that label was a copy regression the
+   * shared form introduced when those two surfaces folded into it (P1-b).
+   */
+  contentPlaceholder?: string;
   /** Localised aria-label for the panel (e.g. "编辑话术"). */
   ariaLabel: string;
   /** Extra fields rendered between the content textarea and the footer
@@ -90,6 +96,7 @@ export function PhraseFormEditor(props: PhraseFormEditorProps) {
     mode,
     initialName,
     initialContent,
+    contentPlaceholder = "话术内容",
     ariaLabel,
     extraFields,
     submitLabel,
@@ -222,7 +229,7 @@ export function PhraseFormEditor(props: PhraseFormEditorProps) {
       />
       <EditorInput
         ref={contentRef}
-        placeholder="话术内容"
+        placeholder={contentPlaceholder}
         value={content}
         rows={3}
         aria-invalid={contentMissing || undefined}

@@ -181,7 +181,17 @@ export function AnchoredEditor({
       // it, so disarm here too rather than let an arm survive into it.
       swallowClickRef.current = false;
       if (e.key !== "Escape") return;
-      if (!panel.contains(document.activeElement)) return;
+      // "The panel currently holds focus" is too strict on its own: when a
+      // focused descendant UNMOUNTS — collapsing an inline delete confirmation
+      // by pressing its own cancel button — focus falls to <body>, no focusin
+      // fires, and the panel would go permanently deaf to Escape until the user
+      // clicked back into it. Nothing is focused in that state, so no other
+      // component has a competing claim on the key; the panel that held focus
+      // last still owns it.
+      const active = document.activeElement;
+      const focusFellAway =
+        heldFocusRef.current && (active === null || active === document.body);
+      if (!panel.contains(active) && !focusFellAway) return;
       // Native popover close-on-Esc would skip our discard semantics.
       e.preventDefault();
       e.stopPropagation();
@@ -236,6 +246,11 @@ export function AnchoredEditor({
       style={{
         top: position?.top ?? 0,
         left: position?.left ?? 0,
+        // Frame-relative, so it cannot live in CSS: the dashboard is an inset
+        // floating frame, not the viewport. Paired with an internal scroll so a
+        // panel too tall for the frame keeps its footer reachable.
+        maxHeight: position?.maxHeight,
+        overflowY: "auto",
         // Until the first measurement lands the panel has no honest place to
         // be; hiding it for that one layout pass avoids a flash at (0,0).
         visibility: position ? "visible" : "hidden",

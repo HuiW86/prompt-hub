@@ -105,6 +105,27 @@ describe("AnchoredEditor — top-layer container (ADR-025 子决策 1)", () => {
     // editor on the very element that dismissed it.
     expect(call("update_alignment_phrase")).toBeUndefined();
   });
+
+  it("still answers Escape after a focused descendant unmounts", () => {
+    // Guarding Escape on "the panel currently contains activeElement" is too
+    // strict: dismissing an inline confirmation by pressing its own cancel
+    // button unmounts the focused node, focus falls to <body>, and no focusin
+    // fires to say so. The panel would go permanently deaf to Escape until the
+    // user clicked back into it — reachable today in the scene properties
+    // panel, whose delete confirmation collapses exactly that way.
+    render(<AlignmentPhrases />);
+    fireEvent.click(screen.getByLabelText("编辑 默认协议"));
+    expect(screen.getByRole("group", { name: "编辑对齐话术" })).toBeTruthy();
+
+    // Simulate the focused descendant going away without a replacement.
+    act(() => {
+      (document.activeElement as HTMLElement | null)?.blur();
+    });
+    expect(document.activeElement).toBe(document.body);
+
+    fireEvent.keyDown(document, { key: "Escape", bubbles: true });
+    expect(screen.queryByRole("group", { name: "编辑对齐话术" })).toBeNull();
+  });
 });
 
 describe("AnchoredEditor — dismissal rules (ADR-025 子决策 2)", () => {

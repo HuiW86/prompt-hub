@@ -12,11 +12,12 @@ import type { Scene } from "../ipc/types";
 
 import {
   ActionCluster,
+  AnchoredEditor,
   Button,
   Chip,
   ConfirmInline,
+  type DismissReason,
   EditorActions,
-  EditorPanel,
   IconButton,
   Input,
 } from "./primitives";
@@ -53,6 +54,9 @@ export interface ScenePropertiesPayload {
 
 export interface ScenePropertiesEditorProps {
   scene: Scene;
+  /** Trigger element the panel pins to (ADR-025 子决策 1) — the scene head's
+   *  edit button, which is also where focus returns on close. */
+  anchor: HTMLElement | null;
   canMoveLeft: boolean;
   canMoveRight: boolean;
   onSave: (payload: ScenePropertiesPayload) => void;
@@ -64,9 +68,18 @@ export interface ScenePropertiesEditorProps {
 // Scene properties panel (plan scene-layered-editing 任务 1): fills PRD §6.4's
 // icon / color / rolePresets fields that had no UI. Container-level actions
 // (move / delete) live in the footer. Structure/content editing is out of scope
-// (任务 5-6). Not yet wired into ScenePanel — 任务 2 does that.
+// (任务 5-6).
+//
+// Anchored (ADR-025 P1-b) but deliberately NOT save-on-outside-click, unlike the
+// three name+content forms (omar, 2026-08-20). Renaming a scene, recolouring it
+// and rewriting its role presets is a bounded task that wants an explicit
+// commit — HIG would call this shape a sheet, not a popover. Two concrete
+// hazards drove the call: an outside click while the 永久删除场景 confirmation
+// is expanded would swallow the confirmation along with the panel, and a colour
+// tapped in passing would become a database write the moment attention moved.
 export function ScenePropertiesEditor({
   scene,
+  anchor,
   canMoveLeft,
   canMoveRight,
   onSave,
@@ -120,11 +133,9 @@ export function ScenePropertiesEditor({
   // Enter adds the pending role, but never mid-IME-composition: committing a
   // pinyin/kana candidate fires an Enter whose isComposing is still true, and
   // swallowing it would eat the composition instead of adding a role.
+  // Escape is NOT handled here — see handleDismiss: the container sees the key
+  // first and clearing the draft is one of the levels it unwinds.
   const onRoleKeyDown = (e: KeyboardEvent<HTMLInputElement>) => {
-    if (e.key === "Escape") {
-      setRoleDraft("");
-      return;
-    }
     if (e.key === "Enter") {
       if (e.nativeEvent.isComposing) return;
       e.preventDefault();
@@ -132,12 +143,33 @@ export function ScenePropertiesEditor({
     }
   };
 
+  // Escape unwinds ONE level at a time rather than tearing the panel down from
+  // any depth: a half-typed role preset first, then an expanded delete
+  // confirmation, and only then the panel itself. The field-level Escape
+  // handlers cannot do this on their own — AnchoredEditor listens on document
+  // in the capture phase, so it decides before any React handler runs, and
+  // refusing through this channel is how a field keeps its own Escape.
+  const handleDismiss = (reason: DismissReason): boolean => {
+    if (reason === "outside") return false;
+    if (roleDraft) {
+      setRoleDraft("");
+      return false;
+    }
+    if (confirmingDelete) {
+      setConfirmingDelete(false);
+      return false;
+    }
+    onClose();
+    return true;
+  };
+
   return (
-    <EditorPanel
+    <AnchoredEditor
+      anchor={anchor}
       layer="task"
-      role="group"
-      aria-label="场景属性"
+      ariaLabel="场景属性"
       className={styles.panel}
+      onDismiss={handleDismiss}
     >
       {/* name — required */}
       <label className={styles.field}>
@@ -148,9 +180,6 @@ export function ScenePropertiesEditor({
           placeholder="场景名称"
           value={name}
           onChange={(e) => setName(e.target.value)}
-          onKeyDown={(e) => {
-            if (e.key === "Escape") onClose();
-          }}
         />
       </label>
 
@@ -316,6 +345,6 @@ export function ScenePropertiesEditor({
           </Button>
         </EditorActions>
       </div>
-    </EditorPanel>
+    </AnchoredEditor>
   );
 }

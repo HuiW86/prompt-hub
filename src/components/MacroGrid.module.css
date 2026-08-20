@@ -167,8 +167,3 @@
   transform: translateY(-50%);
   background: var(--surface-1);
 }
-
-/* Central edit panel inset within the region (panel visuals from EditorPanel). */
-.editor {
-  margin: var(--s-2_5) var(--s-3_5) 0;
-}

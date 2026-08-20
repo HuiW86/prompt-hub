@@ -3,6 +3,13 @@ import { useCallback, useEffect, useLayoutEffect, useState } from "react";
 export interface AnchoredPosition {
   top: number;
   left: number;
+  /**
+   * Cap on the panel's own height, in px. Clamping the ORIGIN is not enough for
+   * a panel taller than the frame: it gets pinned to the top inset and its
+   * footer — which holds 保存 / 取消 — runs off the bottom, which is precisely
+   * the defect ADR-025 exists to fix. Callers pair it with an internal scroll.
+   */
+  maxHeight: number;
 }
 
 // Geometry constants, independent of the spacing tokens on purpose: these feed
@@ -67,8 +74,9 @@ function frameRect(): {
  *
  * Placement: below the anchor by default, flipped above when the space below
  * cannot hold the panel but the space above can; then clamped into the
- * dashboard frame on both axes. Recomputed on scroll of every scrollable
- * ancestor, on window resize, and whenever the anchor or panel changes size.
+ * dashboard frame on both axes, with a height cap for panels the frame cannot
+ * hold outright. Recomputed on scroll of every scrollable ancestor, on window
+ * resize, and whenever the anchor or panel changes size.
  *
  * Returns viewport coordinates for `position: fixed`. That is correct even for
  * a top-layer element: the top layer's containing block is the initial
@@ -110,6 +118,7 @@ export function useAnchoredPosition(
     setPosition({
       top: Math.max(frame.top + INSET, Math.min(top, maxTop)),
       left: Math.max(frame.left + INSET, Math.min(left, maxLeft)),
+      maxHeight: frame.bottom - frame.top - INSET * 2,
     });
   }, [anchor, panel]);
 

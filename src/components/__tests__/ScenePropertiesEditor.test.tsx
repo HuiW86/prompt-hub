@@ -18,8 +18,15 @@ const baseScene: Scene = {
 };
 
 function setup(overrides: Partial<ScenePropertiesEditorProps> = {}) {
+  // A real trigger to pin to: since ADR-025 P1-b the panel is anchored, and an
+  // anchorless panel has no honest place to be, so it renders
+  // `visibility: hidden` until the first measurement lands — which would make
+  // every query below fail on accessibility grounds rather than on behaviour.
+  const anchor = document.createElement("button");
+  document.body.appendChild(anchor);
   const props: ScenePropertiesEditorProps = {
     scene: baseScene,
+    anchor,
     canMoveLeft: true,
     canMoveRight: true,
     onSave: vi.fn(),
@@ -217,6 +224,65 @@ describe("ScenePropertiesEditor — container actions", () => {
     const onClose = vi.fn();
     setup({ onClose });
     fireEvent.click(screen.getByRole("button", { name: "取消" }));
+    expect(onClose).toHaveBeenCalledTimes(1);
+  });
+});
+
+// omar, 2026-08-20: this panel is anchored like the other four editors but
+// deliberately does NOT adopt "点外 = 保存并关闭". Editing a scene's name, colour
+// and role presets is a bounded task that wants an explicit commit, and an
+// outside click while the delete confirmation is expanded would swallow the
+// confirmation along with the panel.
+describe("ScenePropertiesEditor — dismissal (ADR-025 P1-b)", () => {
+  const pressEscape = () =>
+    fireEvent.keyDown(document, { key: "Escape", bubbles: true });
+
+  it("clicking outside neither saves nor closes", () => {
+    const onSave = vi.fn();
+    const onClose = vi.fn();
+    setup({ onSave, onClose });
+    fireEvent.change(screen.getByLabelText("场景名称"), {
+      target: { value: "改了名字" },
+    });
+
+    fireEvent.pointerDown(document.body);
+
+    expect(onSave).not.toHaveBeenCalled();
+    expect(onClose).not.toHaveBeenCalled();
+  });
+
+  it("Escape clears a half-typed role preset before it closes anything", () => {
+    const onClose = vi.fn();
+    setup({ onClose });
+    const roleField = screen.getByLabelText("添加角色预设");
+    roleField.focus();
+    fireEvent.change(roleField, { target: { value: "评审员" } });
+
+    pressEscape();
+
+    // The field's own Escape cannot do this: AnchoredEditor listens on document
+    // in the capture phase, so the panel would have torn down first.
+    expect(roleField).toHaveValue("");
+    expect(onClose).not.toHaveBeenCalled();
+
+    pressEscape();
+    expect(onClose).toHaveBeenCalledTimes(1);
+  });
+
+  it("Escape backs out of the delete confirmation before it closes the panel", () => {
+    const onClose = vi.fn();
+    const onDelete = vi.fn();
+    setup({ onClose, onDelete });
+    fireEvent.click(screen.getByLabelText("删除场景"));
+    screen.getByLabelText("确认删除场景").focus();
+
+    pressEscape();
+
+    expect(screen.queryByLabelText("确认删除场景")).toBeNull();
+    expect(onDelete).not.toHaveBeenCalled();
+    expect(onClose).not.toHaveBeenCalled();
+
+    pressEscape();
     expect(onClose).toHaveBeenCalledTimes(1);
   });
 });

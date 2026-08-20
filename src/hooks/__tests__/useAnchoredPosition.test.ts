@@ -67,7 +67,7 @@ describe("useAnchoredPosition — placement (ADR-025 子决策 1)", () => {
     const anchor = el({ top: 100, left: 200, bottom: 124, right: 300 });
     const panel = el({ width: 300, height: 200 });
 
-    expect(place(anchor, panel)).toEqual({ top: 132, left: 200 });
+    expect(place(anchor, panel)).toMatchObject({ top: 132, left: 200 });
   });
 
   it("flips above when the space below cannot hold the panel", () => {
@@ -85,7 +85,7 @@ describe("useAnchoredPosition — placement (ADR-025 子决策 1)", () => {
     // 400 − 8 inset − (324 + 8 gap) = 60px below, but 300 − 8 − 8 = 284 above.
     // Flipping is observable only as the resulting `top`, which is the point:
     // it is placement arithmetic, not a fact the caller has to be told.
-    expect(place(anchor, panel)).toEqual({ top: 92, left: 100 });
+    expect(place(anchor, panel)).toMatchObject({ top: 92, left: 100 });
   });
 
   it("keeps the panel's top on screen when it fits on neither side", () => {
@@ -103,7 +103,44 @@ describe("useAnchoredPosition — placement (ADR-025 子决策 1)", () => {
     // A panel taller than the frame cannot be placed, only clamped, and the
     // clamp keeps its TOP — the name field, the start of the reading order — on
     // screen rather than its footer.
-    expect(place(anchor, panel)).toEqual({ top: 8, left: 8 });
+    expect(place(anchor, panel)).toMatchObject({ top: 8, left: 8 });
+  });
+
+  it("caps the panel's height to the frame it is clamped into", () => {
+    // Clamping the ORIGIN alone is not enough: the case above pins a too-tall
+    // panel at the top inset and lets the rest run off the bottom, taking the
+    // footer's 保存 / 取消 with it — which is the exact defect ADR-025 exists to
+    // fix, reintroduced one panel lower down. The cap is what the caller pairs
+    // with an internal scroll so those buttons stay reachable.
+    frame({
+      top: 0,
+      left: 0,
+      right: 1000,
+      bottom: 300,
+      width: 1000,
+      height: 300,
+    });
+    const anchor = el({ top: 140, left: 0, bottom: 164, right: 100 });
+    const panel = el({ width: 200, height: 400 });
+
+    expect(place(anchor, panel)?.maxHeight).toBe(284); // 300 − 8 − 8
+  });
+
+  it("caps against the frame rather than the viewport", () => {
+    // Same reason the clamp uses the frame: the shell is an inset floating box,
+    // so a viewport-sized cap would still let a panel spill past its edge.
+    frame({
+      top: 12,
+      left: 12,
+      right: 500,
+      bottom: 400,
+      width: 488,
+      height: 388,
+    });
+    const anchor = el({ top: 100, left: 20, bottom: 124, right: 120 });
+    const panel = el({ width: 200, height: 600 });
+
+    expect(place(anchor, panel)?.maxHeight).toBe(372); // 400 − 12 − 8 − 8
   });
 
   it("clamps to the dashboard frame, not the viewport", () => {
@@ -127,7 +164,7 @@ describe("useAnchoredPosition — placement (ADR-025 子决策 1)", () => {
     const anchor = el({ top: 10, left: 10, bottom: 34, right: 60 });
     const panel = el({ width: 100, height: 50 });
 
-    expect(place(anchor, panel)).toEqual({ top: 42, left: 10 });
+    expect(place(anchor, panel)).toMatchObject({ top: 42, left: 10 });
   });
 
   it("reports no position until it has both an anchor and a panel", () => {
@@ -155,7 +192,7 @@ describe("useAnchoredPosition — following a moving anchor (ADR-025 子决策 1
     const panel = el({ width: 300, height: 100 });
 
     const { result } = renderHook(() => useAnchoredPosition(anchor, panel));
-    expect(result.current).toEqual({ top: 132, left: 200 });
+    expect(result.current).toMatchObject({ top: 132, left: 200 });
 
     // The row scrolled 150px left, carrying the chip with it.
     anchor.moveTo({ left: 50, right: 150 });
@@ -163,7 +200,7 @@ describe("useAnchoredPosition — following a moving anchor (ADR-025 子决策 1
       row.dispatchEvent(new Event("scroll"));
     });
 
-    expect(result.current).toEqual({ top: 132, left: 50 });
+    expect(result.current).toMatchObject({ top: 132, left: 50 });
   });
 
   it("listens to every scrollable ancestor, not just the nearest", () => {

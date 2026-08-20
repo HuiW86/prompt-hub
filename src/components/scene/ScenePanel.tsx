@@ -17,6 +17,7 @@ import {
   Chip,
   EmptyState,
   IconButton,
+  type PhraseFormValues,
   RegionHeader,
 } from "../primitives";
 import { SceneIcon } from "../SceneIcon";
@@ -86,9 +87,7 @@ export function ScenePanel() {
   // <body>, and useRegionNav would restart at the container. useFocusRestore
   // re-lands focus on the mutated item's [data-nav-id] node inside this root.
   const regionRef = useRef<HTMLElement>(null);
-  const { run: withFocusRestore, restoreAfterRender } = useFocusRestore(
-    () => regionRef.current,
-  );
+  const { run: withFocusRestore } = useFocusRestore(() => regionRef.current);
   // Active scene is tracked by ID, not index (P3-6): a tab reorder shifts every
   // index, and an index-keyed selection would silently land on a neighbour scene.
   // The id stays stable across reorders; a deleted/unknown id falls back to the
@@ -96,6 +95,9 @@ export function ScenePanel() {
   const [activeSceneId, setActiveSceneId] = useState<string | null>(null);
   const [showDrafts, setShowDrafts] = useState(false);
   const [showProperties, setShowProperties] = useState(false);
+  // The scene head's edit button — trigger, anchor and focus-return target for
+  // the properties panel (ADR-025 子决策 1).
+  const [propsAnchor, setPropsAnchor] = useState<HTMLElement | null>(null);
   // View-mode in-place editing state — the grid's own action clusters (tasks
   // 5 + 6) drive these. phraseEdit: a phrase card swapped for the PhraseEditor
   // (edit an existing phrase). addPhraseFor: a column's ghost card opened into a
@@ -105,8 +107,11 @@ export function ScenePanel() {
   const [confirmingSubId, setConfirmingSubId] = useState<string | null>(null);
   const [creatingSubStage, setCreatingSubStage] = useState(false);
   const [phraseEditId, setPhraseEditId] = useState<string | null>(null);
+  // `draft` carries a creation the user abandoned and then undid (ADR-025
+  // 子决策 2) — the toast re-opens this column's create form with the text back.
   const [addPhraseFor, setAddPhraseFor] = useState<{
     subStageId: string | null;
+    draft?: PhraseFormValues;
   } | null>(null);
   // The phrase whose card is swapped for the move selector (ADR-022 "移动到…").
   const [movingPhraseId, setMovingPhraseId] = useState<string | null>(null);
@@ -393,6 +398,20 @@ export function ScenePanel() {
     );
   };
 
+  // Abandoning a dirty create form (Esc or 取消) throws away text that exists
+  // nowhere else, so the toast carries the only route back to it (ADR-025
+  // 子决策 2 的规则表 last row). Re-opening targets the same column the draft
+  // was written in, so an undone draft never lands under a different sub-stage.
+  const handleDiscardPhraseDraft = (
+    subStageId: string | null,
+    draft: PhraseFormValues,
+  ) => {
+    showWithAction("已放弃草稿", {
+      label: "撤销",
+      onClick: () => setAddPhraseFor({ subStageId, draft }),
+    });
+  };
+
   // ── View-mode phrase ops (task 6) ─────────────────────────────────────────
   // ↑↓ swaps a phrase with its neighbour WITHIN its own group, persisting the
   // partition's new order through reorder_phrases (order_index is partitioned
@@ -525,6 +544,7 @@ export function ScenePanel() {
             </span>
             <div className={styles.sceneHeadActions}>
               <IconButton
+                ref={setPropsAnchor}
                 aria-label="编辑场景属性"
                 data-nav-item
                 tabIndex={-1}
@@ -536,22 +556,21 @@ export function ScenePanel() {
           </div>
 
           {showProperties && (
-            <div className={styles.editorSlot}>
-              <ScenePropertiesEditor
-                scene={current.scene}
-                canMoveLeft={
-                  scenes.findIndex((sc) => sc.scene.id === current.scene.id) > 0
-                }
-                canMoveRight={
-                  scenes.findIndex((sc) => sc.scene.id === current.scene.id) <
-                  scenes.length - 1
-                }
-                onSave={(payload) => void handleSaveProperties(payload)}
-                onMoveScene={(dir) => void handleMoveScene(dir)}
-                onDelete={() => void handleDeleteScene(current.scene.id)}
-                onClose={() => setShowProperties(false)}
-              />
-            </div>
+            <ScenePropertiesEditor
+              scene={current.scene}
+              anchor={propsAnchor}
+              canMoveLeft={
+                scenes.findIndex((sc) => sc.scene.id === current.scene.id) > 0
+              }
+              canMoveRight={
+                scenes.findIndex((sc) => sc.scene.id === current.scene.id) <
+                scenes.length - 1
+              }
+              onSave={(payload) => void handleSaveProperties(payload)}
+              onMoveScene={(dir) => void handleMoveScene(dir)}
+              onDelete={() => void handleDeleteScene(current.scene.id)}
+              onClose={() => setShowProperties(false)}
+            />
           )}
 
           <div className={styles.phrases}>
@@ -579,6 +598,11 @@ export function ScenePanel() {
                   editingPhraseId={phraseEditId}
                   movingPhraseId={movingPhraseId}
                   addingPhrase={addPhraseFor?.subStageId === subId}
+                  addPhraseDraft={
+                    addPhraseFor?.subStageId === subId
+                      ? addPhraseFor.draft
+                      : null
+                  }
                   flashId={flashId}
                   interactionMode={interactionMode}
                   sceneId={current.scene.id}
@@ -619,13 +643,11 @@ export function ScenePanel() {
                     g.subStage &&
                     void handleDeleteSub(g.subStage.id, realSubIds)
                   }
-                  onPhraseEdit={(id) => {
-                    // Arm a focus restore to the edited card: the save re-pull
-                    // lives inside PhraseEditor, so the orchestrator schedules
-                    // the restore for when the editor closes + the card remounts.
-                    restoreAfterRender(`phrase-${id}`);
-                    setPhraseEditId(id);
-                  }}
+                  // Since ADR-025 the card no longer unmounts to make room for
+                  // the editor, so focus return is the anchored panel's own
+                  // teardown (it re-focuses its anchor — this very card). Arming
+                  // a restore here as well would be a second claim on focus.
+                  onPhraseEdit={(id) => setPhraseEditId(id)}
                   onPhraseEditClose={() => setPhraseEditId(null)}
                   onPhraseMove={(id, dir) =>
                     void handleMovePhrase(subId, g.phrases, id, dir)
@@ -643,6 +665,9 @@ export function ScenePanel() {
                   }
                   onAddPhrase={() => setAddPhraseFor({ subStageId: subId })}
                   onAddPhraseClose={() => setAddPhraseFor(null)}
+                  onAddPhraseDiscard={(draft) =>
+                    handleDiscardPhraseDraft(subId, draft)
+                  }
                   onError={showError}
                 />
               );
