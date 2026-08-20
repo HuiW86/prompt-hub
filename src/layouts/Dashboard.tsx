@@ -1,4 +1,3 @@
-import { Box } from "lucide-react";
 import {
   Group,
   Panel,
@@ -104,14 +103,13 @@ export function Dashboard() {
             defaultSize="68%"
             minSize="42%"
           >
-            {/* Task column: 任务层 marker, then the Macro / Scene split. */}
+            {/* Task column: the Macro / Scene split.
+                The 任务层 marker pill was removed 2026-08-20 (omar) together
+                with ProtocolBand's 协议层 pill — position already says which
+                layer this column is, so the label was the interface explaining
+                its own architecture. ModifierGrid keeps its pill because that
+                panel has no such positional cue. */}
             <div className={styles.taskCol}>
-              <div className={styles.taskLayerHead}>
-                <span className={styles.taskPill}>
-                  <Box size={12} strokeWidth={2} aria-hidden />
-                  任务层
-                </span>
-              </div>
               <Group
                 id="task-2row"
                 orientation="vertical"

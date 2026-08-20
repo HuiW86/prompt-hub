@@ -175,12 +175,14 @@ describe("Dashboard end-to-end render", () => {
   });
 
   // B5-5: per 03-product-spec §13.4 the working regions must be Tab-reachable
-  // (相位带 / 对齐话术 / Macro / Scene / 最近 / SOP). SearchBar relies on its
-  // native input for focus and StatusBar is read-only, so neither carries
-  // tabindex. ModifierGrid + CompositionWorkbench were removed from the
-  // dashboard (UI declutter; the asset types live on in the data layer), so
-  // the cycle dropped from 8 to 6 regions.
-  it("six working regions expose tabindex='0' for region-level Tab navigation", async () => {
+  // (相位带 / 对齐话术 / Macro / Scene / 最近). SearchBar relies on its native
+  // input for focus and StatusBar is read-only, so neither carries tabindex.
+  // ModifierGrid + CompositionWorkbench were removed from the dashboard (UI
+  // declutter; the asset types live on in the data layer), taking the cycle
+  // from 8 to 6; SOP left it in turn (omar 2026-08-20) because a stop that
+  // lands on "第三阶段实现" spends the keyboard user's time on a placeholder.
+  // 5 until the real SOP navigator ships.
+  it("five working regions expose tabindex='0' for region-level Tab navigation", async () => {
     const { container } = render(<App />);
     await waitFor(() =>
       expect(
@@ -193,7 +195,11 @@ describe("Dashboard end-to-end render", () => {
     expect(r.macroGrid?.getAttribute("tabindex")).toBe("0");
     expect(r.scenePanel?.getAttribute("tabindex")).toBe("0");
     expect(r.recentList?.getAttribute("tabindex")).toBe("0");
-    expect(r.sopProgress?.getAttribute("tabindex")).toBe("0");
+    // SOP is a placeholder: on-screen (哲学二 同屏可见) but not worth a Tab stop.
+    // Visible and Tab-reachable are separate claims — this pins that they can
+    // diverge, so restoring the stop later has to be deliberate.
+    expect(r.sopProgress).not.toBeNull();
+    expect(r.sopProgress?.getAttribute("tabindex")).toBeNull();
     // SearchBar wrapper is a role=search div, not tabbable itself.
     expect(r.search?.getAttribute("tabindex")).toBeNull();
     // StatusBar is non-interactive, not in the Tab cycle.

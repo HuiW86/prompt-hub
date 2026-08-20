@@ -40,24 +40,6 @@
   min-height: 0;
 }
 
-/* "任务层" layer marker atop the task column, mirroring ProtocolBand's 协议层
- * pill — neutral chrome label (ADR-019: colour no longer marks layer). The layer
- * identity is carried by column position + the Macro/Scene structure, not hue. */
-.taskLayerHead {
-  flex: 0 0 auto;
-  padding: var(--s-2) var(--s-3_5) 0;
-}
-
-.taskPill {
-  composes: ph-label from "../styles/typography.module.css";
-  display: inline-flex;
-  align-items: center;
-  gap: var(--s-1);
-  padding: var(--s-0_5) var(--s-2);
-  border-radius: var(--r-2);
-  background: var(--surface-2);
-}
-
 .aside {
   display: flex;
   flex-direction: column;

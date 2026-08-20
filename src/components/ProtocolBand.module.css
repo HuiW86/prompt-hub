@@ -32,19 +32,3 @@
   --accent: var(--band-accent);
   --accent-fg: var(--band-accent-fg);
 }
-
-.head {
-  padding: var(--s-2) var(--s-3_5) 0;
-}
-
-/* "协议层" tag — chrome label on the band surface. Layer identity is carried
- * by the band's fixed dark color + position (ADR-020), not an accent hue. */
-.pill {
-  composes: ph-label from "../styles/typography.module.css";
-  display: inline-flex;
-  align-items: center;
-  gap: var(--s-1);
-  padding: var(--s-0_5) var(--s-2);
-  border-radius: var(--r-2);
-  background: var(--surface-2);
-}

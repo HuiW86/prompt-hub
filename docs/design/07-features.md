@@ -1,7 +1,7 @@
 ---
 type: features
 project: prompt-hub
-version: v1.16
+version: v1.17
 created: 2026-05-19
 last_modified: 2026-08-20
 status: in-progress  # S1 进行中（M0 四项全绿）；进度叙事见 §4 节奏表与 CHANGELOG
@@ -113,7 +113,7 @@ related:
 | 复制即隐藏 / ESC 关闭 | P0 | `done` | v1.0 | Phase 5 视觉+功能验收 11/11 ✓（2026-06-03） | omar | [[prompt-hub-mvp#第一阶段]] |
 | UsageRecord 持续记录 | P0 | `in-progress` | v1.0 | 数据层 done / 链路待 S2 | omar | [[06-prd#6.8]] |
 | 三层资产模型（Modifier/Composition/Macro） | P0 | `planned` | v1.0 | 0% | omar | [[02-constitution#B1]] |
-| 协议层与任务层物理分离 | P0 | `done` | v1.0 | 结构分离落地（B2 纯结构）；视觉区分自 ADR-019 改靠位置+形状（弃颜色本体论）/ 数据层待 S2 | omar | [[02-constitution#B2]] |
+| 协议层与任务层物理分离 | P0 | `done` | v1.0 | 结构分离落地（B2 纯结构）；视觉区分自 ADR-019 改靠位置+形状（弃颜色本体论）/ 数据层待 S2。**v1.17 起不再叠文字标签**——「协议层」「任务层」两枚 pill 删除（位置+形状已冗余编码），仅 `ModifierGrid` 保留「协议层 · 参考」（aside 列无 band 无位置线索，是唯一标识）| omar | [[02-constitution#B2]] · [[05-design-spec#5]] |
 | 本地数据存储（无服务端） | P0 | `done` | v1.0 | M0-3 SQLite 落盘 / cargo 12 测试 ✓ | omar | [[02-constitution#A2]] |
 | 设计 Token 系统（无裸值） | P0 | `done` | v1.0 | Phase 1-3 全量 token 化 ✓ | omar | [[prompt-hub-mvp#§0-T1]] |
 
@@ -351,6 +351,7 @@ related:
 | 2026-08-20 | v1.14 bump：§3.8 新增「统一锚定编辑容器」→ `done`（ADR-025 的 P0+P1-a+P1-b）——编辑器脱离宿主文档流改原生 `popover` top layer 锚定，四个编辑面共用 `AnchoredEditor`+`PhraseFormEditor`；Macro / 草稿两份手搓表单删除收编（净删约 180 行，各自重复实现过草稿状态/autofocus/IME 护栏/提交键）；顺带修掉两处 P1-a 既存缺陷（超高面板 footer 出界 → `maxHeight` 按 frame 相对上报；焦点后代卸载后 Esc 失聪）。**零后端/IPC/schema 改动**。前端 373 全绿 / cargo 158 全绿；**真机验收门 G1 六项 + P1-b 门两项全通过**，项 5 与项 2-B 首取 AI 侧逐像素证据（P1-a 三轮 135 帧从未拍到浮层，改窗口 ID 定向 + 按需截图后一次拍中）。**清单纠偏**：ADR 原写「其余五个编辑面」，核实后只有 4 个（`RecentList` 无编辑器，属 P2 键盘层口径被误收）。§4 节奏表加 ADR-025 行，合计 86→87 项。**P2 键盘动作层 + P3 合流未落地**，G2 五项未跑。涟漪 [[03-product-spec]] v0.19（新增 §13.3 编辑容器统一契约 + §13.4 两行快捷键）/ [[05-design-spec]] v0.18（新增 §2.6 层叠标尺 + §10.2.2 `AnchoredEditor` 接口契约）/ [[11-test-spec]] v0.3 | [[025-unified-anchored-editing]] P1 收口涟漪 |
 | 2026-08-20 | v1.15 bump：§3.4 新增「全局唤起键可配置」→ `done`（ADR-027）——**销一笔自 product-spec v0.5 起挂了三个月的账**：§13.4「⌥ Space 默认值，可配置」在册，实现一直硬编码于 `lib.rs:165`。绑定改存 SQLite `settings` 表（migration `0012`，`user_version` 11→12）而非 localStorage——唯一理由是 Rust 在 `setup()` 注册快捷键时 webview 尚不存在；localStorage 方案会让每次启动必然先错误注册一次，而改键者正是默认键冲突的那批人。新增 `get_global_hotkey`/`set_global_hotkey` 两 IPC（51→**53**），改绑走「校验→注销旧→注册新→落库」并在任一步失败回滚。**顺带修掉「点 Dock 图标无反应」**——`RunEvent::Reopen` 既是该 bug 的修复，也是「把自己锁在门外」的逃生口。前端 373→**395** / cargo 158→**168** 全绿，lint/tsc/build/clippy/fmt clean，`bench:hotkey-wake` p95 `13.708ms` 无回归。§4 节奏表 S4 行 4→5 功能，合计 87→**88** 项。**G3 四项未跑**，其中 reopen 逃生口与重启持久化 jsdom/CI 均不可验。涟漪 [[03-product-spec]] v0.20（§13.3 区域 9 快捷键页 + 设置持久化归属表 + §13.4 两行）/ [[06-prd]] v0.13（§5.8 补项 + 新增 §6.8-bis Setting）/ [[11-test-spec]] v0.4 | [[027-configurable-global-hotkey]] 收口涟漪 |
 | 2026-08-20 | v1.16 bump：§3.4「全局唤起键可配置」补**冲突提示**（omar 走查后拍板）——真机证明冲突有两种形态，而只有一种能报错：`register()` 被拒会报「已被占用」，但**更常见的是按键压根没到**（占用方在系统层截走），此时既无错误也无反应，用户只看到「按下去没反应而另一个应用跳出来」。判据不用计时器（会误伤犹豫的用户），用「**修饰键按下又抬起、期间没收到任何主键**」。前端 395→**398**。**G3 项 2 由「不可达」转为「通过」**——该场景补上提示后才终于可观测。涟漪 [[03-product-spec]] v0.21（§13.3 区域 9 冲突形态改写）/ [[11-test-spec]] v0.5 | omar 走查裁决（不新开 ADR：单选项、可逆、不改已批子决策）|
+| 2026-08-20 | v1.17 bump：ADR-026 两项遗留裁决落地——① **层标记 pill 减二留一**：删 `ProtocolBand`「协议层」+ 任务列「任务层」（层级已由位置+形状冗余编码，文字属解释性 UI），**保留 `ModifierGrid`「协议层 · 参考」**（aside 列无 band 无位置线索，唯一标识，删了真丢信息）——**三枚不是一组对称装饰，其中一枚承重**；② **SOP 退出 Tab cycle**，区域级 6 站→**5 站**：占位区在屏（哲学二）但不值一个键盘停靠点，键盘用户每轮都要在「第三阶段实现」上白停一次，真导航器落地时 `tabIndex` 随它回来。398 测试全绿（`App.test.tsx` 区域 tabindex 断言由 6 改 5 并显式钉「在屏但不可 Tab」）。涟漪 [[03-product-spec]] v0.22 / [[05-design-spec]] v0.19 | omar 裁决（[[026-fixed-spatial-layout]] 当初显式不裁的两项）|
 | 2026-06-28 | v1.7 bump：§3.4「数据导入导出（JSON）」`planned`→`done`——repo-core `export.rs`（全保真聚合，独立无过滤 SELECT 以纳入弃用/隐藏行，data schema_version `1.1`，**不含 usage_records**=决策 D2）+ repo-write `import.rs`（**整库替换**=决策 D1，`defer_foreign_keys` 破 phases↔alignment_phrases FK 环，按 major 版本拒不兼容备份）；2 path-based Tauri IPC（`export_data`/`import_data`，前端 dialog 选路 + Rust `std::fs` 读写，避开 fs-plugin scope）；接 `tauri-plugin-dialog`（决策 D3）；SettingsModal 新增「数据」页（导出 save dialog / 导入 open dialog + 整库替换确认弹窗 + 完成后 `refreshAll`）。后端 export 3 + import 5 单测，前端 109 测试全绿（clippy/fmt/lint/prettier clean）；**真机导入导出待验**。B2 复检通过（导出/导入按表搬运，不混协议层与任务层）；A2 不出站（仅写用户选定本地路径）。涟漪 [[06-prd#6.9]] | 数据导入导出功能收口涟漪 |
 
 ---
