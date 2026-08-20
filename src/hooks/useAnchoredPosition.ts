@@ -3,11 +3,14 @@ import { useCallback, useEffect, useLayoutEffect, useState } from "react";
 export interface AnchoredPosition {
   top: number;
   left: number;
-  /** True when the panel flipped above the anchor for want of room below. */
-  flipped: boolean;
 }
 
-/** Gap between the anchor edge and the panel — mirrors --s-2 (8px). */
+// Geometry constants, independent of the spacing tokens on purpose: these feed
+// arithmetic in JS, and reading --s-2 out of the computed root style every
+// reposition would trade a real cost for a cosmetic link. They happen to equal
+// --s-2 today; that is not a contract, so do not "sync" them to it.
+
+/** Gap between the anchor edge and the panel. */
 const OFFSET = 8;
 /** Keep the panel this far inside the dashboard frame on every side. */
 const INSET = 8;
@@ -72,16 +75,19 @@ function frameRect(): {
  * containing block, which is exactly what `fixed` resolves against — this is
  * what lets the panel escape the hover-lift `transform` containing blocks on
  * the Macro / Scene cards.
+ *
+ * There is no `open` parameter: a closed panel is an unmounted panel, so the
+ * hook is only ever called while open. An open flag would be a second source
+ * of truth for the same fact.
  */
 export function useAnchoredPosition(
   anchor: HTMLElement | null,
   panel: HTMLElement | null,
-  open: boolean,
 ): AnchoredPosition | null {
   const [position, setPosition] = useState<AnchoredPosition | null>(null);
 
   const compute = useCallback(() => {
-    if (!open || !anchor || !panel) return;
+    if (!anchor || !panel) return;
     const a = anchor.getBoundingClientRect();
     const p = panel.getBoundingClientRect();
     const frame = frameRect();
@@ -91,6 +97,9 @@ export function useAnchoredPosition(
     // Only flip when flipping actually helps — a panel taller than both gaps
     // stays below and gets clamped, which keeps its top (name field, primary
     // reading order) on screen rather than its footer.
+    // Kept local: which side was taken is an input to the coordinates below and
+    // nothing outside this function has ever needed it. Reporting it would be a
+    // public field no caller reads — add it back only with a consumer in hand.
     const flipped = p.height > roomBelow && roomAbove >= p.height;
 
     const top = flipped ? a.top - OFFSET - p.height : a.bottom + OFFSET;
@@ -101,22 +110,15 @@ export function useAnchoredPosition(
     setPosition({
       top: Math.max(frame.top + INSET, Math.min(top, maxTop)),
       left: Math.max(frame.left + INSET, Math.min(left, maxLeft)),
-      flipped,
     });
-  }, [anchor, panel, open]);
+  }, [anchor, panel]);
 
   // Layout effect: measure and place before paint, so the panel never shows for
   // one frame at its unpositioned origin.
-  useLayoutEffect(() => {
-    if (!open) {
-      setPosition(null);
-      return;
-    }
-    compute();
-  }, [open, compute]);
+  useLayoutEffect(compute, [compute]);
 
   useEffect(() => {
-    if (!open || !anchor || !panel) return;
+    if (!anchor || !panel) return;
 
     const onChange = () => compute();
     const targets = scrollableAncestors(anchor);
@@ -139,7 +141,7 @@ export function useAnchoredPosition(
       window.removeEventListener("resize", onChange);
       ro?.disconnect();
     };
-  }, [open, anchor, panel, compute]);
+  }, [anchor, panel, compute]);
 
   return position;
 }

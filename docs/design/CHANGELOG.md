@@ -14,6 +14,35 @@ description: prompt-hub 设计文档体系变更日志——记录文档结构�
 
 ---
 
+## 2026-08-19（三）· 第四段 — P1-a 交叉审查：规则表四处未落地 + 接口契约提前到 P1-a
+
+### 变更内容
+
+两个独立 agent 对上一段（P1-a）做交叉审查，各自命中同一批缺陷。**四条 CRITICAL 不是新决策，是 [[025-unified-anchored-editing]] 子决策 2 的规则表写了但代码没实现**，直接修，未开新 ADR：
+
+- **撤销回来的草稿点外即静默丢弃**（`PhraseFormEditor.tsx`）：dirty 原以「字段种子值」为基准，而撤销 toast 恢复的草稿是**带种子回填**的，于是 `canSave=true` + `dirty=false`，规则表「未改动→直接关闭不发 IPC」分支抢在保存前面。用户按文档说的「点外 = 保存」点出去，既没落库也没提示。修法：新增必填 `mode: "create" | "edit"`，dirty 改以**已落库值**为基准——创建态基准恒为空，无论字段被什么种子填过
+- **「拒绝关闭」状态下点另一条铅笔仍丢草稿**（`Editor.tsx`）：`editingId` 是单槽，pointerdown 拒绝关闭后，**同一次按压**的 click 照样落到另一条的铅笔上、改写单槽、卸载刚才拒绝关闭的面板。修法：`onDismiss` 返回 `false` 表示拒绝，`AnchoredEditor` 捕获相位吞掉该次按压的 click——「不关闭」必须意味着这次按压什么都不做（对应 omar 裁决「拒绝期间锁住，不允许切到另一条」）
+- **「取消」按钮完全绕过规则表**（`PhraseFormEditor.tsx`）：原 `onClick={onClose}` 直连。同一份脏草稿按 `Esc` 有撤销 toast，点「取消」直接销毁。两个都是放弃入口，现统一走 `handleAbandon`
+- **点外触发的保存失败全静音**（`AlignmentPhrases.tsx`）：`handleCreate` / `handleUpdate` 不 catch，`handleSave` 又吞异常。同文件的 delete / move / set-default 全都走 `showError`，只有保存这条没接。点外保存发生在用户视线已经移开之后，静默失败与成功**逐像素相同**。现补 `showError` + 重抛（`onSubmit` 契约写明调用方必须提示后重抛）
+
+**接口契约从 P1-b 提前到本段**（ADR §6 原定「迁移前先定接口契约」，omar 裁决提前堵）：
+
+- `AnchoredEditor` 删 `open` prop——**挂载即打开**。焦点归还写在卸载 teardown 里，`open={false}` 保持挂载会静默吞掉焦点归还
+- `PhraseFormEditor` 新增必填 `presentation: "anchored" | "inline"`，取代原先「靠 `anchor` 这个 key 在不在 props 里」选模式——一次 `{...props}` 展开就能凭空得到一个 anchor 为 null 的隐形浮层
+- `AnchoredPosition.flipped` 删除（无人消费的死输出；翻转只作为坐标的中间量存在）
+
+### 契约变更（token）
+
+- **`tokens.css` §3b-bis 新增 `--z-modal: 30`**，`--z-popover` / `--z-toast` 顺延为 40 / 50。`SettingsModal` 从 `--z-overlay` 改挂 `--z-modal`。原因：settings 与 search 同踩 `--z-overlay`，相对顺序实际由 `Dashboard.tsx` 的 JSX 顺序决定——今天渲染正确，谁挪一下位置就静默错。**同屏可共存的两层不能同档**。属 [[05-design-spec]] §3c token 契约，随 ADR-025 回流八步一并处理
+
+### 验证
+
+`pnpm test` **357/357**（新增 6 条：撤销草稿点外保存 / 取消走放弃规则 / 保存失败提示 / 拒绝按压锁住 / 拒绝按压逐次重置）· `tsc --noEmit` 0 · `pnpm lint` 0 · `prettier --check` 通过 · `pnpm build` 通过。四条 CRITICAL 的回归测试**已逐条反向验证**：临时还原修复后四条全红，证明测的是缺陷本身而非实现细节。
+
+⚠️ G1 六项真机验收门仍未跑，P1-b 依旧不得开工。
+
+---
+
 ## 2026-08-19（三）· 第三段 — ADR-025 P1-a：锚定编辑层落到对齐话术单点
 
 ### 变更内容

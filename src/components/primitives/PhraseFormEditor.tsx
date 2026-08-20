@@ -23,9 +23,17 @@ export interface PhraseFormValues {
   content: string;
 }
 
-export interface PhraseFormEditorProps {
+interface PhraseFormEditorBaseProps {
   layer: Layer;
-  /** Existing values seed edit mode; absent means a create form. */
+  /**
+   * Which write this form performs. It also fixes the DIRTY BASELINE, which is
+   * why it cannot be inferred from `initialName` being present: a create form's
+   * baseline is empty no matter what seeds the fields, because nothing is in
+   * the DB yet. An undo-restored draft (ADR-025 子决策 2) arrives prefilled,
+   * and measuring it against its own seed reported "unchanged".
+   */
+  mode: "create" | "edit";
+  /** Seed values for the fields — an existing row, or a restored draft. */
   initialName?: string;
   initialContent?: string;
   /** Localised aria-label for the panel (e.g. "编辑话术"). */
@@ -37,22 +45,38 @@ export interface PhraseFormEditorProps {
   submitLabel: string;
   className?: string;
   /**
-   * Opt into the anchored top-layer container (ADR-025 子决策 1): pass the
-   * trigger element to pin against, or `null` while its ref is still settling.
-   * OMITTING the prop keeps the legacy in-flow `EditorPanel` — that is what the
-   * five not-yet-migrated editing surfaces still use, pending the P1-b
-   * interface contract. Presence of the prop, not its value, selects the mode.
+   * Persists the draft. A REJECTION MUST BE SURFACED BY THE CALLER (an error
+   * toast) and then re-thrown: this form only re-enables its save button and
+   * stays open, and an outside-click save happens after the user has already
+   * looked away, so a swallowed rejection is indistinguishable from success.
    */
-  anchor?: HTMLElement | null;
   onSubmit: (values: PhraseFormValues) => Promise<void> | void;
   onClose: () => void;
   /**
-   * Escape with unsaved changes (ADR-025 子决策 2). The caller owns the undo
-   * affordance because only it knows whether the draft was a creation (nothing
-   * in the DB to fall back on) or an edit (original row still intact).
+   * The draft was abandoned with unsaved changes — `Esc` or 取消 (ADR-025
+   * 子决策 2). The caller owns the undo affordance because only it knows
+   * whether the draft was a creation (nothing in the DB to fall back on) or an
+   * edit (original row still intact).
    */
   onDiscard?: (draft: PhraseFormValues) => void;
 }
+
+/**
+ * `presentation` picks the container, and it is REQUIRED on purpose. It used to
+ * be inferred from whether `anchor` appeared in the props object at all, which
+ * made a single `{...props}` spread enough to conjure an invisible anchored
+ * editor with a null anchor — a mode switch you could not see at the call site.
+ *
+ * - `anchored` — the top-layer floating panel (子决策 1); `anchor` is the
+ *   trigger to pin against, `null` while its ref is still settling.
+ * - `inline` — the legacy in-flow `EditorPanel`, still used by the five
+ *   surfaces awaiting P1-b migration.
+ */
+export type PhraseFormEditorProps = PhraseFormEditorBaseProps &
+  (
+    | { presentation: "anchored"; anchor: HTMLElement | null }
+    | { presentation: "inline"; anchor?: never }
+  );
 
 // Shared name + content editor for the four-grid phrase editors (AlignmentPhrases
 // protocol phrases + ScenePanel task phrases). Owns the draft state, autofocus,
@@ -63,13 +87,13 @@ export interface PhraseFormEditorProps {
 export function PhraseFormEditor(props: PhraseFormEditorProps) {
   const {
     layer,
+    mode,
     initialName,
     initialContent,
     ariaLabel,
     extraFields,
     submitLabel,
     className,
-    anchor,
     onSubmit,
     onClose,
     onDiscard,
@@ -88,12 +112,20 @@ export function PhraseFormEditor(props: PhraseFormEditorProps) {
   }, []);
 
   const canSave = name.trim().length > 0 && content.trim().length > 0;
-  // Dirty is measured against the seed snapshot, never against "was this field
+  // Dirty is measured against WHAT IS PERSISTED, never against "was this field
   // focused" (ADR-025 子决策 2) — tabbing through a form must not make it dirty.
   // Compared trimmed so a stray space is not mistaken for an edit.
+  //
+  // A create form's persisted baseline is empty even when the fields are
+  // seeded: see `mode`. Comparing against the seed instead made an
+  // undo-restored draft read as not-dirty, so the outside-click rule table took
+  // its "nothing changed, close without an IPC round trip" branch and threw the
+  // restored text away — no save, no toast, right after the undo affordance had
+  // promised the user it was back.
+  const baseName = mode === "edit" ? (initialName ?? "") : "";
+  const baseContent = mode === "edit" ? (initialContent ?? "") : "";
   const dirty =
-    name.trim() !== (initialName ?? "").trim() ||
-    content.trim() !== (initialContent ?? "").trim();
+    name.trim() !== baseName.trim() || content.trim() !== baseContent.trim();
 
   const handleSave = async () => {
     if (!canSave || saving) return;
@@ -101,19 +133,33 @@ export function PhraseFormEditor(props: PhraseFormEditorProps) {
     try {
       await onSubmit({ name: name.trim(), content: content.trim() });
       // The caller closes on success; on failure it stays open, so re-enable.
+      // Nothing is reported here on purpose — the message belongs to whoever
+      // knows what the write was. See `onSubmit`: the caller must toast before
+      // re-throwing, or a failed save looks exactly like a successful one.
     } catch {
       setSaving(false);
     }
   };
 
+  // Giving up on the draft. Escape and the 取消 button are the same decision,
+  // so they run the same rule (ADR-025 子决策 2 的规则表 last row): 取消 used to
+  // be wired straight to `onClose`, which meant one dirty draft got an undo
+  // toast when abandoned by keyboard and nothing whatsoever by mouse.
+  const handleAbandon = () => {
+    if (saving) return;
+    if (dirty) onDiscard?.({ name, content });
+    onClose();
+  };
+
   // ADR-025 子决策 2 rules table. Only reachable in anchored mode: an in-flow
   // editor has no "outside", and its Escape is handled by the field handlers.
-  const handleDismiss = (reason: DismissReason) => {
-    if (saving) return;
+  // Returns false when the dismissal is REFUSED, which is how the container
+  // knows to swallow the rest of that press.
+  const handleDismiss = (reason: DismissReason): boolean => {
+    if (saving) return true;
     if (reason === "escape") {
-      if (dirty) onDiscard?.({ name, content });
-      onClose();
-      return;
+      handleAbandon();
+      return true;
     }
     // Clicking away is not a decision to throw work out — an empty name or
     // body means we cannot save it either, so hold the panel open and point at
@@ -121,14 +167,15 @@ export function PhraseFormEditor(props: PhraseFormEditorProps) {
     if (!canSave) {
       setShowInvalid(true);
       (name.trim().length === 0 ? nameRef : contentRef).current?.focus();
-      return;
+      return false;
     }
     // Nothing changed — close without spending an IPC round trip.
     if (!dirty) {
       onClose();
-      return;
+      return true;
     }
     void handleSave();
+    return true;
   };
 
   // Both fields commit on Cmd/Ctrl+Enter for one consistent submit key (A1-08).
@@ -138,7 +185,7 @@ export function PhraseFormEditor(props: PhraseFormEditorProps) {
   // both: committing a pinyin/kana candidate fires an Enter whose isComposing is
   // still true, and swallowing it would eat the composition instead.
   const onNameKeyDown = (e: ReactKeyboardEvent<HTMLInputElement>) => {
-    if (e.key === "Escape") onClose();
+    if (e.key === "Escape") handleAbandon();
     if (e.key === "Enter") {
       if (e.nativeEvent.isComposing) return;
       e.preventDefault();
@@ -148,7 +195,7 @@ export function PhraseFormEditor(props: PhraseFormEditorProps) {
   };
 
   const onContentKeyDown = (e: ReactKeyboardEvent<HTMLTextAreaElement>) => {
-    if (e.key === "Escape") onClose();
+    if (e.key === "Escape") handleAbandon();
     if (e.key === "Enter" && (e.metaKey || e.ctrlKey)) {
       if (e.nativeEvent.isComposing) return;
       e.preventDefault();
@@ -193,7 +240,7 @@ export function PhraseFormEditor(props: PhraseFormEditorProps) {
         </p>
       )}
       <EditorActions>
-        <Button intent="subtle" onClick={onClose}>
+        <Button intent="subtle" onClick={handleAbandon}>
           取消
         </Button>
         <Button
@@ -208,12 +255,10 @@ export function PhraseFormEditor(props: PhraseFormEditorProps) {
     </>
   );
 
-  // Presence of the prop selects the container — see the `anchor` doc comment.
-  if ("anchor" in props) {
+  if (props.presentation === "anchored") {
     return (
       <AnchoredEditor
-        anchor={anchor ?? null}
-        open
+        anchor={props.anchor}
         layer={layer}
         ariaLabel={ariaLabel}
         className={className}

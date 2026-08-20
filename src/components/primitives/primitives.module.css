@@ -464,7 +464,8 @@
    `position: fixed` with coordinates from useAnchoredPosition. For a top-layer
    element the containing block is the initial containing block, so `fixed`
    resolves against the viewport regardless of any ancestor transform — that is
-   what lets the panel survive the hover-lift cards.
+   what lets the panel survive the hover-lift cards. z-index is inert in the top
+   layer and is carried only for the jsdom shim path (tokens.css §3b-bis).
 
    Most of this rule exists to undo the [popover] UA sheet, which is written for
    a centred, self-styled panel:
@@ -481,13 +482,7 @@
    renders system-black text inside the dark band: the exact failure the top
    layer was chosen to avoid. Re-declaring it from --fg-1 puts the remap back in
    charge. Nothing in jsdom can catch this — it ships no popover UA sheet at all
-   — which is why ADR-025 验收门 G1 项 1 is a 真机 check.
-
-   `position: fixed` with coordinates from useAnchoredPosition. For a top-layer
-   element the containing block is the initial containing block, so `fixed`
-   resolves against the viewport regardless of any ancestor transform — that is
-   what lets the panel survive the hover-lift cards. z-index is inert in the top
-   layer and is carried only for the jsdom shim path (tokens.css §3b-bis). */
+   — which is why ADR-025 验收门 G1 项 1 is a 真机 check. */
 .anchoredEditor {
   composes: editorPanel;
   position: fixed;

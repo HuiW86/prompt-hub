@@ -208,4 +208,112 @@ describe("AnchoredEditor — dismissal rules (ADR-025 子决策 2)", () => {
     // Nothing was typed, so there is nothing to offer an undo for.
     expect(useToastStore.getState().action).toBeNull();
   });
+
+  it("saves an undo-restored draft on click outside", async () => {
+    render(<AlignmentPhrases />);
+    fireEvent.click(screen.getByLabelText("新增对齐话术"));
+    fireEvent.change(screen.getByPlaceholderText("名称"), {
+      target: { value: "草稿名" },
+    });
+    fireEvent.change(screen.getByPlaceholderText("话术内容"), {
+      target: { value: "草稿内容" },
+    });
+    fireEvent.keyDown(screen.getByPlaceholderText("名称"), { key: "Escape" });
+    act(() => useToastStore.getState().action?.onClick());
+
+    // The restored draft is prefilled, so measuring dirty against the seed made
+    // it read "unchanged" and the not-dirty branch closed the panel without
+    // ever calling onSubmit: undo handed the text back, then the documented
+    // "click outside = save" destroyed it with no toast and no row.
+    clickOutside();
+    await waitFor(() => expect(call("create_alignment_phrase")).toBeTruthy());
+    expect(
+      (call("create_alignment_phrase")?.[1] as { name: string }).name,
+    ).toBe("草稿名");
+  });
+
+  it("the 取消 button runs the same abandon rule as Escape", () => {
+    render(<AlignmentPhrases />);
+    fireEvent.click(screen.getByLabelText("新增对齐话术"));
+    fireEvent.change(screen.getByPlaceholderText("名称"), {
+      target: { value: "草稿名" },
+    });
+    fireEvent.change(screen.getByPlaceholderText("话术内容"), {
+      target: { value: "草稿内容" },
+    });
+    // 取消 used to be wired straight to onClose, so the identical draft got an
+    // undo toast by keyboard and silent destruction by mouse.
+    fireEvent.click(screen.getByRole("button", { name: "取消" }));
+    expect(call("create_alignment_phrase")).toBeUndefined();
+    expect(useToastStore.getState().action?.label).toBe("撤销");
+  });
+
+  it("reports a save that fails on the way out", async () => {
+    // A SQLite-flavoured reject, i.e. the debug-noise class that toUserMessage
+    // deliberately replaces with the caller's actionable fallback.
+    invokeMock.mockRejectedValue("database is locked");
+    render(<AlignmentPhrases />);
+    fireEvent.click(screen.getByLabelText("编辑 默认协议"));
+    fireEvent.change(screen.getByPlaceholderText("名称"), {
+      target: { value: "改名协议" },
+    });
+    // An outside-click save lands after the user has looked away, so silence
+    // here is indistinguishable from success — the panel would sit there
+    // looking saved while nothing reached the DB.
+    clickOutside();
+    await waitFor(() =>
+      expect(useToastStore.getState().message).toBe("保存失败"),
+    );
+    expect(useToastStore.getState().intent).toBe("error");
+    expect(screen.getByPlaceholderText("名称")).toBeInTheDocument();
+  });
+});
+
+describe("AnchoredEditor — a refused dismissal locks the press (ADR-025 子决策 2)", () => {
+  beforeEach(seed);
+
+  it("does not let the refused press reach another row's edit button", () => {
+    usePromptStore.setState({
+      alignmentPhrasesByPhase: {
+        "phase-1": [
+          makePhrase({ id: "ap-1", name: "默认协议", isDefault: true }),
+          makePhrase({ id: "ap-2", name: "第二条", isDefault: false }),
+        ],
+      },
+    });
+    render(<AlignmentPhrases />);
+    fireEvent.click(screen.getByLabelText("编辑 默认协议"));
+    const nameField = screen.getByPlaceholderText("名称");
+    fireEvent.change(nameField, { target: { value: "  " } });
+
+    // `editingId` is a single slot: pointerdown refuses and holds this panel
+    // open, then the very same press lands as a click on the other row's
+    // pencil, reassigns the slot and unmounts the panel that just refused —
+    // draft and all. "不关闭" has to mean the press does nothing at all.
+    const other = screen.getByLabelText("编辑 第二条");
+    fireEvent.pointerDown(other);
+    fireEvent.click(other);
+
+    expect(screen.getByRole("group", { name: "编辑对齐话术" })).toBeTruthy();
+    expect(
+      (screen.getByPlaceholderText("名称") as HTMLInputElement).value,
+    ).toBe("  ");
+    expect(screen.getByRole("status")).toHaveTextContent("不能为空");
+  });
+
+  it("re-arms per press, so a later legitimate click still lands", () => {
+    render(<AlignmentPhrases />);
+    fireEvent.click(screen.getByLabelText("编辑 默认协议"));
+    const nameField = screen.getByPlaceholderText("名称");
+    fireEvent.change(nameField, { target: { value: "" } });
+    fireEvent.pointerDown(document.body);
+    fireEvent.click(document.body);
+
+    // The swallow is scoped to the refused press. Fixing the field and pressing
+    // again must behave normally — a lock that outlived its cause would be the
+    // same defect with the sign flipped.
+    fireEvent.change(nameField, { target: { value: "改名协议" } });
+    fireEvent.pointerDown(document.body);
+    expect(call("update_alignment_phrase")).toBeTruthy();
+  });
 });

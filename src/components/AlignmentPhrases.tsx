@@ -154,17 +154,29 @@ export function AlignmentPhrases() {
     }
   };
 
+  // Both write paths report their own failures. Every other action in this file
+  // already does (delete / move / set-default), and a save has one reason more:
+  // since ADR-025 子决策 2 an outside click also saves, so the write lands after
+  // the user's attention has moved on. Unreported, a failed save is pixel-for-
+  // pixel a successful one. Re-throw after the toast so the shared editor
+  // re-enables its save button and holds the draft (see its `onSubmit` doc).
   const handleCreate = async (name: string, content: string) => {
     if (activePhaseId == null) return;
-    await createAlignmentPhrase({ phaseId: activePhaseId, name, content });
+    try {
+      await createAlignmentPhrase({ phaseId: activePhaseId, name, content });
+    } catch (err) {
+      showError(toUserMessage(err, "新增失败"));
+      throw err;
+    }
     // Confirm the save with the same feedback strength as delete (A1-07).
     showToast("已新增对齐话术");
     setRestoredDraft(null);
     setAdding(false);
   };
 
-  // Escape on a dirty create form throws away text that exists nowhere else,
-  // so the toast carries the only route back to it (ADR-025 子决策 2).
+  // Abandoning a dirty create form (Esc or 取消) throws away text that exists
+  // nowhere else, so the toast carries the only route back to it (ADR-025
+  // 子决策 2).
   const handleDiscardDraft = (draft: { name: string; content: string }) => {
     showWithAction("已放弃草稿", {
       label: "撤销",
@@ -176,7 +188,12 @@ export function AlignmentPhrases() {
   };
 
   const handleUpdate = async (id: string, name: string, content: string) => {
-    await updateAlignmentPhrase({ id, name, content });
+    try {
+      await updateAlignmentPhrase({ id, name, content });
+    } catch (err) {
+      showError(toUserMessage(err, "保存失败"));
+      throw err;
+    }
     showToast("已保存对齐话术");
     setEditingId(null);
   };
@@ -202,6 +219,8 @@ export function AlignmentPhrases() {
             {editingId === p.id && (
               <PhraseFormEditor
                 layer="protocol"
+                presentation="anchored"
+                mode="edit"
                 anchor={anchorFor(p.id)}
                 ariaLabel="编辑对齐话术"
                 initialName={p.name}
@@ -253,6 +272,8 @@ export function AlignmentPhrases() {
           {adding && (
             <PhraseFormEditor
               layer="protocol"
+              presentation="anchored"
+              mode="create"
               anchor={anchorFor(GHOST_ADD_ANCHOR)}
               ariaLabel="新增对齐话术"
               initialName={restoredDraft?.name}

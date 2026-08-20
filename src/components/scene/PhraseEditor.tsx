@@ -67,6 +67,8 @@ export function PhraseEditor({
   return (
     <PhraseFormEditor
       layer="task"
+      presentation="inline"
+      mode={existing ? "edit" : "create"}
       ariaLabel={existing ? "编辑话术" : "新增话术"}
       initialName={existing?.name}
       initialContent={existing?.content}

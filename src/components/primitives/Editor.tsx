@@ -54,12 +54,17 @@ export type DismissReason = "outside" | "escape";
 export interface AnchoredEditorProps {
   /** Element the panel pins to; also where focus returns on close. */
   anchor: HTMLElement | null;
-  open: boolean;
   layer?: Layer;
   /** Localised aria-label for the panel (e.g. "编辑话术"). */
   ariaLabel: string;
   className?: string;
-  onDismiss: (reason: DismissReason) => void;
+  /**
+   * Reports the intent; the caller applies 子决策 2 的规则表 and unmounts the
+   * panel if it decides to close. Return `false` to say the dismissal was
+   * REFUSED (a draft that fails validation) — see the pointerdown handler for
+   * what that buys.
+   */
+  onDismiss: (reason: DismissReason) => boolean | void;
   children: ReactNode;
 }
 
@@ -82,9 +87,14 @@ export interface AnchoredEditorProps {
 // Dismissal is ours, not the platform's: native light-dismiss only hides, and
 // 子决策 2 requires "click outside = save and close". So the popover is
 // `manual` and this component reports intent; the caller applies the rules.
+//
+// MOUNTED MEANS OPEN — there is deliberately no `open` prop. The teardown
+// below is what returns focus to the trigger, so a version that rendered
+// `null` for `open={false}` while staying mounted would swallow that focus
+// return, silently, for any caller that reached for the prop instead of
+// unmounting. One way to close is the only safe number.
 export function AnchoredEditor({
   anchor,
-  open,
   layer = "neutral",
   ariaLabel,
   className,
@@ -92,7 +102,7 @@ export function AnchoredEditor({
   children,
 }: AnchoredEditorProps) {
   const [panel, setPanel] = useState<HTMLDivElement | null>(null);
-  const position = useAnchoredPosition(anchor, panel, open);
+  const position = useAnchoredPosition(anchor, panel);
 
   // Keep the dismiss callback out of the listener effects' dependency lists:
   // it is re-created every render by callers that close over draft state, and
@@ -105,14 +115,14 @@ export function AnchoredEditor({
   const anchorRef = useRef(anchor);
   anchorRef.current = anchor;
 
+  // Whether focus was inside the panel, sampled while it still is.
+  const heldFocusRef = useRef(false);
+
   // Promoted into the TOP LAYER here rather than in an effect, on purpose: ref
   // callbacks run during commit, before any effect, and until the popover is
   // shown the UA sheet keeps it `display: none` — so a child's mount-time
   // autofocus (PhraseFormEditor focusing the name field) would land on an
   // unfocusable element and silently do nothing.
-  // Whether focus was inside the panel, sampled while it still is.
-  const heldFocusRef = useRef(false);
-
   const attachPanel = useCallback((el: HTMLDivElement | null) => {
     setPanel(el);
     if (!el) return;
@@ -121,25 +131,55 @@ export function AnchoredEditor({
     if (typeof el.showPopover === "function") el.showPopover();
   }, []);
 
+  // Armed when a dismissal is refused, to neutralise the click that the same
+  // press is about to deliver. Without it "不关闭" only means "not closed by
+  // THIS route": the press that was refused still lands as a click on whatever
+  // is underneath, and every host keeps its editing target in a single slot
+  // (AlignmentPhrases' `editingId`), so hitting another row's edit button
+  // reassigns that slot and unmounts the very panel that just refused to
+  // close — draft and all. Refusing has to make the press do nothing at all.
+  const swallowClickRef = useRef(false);
+
   useEffect(() => {
-    if (!open || !panel) return;
+    if (!panel) return;
 
     // pointerdown, not click: a click fires after the mousedown already moved
     // focus, so a "save on outside" that waited for click would race the blur.
     const onPointerDown = (e: PointerEvent) => {
+      // Every press starts a fresh verdict; a stale arm must never outlive the
+      // press that set it.
+      swallowClickRef.current = false;
       const target = e.target as Node | null;
       if (!target) return;
       if (panel.contains(target)) return;
       // Pressing the anchor itself is a toggle, not an outside dismissal —
       // letting it through would save here and immediately re-open there.
       if (anchor?.contains(target)) return;
-      dismissRef.current("outside");
+      if (dismissRef.current("outside") !== false) return;
+      swallowClickRef.current = true;
+      // Also suppress the compatibility mousedown, whose default action would
+      // move focus onto whatever was pressed — the caller has just focused the
+      // offending field to explain itself, and losing focus a beat later would
+      // undo that. `click` still fires regardless, hence the swallow above.
+      e.preventDefault();
+    };
+
+    // Capture on document, so this runs before React's root listener and the
+    // click never reaches any component handler.
+    const onClick = (e: MouseEvent) => {
+      if (!swallowClickRef.current) return;
+      swallowClickRef.current = false;
+      e.preventDefault();
+      e.stopPropagation();
     };
 
     // Escape is handled here as well as in the form fields: the panel can hold
     // focus on a non-input (a button, or the panel itself), where the fields'
     // own handlers never see the key.
     const onKeyDown = (e: KeyboardEvent) => {
+      // Keyboard activation can synthesise a click with no pointerdown ahead of
+      // it, so disarm here too rather than let an arm survive into it.
+      swallowClickRef.current = false;
       if (e.key !== "Escape") return;
       if (!panel.contains(document.activeElement)) return;
       // Native popover close-on-Esc would skip our discard semantics.
@@ -159,14 +199,16 @@ export function AnchoredEditor({
     };
 
     document.addEventListener("pointerdown", onPointerDown, true);
+    document.addEventListener("click", onClick, true);
     document.addEventListener("keydown", onKeyDown, true);
     document.addEventListener("focusin", onFocusIn, true);
     return () => {
       document.removeEventListener("pointerdown", onPointerDown, true);
+      document.removeEventListener("click", onClick, true);
       document.removeEventListener("keydown", onKeyDown, true);
       document.removeEventListener("focusin", onFocusIn, true);
     };
-  }, [open, panel, anchor]);
+  }, [panel, anchor]);
 
   // Focus returns to the trigger when the panel goes away, so a keyboard user
   // lands back on the chip they opened rather than at the top of the region.
@@ -183,8 +225,6 @@ export function AnchoredEditor({
     },
     [],
   );
-
-  if (!open) return null;
 
   return (
     <div

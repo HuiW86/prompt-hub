@@ -23,7 +23,7 @@ function frame(rect: Partial<DOMRect>) {
 }
 
 const place = (anchor: HTMLElement, panel: HTMLElement) =>
-  renderHook(() => useAnchoredPosition(anchor, panel, true)).result.current;
+  renderHook(() => useAnchoredPosition(anchor, panel)).result.current;
 
 afterEach(() => {
   document.body.replaceChildren();
@@ -42,11 +42,7 @@ describe("useAnchoredPosition — placement (ADR-025 子决策 1)", () => {
     const anchor = el({ top: 100, left: 200, bottom: 124, right: 300 });
     const panel = el({ width: 300, height: 200 });
 
-    expect(place(anchor, panel)).toEqual({
-      top: 132,
-      left: 200,
-      flipped: false,
-    });
+    expect(place(anchor, panel)).toEqual({ top: 132, left: 200 });
   });
 
   it("flips above when the space below cannot hold the panel", () => {
@@ -62,10 +58,12 @@ describe("useAnchoredPosition — placement (ADR-025 子决策 1)", () => {
     const panel = el({ width: 300, height: 200 });
 
     // 400 − 8 inset − (324 + 8 gap) = 60px below, but 300 − 8 − 8 = 284 above.
-    expect(place(anchor, panel)).toEqual({ top: 92, left: 100, flipped: true });
+    // Flipping is observable only as the resulting `top`, which is the point:
+    // it is placement arithmetic, not a fact the caller has to be told.
+    expect(place(anchor, panel)).toEqual({ top: 92, left: 100 });
   });
 
-  it("stays below when neither side fits, keeping the panel's top on screen", () => {
+  it("keeps the panel's top on screen when it fits on neither side", () => {
     frame({
       top: 0,
       left: 0,
@@ -77,11 +75,10 @@ describe("useAnchoredPosition — placement (ADR-025 子决策 1)", () => {
     const anchor = el({ top: 140, left: 0, bottom: 164, right: 100 });
     const panel = el({ width: 200, height: 400 });
 
-    // Flipping would put the footer on screen and the name field off it; the
-    // clamp keeps the reading order's start visible instead.
-    const pos = place(anchor, panel);
-    expect(pos?.flipped).toBe(false);
-    expect(pos?.top).toBe(8);
+    // A panel taller than the frame cannot be placed, only clamped, and the
+    // clamp keeps its TOP — the name field, the start of the reading order — on
+    // screen rather than its footer.
+    expect(place(anchor, panel)).toEqual({ top: 8, left: 8 });
   });
 
   it("clamps to the dashboard frame, not the viewport", () => {
@@ -105,12 +102,12 @@ describe("useAnchoredPosition — placement (ADR-025 子决策 1)", () => {
     const anchor = el({ top: 10, left: 10, bottom: 34, right: 60 });
     const panel = el({ width: 100, height: 50 });
 
-    expect(place(anchor, panel)).toEqual({ top: 42, left: 10, flipped: false });
+    expect(place(anchor, panel)).toEqual({ top: 42, left: 10 });
   });
 
   it("reports no position until it has both an anchor and a panel", () => {
     const panel = el({ width: 100, height: 50 });
-    const { result } = renderHook(() => useAnchoredPosition(null, panel, true));
+    const { result } = renderHook(() => useAnchoredPosition(null, panel));
     expect(result.current).toBeNull();
   });
 });

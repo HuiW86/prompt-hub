@@ -23,7 +23,11 @@ description: 编辑体系统一——编辑器脱离宿主文档流改锚定 top
 
 > 子决策 6（PhaseBar 主角化复核）**推翻 ADR-024 已拍板的一个子项**，故未夹带通过，2026-08-17 由 omar 单独点头后生效。[[024-dark-cockpit-identity]] 的 PhaseBar 子项自此被本 ADR 局部修订，其余身份设计（`--brand` 恒定色系、深色驾驶舱）不变。
 >
-> **落地进度**：P0（子决策 6）已实施 2026-08-17 —— `PhaseBar.module.css` 摘除 `flex-grow: 2.2` / `font-size: var(--t-18)` 及两者的 transition，活动相位改由 `--brand-dim` 底 + `--brand` 下划线 + 实底序号章 + `--w-600` 表达权重，格宽与字号恒定。P1–P3 待排。
+> **落地进度**：P0（子决策 6）已实施 2026-08-17 —— `PhaseBar.module.css` 摘除 `flex-grow: 2.2` / `font-size: var(--t-18)` 及两者的 transition，活动相位改由 `--brand-dim` 底 + `--brand` 下划线 + 实底序号章 + `--w-600` 表达权重，格宽与字号恒定。
+>
+> **P1-a 已实施 2026-08-19**（`--z-*` 标尺 + `AnchoredEditor` + `useAnchoredPosition`，只接对齐话术一处）。当日交叉审查发现**子决策 2 的规则表有四处写了没落地**（撤销草稿点外静默丢弃 / 拒绝关闭期间被同一次按压绕过 / 「取消」按钮不走规则表 / 点外保存失败静音），已当日修复并补回归测试，不构成新决策。同时按 omar 裁决把 ADR §6 原定 P1-b 的**接口契约定义提前到 P1-a**（`AnchoredEditor` 删 `open`、`PhraseFormEditor` 新增必填 `presentation`、`AnchoredPosition.flipped` 删除），避免五个编辑面照着有陷阱的接口迁一遍。明细见 [[CHANGELOG]] 2026-08-19 第三、四段。
+>
+> ⚠️ **G1 六项真机验收门未跑，P1-b 不得开工**。P2–P3 待排。
 
 ### 修订记录
 
