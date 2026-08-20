@@ -32,19 +32,26 @@
 
 无进行中改动。工作区干净（仅 `.codex/` / `AGENTS.md` / `dsh-plugin-ziwuliuzhu/` 未跟踪）。
 
-⚠️ `main` **领先 `origin/main` 12 个 commit、未 push**（其中 1 个是本会话前就存在的 ADR-026 checkpoint，说明推送本就按 omar 节奏走）。
+**2026-08-20 补记（本次会话）**：
 
-⚠️ `feat/anchored-editor-p1a` 分支**保留未删**，作为回滚把手。
+- **已 push**：`f5970cc..9cb08f3`，13 个 commit，`main` 与 `origin/main` 同步
+- **`feat/anchored-editor-p1a` 已删**（`git branch -d` 校验通过 = 内容全在 `main`）。回滚锚点改用 merge commit `97858f7`
+- **旧 Next Actions 第 1 项（push 与分支清理决策）销账**
 
 ⚠️ `dsh-plugin-ziwuliuzhu/` 未跟踪且 6 个文件 prettier 不合规——与本项目无关，**不要 stage、不要格式化**。
 
 ## Next Actions
 
-1. **push 与分支清理决策**：`main` 领先 `origin/main` 12 commit 未 push；`feat/anchored-editor-p1a` 保留未删。需 omar 定推送时机，确认后 `git push origin main` + `git branch -d feat/anchored-editor-p1a` (new 2026-08-20)
+1. **全局唤起键可配置 — 先开 ADR-027，不要直接开写**（2026-08-20 讨论定向，omar 选「只做全局唤起键，其余暂缓」）。当前硬编码在 `src-tauri/src/lib.rs:165` `Shortcut::new(Some(Modifiers::ALT), Code::Space)`。**注意：可见化那一半早已做完**——`src/components/HotkeyBanner.tsx` 查 `AppState.hotkey_registered` 出可关闭横幅，勿重复立项。ADR 须裁三条：
+   - **① 存哪（决定其余两条）**：Rust 在 setup 阶段注册，读不到 localStorage。localStorage 方案有「开机先注册旧键、前端挂载后再改」的窗口期，而用户改键的原因通常正是冲突，该窗口期注册照样失败 → **倾向 SQLite**（`db_init` 本就在注册之前，加一次单行读），代价是破 `settingsStore` 注释「appearance prefs 永不进 SQLite」的界（论据：快捷键非外观偏好、不含隐私指纹）
+   - **② 冲突检测只有一种形态**：macOS 无 API 枚举他人占用的键，唯一检测手段是 `register()` 失败 → 必须新增可运行时重注册的 IPC（unregister 旧 + register 新 + 失败回滚原键），不能只写配置等下次启动。硬约束：**强制至少一个修饰键**（裸字母全局键会在系统级吞掉打字）
+   - **③ 新失败模式：配置把自己锁在门外** ⚠️ 用户设的键日后被他人抢占 → 开机注册失败 → 唤不起窗口，而改配置的入口在窗口里，`HotkeyBanner` 也救不了（它得先有窗口）。逃生口三选一：(a) 保留不可改的兜底和弦 / (b) **处理 macOS reopen 事件（Dock 点击 / 重复启动）——倾向此项**，它同时修掉「点 Dock 图标没反应」/ (c) `--show` 命令行
+   - **为什么够格开 ADR**：①是不可逆存储契约选择、③引入当前不存在的失败模式、改动落在 C1 200ms 启动路径。涟漪到 `06-prd`（设置字段）+ `03-product-spec` (new 2026-08-20)
 2. **`docs/design/05-design-spec.md` §3c compact 层立论重写**：正文写着「The 640px-tall baseline window」，但窗口恒等于显示器高度（`src-tauri/src/lib.rs:24` `fit_to_active_monitor`），该基线不可复现。**compact 层的存在理由是产品判断，需 omar 定**，然后同步 `src/styles/tokens.css:480-500` 注释块 (carried from 2026-08-19)
 3. **ADR-026 显式不裁的两项待 omar 裁**：`src/layouts/Dashboard.tsx:145-150` 的 `任务层` pill 去留（现常显以保行为等价；与 `ProtocolBand.module.css` 的「协议层」pill 成对，删一半破坏层级编码对称性）/ `src/components/SopProgress.tsx` stub 是否继续占正式区 (carried from 2026-08-18)
-4. **ADR-025 契约回流八步**（P1-b 落地后**清单变长**，须一次做完）：`docs/design/03-product-spec.md` §13.3 各区域编辑契约 + §13.4 键盘契约；`docs/design/05-design-spec.md` overlay 层级 + 选中态 + 焦点环；`07-features` §3.8；`11-test-spec`。**必须一并回流的五笔**：(a) `src/styles/tokens.css` §3b-bis `--z-modal: 30`（`--z-popover`/`--z-toast` 顺延 40/50），属 design-spec §3c token 契约；(b) `PhraseFormEditor` / `AnchoredEditor` 接口契约（`presentation` 必填、挂载即打开、`mode` 定 dirty 基准、新增 `contentPlaceholder`）；(c) **Scene 属性面板点外拒绝关闭 + Esc 逐层退栈**，是子决策 2 规则表的显式例外；(d) **Macro 提交键改为 A1-08 统一语义**（裸 Enter 不再落库）；(e) `useAnchoredPosition` 增报 `maxHeight`（面板高度上限是 frame 相对，不进 CSS） (carried from 2026-08-16，本轮扩容)
-5. **开 ADR-025 P2（无阻塞，可开工）**：键盘动作层，子决策 3.1–3.4 + 子决策 4。3.1 去掉动作簇 `data-nav-item`（`src/components/AlignmentPhrases.tsx` `PhraseChip` 6 停靠点→1、`src/components/scene/ViewPhraseCard.tsx` 7→1、`src/components/MacroGrid.tsx` 5→1）；3.2 键位表挂 `src/hooks/useRegionNav.ts:32`（⌘/⌥/⇧ 已让出）；3.3 动作簇改选中态跟随——**顺带解掉 `src/components/ScenePanel.module.css:420` hover 遮挡标题**。ADR §6 要求**先在对齐话术一个区域跑通全套键位再铺开**，有独立验收门 G2（5 项）。⚠️ ADR §6 自记「键位表应一次定死」，肌肉记忆形成后再改更痛 (new 2026-08-20)
+4. ~~**ADR-025 契约回流八步**~~ ✅ **2026-08-20 完成**（product-spec v0.19 / design-spec v0.18 / features v1.14 / test-spec v0.3 / MANIFEST v1.11）。**实际是七笔不是五笔**——下列清单漏记了「子决策 2 保存语义规则表」与「容器形态本身」两笔。回流中另发现三处账实不符：(i) **`⌘Enter` 保存并推进到下一条从未实现**（属 P2，已标注为未落地而非现状）；(ii) test-spec 源码级 gate 实为 **6 个**（`density-gate` / `theme-parity` 早已在 CI 跑却从未登记），IPC 命令 48→51；(iii) product-spec §13.4 的 `⌥ Space`「可配置」是自 v0.5 起写入却从未实现的欠账，即本清单第 1 项 ADR-027 的文档依据。**范围外未补**：ADR-026 缺 features §4 节奏表行与 §6 变更日志条目（已在 §4 表下留警示）。原始清单存档如下：`docs/design/03-product-spec.md` §13.3 各区域编辑契约 + §13.4 键盘契约；`docs/design/05-design-spec.md` overlay 层级 + 选中态 + 焦点环；`07-features` §3.8；`11-test-spec`。**必须一并回流的五笔**：(a) `src/styles/tokens.css` §3b-bis `--z-modal: 30`（`--z-popover`/`--z-toast` 顺延 40/50），属 design-spec §3c token 契约；(b) `PhraseFormEditor` / `AnchoredEditor` 接口契约（`presentation` 必填、挂载即打开、`mode` 定 dirty 基准、新增 `contentPlaceholder`）；(c) **Scene 属性面板点外拒绝关闭 + Esc 逐层退栈**，是子决策 2 规则表的显式例外；(d) **Macro 提交键改为 A1-08 统一语义**（裸 Enter 不再落库）；(e) `useAnchoredPosition` 增报 `maxHeight`（面板高度上限是 frame 相对，不进 CSS） (carried from 2026-08-16，本轮扩容)
+5. **开 ADR-025 P2（无阻塞，可开工）**：键盘动作层，子决策 3.1–3.4 + 子决策 4。3.1 去掉动作簇 `data-nav-item`（`src/components/AlignmentPhrases.tsx` `PhraseChip` 6 停靠点→1、`src/components/scene/ViewPhraseCard.tsx` 7→1、`src/components/MacroGrid.tsx` 5→1）；3.2 键位表挂 `src/hooks/useRegionNav.ts:32`（⌘/⌥/⇧ 已让出）；3.3 动作簇改选中态跟随——**顺带解掉 `src/components/ScenePanel.module.css:420` hover 遮挡标题**。ADR §6 要求**先在对齐话术一个区域跑通全套键位再铺开**，有独立验收门 G2（5 项）。⚠️ ADR §6 自记「键位表应一次定死」，肌肉记忆形成后再改更痛。
+   **2026-08-20 已议免重复讨论**：动作键层**不做可自定义**（omar 定「其余暂缓」）。三层键性质不同——全局唤起键该可配（已拆为第 1 项）/ 结构导航键 `Tab`·方向键·`Esc`·`Enter` 属平台约定不该可配 / 动作键 `E`·`R`·`⌘D`·`⌫` 是上下文键（仅焦点在条目上时生效），冲突面在 app 内部、我们自己能排完，可配反而放大「裸字母键须避让 IME / type-ahead」那笔债。**键盘布局差异（Dvorak/AZERTY）用 `e.code` 而非 `e.key` 解决大半，比配置面板便宜两个数量级**。表驱动写法（键位集中成 map 常量而非散进六个组件的 switch）同属暂缓，开工时再定 (new 2026-08-20)
 6. **契约回流八步（旧账）**：`03-product-spec.md` §13.4 描述 SOP 为 instrument card 而 `src/components/SopProgress.tsx` 是单行 stub。合并既有欠账：§4.0/§13.4 + §4.0.7 卡片解剖（title-only）+ 外观设置（density）；design-spec §2/§8/§9 + §3c token 层。**§3c 剩两个 unbound token 待处置**（`--t-18` / `--h-modifier-tray`） (carried from 2026-07-21)
 7. **重写 `docs/release-runbook.md` §3 第 1 项**：改为已实际执行的可执行三项（`Info.plist` 版本 / `codesign -dvvv` 验 Authority+TeamID / `lipo -info` 架构 + 文件清单 diff），正文仍是旧的不可执行表述 (carried from 2026-08-10)
 8. **`docs/release-runbook.md` §3 第 4 项补 Ed25519 验签脚本**：Python 内联验签（`base64` → 切 `alg/key_id/pk` → `blake2b-512` 预哈希 → `Ed25519PublicKey.verify`），免 `brew install minisign` 且能验已安装旧客户端的内嵌公钥 (carried from 2026-08-11)
@@ -67,6 +74,7 @@
 ## Dropped
 
 - 无。旧 22 项：2 项完成销账（第 3 项 P1-b、第 22 项分支合入决策），其余 20 项全部承接；新增 3 项（push 与分支清理 / 开 P2 / 1pt 归因）。净计 23 项。
+- **2026-08-20 补记**：第 1 项（push 与分支清理）当日执行完毕并销账，其位置由新增的「全局唤起键可配置 ADR-027 立项」承接。**动作键可自定义**经讨论主动暂缓（理由已写进第 5 项，非放弃、是划出 P2 范围）。总数仍 23 项。
 
 ## Risks & Decisions
 
