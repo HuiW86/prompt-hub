@@ -1,5 +1,5 @@
 import { Check, Pencil, X } from "lucide-react";
-import { useEffect, useRef, useState } from "react";
+import { useState } from "react";
 
 import { ipc } from "../ipc";
 import { GROUP_KINDS } from "../ipc/types";
@@ -18,11 +18,9 @@ import { relativeTime } from "../utils/time";
 import {
   Button,
   CardSurface,
-  EditorActions,
-  EditorInput,
-  EditorPanel,
   EmptyState,
-  Input,
+  PhraseFormEditor,
+  type PhraseFormValues,
 } from "./primitives";
 import styles from "./DraftInbox.module.css";
 
@@ -81,6 +79,12 @@ function DraftCard({ draft }: { draft: DraftSummary }) {
   const [busy, setBusy] = useState(false);
   // Full payload hydrated via get_draft when the edit flow opens; null = closed.
   const [editing, setEditing] = useState<EditablePayload | null>(null);
+  // The 编辑 button is the trigger the panel pins to and where focus returns
+  // (ADR-025 子决策 1). It is preferred over the whole card because the card
+  // also holds 丢弃 / 归档: pressing the anchor is treated as a toggle rather
+  // than an outside dismissal, so anchoring to the card would let a draft be
+  // discarded out from under its own open editor.
+  const [editAnchor, setEditAnchor] = useState<HTMLElement | null>(null);
 
   const isModifier = draft.targetType === "modifier";
   const promoteBlocked = draft.targetType === "composition";
@@ -148,7 +152,8 @@ function DraftCard({ draft }: { draft: DraftSummary }) {
   // Hydrate the full stored payload before opening the editor — the list only
   // carries an 80-char preview, and update_draft is a full-replacement write.
   async function onEditClick() {
-    if (busy || editBlocked) return;
+    // Already open: re-hydrating would re-run get_draft under a live draft.
+    if (busy || editBlocked || editing) return;
     setBusy(true);
     try {
       const full = await ipc.getDraft(draft.id);
@@ -170,29 +175,25 @@ function DraftCard({ draft }: { draft: DraftSummary }) {
         <span className={styles.type}>{TYPE_LABEL[draft.targetType]}</span>
         <h4 className={styles.name}>{draft.name}</h4>
       </div>
-      {editing ? (
+      {editing && (
         <DraftEditor
           draftId={draft.id}
           payload={editing}
+          anchor={editAnchor}
           onClose={() => setEditing(null)}
         />
-      ) : (
-        <>
-          <p className={styles.preview}>{draft.preview}</p>
-          <div className={styles.foot}>
-            <div className={styles.meta}>
-              <span className={styles.source}>{draft.toolName}</span>
-              <span className={styles.time}>
-                {relativeTime(draft.createdAt)}
-              </span>
-            </div>
-            <div className={styles.actions}>
-              {promoteBlocked && (
-                <span className={styles.blockedHint}>
-                  {PROMOTE_BLOCKED_HINT}
-                </span>
-              )}
-              {/* P0-1 roving nav (03-product-spec §13.4 v0.7 "方向键选草稿卡 +
+      )}
+      <p className={styles.preview}>{draft.preview}</p>
+      <div className={styles.foot}>
+        <div className={styles.meta}>
+          <span className={styles.source}>{draft.toolName}</span>
+          <span className={styles.time}>{relativeTime(draft.createdAt)}</span>
+        </div>
+        <div className={styles.actions}>
+          {promoteBlocked && (
+            <span className={styles.blockedHint}>{PROMOTE_BLOCKED_HINT}</span>
+          )}
+          {/* P0-1 roving nav (03-product-spec §13.4 v0.7 "方向键选草稿卡 +
                   动作键 promote/discard"): the browse-state action buttons opt
                   into the scene-panel region's arrow traversal via data-nav-item
                   + tabIndex=-1. Type-blocked buttons (composition edit/promote)
@@ -200,161 +201,118 @@ function DraftCard({ draft }: { draft: DraftSummary }) {
                   button, so marking them would strand arrow traversal. The
                   discard button is never type-blocked, so it always anchors the
                   card in the sequence. */}
-              <Button
-                intent="ghost"
-                onClick={() => void onEditClick()}
-                disabled={busy || editBlocked}
-                title={editBlocked ? PROMOTE_BLOCKED_HINT : undefined}
-                data-nav-item={editBlocked ? undefined : true}
-                tabIndex={-1}
-              >
-                <Pencil size={13} aria-hidden strokeWidth={2} />
-                编辑
-              </Button>
-              <Button
-                intent="ghost"
-                onClick={() => void doDiscard()}
-                disabled={busy}
-                data-nav-item
-                tabIndex={-1}
-              >
-                <X size={13} aria-hidden strokeWidth={2} />
-                丢弃
-              </Button>
-              <Button
-                intent="ghost"
-                onClick={onPromoteClick}
-                disabled={busy || promoteBlocked}
-                title={promoteBlocked ? PROMOTE_BLOCKED_HINT : undefined}
-                aria-expanded={isModifier ? picking : undefined}
-                data-nav-item={promoteBlocked ? undefined : true}
-                tabIndex={-1}
-              >
-                <Check size={13} aria-hidden strokeWidth={2} />
-                归档
-              </Button>
-            </div>
-          </div>
-          {isModifier && picking && (
-            <div
-              className={styles.quad}
-              role="group"
-              aria-label="选择四象限分类"
+          <Button
+            intent="ghost"
+            ref={setEditAnchor}
+            onClick={() => void onEditClick()}
+            disabled={busy || editBlocked}
+            title={editBlocked ? PROMOTE_BLOCKED_HINT : undefined}
+            data-nav-item={editBlocked ? undefined : true}
+            tabIndex={-1}
+          >
+            <Pencil size={13} aria-hidden strokeWidth={2} />
+            编辑
+          </Button>
+          <Button
+            intent="ghost"
+            onClick={() => void doDiscard()}
+            disabled={busy}
+            data-nav-item
+            tabIndex={-1}
+          >
+            <X size={13} aria-hidden strokeWidth={2} />
+            丢弃
+          </Button>
+          <Button
+            intent="ghost"
+            onClick={onPromoteClick}
+            disabled={busy || promoteBlocked}
+            title={promoteBlocked ? PROMOTE_BLOCKED_HINT : undefined}
+            aria-expanded={isModifier ? picking : undefined}
+            data-nav-item={promoteBlocked ? undefined : true}
+            tabIndex={-1}
+          >
+            <Check size={13} aria-hidden strokeWidth={2} />
+            归档
+          </Button>
+        </div>
+      </div>
+      {isModifier && picking && (
+        <div className={styles.quad} role="group" aria-label="选择四象限分类">
+          {GROUP_KINDS.map((kind) => (
+            <button
+              key={kind}
+              type="button"
+              className={styles.quadBtn}
+              onClick={() => void doPromote(kind)}
+              disabled={busy}
             >
-              {GROUP_KINDS.map((kind) => (
-                <button
-                  key={kind}
-                  type="button"
-                  className={styles.quadBtn}
-                  onClick={() => void doPromote(kind)}
-                  disabled={busy}
-                >
-                  {GROUP_KIND_LABEL[kind]}
-                </button>
-              ))}
-            </div>
-          )}
-        </>
+              {GROUP_KIND_LABEL[kind]}
+            </button>
+          ))}
+        </div>
       )}
     </CardSurface>
   );
 }
 
-// Inline edit panel for a pending draft (PRD §10.3 update_draft "UI 编辑保存").
-// Only name + content are exposed; every hidden payload field (schema_version /
-// phase_id / scene_id / is_default) is carried over verbatim from the hydrated
-// payload. Modifier drafts carry NO group_kind here — the four-quadrant call
-// stays a promote-time human decision (ADR-015 补遗 decision iii).
+// Edit panel for a pending draft (PRD §10.3 update_draft "UI 编辑保存"), floated
+// over its 编辑 button since ADR-025 P1-b. Only name + content are exposed; every
+// hidden payload field (schema_version / phase_id / scene_id / is_default) is
+// carried over verbatim from the hydrated payload. Modifier drafts carry NO
+// group_kind here — the four-quadrant call stays a promote-time human decision
+// (ADR-015 补遗 decision iii).
+//
+// The hand-rolled form this replaced duplicated the shared editor's draft state,
+// autofocus, IME guard and submit keys. Folding it in also buys the 子决策 2 rule
+// table for free: an outside click now saves rather than silently abandoning.
 function DraftEditor({
   draftId,
   payload,
+  anchor,
   onClose,
 }: {
   draftId: string;
   payload: EditablePayload;
+  anchor: HTMLElement | null;
   onClose: () => void;
 }) {
   const updateDraft = usePromptStore((s) => s.updateDraft);
   const toast = useToastStore((s) => s.show);
   const toastError = useToastStore((s) => s.showError);
-  const [name, setName] = useState(payload.name);
-  const [content, setContent] = useState(payload.content);
-  const [saving, setSaving] = useState(false);
-  const nameRef = useRef<HTMLInputElement>(null);
-  const contentRef = useRef<HTMLTextAreaElement>(null);
 
-  useEffect(() => {
-    nameRef.current?.focus();
-  }, []);
-
-  const canSave = name.trim().length > 0 && content.trim().length > 0;
-
-  const handleSave = async () => {
-    if (!canSave || saving) return;
-    setSaving(true);
+  const handleSubmit = async ({ name, content }: PhraseFormValues) => {
     try {
       await updateDraft({
         id: draftId,
-        payload: { ...payload, name: name.trim(), content: content.trim() },
+        payload: { ...payload, name, content },
       });
-      toast("草稿已保存");
-      onClose();
     } catch (err) {
       toastError(toUserMessage(err, "保存失败"));
-      setSaving(false);
+      // Re-throw so the shared editor re-enables its save button and holds the
+      // draft — an outside-click save lands after the user has looked away, so
+      // a swallowed rejection would look exactly like success.
+      throw err;
     }
+    toast("草稿已保存");
+    onClose();
   };
 
   return (
-    <EditorPanel layer="neutral" role="group" aria-label="编辑草稿">
-      <Input
-        ref={nameRef}
-        placeholder="名称"
-        value={name}
-        onChange={(e) => setName(e.target.value)}
-        onKeyDown={(e) => {
-          if (e.key === "Escape") onClose();
-          if (e.key === "Enter") {
-            // IME guard: committing a pinyin/kana candidate fires Enter while
-            // isComposing is still true — swallowing it would eat the
-            // composition instead of saving.
-            if (e.nativeEvent.isComposing) return;
-            e.preventDefault();
-            // Unified submit key (A1-08): bare Enter in the name field advances
-            // to the content field; Cmd/Ctrl+Enter commits from either field.
-            if (e.metaKey || e.ctrlKey) void handleSave();
-            else contentRef.current?.focus();
-          }
-        }}
-      />
-      <EditorInput
-        ref={contentRef}
-        placeholder="内容"
-        value={content}
-        rows={3}
-        onChange={(e) => setContent(e.target.value)}
-        onKeyDown={(e) => {
-          if (e.key === "Escape") onClose();
-          if (e.key === "Enter" && (e.metaKey || e.ctrlKey)) {
-            // IME guard: skip the commit-Enter of an in-flight composition.
-            if (e.nativeEvent.isComposing) return;
-            e.preventDefault();
-            void handleSave();
-          }
-        }}
-      />
-      <EditorActions>
-        <Button intent="subtle" onClick={onClose}>
-          取消
-        </Button>
-        <Button
-          intent="primary"
-          onClick={() => void handleSave()}
-          disabled={!canSave || saving}
-        >
-          保存
-        </Button>
-      </EditorActions>
-    </EditorPanel>
+    <PhraseFormEditor
+      layer="neutral"
+      presentation="anchored"
+      anchor={anchor}
+      // A draft always exists in the DB, so this is an edit: the dirty baseline
+      // is the stored payload and abandoning needs no undo toast.
+      mode="edit"
+      ariaLabel="编辑草稿"
+      initialName={payload.name}
+      initialContent={payload.content}
+      contentPlaceholder="内容"
+      submitLabel="保存"
+      onSubmit={handleSubmit}
+      onClose={onClose}
+    />
   );
 }

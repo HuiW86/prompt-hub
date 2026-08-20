@@ -463,6 +463,12 @@
      overloading it as a hard min-width made one value serve two semantics. */
   --w-inline-editor: 184px;
 
+  /* Anchored editor width cap (ADR-025 子决策 1). Freed from its host row, the
+     panel would otherwise size to `max-content` and stretch to the widest line
+     of a long phrase. Capped so the textarea wraps at a readable measure and
+     the panel keeps clear of the frame edges it is clamped against. */
+  --w-anchored-editor-max: 360px;
+
   /* Toast width cap — long error strings wrap instead of stretching the toast
      across the viewport (P1-3 overflow guard). */
   --w-toast-max: 320px;
@@ -474,6 +480,48 @@
 :root {
   --op-icon: 0.7;
   --op-dim: 0.5;
+}
+
+/* ============================================================
+   3b-bis. Stacking scale — one ladder for every layer that leaves the flow
+   (ADR-025 子决策 1). Before this, four call sites each invented a number
+   (sticky header 2 / search overlay 1 / settings modal 10 / toast 100) and
+   nothing said which was allowed to cover which — the overlay's `1` only
+   worked because nothing else in its stacking context competed.
+
+   Rungs are 10 apart so a one-off can slot between two without a re-number,
+   and they are ORDERED BY WHO MAY COVER WHOM, not by component:
+     raised   in-flow lift (sticky column headers, hover elevation)
+     overlay  full-surface layers that take over the cockpit (search)
+     modal    a decision surface opened ON TOP of one of those (settings)
+     popover  anchored editors — must clear the overlay it was opened from
+     toast    feedback; tops this scale, never blocks input
+
+   `--z-modal` exists because settings and search shared `--z-overlay`, which
+   left their relative order decided by JSX order in Dashboard.tsx — correct
+   today, and silently wrong the first time someone reorders that list. Two
+   layers that can be on screen together must not sit on the same rung; the
+   ladder, not the render order, is what states the answer.
+
+   The toast rung tops the SCALE, which is not the same as topping the screen:
+   an AnchoredEditor sits in the top layer and paints above every z-index there
+   is, so a toast cannot cover one. They barely coexist today (the editor closes
+   on save, before the toast arms), but do not read this rung as "always on
+   top" when placing the next floating thing.
+
+   NOTE on --z-popover: an element in the TOP LAYER (popover / dialog) does not
+   participate in z-index at all — it paints above every stacking context by
+   definition. This rung exists for (a) jsdom, where the shim renders the panel
+   as an ordinary absolutely-positioned div, and (b) any future non-popover
+   floating layer. Do not read it as "what makes AnchoredEditor float" on a
+   real WKWebView; that is the top layer's doing.
+   ============================================================ */
+:root {
+  --z-raised: 10;
+  --z-overlay: 20;
+  --z-modal: 30;
+  --z-popover: 40;
+  --z-toast: 50;
 }
 
 /* ============================================================

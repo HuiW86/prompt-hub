@@ -5,7 +5,10 @@
 .overlay {
   position: fixed;
   inset: 0;
-  z-index: 10;
+  /* --z-modal, not --z-overlay: settings can be opened over the search overlay,
+     so the ladder has to say which wins instead of the JSX order in
+     Dashboard.tsx (tokens.css §3b-bis). */
+  z-index: var(--z-modal);
   display: flex;
   align-items: center;
   justify-content: center;

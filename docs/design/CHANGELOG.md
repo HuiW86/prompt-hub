@@ -14,6 +14,118 @@ description: prompt-hub 设计文档体系变更日志——记录文档结构�
 
 ---
 
+## 2026-08-20（四）· ADR-025 P1-b — 其余编辑面迁入锚定层
+
+### 变更内容
+
+[[025-unified-anchored-editing]] P1-b 落地（`4535efa` + `8aa86f8`）。**先纠一处清单错误**：ADR §6 与 plan 一直写「其余**五个**编辑面」，逐文件核实后只有 **4 个**——`RecentList.tsx` 根本没有编辑器，它是只读复制列表，因属 P2 键盘动作层与 hover-lift 五处之一被迁移清单误收。这与 G1 项 5 是同一类错误：**清单引用了一个在本阶段不存在的对象**（memory `feedback_gate_executability`）。
+
+**A 类 · 同构 name+content 三处**（Scene 话术 / Macro / 草稿）：
+
+- Macro 与草稿各有一份**手搓表单**，重复实现了共享编辑器的草稿状态 / autofocus / IME 护栏 / 提交键。两份删除，收编进 `PhraseFormEditor`，净删约 180 行
+- 收编顺带让这两处白拿子决策 2 规则表：点外保存、校验不通过则拒绝关闭、创建态放弃给撤销 toast、「取消」与 `Esc` 同路径
+- **Macro 的裸 Enter 语义随之改变**：原先裸 Enter 直接落库，现统一到 A1-08——`⌘Enter` 提交，名称框裸 Enter 前进到正文。原行为能保存一条正文尚未写完的 Macro
+- 新增 `contentPlaceholder` prop：共享表单把正文占位符硬编码成「话术内容」，Macro 与草稿的正文不是话术，直接收编会造成文案回归
+
+**B 类 · Scene 属性一处**：5 字段 + 内嵌永久删除确认 + 容器级移位按钮。按 **omar 2026-08-20 裁决**走「锚定容器但**点外拒绝关闭**」——它是有界任务而非一次性属性微调，HIG 里这形状是 sheet 不是 popover；两个具体风险是删除确认框展开时点外会连确认框一起吞掉，以及顺手点中的颜色会在注意力离开的瞬间变成一次落库写入。`Esc` 相应改为**逐层退栈**：半截角色预设 → 删除确认 → 面板。
+
+**宿主统一改动**：编辑时不再把触发元素换成编辑器——卡片 / chip / 按钮保持挂载，因为它就是锚点，塌掉一个槽位等于抽走浮层脚下的地面。
+
+### 顺带修掉的两处 P1-a 既存缺陷
+
+均非新决策，是 P1-a 容器本身的洞，迁移到更高的面板时才暴露：
+
+- **超高面板的 footer 出界**：只夹取**原点**不够。高于 dashboard frame 的面板被钉在顶部内缩处，footer（保存 / 取消）跑出画面下沿——**正是 ADR-025 触发事件 A 的缺陷在另一块面板上原样复现**。`useAnchoredPosition` 增报 frame 相对的 `maxHeight`，面板内部滚动。该值不能写进 CSS：外壳是 inset 浮动框而不是视口
+- **焦点后代卸载后 Esc 失聪**：Esc 守卫写的是「面板当前含 `activeElement`」。内联确认框被自己的取消键收起时，被聚焦的节点随之卸载，焦点落到 `<body>` 且**不触发 `focusin`**，面板从此对 Esc 永久无响应，直到用户重新点回面板。现补：焦点从本面板掉落且无处着落时，本面板仍持有该键
+
+### 删除
+
+- `useFocusRestore` 的 `restoreAfterRender` 入口——唯一调用方是 ScenePanel，用途是「编辑器卸载了话术卡，卡重新挂载后把焦点找回来」。卡片现在不卸载了，焦点归还是锚定面板自己的 teardown，**两处争抢焦点比一处少一处**
+- `MacroGrid.module.css` `.editor` / `ScenePanel.module.css` `.editorSlot`——两个流内编辑器的槽位，迁移后无引用
+
+### 验证
+
+`pnpm test` **373/373**（362 → 373）· `tsc --noEmit` 0 · `pnpm lint` 0 · `prettier --check` 通过 · `pnpm build` 通过。新增测试**逐条反向验证**：六次故意破坏（Esc 守卫回退 / 点外改为接受 / Esc 不再退栈 / Macro 去掉撤销 toast / 草稿恢复到错误的列 / 高度上限改按视口算），每次**只**被对应用例抓住。
+
+### 真机走查（当日执行，两项均通过）
+
+dev 实例走查，**首次取得 AI 侧观测证据**——P1-a 三轮共 135 帧从未拍到浮层，本轮改按窗口 ID 定向 + 按需截图后一次拍中：
+
+- **G1 项 5 通过**：Macro 卡上开浮层，鼠标移入 / 移出各一帧，**浮层区域逐像素零差异**（最大通道差 `0`），同帧卡片区域最大通道差 `231`。卡片在 hover-lift，浮层纹丝不动 —— top layer 真的逃出了 `transform` 包含块
+- **G1 项 2 的 B 半通过**：Scene 话术卡上开浮层（下方空间不足，**向上翻转**），纵向滚动后模板匹配测位移——锚点侧 `-168px`、浮层 `-166px`（物理像素 @2x）。反向滚回原位、连滚多次，**差值恒为 2 物理像素 = 1 逻辑点，不累积**
+
+**那 1 逻辑点已 A/B 排除是本轮高度上限所致**：同一滚动位置同一面板，`maxHeight`/`overflowY` 开关两版浮层位置完全一致（`+0px`，误差 `0.00`）。成因未归因，记为已知量——亚感知、恒定、不累积。
+
+走查同时复现两项既有记录：浮层正确逃出 `.sceneCard` 的 `overflow: hidden`；hover 动作簇仍遮挡话术卡标题（随 P2 子决策 3.3 解决）。
+
+**方法**：窗口 ID 定向 `screencapture -l<id>`（禁止全屏）+ CGEvent 合成鼠标 + PIL 模板匹配。全程只点铅笔不点卡片本体（卡片本体是复制热区会触发 hide-on-copy），事后核对「今日复制 0 次」**未产生任何写入**，无需造临时数据也无需回滚。
+
+---
+
+## 2026-08-19（三）· 第四段 — P1-a 交叉审查：规则表四处未落地 + 接口契约提前到 P1-a
+
+### 变更内容
+
+两个独立 agent 对上一段（P1-a）做交叉审查，各自命中同一批缺陷。**四条 CRITICAL 不是新决策，是 [[025-unified-anchored-editing]] 子决策 2 的规则表写了但代码没实现**，直接修，未开新 ADR：
+
+- **撤销回来的草稿点外即静默丢弃**（`PhraseFormEditor.tsx`）：dirty 原以「字段种子值」为基准，而撤销 toast 恢复的草稿是**带种子回填**的，于是 `canSave=true` + `dirty=false`，规则表「未改动→直接关闭不发 IPC」分支抢在保存前面。用户按文档说的「点外 = 保存」点出去，既没落库也没提示。修法：新增必填 `mode: "create" | "edit"`，dirty 改以**已落库值**为基准——创建态基准恒为空，无论字段被什么种子填过
+- **「拒绝关闭」状态下点另一条铅笔仍丢草稿**（`Editor.tsx`）：`editingId` 是单槽，pointerdown 拒绝关闭后，**同一次按压**的 click 照样落到另一条的铅笔上、改写单槽、卸载刚才拒绝关闭的面板。修法：`onDismiss` 返回 `false` 表示拒绝，`AnchoredEditor` 捕获相位吞掉该次按压的 click——「不关闭」必须意味着这次按压什么都不做（对应 omar 裁决「拒绝期间锁住，不允许切到另一条」）
+- **「取消」按钮完全绕过规则表**（`PhraseFormEditor.tsx`）：原 `onClick={onClose}` 直连。同一份脏草稿按 `Esc` 有撤销 toast，点「取消」直接销毁。两个都是放弃入口，现统一走 `handleAbandon`
+- **点外触发的保存失败全静音**（`AlignmentPhrases.tsx`）：`handleCreate` / `handleUpdate` 不 catch，`handleSave` 又吞异常。同文件的 delete / move / set-default 全都走 `showError`，只有保存这条没接。点外保存发生在用户视线已经移开之后，静默失败与成功**逐像素相同**。现补 `showError` + 重抛（`onSubmit` 契约写明调用方必须提示后重抛）
+
+**接口契约从 P1-b 提前到本段**（ADR §6 原定「迁移前先定接口契约」，omar 裁决提前堵）：
+
+- `AnchoredEditor` 删 `open` prop——**挂载即打开**。焦点归还写在卸载 teardown 里，`open={false}` 保持挂载会静默吞掉焦点归还
+- `PhraseFormEditor` 新增必填 `presentation: "anchored" | "inline"`，取代原先「靠 `anchor` 这个 key 在不在 props 里」选模式——一次 `{...props}` 展开就能凭空得到一个 anchor 为 null 的隐形浮层
+- `AnchoredPosition.flipped` 删除（无人消费的死输出；翻转只作为坐标的中间量存在）
+
+### 契约变更（token）
+
+- **`tokens.css` §3b-bis 新增 `--z-modal: 30`**，`--z-popover` / `--z-toast` 顺延为 40 / 50。`SettingsModal` 从 `--z-overlay` 改挂 `--z-modal`。原因：settings 与 search 同踩 `--z-overlay`，相对顺序实际由 `Dashboard.tsx` 的 JSX 顺序决定——今天渲染正确，谁挪一下位置就静默错。**同屏可共存的两层不能同档**。属 [[05-design-spec]] §3c token 契约，随 ADR-025 回流八步一并处理
+
+### 验证
+
+`pnpm test` **357/357**（新增 6 条：撤销草稿点外保存 / 取消走放弃规则 / 保存失败提示 / 拒绝按压锁住 / 拒绝按压逐次重置）· `tsc --noEmit` 0 · `pnpm lint` 0 · `prettier --check` 通过 · `pnpm build` 通过。四条 CRITICAL 的回归测试**已逐条反向验证**：临时还原修复后四条全红，证明测的是缺陷本身而非实现细节。
+
+### G1 真机走查（同日执行）
+
+| 项 | 结论 |
+|---|---|
+| 1 暗 band 浮层配色 / 3 保存·取消可见可点 / 4 焦点归还 | 通过 —— **omar 真机目视**。AI 侧两轮共 75 帧屏幕捕获未拍到浮层，这三项不含 AI 观测证据 |
+| 6 唤起性能 | 通过 —— `bench:hotkey-wake` p95 **15.3ms** / 200ms 预算，与签名后基线同档无回归 |
+| 2 chip 行滚动跟随 | **当日补验通过**（omar 指示先补再迁），拆两半取证：**A 半**订阅逻辑补 5 条 jsdom 测试（`useAnchoredPosition.test.ts` 6→11），并逐条反向验证——把 hook 改成「只订最近祖先」/「不过滤 overflow」/「泄漏 scroll 监听」，三种破坏各自只被对应一条测出；**B 半**真机跟随 omar 目视确认（造 14 条临时话术撑溢出 chip 行，验毕精确删除并与操作前整库备份逐字段比对，原 13 条零差异） |
+| 5 hover-lift 卡片定位 | **deferred → P1-b 门**。P1-a 只接对齐话术，Macro / Scene 仍是流内 `EditorPanel`，无浮层可开——G1 原文把迁移后才存在的对象写进了迁移前的门 |
+
+omar 拍板 **P1-b 放行**。项 2 原判「物理不可验」只挡住了真机那一半，逻辑那一半一直可测却一直没测——`scrollableAncestors` 的 jsdom 零覆盖由此摘除。遗留认知：B 半是人工目视、不可回归，而 P1-b 迁的 Scene / Recent 是**纵向**滚动容器，跟随行为在纵轴上属首次真实使用，需在 P1-b 门重新目视。
+
+---
+
+## 2026-08-19（三）· 第三段 — ADR-025 P1-a：锚定编辑层落到对齐话术单点
+
+### 变更内容
+
+[[025-unified-anchored-editing]] 分期 **P1-a**（容器单点验证）落地。**只接对齐话术一处**，其余五个编辑面维持在流内 `EditorPanel`，等 G1 真机验收门六项通过后才准迁（ADR §6 分期条款）。
+
+- **`--z-*` 层级标尺**（`tokens.css` 新增 §3b-bis）：`--z-raised` / `--z-overlay` / `--z-popover` / `--z-toast` 四档，按「谁可以盖住谁」排序而非按组件。收编四处各自发明的硬编码——`ScenePanel`(2) / `SearchOverlay`(1) / `SettingsModal`(10) / `Toast`(100)。⚠️ 注释写明 `--z-popover` 在真机 **不起作用**（top layer 元素不参与 z-index），它只服务 jsdom shim 与未来的非 popover 浮层，免得后人误以为是它让浮层浮起来的
+- **`AnchoredEditor`**（`primitives/Editor.tsx` 新增）：原生 `popover="manual"` 进 top layer，**不 portal**——DOM 祖先链不变，[[020-restore-protocol-dark-band]] 那 20 个 token remap 靠继承活着
+- **`useAnchoredPosition`**（`src/hooks/` 新建）：下方优先 → 空间不足翻上 → 夹取到 **dashboard 矩形**（不是视口，外壳是 `inset: var(--s-3)` 的圆角浮框）→ 观察全部滚动祖先 + resize + 双向 `ResizeObserver`
+- **保存语义规则表**（子决策 2 完整落地）：点外+合法+dirty=保存关闭 / 点外+校验不过=**不关闭**并高亮失败字段 / 点外+未改动=直接关不发 IPC / `Esc`=放弃，创建态给撤销 toast 带回草稿原文。dirty 以初值快照比对，不以「是否聚焦过」判定
+- 对齐话术编辑时 **chip 不再被替换**——它现在是锚点，必须留在原地
+- `AlignmentPhrases.module.css` `.inlineEditor` 随之失去消费者，删除（`--w-inline-editor` 转为浮层 min-width，语义不变）
+
+### 两处 jsdom 验不了、靠读规范抓出来的事
+
+- **`[popover]` 的 UA sheet 声明 `color: CanvasText`，而声明值击败继承值**。ADR-025 选 top layer 正是为了保住 band 的 `--fg-1` remap，但 `color` 不是自定义属性——不显式重声明，浮层会在暗 band 上渲染系统黑字，**恰好是选 top layer 想避免的那个失败**。已在 `.anchoredEditor` 补 `color: var(--fg-1)`。jsdom 完全不带 popover 的 UA 样式表，这条永远测不出来，故 G1 项 1 必须真机验
+- **ADR §3 技术约束「jsdom 不支持 popover」经复核属实**（中途一度误判为已支持——当时读到的「原生支持」实为自己刚装上的 shim）。但 shim 需要的**不止 API**：jsdom 带了隐藏闭合 popover 的 UA 规则却无法求值 `:popover-open`，导致规则恒成立、已打开的浮层仍 `display: none`，既不可聚焦也对 role 查询不可见。shim 因此补了 inline `display`（实测只有 inline 样式能压过 UA sheet）
+
+### 验证
+
+`pnpm test` **352/352**（35→37 文件，新增 11 条锚定/规则表 + 6 条定位算术）· `pnpm lint` 0 · `prettier --check .` 通过 · `pnpm build` 通过 · `doc-governance` 0 error / 7 warn（既有基线，`useAnchoredPosition.ts` 前向引用随文件创建自消）。
+
+⚠️ **G1 六项真机验收门未跑，P1-b 不得开工**；jsdom 绿灯不构成 top layer / 继承 / 定位 / 焦点四项的证据。
+
+---
+
 ## 2026-08-19（三）· 后半 — 走查缺陷裁决：Scene 下限纠偏 + 承重件标注
 
 ### 变更内容

@@ -13,13 +13,15 @@ import { useCallback, useEffect, useRef } from "react";
 // restore and consumes it on the next commit (effect below), with a macrotask
 // fallback for the case where the commit flushed before arming.
 //
-// Two entry points cover the two shapes of write in this region:
-//   • run(mutation, options) — the orchestrator owns an async handler that
-//     internally re-pulls (reorder / delete / move). It snapshots the focused
-//     nav key BEFORE the write and arms the restore once it resolves.
-//   • restoreAfterRender(key) — a CHILD owns the re-pull (e.g. PhraseEditor's
-//     save), so the orchestrator can't await it. The orchestrator arms a key
-//     when the editor closes; once the card re-mounts, the effect lands focus.
+// One entry point: run(mutation, options) — the orchestrator owns an async
+// handler that internally re-pulls (reorder / delete / move). It snapshots the
+// focused nav key BEFORE the write and arms the restore once it resolves.
+//
+// There used to be a second, restoreAfterRender(key), for writes a CHILD owned
+// (PhraseEditor's save, which the orchestrator could not await). ADR-025 removed
+// its reason to exist: the editor no longer replaces the card, so the card never
+// unmounts and focus return is the anchored panel's own teardown. Two claims on
+// focus is one too many.
 //
 // Contract with useRegionNav: restored targets carry BOTH `data-nav-id` (this
 // hook's stable key) and `data-nav-item` (the roving-nav marker), so arrow
@@ -153,16 +155,6 @@ export function useFocusRestore(getRoot: () => HTMLElement | null) {
     [attempt],
   );
 
-  // Arm a key to focus after the next render commit — for writes a child owns
-  // (the orchestrator can't await them, so it schedules the restore instead).
-  const restoreAfterRender = useCallback(
-    (key: string) => {
-      pendingRef.current = { key, siblingKeys: [], tries: 8 };
-      setTimeout(attempt, 0);
-    },
-    [attempt],
-  );
-
   // Keep the retry path pointed at the latest attempt closure.
   useEffect(() => {
     attemptRef.current = attempt;
@@ -173,5 +165,5 @@ export function useFocusRestore(getRoot: () => HTMLElement | null) {
     attempt();
   });
 
-  return { run, restoreAfterRender };
+  return { run };
 }

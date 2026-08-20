@@ -17,6 +17,9 @@ import styles from "../ScenePanel.module.css";
 
 export interface ViewPhraseCardProps {
   phrase: Phrase;
+  /** Hands the card element up so its anchored editor can pin to it
+   *  (ADR-025 子决策 1) — the card is also the focus-restore target. */
+  anchorRef?: (el: HTMLElement | null) => void;
   flash: boolean;
   interactionMode: InteractionMode;
   canMoveUp: boolean;
@@ -41,6 +44,7 @@ export interface ViewPhraseCardProps {
 // never bleeds into another's.
 export function ViewPhraseCard({
   phrase,
+  anchorRef,
   flash,
   interactionMode,
   canMoveUp,
@@ -67,6 +71,7 @@ export function ViewPhraseCard({
       : styles.phraseContent;
   return (
     <div
+      ref={anchorRef}
       role="button"
       tabIndex={-1}
       className={cls}

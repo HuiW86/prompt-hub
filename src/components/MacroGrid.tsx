@@ -1,9 +1,10 @@
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { DragDropProvider } from "@dnd-kit/react";
 import { useSortable } from "@dnd-kit/react/sortable";
 import { move } from "@dnd-kit/helpers";
 import { Flame, GripVertical, Pencil, Plus, Trash2, Zap } from "lucide-react";
 
+import { useAnchorRegistry } from "../hooks/useAnchorRegistry";
 import { useCopy } from "../hooks/useCopy";
 import { useRegionNav } from "../hooks/useRegionNav";
 import { usePromptStore } from "../stores/promptStore";
@@ -17,27 +18,43 @@ import {
   Button,
   CardSurface,
   ConfirmInline,
-  EditorActions,
-  EditorInput,
-  EditorPanel,
   EmptyState,
   IconButton,
-  Input,
+  PhraseFormEditor,
+  type PhraseFormValues,
   RegionHeader,
 } from "./primitives";
 import styles from "./MacroGrid.module.css";
 
 const HOT_TOP_N = 4;
 
-type EditTarget = { mode: "create" } | { mode: "edit"; macro: Macro } | null;
+// Anchor keys for the two create entry points. Both are on screen at once while
+// the grid is empty, so they cannot share a key — the panel would then pin to
+// whichever registered last rather than to the button the user pressed. Macro
+// ids are uuids, so reserved literals cannot collide with an edit target's key.
+const CREATE_ANCHOR_HEADER = "__create_header__";
+const CREATE_ANCHOR_EMPTY = "__create_empty__";
+
+// `anchorKey` rides the create target because the editor pins to its TRIGGER
+// (ADR-025 子决策 1) and a create has no row of its own to pin to.
+type EditTarget =
+  | { mode: "create"; anchorKey: string }
+  | { mode: "edit"; macro: Macro }
+  | null;
 
 export function MacroGrid() {
   const macros = usePromptStore((s) => s.macros);
   const reorderMacros = usePromptStore((s) => s.reorderMacros);
   const deleteMacro = usePromptStore((s) => s.deleteMacro);
+  const createMacro = usePromptStore((s) => s.createMacro);
+  const updateMacro = usePromptStore((s) => s.updateMacro);
   const showToast = useToastStore((s) => s.show);
   const showError = useToastStore((s) => s.showError);
+  const showWithAction = useToastStore((s) => s.showWithAction);
   const onRegionKeyDown = useRegionNav();
+  // Trigger elements the anchored editor pins to: each card by macro id, plus
+  // the two create buttons (ADR-025 子决策 1).
+  const anchors = useAnchorRegistry();
 
   // Local render source during a drag (learnings 信条五: a single local array is
   // the source of truth while dragging; the store stays untouched until the drop
@@ -47,6 +64,11 @@ export function MacroGrid() {
 
   const [editing, setEditing] = useState<EditTarget>(null);
   const [confirmingId, setConfirmingId] = useState<string | null>(null);
+  // A discarded creation draft, restored by the undo toast (ADR-025 子决策 2).
+  // Edits need no equivalent — the original row is still in the DB.
+  const [restoredDraft, setRestoredDraft] = useState<PhraseFormValues | null>(
+    null,
+  );
 
   // Cockpit (invoke) mode sorts tiles by heat — the grab-and-go moment wants
   // the hottest entries in the first row (哲学四: usage data drives placement).
@@ -83,6 +105,47 @@ export function MacroGrid() {
     }
   };
 
+  const closeEditor = () => {
+    setRestoredDraft(null);
+    setEditing(null);
+  };
+
+  // Reports its own failure and re-throws: since ADR-025 子决策 2 an outside
+  // click also saves, so the write lands after the user has looked away — an
+  // unreported rejection is pixel-for-pixel a successful save. Re-throwing lets
+  // the shared editor re-enable its button and hold the draft.
+  const handleSave = async ({ name, content }: PhraseFormValues) => {
+    if (!editing) return;
+    try {
+      if (editing.mode === "edit") {
+        await updateMacro({ id: editing.macro.id, name, content });
+      } else {
+        await createMacro({ name, content });
+      }
+    } catch (err) {
+      showError(toUserMessage(err, "保存失败"));
+      throw err;
+    }
+    // Same feedback strength as the delete path (A1-07).
+    showToast(editing.mode === "edit" ? "已保存 Macro" : "已新增 Macro");
+    closeEditor();
+  };
+
+  // Abandoning a dirty create form (Esc or 取消) throws away text that exists
+  // nowhere else, so the toast carries the only route back to it (ADR-025
+  // 子决策 2 的规则表 last row).
+  const handleDiscardDraft = (draft: PhraseFormValues) => {
+    const anchorKey =
+      editing?.mode === "create" ? editing.anchorKey : CREATE_ANCHOR_HEADER;
+    showWithAction("已放弃草稿", {
+      label: "撤销",
+      onClick: () => {
+        setRestoredDraft(draft);
+        setEditing({ mode: "create", anchorKey });
+      },
+    });
+  };
+
   return (
     <section
       className={styles.region}
@@ -98,10 +161,13 @@ export function MacroGrid() {
         right={
           <Button
             layer="task"
+            ref={anchors.ref(CREATE_ANCHOR_HEADER)}
             aria-label="新增 Macro"
             data-nav-item
             tabIndex={-1}
-            onClick={() => setEditing({ mode: "create" })}
+            onClick={() =>
+              setEditing({ mode: "create", anchorKey: CREATE_ANCHOR_HEADER })
+            }
           >
             <Plus size={14} aria-hidden strokeWidth={2} />
             <span>新增</span>
@@ -109,11 +175,30 @@ export function MacroGrid() {
         }
       />
 
+      {/* The trigger stays mounted underneath — it is the anchor, and the grid
+          must not collapse a slot out from under the floating panel. */}
       {editing && (
-        <MacroEditor
-          target={editing}
-          onClose={() => setEditing(null)}
-          onError={showError}
+        <PhraseFormEditor
+          layer="task"
+          presentation="anchored"
+          anchor={anchors.get(
+            editing.mode === "edit" ? editing.macro.id : editing.anchorKey,
+          )}
+          mode={editing.mode}
+          ariaLabel={editing.mode === "edit" ? "编辑 Macro" : "新增 Macro"}
+          initialName={
+            editing.mode === "edit" ? editing.macro.name : restoredDraft?.name
+          }
+          initialContent={
+            editing.mode === "edit"
+              ? editing.macro.content
+              : restoredDraft?.content
+          }
+          contentPlaceholder="内容"
+          submitLabel={editing.mode === "edit" ? "保存" : "新增"}
+          onSubmit={handleSave}
+          onClose={closeEditor}
+          onDiscard={editing.mode === "create" ? handleDiscardDraft : undefined}
         />
       )}
 
@@ -129,8 +214,11 @@ export function MacroGrid() {
           action={
             <Button
               layer="task"
+              ref={anchors.ref(CREATE_ANCHOR_EMPTY)}
               aria-label="新建 Macro"
-              onClick={() => setEditing({ mode: "create" })}
+              onClick={() =>
+                setEditing({ mode: "create", anchorKey: CREATE_ANCHOR_EMPTY })
+              }
             >
               <Plus size={14} aria-hidden strokeWidth={2} />
               <span>新建 Macro</span>
@@ -160,6 +248,7 @@ export function MacroGrid() {
               <SortableMacroCard
                 key={m.id}
                 macro={m}
+                anchorRef={anchors.ref(m.id)}
                 index={idx}
                 isHot={hotIds.has(m.id)}
                 isConfirming={confirmingId === m.id}
@@ -178,6 +267,8 @@ export function MacroGrid() {
 
 interface CardProps {
   macro: Macro;
+  /** Hands the card element up so its anchored editor can pin to it. */
+  anchorRef: (el: HTMLElement | null) => void;
   index: number;
   isHot: boolean;
   isConfirming: boolean;
@@ -189,6 +280,7 @@ interface CardProps {
 
 function SortableMacroCard({
   macro,
+  anchorRef,
   index,
   isHot,
   isConfirming,
@@ -201,10 +293,22 @@ function SortableMacroCard({
   const copy = useCopy();
   const flashId = useToastStore((s) => s.flashTargetId);
 
+  // One element has to serve both the sortable and the anchor registry. Both
+  // callbacks are reached through a ref so the composed one keeps a STABLE
+  // identity: React detaches and re-attaches a ref whose identity changed, and
+  // the registry bumps a render whenever an element is (de)registered — a
+  // per-render identity would make those two chase each other forever.
+  const nodeCbs = useRef({ ref, anchorRef });
+  nodeCbs.current = { ref, anchorRef };
+  const setCardNode = useCallback((el: HTMLDivElement | null) => {
+    nodeCbs.current.ref(el);
+    nodeCbs.current.anchorRef(el);
+  }, []);
+
   return (
     <CardSurface
       layer="task"
-      ref={ref}
+      ref={setCardNode}
       className={styles.macroCard}
       flash={flashId === macro.id}
       dragging={isDragging}
@@ -286,103 +390,5 @@ function SortableMacroCard({
         </ActionCluster>
       )}
     </CardSurface>
-  );
-}
-
-interface EditorProps {
-  target: Exclude<EditTarget, null>;
-  onClose: () => void;
-  onError: (msg: string) => void;
-}
-
-function MacroEditor({ target, onClose, onError }: EditorProps) {
-  const createMacro = usePromptStore((s) => s.createMacro);
-  const updateMacro = usePromptStore((s) => s.updateMacro);
-  const existing = target.mode === "edit" ? target.macro : null;
-
-  const [name, setName] = useState(existing?.name ?? "");
-  const [content, setContent] = useState(existing?.content ?? "");
-  const [saving, setSaving] = useState(false);
-  const nameRef = useRef<HTMLInputElement>(null);
-
-  useEffect(() => {
-    nameRef.current?.focus();
-  }, []);
-
-  const canSave = name.trim().length > 0 && content.trim().length > 0;
-
-  const handleSave = async () => {
-    if (!canSave || saving) return;
-    setSaving(true);
-    try {
-      if (existing) {
-        await updateMacro({
-          id: existing.id,
-          name: name.trim(),
-          content: content.trim(),
-        });
-      } else {
-        await createMacro({ name: name.trim(), content: content.trim() });
-      }
-      onClose();
-    } catch (err) {
-      onError(toUserMessage(err, "保存失败"));
-      setSaving(false);
-    }
-  };
-
-  return (
-    <EditorPanel
-      layer="task"
-      className={styles.editor}
-      role="group"
-      aria-label={existing ? "编辑 Macro" : "新增 Macro"}
-    >
-      <Input
-        ref={nameRef}
-        placeholder="名称"
-        value={name}
-        onChange={(e) => setName(e.target.value)}
-        onKeyDown={(e) => {
-          if (e.key === "Escape") onClose();
-          if (e.key === "Enter") {
-            // IME guard: committing a pinyin/kana candidate fires Enter while
-            // isComposing is still true — swallowing it would eat the
-            // composition instead of saving.
-            if (e.nativeEvent.isComposing) return;
-            e.preventDefault();
-            void handleSave();
-          }
-        }}
-      />
-      <EditorInput
-        placeholder="内容"
-        value={content}
-        rows={3}
-        onChange={(e) => setContent(e.target.value)}
-        onKeyDown={(e) => {
-          if (e.key === "Escape") onClose();
-          if (e.key === "Enter" && (e.metaKey || e.ctrlKey)) {
-            // IME guard: skip the commit-Enter of an in-flight composition.
-            if (e.nativeEvent.isComposing) return;
-            e.preventDefault();
-            void handleSave();
-          }
-        }}
-      />
-      <EditorActions>
-        <Button intent="subtle" onClick={onClose}>
-          取消
-        </Button>
-        <Button
-          layer="task"
-          intent="primary"
-          onClick={() => void handleSave()}
-          disabled={!canSave || saving}
-        >
-          {existing ? "保存" : "新增"}
-        </Button>
-      </EditorActions>
-    </EditorPanel>
   );
 }

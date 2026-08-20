@@ -1,14 +1,25 @@
 import { ArrowLeft, ArrowRight, Pencil, Plus, Trash2 } from "lucide-react";
+import { Fragment } from "react";
 
+import { useAnchorRegistry } from "../../hooks/useAnchorRegistry";
 import type { Phrase, SceneWithChildren, SubStage } from "../../ipc/types";
 import type { InteractionMode } from "../../stores/settingsStore";
-import { ActionCluster, ConfirmInline, IconButton } from "../primitives";
+import {
+  ActionCluster,
+  ConfirmInline,
+  IconButton,
+  type PhraseFormValues,
+} from "../primitives";
 
 import styles from "../ScenePanel.module.css";
 import { InlineNameEditor } from "./InlineNameEditor";
 import { PhraseEditor } from "./PhraseEditor";
 import { PhraseMoveSelector } from "./PhraseMoveSelector";
 import { ViewPhraseCard } from "./ViewPhraseCard";
+
+// Anchor key for this column's add-phrase ghost button. Phrase ids are uuids,
+// so a reserved literal cannot collide with one.
+const ADD_ANCHOR = "__add__";
 
 interface ViewColumnProps {
   index: number;
@@ -21,6 +32,8 @@ interface ViewColumnProps {
   editingPhraseId: string | null;
   movingPhraseId: string | null;
   addingPhrase: boolean;
+  /** Draft the undo toast put back into this column's create form. */
+  addPhraseDraft?: PhraseFormValues | null;
   flashId: string | null;
   interactionMode: InteractionMode;
   sceneId: string;
@@ -48,6 +61,7 @@ interface ViewColumnProps {
   onPhraseDelete: (id: string) => void;
   onAddPhrase: () => void;
   onAddPhraseClose: () => void;
+  onAddPhraseDiscard: (draft: PhraseFormValues) => void;
   onError: (msg: string) => void;
 }
 
@@ -68,6 +82,7 @@ export function ViewColumn({
   editingPhraseId,
   movingPhraseId,
   addingPhrase,
+  addPhraseDraft,
   flashId,
   interactionMode,
   sceneId,
@@ -90,9 +105,13 @@ export function ViewColumn({
   onPhraseDelete,
   onAddPhrase,
   onAddPhraseClose,
+  onAddPhraseDiscard,
   onError,
 }: ViewColumnProps) {
   const subStageId = subStage?.id ?? null;
+  // Trigger elements the anchored editors pin to: each phrase card by id, and
+  // this column's add-phrase ghost button (ADR-025 子决策 1).
+  const anchors = useAnchorRegistry();
   return (
     <div className={styles.group}>
       <div className={styles.subStage}>
@@ -202,16 +221,9 @@ export function ViewColumn({
       </div>
 
       {phrases.map((p, pi) =>
-        editingPhraseId === p.id ? (
-          <PhraseEditor
-            key={p.id}
-            target={{ mode: "edit", phrase: p }}
-            sceneId={sceneId}
-            subStages={subStages}
-            onClose={onPhraseEditClose}
-            onError={onError}
-          />
-        ) : movingPhraseId === p.id ? (
+        // The move selector still SWAPS the card — it is a picker, not an
+        // ADR-025 editor, and it has no anchor to pin to.
+        movingPhraseId === p.id ? (
           <PhraseMoveSelector
             key={p.id}
             phrase={p}
@@ -222,46 +234,65 @@ export function ViewColumn({
             }
           />
         ) : (
-          <ViewPhraseCard
-            key={p.id}
-            phrase={p}
-            flash={flashId === p.id}
-            interactionMode={interactionMode}
-            canMoveUp={pi > 0}
-            canMoveDown={pi < phrases.length - 1}
-            onCopy={() => onCopy(p)}
-            onEdit={() => onPhraseEdit(p.id)}
-            onMove={(dir) => onPhraseMove(p.id, dir)}
-            onMoveTo={() => onPhraseMoveToStart(p.id)}
-            onDelete={() => onPhraseDelete(p.id)}
-          />
+          // The card stays mounted while its editor is open: it is the anchor,
+          // and the column must not collapse a slot out from under the panel.
+          <Fragment key={p.id}>
+            {editingPhraseId === p.id && (
+              <PhraseEditor
+                target={{ mode: "edit", phrase: p }}
+                sceneId={sceneId}
+                subStages={subStages}
+                anchor={anchors.get(p.id)}
+                onClose={onPhraseEditClose}
+                onError={onError}
+              />
+            )}
+            <ViewPhraseCard
+              phrase={p}
+              anchorRef={anchors.ref(p.id)}
+              flash={flashId === p.id}
+              interactionMode={interactionMode}
+              canMoveUp={pi > 0}
+              canMoveDown={pi < phrases.length - 1}
+              onCopy={() => onCopy(p)}
+              onEdit={() => onPhraseEdit(p.id)}
+              onMove={(dir) => onPhraseMove(p.id, dir)}
+              onMoveTo={() => onPhraseMoveToStart(p.id)}
+              onDelete={() => onPhraseDelete(p.id)}
+            />
+          </Fragment>
         ),
       )}
 
-      {addingPhrase ? (
+      {/* The ghost button stays put while the create form floats above it —
+          it is the anchor, and the column's trailing slot must not jump. */}
+      {addingPhrase && (
         <PhraseEditor
           target={{ mode: "create" }}
           sceneId={sceneId}
           subStages={subStages}
+          anchor={anchors.get(ADD_ANCHOR)}
           initialSubStageId={subStageId}
+          initialDraft={addPhraseDraft}
           onClose={onAddPhraseClose}
+          onDiscard={onAddPhraseDiscard}
           onError={onError}
         />
-      ) : (
-        <button
-          type="button"
-          className={styles.ghostAdd}
-          onClick={onAddPhrase}
-          aria-label={
-            subStage ? `在 ${subStage.name} 添加话术` : "在未分组添加话术"
-          }
-          data-nav-item
-          tabIndex={-1}
-        >
-          <Plus size={14} aria-hidden strokeWidth={2} />
-          <span>添加话术</span>
-        </button>
       )}
+      <button
+        type="button"
+        ref={anchors.ref(ADD_ANCHOR)}
+        className={styles.ghostAdd}
+        onClick={onAddPhrase}
+        aria-label={
+          subStage ? `在 ${subStage.name} 添加话术` : "在未分组添加话术"
+        }
+        data-nav-item
+        tabIndex={-1}
+      >
+        <Plus size={14} aria-hidden strokeWidth={2} />
+        <span>添加话术</span>
+      </button>
     </div>
   );
 }

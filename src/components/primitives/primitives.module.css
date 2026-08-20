@@ -440,6 +440,63 @@
   gap: var(--s-2);
 }
 
+/* Refused-dismissal marker (ADR-025 子决策 2): clicking outside with an empty
+   name or body holds the panel open, and this says which field is the reason.
+   The palette has no --danger token — SettingsModal.statusError set the
+   precedent of surfacing failure as high-contrast neutral, and inventing a hue
+   here would be a design-spec §3c token contract change, not a bug fix. */
+.fieldInvalid,
+.fieldInvalid:focus-visible {
+  border-color: var(--fg-1);
+}
+
+.fieldHint {
+  composes: ph-note from "../../styles/typography.module.css";
+  margin: 0;
+  color: var(--fg-2);
+}
+
+/* ── AnchoredEditor — top-layer edit shell (ADR-025 子决策 1) ─────────────
+   Same skin as .editorPanel plus elevation, because this one genuinely floats
+   over content and needs to read as a separate plane (--shadow-2 is the
+   palette's designated overlay elevation).
+
+   `position: fixed` with coordinates from useAnchoredPosition. For a top-layer
+   element the containing block is the initial containing block, so `fixed`
+   resolves against the viewport regardless of any ancestor transform — that is
+   what lets the panel survive the hover-lift cards. z-index is inert in the top
+   layer and is carried only for the jsdom shim path (tokens.css §3b-bis).
+
+   Most of this rule exists to undo the [popover] UA sheet, which is written for
+   a centred, self-styled panel:
+     inset: 0 / margin: auto  → centring; reset so our own top/left win
+     overflow: auto           → we size to content and must not clip
+     width: fit-content       → replaced by a capped max-content measure
+     color: CanvasText        → THE IMPORTANT ONE, see below
+
+   `color` is the subtle one. ADR-025 子决策 1 picked the top layer precisely so
+   the panel would keep inheriting the protocol band's ~20 token remaps
+   (ProtocolBand.module.css remaps --fg-1 → --band-fg for its subtree). Custom
+   properties do still inherit — but `color` is not a custom property, and the
+   UA's declared CanvasText BEATS an inherited value. Left alone, the panel
+   renders system-black text inside the dark band: the exact failure the top
+   layer was chosen to avoid. Re-declaring it from --fg-1 puts the remap back in
+   charge. Nothing in jsdom can catch this — it ships no popover UA sheet at all
+   — which is why ADR-025 验收门 G1 项 1 is a 真机 check. */
+.anchoredEditor {
+  composes: editorPanel;
+  position: fixed;
+  margin: 0;
+  inset: auto;
+  z-index: var(--z-popover);
+  width: max-content;
+  max-width: var(--w-anchored-editor-max);
+  min-width: var(--w-inline-editor);
+  color: var(--fg-1);
+  box-shadow: var(--shadow-2);
+  overflow: visible;
+}
+
 /* ── Chip — single tag (§10.2.2) ─────────────────────────────────────── */
 .chip {
   composes: ph-card-body from "../../styles/typography.module.css";

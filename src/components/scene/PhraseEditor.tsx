@@ -13,11 +13,21 @@ interface EditorProps {
   target: Exclude<EditTarget, null>;
   sceneId: string;
   subStages: SubStage[];
+  /**
+   * Trigger element the panel pins to (ADR-025 子决策 1): the phrase card when
+   * editing, the column's add-phrase ghost button when creating. `null` while
+   * that element's ref is still settling.
+   */
+  anchor: HTMLElement | null;
   // The add-phrase ghost card prefills the create form with the column's
   // sub-stage so the new phrase lands in place (task 6); when left undefined the
   // create form defaults to ungrouped.
   initialSubStageId?: string | null;
+  /** Name/content of a discarded draft the undo toast put back (create only). */
+  initialDraft?: PhraseFormValues | null;
   onClose: () => void;
+  /** A dirty create draft was abandoned — the caller owns the undo toast. */
+  onDiscard?: (draft: PhraseFormValues) => void;
   onError: (msg: string) => void;
 }
 
@@ -25,8 +35,11 @@ export function PhraseEditor({
   target,
   sceneId,
   subStages,
+  anchor,
   initialSubStageId,
+  initialDraft,
   onClose,
+  onDiscard,
   onError,
 }: EditorProps) {
   const createPhrase = usePromptStore((s) => s.createPhrase);
@@ -67,12 +80,18 @@ export function PhraseEditor({
   return (
     <PhraseFormEditor
       layer="task"
+      presentation="anchored"
+      anchor={anchor}
+      mode={existing ? "edit" : "create"}
       ariaLabel={existing ? "编辑话术" : "新增话术"}
-      initialName={existing?.name}
-      initialContent={existing?.content}
+      initialName={existing?.name ?? initialDraft?.name}
+      initialContent={existing?.content ?? initialDraft?.content}
       submitLabel={existing ? "保存" : "新增"}
       onSubmit={handleSubmit}
       onClose={onClose}
+      // Only a creation has nothing to fall back on; an edit's original row is
+      // still in the DB (ADR-025 子决策 2 的规则表 last row).
+      onDiscard={existing ? undefined : onDiscard}
       extraFields={
         <select
           className={styles.subStageSelect}
