@@ -11,6 +11,16 @@ pub enum AppError {
     Tauri(#[from] tauri::Error),
     #[error("state lock poisoned")]
     LockPoisoned,
+    // ADR-027. Three distinct variants rather than one string, because the
+    // settings UI must tell them apart: the first two are the user's input to
+    // fix, the third is another app holding the chord — nothing the user can
+    // fix from inside this window.
+    #[error("无法识别的快捷键：{0}")]
+    InvalidAccelerator(String),
+    #[error("快捷键必须包含至少一个修饰键（⌘ / ⌥ / ⌃ / ⇧）")]
+    ModifierRequired,
+    #[error("快捷键 {0} 已被其他应用占用，请换一组")]
+    HotkeyUnavailable(String),
 }
 
 impl Serialize for AppError {

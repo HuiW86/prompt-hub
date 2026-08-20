@@ -1,12 +1,12 @@
 ---
 type: manifest
 project: prompt-hub
-version: v1.11
+version: v1.12
 status: active
 created: 2026-05-24
 last_modified: 2026-08-20
 audience: [human, ai]
-description: prompt-hub 项目前期准备文件总清单——按方法论 v1.3 六层架构（L0 宪法 / L1 产品契约 / L2 工程规格 / L3 实施规格 / L4 索引 / L5 协作契约）+ ADR + 实施方案 + 视觉原型 + AI 上下文 + 工程护栏（CI/gate 测试）。AI 进项目读完 CLAUDE.md 后接读本文件能 1 分钟拿全貌；不写行数（参考性强但易过期）。v1.11：ADR-025 回流涟漪——四份文档版本列推到现值（product-spec v0.19 / design-spec v0.18 / features v1.14 / test-spec v0.3）+ 源码级 gate 登记 3→6。⚠️ 其余行仍停在 2026-07-06 口径（未随 ADR-022/025/026 更新），属旧账
+description: prompt-hub 项目前期准备文件总清单——按方法论 v1.3 六层架构（L0 宪法 / L1 产品契约 / L2 工程规格 / L3 实施规格 / L4 索引 / L5 协作契约）+ ADR + 实施方案 + 视觉原型 + AI 上下文 + 工程护栏（CI/gate 测试）。AI 进项目读完 CLAUDE.md 后接读本文件能 1 分钟拿全貌；不写行数（参考性强但易过期）。v1.12：ADR-027 回流涟漪——product-spec v0.20 / prd v0.13 / features v1.15 / test-spec v0.4，另修正 prd 行的**版本漂移**（本表记 v0.11，实际早已 v0.12）。⚠️ 其余行仍停在 2026-07-06 口径（未随 ADR-022/025/026 更新），属旧账
 related:
   - CLAUDE
   - 02-constitution
@@ -29,7 +29,7 @@ related:
 | 🤝 共创 | 6 | 6/6 ratified（2026-06-01 product-spec v0.7 / design-spec v0.8 omar 审定升 ratified）|
 | 🤖 AI 主笔（人审） | 6 | 4/6 ratified（tech-stack / ops-spec + sitemap·test-spec v0.2 2026-07-02 omar 人审通过）+ prd pre-code + features in-progress |
 | 🤖 AI 派生人审（L5） | 2 | 2/2 active |
-| ADR 决策记录 | 21 | 18 Accepted + 1 Superseded（012）+ 1 Proposed（005）+ 1 Reserved（011）|
+| ADR 决策记录 | **27** | **24 Accepted** + 1 Superseded（012 by 019）+ 1 Proposed（005）+ 1 Reserved（011）。⚠️ 本行 v1.11 前记「21 / 18 Accepted」已漂移多轮，v1.12 按 `docs/adr/*.md` 逐文件 `status:` 实数重列 |
 | 实施方案 | 7 | 5 done + 1 active + 1 phased（adr-017 Phase 6 待办）|
 | 技术调研 | 2 | active（索引 + 1 份调研）|
 | 视觉原型 | 1 | v1 已归档至 archive/（2026-05-25）|
@@ -52,7 +52,7 @@ related:
 
 | 路径 | 内容 | 状态 |
 |---|---|---|
-| `docs/design/03-product-spec.md` | UI 契约（双形态 / 布局 / 交互） | draft **v0.19**（2026-08-20 ADR-025 涟漪：§13.3 新增「编辑容器统一契约」跨区域小节 + §13.4 两行快捷键；前 v0.18/v0.17 ADR-026 固定空间布局 / v0.16 ADR-022 跨 Scene 移动 / v0.15 交互模式 D-0 / v0.14 ADR-021 三层就地编辑；v0.10 起待 omar 人审，前序 v0.8 已 ratified）|
+| `docs/design/03-product-spec.md` | UI 契约（双形态 / 布局 / 交互） | draft **v0.20**（2026-08-20 ADR-027 涟漪：§13.3 区域 9 新增快捷键页 + 设置持久化归属表 + §13.4 三行；同日 v0.19 ADR-025 涟漪：§13.3 新增「编辑容器统一契约」跨区域小节 + §13.4 两行快捷键；前 v0.18/v0.17 ADR-026 固定空间布局 / v0.16 ADR-022 跨 Scene 移动 / v0.15 交互模式 D-0 / v0.14 ADR-021 三层就地编辑；v0.10 起待 omar 人审，前序 v0.8 已 ratified）|
 | `docs/design/04-user-flows.md` | 用户流（边缘 / 异常 / 跨形态） | ratified |
 | `docs/design/05-design-spec.md` | 视觉/动效 token 体系 | ratified **v0.18**（2026-08-20 ADR-025 涟漪：新增 §2.6 层叠标尺 `--z-*` + §10.2.2 `AnchoredEditor` 接口契约；前 v0.17/v0.16 ADR-026 / v0.14 ADR-021 用户内容色 / v0.13 暗 band / v0.12 ADR-019 推翻 flat 锚点；v0.11 起增量待人审，v0.10 已 omar 审定）|
 
@@ -62,8 +62,8 @@ related:
 
 | 路径 | 内容 | 状态 |
 |---|---|---|
-| `docs/design/06-prd.md` | 数据契约 / API / 状态机 / 错误码 | pre-code v0.11（2026-06-27 scene-substage-editing 涟漪：§6.4 +写入口归属指派；前 v0.10 ADR-017 C3 §8.3 updater 例外）|
-| `docs/design/07-features.md` | **87** 功能矩阵 S1–S5 + AE + 自动更新 + Promptscape 吸收 + 结构编辑 + 数据导入导出 + 走查修缮 + Scene 编辑分层 + UX 任务流 A/B + 锚定编辑容器 | in-progress **v1.14**（2026-08-20 ADR-025：§3.8 统一锚定编辑容器 done + §4 节奏表 86→87；前 v1.13/v1.12 ADR-026 / v1.11 ADR-022 / v1.10 UX 批次 A / v1.9 ADR-021 Scene 编辑分层化）|
+| `docs/design/06-prd.md` | 数据契约 / API / 状态机 / 错误码 | pre-code **v0.13**（2026-08-20 ADR-027 涟漪：§5.8 补全局唤起键 + 新增 §6.8-bis Setting 表，`user_version` 11→12；前 v0.12 走查修缮 `get_draft` / v0.11 scene-substage-editing §6.4 写入口归属。⚠️ 本表此前记 v0.11 属版本漂移，v1.12 修正。⚠️ `status: pre-code` 与「表已落地」矛盾，属旧账）|
+| `docs/design/07-features.md` | **88** 功能矩阵 S1–S5 + AE + 自动更新 + Promptscape 吸收 + 结构编辑 + 数据导入导出 + 走查修缮 + Scene 编辑分层 + UX 任务流 A/B + 锚定编辑容器 | in-progress **v1.15**（2026-08-20 ADR-027：§3.4 全局唤起键可配置 done + §4 节奏表 87→88；同日 v1.14 ADR-025：§3.8 统一锚定编辑容器 done + §4 节奏表 86→87；前 v1.13/v1.12 ADR-026 / v1.11 ADR-022 / v1.10 UX 批次 A / v1.9 ADR-021 Scene 编辑分层化）|
 | `docs/design/08-sitemap.md` | 资产对象树 + 区域地图 + 焦点导航 | ratified v0.2（2026-07-02 omar 人审通过；同日全量重写对齐 product-spec v0.13「单窗口一屏全景 + 浮层」现状；前 v0.1 视图清单已失真）|
 
 ---
@@ -74,7 +74,7 @@ related:
 |---|---|---|
 | `docs/design/09-tech-stack.md` | 全栈技术决议 | ratified v1.3（2026-06-19 ADR-017 涟漪：D14 自动更新 + §4.4 updater 子系统 + plugin-process 依赖锁）|
 | `docs/design/10-ops-spec.md` | 运维规格 | ratified v0.3（2026-06-17 ADR-017 C4：§5.2 telemetry 措辞澄清 + §9.4 反向指针）|
-| `docs/design/11-test-spec.md` | 测试规格 | draft **v0.3**（2026-08-20 全量刷新 📊 口径：前端 **373** + Rust **158** + **6** 源码级 gate + IPC **51** 命令，另加 §4.1 真机验收门 / jsdom `popover` shim，待人审；前 v0.2 2026-07-02 omar 人审通过，口径 154/135/4）|
+| `docs/design/11-test-spec.md` | 测试规格 | draft **v0.4**（2026-08-20 ADR-027 涟漪：前端 **395** + Rust **168** + IPC **53** + 新增 §4.2 G3 门四项；同日 v0.3 全量刷新 📊 口径：前端 373 + Rust 158 + **6** 源码级 gate + IPC 51，另加 §4.1 真机验收门 / jsdom `popover` shim，均待人审；前 v0.2 2026-07-02 omar 人审通过，口径 154/135/4）|
 
 ---
 

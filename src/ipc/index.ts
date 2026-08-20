@@ -44,10 +44,20 @@ export const ipc = {
     invoke<UsageRecord>("record_usage", { input, suppressHide }),
   hideWindow: () => invoke<void>("hide_window"),
   showWindow: () => invoke<void>("show_window"),
-  // True when the ⌥Space global shortcut registered at startup. Queried once at
-  // App mount; false drives a dismissible warning banner (the wake hotkey is
-  // likely claimed by another app).
+  // True when the wake chord registered at startup (or at the last rebind).
+  // Queried once at App mount; false drives a dismissible warning banner (the
+  // chord is likely claimed by another app).
   hotkeyRegistered: () => invoke<boolean>("hotkey_registered"),
+  // The chord currently registered with the OS (ADR-027). Read from Rust rather
+  // than localStorage: this preference is registered in setup(), before any
+  // renderer exists, so SQLite is the only store that can serve it in time —
+  // and the live registration, not the renderer's copy, is the truth.
+  getGlobalHotkey: () => invoke<string>("get_global_hotkey"),
+  // Rebind. Rejects unparseable input and modifier-less chords, and rolls back
+  // to the previous chord when the OS refuses the new one; resolves with the
+  // accelerator that is now live.
+  setGlobalHotkey: (accelerator: string) =>
+    invoke<string>("set_global_hotkey", { accelerator }),
 
   // ── Draft inbox (PRD §10.3) — Tauri-only, never via MCP ──
   listDrafts: (args?: {

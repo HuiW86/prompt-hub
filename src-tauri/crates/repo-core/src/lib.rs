@@ -6,6 +6,7 @@ pub mod error;
 pub mod export;
 pub mod models;
 pub mod repo;
+pub mod settings;
 
 pub use asset_read::ReadOnlyAssetRepo;
 pub use backup::{backups_dir_for, snapshot, BACKUPS_DIRNAME, MAX_BACKUPS};

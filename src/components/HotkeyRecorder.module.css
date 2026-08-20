@@ -1,0 +1,68 @@
+.row {
+  display: flex;
+  align-items: center;
+  gap: var(--s-2);
+}
+
+/* Reads as a keycap so the chord is scannable as a key, not as prose. */
+.chord {
+  composes: ph-action from "../styles/typography.module.css";
+  display: inline-flex;
+  align-items: center;
+  height: var(--h-chip);
+  padding: 0 var(--s-3);
+  border: var(--hairline) solid var(--border-1);
+  border-radius: var(--r-3);
+  background: var(--surface-1);
+  color: var(--fg-1);
+}
+
+/* Recording is a mode, and its whole point is that every keystroke is being
+ * swallowed — the field has to look armed or the user won't understand why
+ * their other shortcuts stopped responding. Accent border matches the
+ * segmented control's active state rather than introducing a new signal. */
+.chord.recording {
+  border-color: var(--accent);
+  color: var(--fg-2);
+}
+
+.button {
+  composes: ph-action from "../styles/typography.module.css";
+  display: inline-flex;
+  align-items: center;
+  gap: var(--s-1_5);
+  height: var(--h-chip);
+  padding: 0 var(--s-2_5);
+  border: var(--hairline) solid var(--border-1);
+  border-radius: var(--r-3);
+  background: var(--surface-1);
+  color: var(--fg-2);
+  cursor: pointer;
+  appearance: none;
+  transition:
+    background-color var(--d-fast) var(--ease),
+    border-color var(--d-fast) var(--ease),
+    color var(--d-fast) var(--ease);
+}
+
+.button:hover:not(:disabled) {
+  border-color: var(--border-2);
+  color: var(--fg-1);
+}
+
+.button:focus-visible {
+  outline: var(--border-thick) solid var(--accent);
+  outline-offset: 0;
+}
+
+.button:disabled {
+  opacity: var(--op-dim);
+  cursor: not-allowed;
+}
+
+/* Amber, not red: the palette has no danger token, and amber-as-signal is the
+ * established convention here (HotkeyBanner, Toast .error). */
+.error {
+  composes: ph-note from "../styles/typography.module.css";
+  color: var(--accent-swatch-amber);
+}

@@ -26,7 +26,11 @@ pub struct ImportSummary {
 // `usage_records` is wiped too — D2 doesn't export it, and its phase_id FK would
 // dangle after the phases it points at are replaced. `sops`/`sop_steps`/`drafts`
 // are left untouched: SOP has no writes yet (always empty) and drafts is an
-// independent MCP staging table, not part of the asset backup.
+// independent MCP staging table, not part of the asset backup. `settings` is
+// likewise untouched and must stay that way — wiping it during a restore would
+// silently reset the user's wake chord to the default, i.e. an asset import
+// would change how the app is summoned (ADR-027). Guarded by
+// `import_preserves_machine_local_settings`.
 const WIPE_ORDER: &[&str] = &[
     "usage_records",
     "compositions",
@@ -335,6 +339,23 @@ mod tests {
             })
             .expect("count");
         assert_eq!(after, 0, "post-snapshot macro must be wiped by restore");
+    }
+
+    #[test]
+    fn import_preserves_machine_local_settings() {
+        // ADR-027: `settings` is machine-local config, not a portable asset.
+        // Restoring an asset backup must not change how the app is summoned.
+        let (_dir, conn) = migrated_conn();
+        repo_core::settings::set_global_hotkey(&conn, "Ctrl+Shift+P").expect("set hotkey");
+        let backup = export_json(&conn).expect("export seed");
+
+        import_json(&conn, &backup).expect("restore");
+
+        assert_eq!(
+            repo_core::settings::global_hotkey(&conn).expect("read hotkey"),
+            "Ctrl+Shift+P",
+            "a wipe-and-restore must not reset the user's wake chord"
+        );
     }
 
     #[test]

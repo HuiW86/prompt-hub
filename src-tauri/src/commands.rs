@@ -1,4 +1,5 @@
 use std::path::PathBuf;
+use std::str::FromStr;
 use std::sync::atomic::{AtomicBool, AtomicU64, Ordering};
 use std::sync::Mutex;
 use std::time::Duration;
@@ -6,6 +7,7 @@ use std::time::Duration;
 use rusqlite::Connection;
 use serde::Serialize;
 use tauri::{AppHandle, Manager, State, WebviewWindow};
+use tauri_plugin_global_shortcut::{GlobalShortcutExt, Shortcut};
 
 // Window stays visible briefly after a copy so the user sees the flash
 // confirmation before it hides. Matches the 200ms allowance in
@@ -56,12 +58,18 @@ pub struct AppState {
     // re-summoned the window, manual hide, etc.). Prevents stale timers
     // from hiding a freshly-shown window.
     pub copy_seq: AtomicU64,
-    // Whether the ⌥Space global shortcut registered at setup. Defaults to true;
-    // setup flips it false if register() failed (typically the chord is already
-    // claimed by another app), so the frontend can query and warn the user that
-    // wake won't work. Written once at startup, read once at App mount — never on
-    // the wake hot path, so it costs the C1 budget nothing.
+    // Whether the wake chord registered at setup. Defaults to true; setup flips
+    // it false if register() failed (typically the chord is already claimed by
+    // another app), so the frontend can query and warn the user that wake won't
+    // work. Read at App mount and after every rebind — never on the wake hot
+    // path, so it costs the C1 budget nothing.
     pub hotkey_registered: AtomicBool,
+    // The accelerator currently registered with the OS (ADR-027). Mirrors
+    // `settings.global_hotkey` in SQLite; held in memory because unregistering
+    // on rebind needs the *live* chord, and because the settings UI reads it on
+    // every open. Kept equal to the stored value by set_global_hotkey, which
+    // rolls the registration back if the write fails.
+    pub current_hotkey: Mutex<String>,
 }
 
 fn with_conn<F, T>(state: &State<'_, AppState>, f: F) -> AppResult<T>
@@ -212,13 +220,115 @@ pub fn show_window(state: State<'_, AppState>, window: WebviewWindow) -> AppResu
     Ok(())
 }
 
-// True when the ⌥Space global shortcut registered successfully at setup. The
-// frontend polls this once at mount and, on false, shows a dismissible banner
-// telling the user the wake hotkey is unavailable (usually another app already
-// owns ⌥Space). A plain atomic read — no lock, no IO.
+// True when the wake chord registered successfully (at setup, or at the last
+// rebind). The frontend polls this once at mount and, on false, shows a
+// dismissible banner telling the user the wake hotkey is unavailable (usually
+// another app already owns the chord). A plain atomic read — no lock, no IO.
 #[tauri::command]
 pub fn hotkey_registered(state: State<'_, AppState>) -> bool {
     state.hotkey_registered.load(Ordering::Relaxed)
+}
+
+// ── Global wake chord (ADR-027) ──────────────────────────────────────────────
+
+// Parse an accelerator and enforce the one rule we add on top of the plugin's
+// grammar: at least one modifier. A bare-key global shortcut swallows that key
+// in *every* application system-wide, and the only way to undo it is to get
+// back into this window — which is exactly what the swallowed key was for.
+// Rejecting is therefore the recoverable choice; warning is not.
+//
+// No reserved-chord blocklist: macOS decides what it will hand out, and a
+// hand-maintained list would drift from the OS with every release. The single
+// source of truth for "is this chord available" is register() itself.
+pub(crate) fn parse_accelerator(accelerator: &str) -> AppResult<Shortcut> {
+    let shortcut = Shortcut::from_str(accelerator)
+        .map_err(|_| AppError::InvalidAccelerator(accelerator.to_string()))?;
+    if shortcut.mods.is_empty() {
+        return Err(AppError::ModifierRequired);
+    }
+    Ok(shortcut)
+}
+
+// The accelerator currently registered with the OS. Cheap in-memory read; the
+// settings UI hydrates from this rather than from localStorage, because this
+// value (not the renderer's copy) is what wakes the window.
+#[tauri::command]
+pub fn get_global_hotkey(state: State<'_, AppState>) -> AppResult<String> {
+    let guard = state
+        .current_hotkey
+        .lock()
+        .map_err(|_| AppError::LockPoisoned)?;
+    Ok(guard.clone())
+}
+
+// Rebind the wake chord: validate → unregister old → register new → persist,
+// rolling back to the previous chord at either failure point (ADR-027
+// sub-decision 2). The invariant being defended is `live == stored`: a user who
+// sees a chord in settings must be able to press it, and a restart must not
+// resurrect a chord they replaced.
+//
+// MUST stay `async`. The plugin's register/unregister dispatch onto the main
+// thread and block on the reply (`run_main_thread!`), while *synchronous* Tauri
+// commands already run on the main thread (see the note in show_window) — a
+// sync version of this command deadlocks the app on first use. `async` puts it
+// on the async runtime, where blocking on the main thread's reply is safe.
+#[tauri::command]
+pub async fn set_global_hotkey(app: AppHandle, accelerator: String) -> AppResult<String> {
+    let next = parse_accelerator(&accelerator)?;
+    let state = app.state::<AppState>();
+
+    let previous_accel = {
+        let guard = state
+            .current_hotkey
+            .lock()
+            .map_err(|_| AppError::LockPoisoned)?;
+        guard.clone()
+    };
+    // A previous chord that no longer parses (hand-edited DB row) simply has
+    // nothing to unregister or roll back to — not an error worth blocking a
+    // rebind that is most likely trying to fix exactly that.
+    let previous = parse_accelerator(&previous_accel).ok();
+    let shortcuts = app.global_shortcut();
+
+    // Release the old chord first. Skipped when it is the same chord being
+    // re-submitted, since unregister+register of one chord would be a no-op
+    // round trip that can only fail.
+    if previous_accel != accelerator {
+        if let Some(prev) = previous {
+            let _ = shortcuts.unregister(prev);
+        }
+        if shortcuts.register(next).is_err() {
+            // Someone else owns the requested chord. Put the old one back so the
+            // user is not left with no way to wake the window at all.
+            let restored = previous.is_some_and(|prev| shortcuts.register(prev).is_ok());
+            state.hotkey_registered.store(restored, Ordering::Relaxed);
+            return Err(AppError::HotkeyUnavailable(accelerator));
+        }
+    }
+
+    // Registered and live — now make it durable. If the write fails the live
+    // binding no longer matches what a restart would restore, so undo the
+    // registration rather than leave the two out of step.
+    if let Err(e) = with_write_conn(&state, |c| {
+        repo_core::settings::set_global_hotkey(c, &accelerator)
+    }) {
+        if previous_accel != accelerator {
+            let _ = shortcuts.unregister(next);
+            let restored = previous.is_some_and(|prev| shortcuts.register(prev).is_ok());
+            state.hotkey_registered.store(restored, Ordering::Relaxed);
+        }
+        return Err(e);
+    }
+
+    {
+        let mut guard = state
+            .current_hotkey
+            .lock()
+            .map_err(|_| AppError::LockPoisoned)?;
+        *guard = accelerator.clone();
+    }
+    state.hotkey_registered.store(true, Ordering::Relaxed);
+    Ok(accelerator)
 }
 
 // ── Draft inbox (PRD §10.3) — Tauri-only, never exposed via MCP ──────────────
@@ -764,6 +874,60 @@ mod tests {
         let path = dir.path().join("prompt-hub.db");
         let conn = db::open_and_migrate(&path).expect("migrate");
         (dir, conn)
+    }
+
+    // ── Accelerator validation (ADR-027 sub-decision 2) ──────────────────────
+    // The register/rollback path itself needs a live Tauri app and an OS that
+    // can hand out chords, so it belongs to the G3 manual gate. What IS
+    // testable here is the gate in front of it — and the modifier rule is the
+    // one whose failure mode is unrecoverable.
+
+    #[test]
+    fn parse_accelerator_accepts_the_shipped_default() {
+        let parsed = parse_accelerator(repo_core::settings::DEFAULT_GLOBAL_HOTKEY)
+            .expect("the shipped default must parse");
+        assert!(!parsed.mods.is_empty());
+    }
+
+    #[test]
+    fn parse_accelerator_rejects_a_bare_key() {
+        // A modifier-less global chord swallows that key in every app, and the
+        // only escape is the window this key was supposed to open.
+        let err = parse_accelerator("Space").expect_err("bare key must be rejected");
+        assert!(
+            matches!(err, AppError::ModifierRequired),
+            "expected ModifierRequired, got {err:?}"
+        );
+    }
+
+    #[test]
+    fn parse_accelerator_rejects_gibberish() {
+        let err = parse_accelerator("Ctrl+NotAKey").expect_err("unknown key must be rejected");
+        assert!(
+            matches!(err, AppError::InvalidAccelerator(_)),
+            "expected InvalidAccelerator, got {err:?}"
+        );
+    }
+
+    #[test]
+    fn parse_accelerator_accepts_multi_modifier_chords() {
+        for accel in ["Ctrl+Shift+P", "CommandOrControl+Alt+K", "Alt+Backquote"] {
+            assert!(
+                parse_accelerator(accel).is_ok(),
+                "{accel} should be a valid binding"
+            );
+        }
+    }
+
+    #[test]
+    fn stored_default_hotkey_is_registerable() {
+        // Guards the seam between the SQL seed and the code fallback: if the
+        // migration ever seeds a value the parser rejects, the app boots with
+        // no wake key at all and the failure looks like an OS conflict.
+        let (_dir, conn) = migrated_conn();
+        let stored = repo_core::settings::global_hotkey(&conn).expect("read seeded hotkey");
+        assert_eq!(stored, repo_core::settings::DEFAULT_GLOBAL_HOTKEY);
+        assert!(parse_accelerator(&stored).is_ok());
     }
 
     fn pre_import_backup_count(db_path: &std::path::Path) -> usize {

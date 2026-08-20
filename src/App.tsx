@@ -14,9 +14,19 @@ function App() {
   const refreshAll = usePromptStore((s) => s.refreshAll);
   const selectPhase = usePhaseSelect();
 
+  const loadGlobalHotkey = useSettingsStore((s) => s.loadGlobalHotkey);
+
   useEffect(() => {
     void refreshAll();
   }, [refreshAll]);
+
+  // Hydrate the wake chord from Rust (ADR-027). SQLite owns it because setup()
+  // registers the chord before any renderer exists; this read is only so the UI
+  // can name the chord correctly in settings and in the failure banner. Off the
+  // wake hot path — one query at mount.
+  useEffect(() => {
+    void loadGlobalHotkey();
+  }, [loadGlobalHotkey]);
 
   // Auto-update check (ADR-017 §5.2): runs once at startup, off the ⌥Space wake
   // hot path (that path is the Rust global-shortcut handler — untouched here),

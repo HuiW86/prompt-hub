@@ -1,12 +1,12 @@
 ---
 type: product-spec
 project: prompt-hub
-version: v0.19
+version: v0.20
 created: 2026-05-18
 last_modified: 2026-08-20
 status: draft  # v0.10 起增量待 omar 人审；前序 v0.8 已 ratified
 author: co  # 🤝 人机共创（CLAUDE §5.2）
-related: [[01-spec]], [[05-design-spec]], [[06-prd]], [[012-lock-visual-quality-anchor]], [[019-supersede-flat-visual-anchor]], [[020-restore-protocol-dark-band]], [[021-scene-layered-editing]], [[022-cross-scene-phrase-move]], [[025-unified-anchored-editing]], [[013-alignment-phrases-tab-inclusion]], [[015-expose-mcp-write-pipeline]], [[017-enable-auto-update]], [[018-absorb-promptscape-design]], [[026-fixed-spatial-layout]]
+related: [[01-spec]], [[05-design-spec]], [[06-prd]], [[012-lock-visual-quality-anchor]], [[019-supersede-flat-visual-anchor]], [[020-restore-protocol-dark-band]], [[021-scene-layered-editing]], [[022-cross-scene-phrase-move]], [[025-unified-anchored-editing]], [[027-configurable-global-hotkey]], [[013-alignment-phrases-tab-inclusion]], [[015-expose-mcp-write-pipeline]], [[017-enable-auto-update]], [[018-absorb-promptscape-design]], [[026-fixed-spatial-layout]]
 description: 手动 AI 编程仪表盘的 UI 契约——双形态架构/布局/点击路径/状态反馈/用户旅程/主形态 UI 草案；写 UI / 改交互时召回。版本叙事见 CHANGELOG
 ---
 
@@ -845,11 +845,25 @@ dirty 判定以**初始值快照**比对，不以「是否聚焦过」判定。
 - **位置**：居中 overlay 模态（`--scrim` 遮罩覆盖全屏），非常驻区域
 - **唤起**：Header gear 点击 / `⌘,`
 - **关闭**：Esc / 点击遮罩 / 右上角 X
-- **结构**：左导航（外观 / 更新 / 数据）+ 右内容
+- **结构**：左导航（外观 / **快捷键** / 更新 / 数据）+ 右内容
   - **外观页**：主题模式三态分段控件（浅色 / 深色 / 跟随系统）+ 强调色 5 色 swatch（中性 / 蓝 / 绿 / 紫 / 琥珀）；偏好 persist localStorage（[[02-constitution#A2]] 不出站）
+  - **快捷键页（v0.20 新增 · 涟漪 [[027-configurable-global-hotkey]]）**：单字段「全局唤起」——当前组合键 keycap + 「更改」/「恢复默认」两键。**为什么独立成页而不并入外观**：唤起键是行为绑定不是外观偏好，且两者持久化归属不同（见下方「设置持久化归属」）
+    - **录键是一种模式，不是输入框**：值是物理组合键，唯一诚实的录入方式是按下它。「更改」进入录键态 → window `keydown` **capture 阶段全量捕获 + `stopPropagation`**，否则正在录的组合键会同时触发它当前绑定的应用内动作
+    - **ESC 语义在录键态被局部改写**：一次 ESC 取消录制，**第二次才关闭设置弹窗**。这是本页与 §13.3「编辑容器统一契约」ESC 规则的**唯一交叉面**——弹窗的 ESC 监听在 window 冒泡阶段，录键态的 capture 监听先于它执行。取舍理由：录制中途把弹窗关掉，用户无法判断组合键是否已保存
+    - **只接受带修饰键的组合**：裸键全局快捷键会在**所有应用**里吞掉该键，而唯一的撤销途径正是这个键本该唤起的窗口。前端与 Rust 双重拒绝（不是防御性重复：前端要在用户提交前拒绝，Rust 要拒绝因为前端不是唯一调用方）
+    - **冲突只有一种可见形态**：macOS 无 API 枚举占用者，唯一手段是 `register()` 失败。改绑走「校验 → 注销旧 → 注册新 → 落库」，任一步失败**回滚到旧组合键**，保证「设置里看到的 == 按下去能用的」
+    - **逃生口**：绑定成一个自己按不出的组合键时，点 Dock 图标 / 重复启动 `.app` 仍可唤起（macOS reopen 事件）；最后一道是 `sqlite3` 手改 `settings` 表
   - **更新页**：opt-in 总开关（[[017-enable-auto-update]] §5.3 出站豁免）+ 状态行 +「检查更新」/「下载并安装」，复用 `updaterStore` 状态机
     - **检查失败反馈分级（v0.13 · P0-4，触 [[017-enable-auto-update]] 交互记载）**：**auto**（启动自动检查）失败**静默降级**——console.warn + status 回落 idle，不再挂常驻「更新失败」横幅（error 字段仍留存供排查）；**manual**（本页「检查更新」及 opt-in 接受后的首查）失败保留全量反馈——error status + toast。理由：离线/网络抖动是常态，启动失败横幅制造无谓焦虑；用户显式动作则必须有回音
   - **数据页（v0.11 新增 · [[06-prd#6.9]]/§7.5）**：「导出备份…」（save dialog 选本地路径 → 全保真 JSON，默认名 `prompt-hub-backup-YYYY-MM-DD.json`）+「导入备份…」（open dialog 选 JSON → **整库替换确认弹窗** → 导入后 `refreshAll` 重载全部 store）；文件仅写用户选定本地路径（[[02-constitution#A2]] 不出站），导入为**清空 + 整库替换**不可撤销（决策 D1），导出**不含使用记录**（决策 D2）
+- **设置持久化归属（v0.20 新增 · [[027-configurable-global-hotkey]] 子决策 1）**：判据是**何时被读**，不是重要程度——
+
+  | 归属 | 判据 | 成员 |
+  |---|---|---|
+  | localStorage | 只有渲染进程需要 | 主题 / 强调色 / 密度 / `interactionMode` / 布局分栏值 |
+  | SQLite `settings` 表 | **Rust 在 webview 挂载之前就要读** | 全局唤起键 |
+
+  唤起键在 `setup()` 阶段注册，那一刻 localStorage 不可达——这是它入库的**唯一**理由，也是判据可机械执行的原因。该表**不进导出/导入**：它是机器本地配置，不是可带走的资产。
 - **B2 合规**：强调色只染中性面（导航焦点环 / swatch / 开关 on 态），**不染 protocol/task 语义层**（[[02-constitution#B2]] / [[05-design-spec#13.1]]）；数据页导出/导入按表整搬，不混协议层与任务层
 - **不进 Tab cycle 总数**：模态弹窗有自己的焦点域，不计入 §13.4 区域级 6-tab 全景循环
 - **与设置语义的历史校正**：v0.5「⌘, 唤起配置面板（编辑 Scene/Phase/Modifier）」的旧措辞已被本区域取代——⌘, 现打开本设置弹窗（外观 + 更新），资产编辑走各区域就地编辑态
@@ -858,13 +872,14 @@ dirty 判定以**初始值快照**比对，不以「是否聚焦过」判定。
 
 | 快捷键 | 动作 | 备注 |
 |--------|------|------|
-| `⌥ Space` | 全局唤起仪表盘 | 默认值，可配置 |
+| `⌥ Space` | 全局唤起仪表盘 | 默认值，**可在设置 › 快捷键改绑**（v0.20 落地 · [[027-configurable-global-hotkey]]）。绑定存 SQLite `settings` 表而非 localStorage——Rust 在 setup 阶段注册，早于任何渲染进程 |
 | `ESC` | 关闭仪表盘 | 任何时候可用 |
+| `ESC`（录键态） | 取消录制，不改绑定 | v0.20 · 录键期间键盘被全量捕获（window capture + `stopPropagation`），**一次 ESC 取消录制、第二次才关设置弹窗**。见 §13.3 区域 9 快捷键页 |
 | `⏎` | 复制当前选中项 + 自动隐藏窗口 | 主形态默认行为 |
 | `⌘K` | 焦点跳到搜索框 | 唤起即已默认聚焦 |
 | `⌘1` - `⌘8` | 直接切换到第 N 个相位 + 复制对齐话术 | 哲学七的极速通道 |
 | `⌘N` | 唤起 Composition 工作台子窗口 | 现场组装 |
-| `⌘,` | 打开设置弹窗（外观 + 更新，区域 9）| v0.11 起经 Header gear / `⌘,`（原「配置面板编辑 Scene/Phase/Modifier」措辞已废，资产编辑走各区就地编辑态）|
+| `⌘,` | 打开设置弹窗（外观 / 快捷键 / 更新 / 数据，区域 9）| v0.11 起经 Header gear / `⌘,`（原「配置面板编辑 Scene/Phase/Modifier」措辞已废，资产编辑走各区就地编辑态）；快捷键页 v0.20 新增 |
 | `⌘⏎` | **编辑器内提交**（保存并关闭，焦点归还触发元素）| v0.19 · 统一提交键 A1-08。裸 `⏎` 不落库——名称字段推进到正文、正文换行。P2 目标：整理态改为「保存并推进到下一条」，**未落地** |
 | `ESC`（编辑器内） | **放弃并关闭**编辑器（创建态给撤销 toast）| v0.19 · 不冒泡到「关闭仪表盘」。`ScenePropertiesEditor` 为**逐层退栈**：半截角色预设 → 删除确认 → 面板（见 §13.3 编辑容器统一契约 c）|
 | `↑` `↓` `←` `→` | 在卡片间移动焦点 | 键盘党的扫视路径 |
@@ -903,6 +918,23 @@ dirty 判定以**初始值快照**比对，不以「是否聚焦过」判定。
 
 ## 修订记录
 
+### v0.20（2026-08-20）— ADR-027 涟漪：全局唤起键可配置
+
+> 涟漪源 [[027-configurable-global-hotkey]]（Accepted 2026-08-20，当日落地）。与 v0.19 同日的第二笔。**本次是销账不是新增**——§13.4 的「可配置」自 v0.5 起在册，实现一直硬编码；本次让实现追上契约，契约条文本身只补细节不改承诺。
+
+| 落点 | 改动 | 依据 |
+|---|---|---|
+| §13.3 区域 9 **新增「快捷键页」** | 设置弹窗左导航 3 页 → **4 页**（外观 / 快捷键 / 更新 / 数据）。快捷键页规格：录键是模式非输入框 / capture 全量捕获 / ESC 局部改写 / 强制修饰键 / 冲突只有 `register()` 失败一种形态 / 三层逃生口 | ADR-027 子决策 2、3 |
+| §13.3 区域 9 **新增「设置持久化归属」表** | 判据 = **何时被读**：只渲染进程需要 → localStorage；Rust 在 webview 挂载前要读 → SQLite `settings`。并记明该表不进导出/导入 | 子决策 1 |
+| §13.4 `⌥ Space` 行 | 「默认值，可配置」→ 补明改绑入口与存储位置 | 子决策 1 |
+| §13.4 **新增 `ESC`（录键态）行** | 一次取消录制、第二次才关弹窗 | 子决策 2 |
+| §13.4 `⌘,` 行 | 设置弹窗页签枚举 3 → 4 | 随区域 9 |
+| v0.19「遗留」条 | 标记销账 | — |
+
+**ESC 交叉面已显式记录，不留隐性冲突**：录键态的 window capture 监听先于设置弹窗的冒泡 ESC 监听执行，这是 §13.3「编辑容器统一契约」ESC 规则的唯一例外面，已在区域 9 就地写明取舍理由（录制中途关窗，用户无法判断是否已保存）。
+
+**验收**：G3 四项**未跑**（见 [[11-test-spec#4.2]]）。其中项 3（Dock / 重复启动的 reopen 逃生口）与项 4（改键后重启仍生效）**jsdom 与 CI 均物理不可验**，只能真机走查——确认前不入对外发布说明。
+
 ### v0.19（2026-08-20）— ADR-025 涟漪：统一锚定编辑容器 + 保存语义契约
 
 > 涟漪源 [[025-unified-anchored-editing]]（Accepted 2026-08-17，P0 当日落地；P1-a + P1-b 于 2026-08-20 合入 `main`，merge `97858f7`）。🤝 共创起草，待 omar 人审。
@@ -921,7 +953,7 @@ dirty 判定以**初始值快照**比对，不以「是否聚焦过」判定。
 
 **未落地项已显式标注，不写成现状**：「`⌘Enter` 保存并**推进到下一条**」属 P2 连续处理模型，`PhraseFormEditor` 现仅实现保存并关闭；键盘动作层（子决策 3.1–3.4）整体未落地。**验收依据**：G1 六项 + P1-b 门两项已全部通过，其中项 5 与项 2-B 取得 AI 侧逐像素证据（明细见 ADR-025 §6）。
 
-**遗留（不属本次涟漪）**：§13.4 表中 `⌥ Space`「默认值，**可配置**」是自 v0.5 起写入却从未实现的契约欠账——实现硬编码于 `src-tauri/src/lib.rs:165`。已立 ADR-027 处置，见 [[HANDOFF#Next-Actions]] 第 1 项。
+**遗留（不属本次涟漪）**：§13.4 表中 `⌥ Space`「默认值，**可配置**」是自 v0.5 起写入却从未实现的契约欠账——实现硬编码于 `src-tauri/src/lib.rs:165`。~~已立 ADR-027 处置~~ → **v0.20 已销账**（[[027-configurable-global-hotkey]] Accepted 并当日落地）。
 
 ### v0.18（2026-08-19）— 走查缺陷裁决：Scene 下限纠偏
 

@@ -1,12 +1,12 @@
 ---
 type: prd
 project: prompt-hub
-version: v0.12
+version: v0.13
 created: 2026-05-18
-last_modified: 2026-07-01
+last_modified: 2026-08-20
 status: pre-code
 author: ai  # 🤖 AI 主笔 + 人审（CLAUDE §5.2）
-related: [[01-spec]], [[03-product-spec]], [[prompt-hub-mvp]], [[015-expose-mcp-write-pipeline]], [[mcp-write-pipeline]]
+related: [[01-spec]], [[03-product-spec]], [[prompt-hub-mvp]], [[015-expose-mcp-write-pipeline]], [[027-configurable-global-hotkey]], [[mcp-write-pipeline]]
 description: 手动 AI 编程仪表盘的工程契约——数据模型/状态机/NFR/Boundaries/IPC + MCP 接口契约；写后端 / 数据层时召回。版本叙事见 CHANGELOG
 ---
 
@@ -303,11 +303,13 @@ SOP 模板应该是**可自定义的**，初始内置是锚点，使用者会很
 - SOP 模板的创建、编辑、删除
 - 首屏区域的高度比例、折叠状态
 - 数据导入/导出（JSON 格式，方便备份和迁移）
+- **全局唤起键**（v0.13 新增 · [[027-configurable-global-hotkey]]）——默认 `⌥ Space`，可改绑；存 SQLite `settings` 表（§6.8-bis），非 localStorage
 
 **为什么这样设计**：
 - 哲学九要求界面可配置，但不是所有配置都要暴露在首屏
 - 把低频配置放在二级页面，让首屏保持清爽
 - JSON 导入导出是对抗"工具锁定"的重要设计——使用者的资产必须随时可以带走
+- **唤起键必须可配（v0.13 补）**：它此前是本清单唯一的缺口，而缺得最不该——它是主形态的**唯一入口**，被别的应用占走时产品整体不可达。哲学九主张「界面自身可维护」，却唯独入口不可改，是自相矛盾。补上后清单与 [[03-product-spec#13.4]] 自 v0.5 的「可配置」承诺才一致
 
 ---
 
@@ -777,6 +779,35 @@ SOP 节包含 2 个相关模型：**SOP**（标准作业流程）、**SOPStep**�
 - `modifier_ids` 让"哪些 Modifier 在实战中被组合得最多"成为可分析数据，是 [[01-spec#10.1-Modifier-池的增长管理]] 治理的数据基础
 - `sop_id` + `sop_step_order` 让 SOP 执行可追溯——可以统计"方案设计 SOP 平均走到第几步就完成了"，是 [[01-spec#10.2-SOP-的粒度]] 调整的数据基础
 - 这张表是最高频写入的，实现时建议 **append-only**（不修改旧记录，只追加新行）——避免任何同步冲突，也方便定期归档
+
+### 6.8-bis Setting（机器本地配置 · v0.13 新增 · [[027-configurable-global-hotkey]]）
+
+> **不是资产**。本表刻意排除在 §6.0 资产关系总览之外——它不被任何资产引用，也不引用任何资产，且**不进导出/导入**（§6.9 / §7.5）。收录它只因为存在一类配置**渲染进程无法承担**。
+
+#### Fields
+
+| Name | Type | Nullable | Default | Constraint | Description |
+|------|------|----------|---------|------------|-------------|
+| key | string | N | - | PK | 配置键 |
+| value | string | N | - | - | 配置值（字符串化；本表不做类型系统） |
+
+#### 准入判据（唯一）
+
+**Rust 在 webview 挂载之前就需要读它。** 满足则入本表，否则归 localStorage（[[03-product-spec#13.3]] 区域 9「设置持久化归属」表）。
+
+判据是时机而非重要程度——这样它可机械执行，不需要逐项讨论。当前**唯一成员**：
+
+| key | 默认值 | 为什么渲染进程承担不了 |
+|-----|--------|----------------------|
+| `global_hotkey` | `Alt+Space` | 全局快捷键在 Tauri `setup()` 阶段注册，那一刻 webview 尚未创建，localStorage 不可达。若改用 localStorage，只能「先注册默认键、前端挂载后再改」——而用户改键的原因通常正是默认键冲突，等于每次启动都必然经历一次错误注册 |
+
+#### 删除策略
+
+无删除路径。缺行**回落代码内默认值并照常启动**，不视为库损坏——手改本表是唤起键把用户锁在门外时的最后一道逃生口（[[027-configurable-global-hotkey]] 子决策 3），一次误敲 `DELETE` 不该让应用永久开不了机。
+
+#### 与导出的关系
+
+`export_data` / `import_data` **均不覆盖本表**，且导入的整库 wipe 也不清它。理由：导出的定位是「资产随用户走」（§7.5 抗工具锁定），而把 A 机器的键绑定带到 B 机器只会制造冲突。已由回归测试钉住（`import_preserves_machine_local_settings`）。
 
 ### 6.9 数据导出 JSON Schema
 
@@ -1373,6 +1404,21 @@ PRD 不复刻风险表，避免双源真理漂移；实施侧风险/缓解以 pl
 ---
 
 ## 修订记录
+
+### v0.13（2026-08-20）— ADR-027 涟漪：全局唤起键可配置
+
+**触发**：[[027-configurable-global-hotkey]] Accepted 并当日落地后按方法论 §7 回流。
+
+| 章节 | 改动 |
+|------|------|
+| §5.8 可配置项清单 | **新增「全局唤起键」一行** —— 本清单此前唯一的缺口，且缺得最不该：它是主形态的唯一入口，被占走时产品整体不可达。补记「哲学九主张界面可维护，却唯独入口不可改，是自相矛盾」 |
+| **新增 §6.8-bis Setting** | `settings(key PK, value)` 表。**刻意排除在 §6.0 资产总览之外**——不被任何资产引用、不引用任何资产、不进导出。准入判据唯一：**Rust 在 webview 挂载前就要读**。当前唯一成员 `global_hotkey` |
+| §6.8-bis 删除策略 | 缺行**回落默认值并照常启动**，不当作库损坏——手改本表是把自己锁在门外后的最后逃生口，一次误敲 `DELETE` 不该让应用永久开不了机 |
+| §6.8-bis 与导出的关系 | `export_data` / `import_data` 均不覆盖本表，整库 wipe 也不清它；已由 `import_preserves_machine_local_settings` 钉住 |
+
+**IPC 面**：51 → **53**（`get_global_hotkey` / `set_global_hotkey`）。**不落 §10.3**——该节的「6 Tauri IPC」是 MCP 写管线专章的草稿命令面，不是全量命令清单；把两个设置命令塞进去会扩大该节的语义。全量口径归 [[11-test-spec]]，已随本轮刷新。
+
+**schema**：`user_version` 11 → **12**（migration `0012_settings`）。MCP 进程共享同库，发版须同批，否则旧二进制撞 `SchemaVersionMismatch`。
 
 ### v0.12（2026-07-01）— 产品走查修缮批次涟漪：get_draft IPC + composition promote 暂缓 + 资产管理命令补记
 

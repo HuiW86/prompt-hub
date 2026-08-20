@@ -1,7 +1,7 @@
 ---
 type: adr
 project: prompt-hub
-status: Proposed
+status: Accepted
 description: 全局唤起键可配置——兑现 product-spec §13.4 自 v0.5 起写下却从未实现的「默认值，可配置」；绑定存 SQLite（setup 阶段唯一读得到的持久层），冲突只能靠 register() 失败探知，并新增 macOS Reopen 逃生口防止用户把自己锁在门外
 related:
   - 03-product-spec
@@ -17,7 +17,7 @@ related:
 
 - **标题**：全局唤起键从硬编码 `⌥Space` 改为用户可配置——绑定持久化到 SQLite，改键走可运行时重注册的 IPC，并新增一条不依赖快捷键的唤起通路
 - **日期**：2026-08-20
-- **决策者**：omar（**待审**）；起草：Claude（🤝 共创文档，见 [[CLAUDE#§5.2]]）
+- **决策者**：omar（2026-08-20 拍板）；起草：Claude（🤝 共创文档，见 [[CLAUDE#§5.2]]）
 - **影响范围**：
   - **代码**：`src-tauri/src/lib.rs`（setup 读绑定 + 注册 + `RunEvent::Reopen` 分支）/ `src-tauri/src/commands.rs`（新增 `get_global_hotkey` / `set_global_hotkey`）/ `src-tauri/crates/repo-core`（新增 `settings` KV 表，migration `0012`，`user_version` 11→12）/ `src/stores/settingsStore.ts`（`globalHotkey` 由死字段转为真绑定）/ `src/components/SettingsModal.tsx`（录键控件）/ `src/components/HotkeyBanner.tsx`（文案不再写死 `⌥Space`）
   - **文档**：[[03-product-spec]] §13.4「可配置」条目落地 + §1.1 触发描述 + §13.4 键位表；[[06-prd]] §5.8 可配置项清单（**现缺此项**）+ §6 数据模型（`settings` 表）；[[09-tech-stack]] 无变更（不新增依赖）
@@ -25,9 +25,17 @@ related:
 
 ## 2. Status
 
-`Proposed`（2026-08-20 起草，等 omar 拍板；三条子决策各自可单独否决）
+`Accepted`（2026-08-20 起草并由 omar 当日拍板，三条子决策全数通过）
 
 > **范围声明**：本 ADR 只裁**全局唤起键**一条。结构导航键（Tab / 方向键）与动作键（区域内裸字母键）的可配置性**显式不裁**，理由见 §5「显式不裁」。
+>
+> **落地进度（2026-08-20 当日实施）**：代码全部落地。migration `0012_settings`（`user_version` 11→12）、`repo-core/src/settings.rs`、`get_global_hotkey` / `set_global_hotkey` 两个 IPC（51→53）、`SettingsModal` 录键控件、`RunEvent::Reopen` 分支均已实现，前端 373→388 / Rust 158→170 全绿。
+>
+> **实施期口径修订 1 — 缺行回落默认值，不再 `fail_startup`**：子决策 1 原文写「读取路径无 `None` 分支，读不到 = 库损坏，走 `fail_startup`」。实施时改为**缺行回落 `Alt+Space` 并照常启动**。理由是原方案与子决策 3 的第三层逃生口自相矛盾：那条逃生口正是「用 `sqlite3` 手改 `settings` 表救回来」，而手改时打成 `DELETE` 而非 `UPDATE` 就会让应用**永久开不了机**——把逃生口变成砖头。缺行是可恢复状态，不该与"库损坏"同等对待。
+>
+> **实施期口径修订 2 — `set_global_hotkey` 必须是 `async` 命令**：插件的 `register()` / `unregister()` 内部用 `run_main_thread!` 派发并**阻塞等待结果**（`tauri-plugin-global-shortcut-2.3.1/src/lib.rs:73-85`），而同步 IPC 命令本身就跑在主线程上（`commands.rs:201-205` 既有注释已述该事实）。同步命令里调用即**主线程自锁死**。改 `async fn` 让 Tauri 把它派到 async runtime，是唯一不改插件的解法。这条不影响任何契约，属实现约束，记此备忘以防后人"顺手改回同步"。
+>
+> **真机验收门 G3（4 项，未跑）**：见 [[11-test-spec#4.2]]。其中项 3（Reopen 逃生口）与项 4（改键后重启仍生效）**jsdom 与 CI 均不可验**，只能真机走查。
 
 ## 3. Context
 
@@ -241,5 +249,11 @@ RunEvent::Reopen { .. } => 走与快捷键处理器相同的 wake（run_on_main_
 ## 相关链接
 
 - **触发本决策的文档**：[[03-product-spec#13.4]] 键位表（`:861` 自 v0.5 的「可配置」）+ `:924` 遗留标注；2026-08-20 [[025-unified-anchored-editing]] 契约回流的副产品
-- **被本决策影响的文档**：[[03-product-spec]] §1.1 / §13.4；[[06-prd]] §5.8 可配置项（现缺唤起键）+ §6 数据模型（`settings` 表）；[[07-features]] §3 / §4 节奏表；[[11-test-spec]]（新增真机验收项：Reopen 逃生口）
+- **被本决策影响的文档**（回流八步 2026-08-20 当日完成，逐项落点如下）：
+  - ✅ [[03-product-spec]] **v0.19 → v0.20** —— §13.3 区域 9 新增「快捷键页」+「设置持久化归属」表；§13.4 `⌥ Space` 行改写 + 新增 `ESC`（录键态）行 + `⌘,` 行页签枚举 3→4
+  - ✅ [[06-prd]] **v0.12 → v0.13** —— §5.8 补「全局唤起键」；新增 §6.8-bis Setting
+  - ✅ [[07-features]] **v1.14 → v1.15** —— §3.4 新增行 `done`；§4 节奏表合计 87→88；§3.6 全局快捷键注册行补记
+  - ✅ [[11-test-spec]] **v0.3 → v0.4** —— 数字全量刷新；新增 §4.2 G3 门四项
+  - ✅ [[CHANGELOG]] 2026-08-20 第三段；[[CLAUDE]] §7 指针；[[MANIFEST]] v1.11 → v1.12
+  - ❌ **未落 [[06-prd]] §10.3** —— 该节的「6 Tauri IPC」是 MCP 写管线专章的草稿命令面，不是全量命令清单；全量口径归 test-spec §3.3，已刷新至 53
 - **相关 ADR**：[[003-choose-data-persistence]]（SQLite 单库，本决策沿用）/ [[008-enable-macos-private-api]]（NSPanel 唤起模型，本决策只换触发键不动模型）/ [[025-unified-anchored-editing]]（P2 键位表与 `e.code` 取向一致；录键态的 ESC 与其编辑器 ESC 契约有交叉面）

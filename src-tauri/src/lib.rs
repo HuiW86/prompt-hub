@@ -3,7 +3,7 @@ use std::sync::Mutex;
 
 use tauri::{Manager, PhysicalPosition, PhysicalSize, RunEvent};
 use tauri_plugin_dialog::{DialogExt, MessageDialogKind};
-use tauri_plugin_global_shortcut::{Code, GlobalShortcutExt, Modifiers, Shortcut, ShortcutState};
+use tauri_plugin_global_shortcut::{GlobalShortcutExt, ShortcutState};
 
 #[cfg(feature = "bench")]
 mod bench;
@@ -36,6 +36,37 @@ fn fit_to_active_monitor(window: &tauri::WebviewWindow) {
     }
 }
 
+// Show the overlay on the active monitor. Shared by the wake chord and the
+// macOS reopen handler so both paths get identical geometry and z-order
+// behaviour — an earlier version inlined this in the shortcut handler only,
+// which is how clicking the Dock icon came to do nothing at all.
+//
+// Re-fit + show + focus must all run on the main thread: AppKit setters are
+// MainThreadOnly, and cursor/monitor queries crash when called off the main
+// thread (tauri-apps/tauri#15170). The global-shortcut handler runs on a worker
+// thread, so dispatch the whole wake onto main.
+//
+// fit_to_active_monitor re-fits so the overlay tracks the current display /
+// resolution / cursor screen rather than the stale setup-time geometry.
+//
+// macOS uses orderFrontRegardless (macos::wake) rather than set_focus(): tao's
+// set_focus() calls activateIgnoringOtherApps:, yanking the window into the
+// app's own Space and fighting the non-activating panel model.
+#[cfg(desktop)]
+fn wake_main_window(app: &tauri::AppHandle) {
+    let Some(window) = app.get_webview_window("main") else {
+        return;
+    };
+    let _ = app.run_on_main_thread(move || {
+        fit_to_active_monitor(&window);
+        let _ = window.show();
+        #[cfg(not(target_os = "macos"))]
+        let _ = window.set_focus();
+        #[cfg(target_os = "macos")]
+        macos::wake(&window);
+    });
+}
+
 // Fatal-startup handler: surface `message` in a native error dialog, then
 // exit(1) once the user dismisses it. Called from setup() when the DB path
 // cannot be resolved or the DB cannot be opened/migrated — a bare panic there
@@ -66,8 +97,9 @@ fn fail_startup(app: &tauri::App, message: String) {
             db_path: None,
             copy_seq: AtomicU64::new(0),
             // Startup already failed; the DB error dialog owns this launch and
-            // shortcut setup is skipped, so the value is moot.
+            // shortcut setup is skipped, so both values are moot.
             hotkey_registered: AtomicBool::new(true),
+            current_hotkey: Mutex::new(repo_core::settings::DEFAULT_GLOBAL_HOTKEY.to_string()),
         });
     }
     if let Some(window) = app.get_webview_window("main") {
@@ -128,6 +160,28 @@ pub fn run() {
                     return Ok(());
                 }
             };
+            // Read the wake chord BEFORE managing state, because the shortcut
+            // must be registered inside this same setup hook — long before any
+            // renderer exists. That ordering is the whole reason this one
+            // preference lives in SQLite instead of localStorage (ADR-027).
+            // A read failure falls back to the shipped default rather than
+            // blocking startup: being summonable matters more than honoring a
+            // preference we could not load.
+            //
+            // Resolve to a chord we can actually register before it is recorded
+            // anywhere, so AppState.current_hotkey always describes what is
+            // live. A stored value that no longer parses (hand-edited row, a
+            // downgrade that dropped a key name) degrades to the default
+            // instead of leaving the app with no wake key.
+            let stored = repo_core::settings::global_hotkey(&conn)
+                .unwrap_or_else(|_| repo_core::settings::DEFAULT_GLOBAL_HOTKEY.to_string());
+            let hotkey = if commands::parse_accelerator(&stored).is_ok() {
+                stored
+            } else {
+                eprintln!("stored wake chord {stored:?} is not a valid accelerator; using default");
+                repo_core::settings::DEFAULT_GLOBAL_HOTKEY.to_string()
+            };
+
             app.manage(AppState {
                 conn: Mutex::new(conn),
                 db_path: Some(db_path),
@@ -135,6 +189,7 @@ pub fn run() {
                 // Optimistic default; the desktop shortcut setup below flips it
                 // false if register() fails.
                 hotkey_registered: AtomicBool::new(true),
+                current_hotkey: Mutex::new(hotkey.clone()),
             });
 
             #[cfg(desktop)]
@@ -162,9 +217,14 @@ pub fn run() {
                     }
                 }
 
-                let toggle = Shortcut::new(Some(Modifiers::ALT), Code::Space);
+                // Safe: `hotkey` was resolved above to a value that parses.
+                let toggle =
+                    commands::parse_accelerator(&hotkey).expect("resolved wake chord must parse");
                 app.handle().plugin(
                     tauri_plugin_global_shortcut::Builder::new()
+                        // A builder-level handler fires for every registered
+                        // shortcut, so a rebind (which re-registers without its
+                        // own handler) keeps waking the window.
                         .with_handler(move |app, _shortcut, event| {
                             if event.state() != ShortcutState::Pressed {
                                 return;
@@ -180,46 +240,23 @@ pub fn run() {
                             if window.is_visible().unwrap_or(false) {
                                 let _ = window.hide();
                             } else {
-                                // Re-fit + show + focus must all run on the main
-                                // thread: AppKit setters are MainThreadOnly, and
-                                // cursor/monitor queries crash when called off the
-                                // main thread (tauri-apps/tauri#15170). The
-                                // global-shortcut handler itself runs on a worker
-                                // thread, so dispatch the whole wake onto main.
-                                //
-                                // fit_to_active_monitor re-fits so the overlay
-                                // tracks the current display / resolution / cursor
-                                // screen rather than the stale setup-time geometry.
-                                //
-                                // macOS uses orderFrontRegardless (macos::wake)
-                                // rather than set_focus(): tao's set_focus() calls
-                                // activateIgnoringOtherApps:, yanking the window
-                                // into the app's own Space and fighting the
-                                // non-activating panel model.
-                                let window = window.clone();
-                                let _ = app.run_on_main_thread(move || {
-                                    fit_to_active_monitor(&window);
-                                    let _ = window.show();
-                                    #[cfg(not(target_os = "macos"))]
-                                    let _ = window.set_focus();
-                                    #[cfg(target_os = "macos")]
-                                    macos::wake(&window);
-                                });
+                                wake_main_window(app);
                             }
                         })
                         .build(),
                 )?;
-                // Registering ⌥Space can fail on a user machine — most often the
-                // chord is already claimed by another app (Spotlight remap, an
+                // Registering the chord can fail on a user machine — most often
+                // it is already claimed by another app (Spotlight remap, an
                 // input-method switcher, etc.). Don't propagate: a bare `?` here
                 // maps to the invisible "Failed to setup app" panic, so a
                 // double-clicked .app just vanishes. Instead record the failure in
                 // AppState (hotkey_registered → false) and keep booting; the
-                // frontend queries it at mount and warns the user. The wake path
-                // is dead without the shortcut, but every other feature still
-                // works and the window is reachable via `show_window`.
+                // frontend queries it at mount and warns the user. Wake is still
+                // reachable without the chord — via the Dock / relaunch reopen
+                // handler below and `show_window` — and the user can rebind to a
+                // free chord from settings (ADR-027).
                 if let Err(e) = app.global_shortcut().register(toggle) {
-                    eprintln!("global shortcut ⌥Space registration failed: {e}");
+                    eprintln!("global shortcut {hotkey} registration failed: {e}");
                     app.state::<AppState>()
                         .hotkey_registered
                         .store(false, Ordering::Relaxed);
@@ -243,6 +280,8 @@ pub fn run() {
             commands::hide_window,
             commands::show_window,
             commands::hotkey_registered,
+            commands::get_global_hotkey,
+            commands::set_global_hotkey,
             commands::list_drafts,
             commands::count_pending_drafts,
             commands::get_draft,
@@ -287,6 +326,23 @@ pub fn run() {
         .expect("error while building tauri application");
 
     app.run(|app, event| {
+        // macOS applicationShouldHandleReopen — fired by a Dock icon click and
+        // by relaunching an already-running .app. This is the escape hatch that
+        // makes a user-configurable wake chord safe (ADR-027 sub-decision 3):
+        // bind yourself to a chord you cannot press, and this still opens the
+        // window so you can rebind. It also fixes a standalone defect — the
+        // window is created hidden, so before this handler existed clicking the
+        // Dock icon did nothing whatsoever.
+        #[cfg(desktop)]
+        if let RunEvent::Reopen { .. } = event {
+            // Unconditional wake, not a toggle: a reopen is the user asking to
+            // see the window, never to dismiss it.
+            if let Some(state) = app.try_state::<AppState>() {
+                state.copy_seq.fetch_add(1, Ordering::SeqCst);
+            }
+            wake_main_window(app);
+        }
+
         if let RunEvent::Exit = event {
             #[cfg(desktop)]
             let _ = app.global_shortcut().unregister_all();

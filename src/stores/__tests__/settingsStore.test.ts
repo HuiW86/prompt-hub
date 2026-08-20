@@ -1,21 +1,62 @@
-import { beforeEach, describe, expect, it } from "vitest";
+import { beforeEach, describe, expect, it, vi } from "vitest";
 
 import { useSettingsStore } from "../settingsStore";
+
+vi.mock("../../ipc", () => ({
+  ipc: {
+    getGlobalHotkey: vi.fn(),
+    setGlobalHotkey: vi.fn(),
+  },
+}));
+
+const { ipc } = await import("../../ipc");
+const getGlobalHotkey = vi.mocked(ipc.getGlobalHotkey);
+const setGlobalHotkeyIpc = vi.mocked(ipc.setGlobalHotkey);
 
 const initial = useSettingsStore.getState();
 
 describe("settingsStore", () => {
   beforeEach(() => {
     useSettingsStore.setState(initial, true);
+    vi.clearAllMocks();
   });
 
-  it("defaults globalHotkey to Alt+Space", () => {
+  it("defaults globalHotkey to Alt+Space (the value migration 0012 seeds)", () => {
     expect(useSettingsStore.getState().globalHotkey).toBe("Alt+Space");
   });
 
-  it("setGlobalHotkey updates the binding", () => {
-    useSettingsStore.getState().setGlobalHotkey("Ctrl+Shift+P");
+  // ADR-027: SQLite owns this one preference, so the store is a mirror of the
+  // live registration — never an independent source of truth.
+  it("loadGlobalHotkey hydrates from the backend", async () => {
+    getGlobalHotkey.mockResolvedValue("Ctrl+Shift+P");
+    await useSettingsStore.getState().loadGlobalHotkey();
     expect(useSettingsStore.getState().globalHotkey).toBe("Ctrl+Shift+P");
+  });
+
+  it("loadGlobalHotkey keeps the current value when the bridge is absent", async () => {
+    getGlobalHotkey.mockRejectedValue(new Error("no ipc bridge"));
+    await useSettingsStore.getState().loadGlobalHotkey();
+    expect(useSettingsStore.getState().globalHotkey).toBe("Alt+Space");
+  });
+
+  it("setGlobalHotkey adopts the accelerator the backend confirms is live", async () => {
+    setGlobalHotkeyIpc.mockResolvedValue("Ctrl+Shift+P");
+    await useSettingsStore.getState().setGlobalHotkey("Ctrl+Shift+P");
+    expect(setGlobalHotkeyIpc).toHaveBeenCalledWith("Ctrl+Shift+P");
+    expect(useSettingsStore.getState().globalHotkey).toBe("Ctrl+Shift+P");
+  });
+
+  // The failure that matters: a rejected rebind (chord already claimed) must
+  // leave the store showing the chord that still works. Displaying the
+  // requested-but-refused chord would send the user pressing a dead key.
+  it("setGlobalHotkey leaves the binding untouched when the backend refuses", async () => {
+    setGlobalHotkeyIpc.mockRejectedValue(
+      new Error("快捷键 Ctrl+Space 已被其他应用占用，请换一组"),
+    );
+    await expect(
+      useSettingsStore.getState().setGlobalHotkey("Ctrl+Space"),
+    ).rejects.toThrow(/已被其他应用占用/);
+    expect(useSettingsStore.getState().globalHotkey).toBe("Alt+Space");
   });
 
   it("togglePhaseVisibility flips inclusion in hiddenPhaseIds", () => {

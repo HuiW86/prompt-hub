@@ -1,18 +1,19 @@
 ---
 type: test-spec
 project: prompt-hub
-version: v0.3
+version: v0.4
 created: 2026-05-19
 last_modified: 2026-08-20
-status: draft # v0.2 曾 ratified（2026-07-02 口径）；v0.3 全量刷新数字 + ADR-025 涟漪，待人审
+status: draft # v0.2 曾 ratified（2026-07-02 口径）；v0.3 全量刷新数字 + ADR-025 涟漪、v0.4 ADR-027 涟漪，均待人审
 author: ai # 🤖 AI 主笔 + 人审（CLAUDE §5.2）
 audience: [ai, human]
-description: prompt-hub 测试规格——前端 Vitest 373 用例 + Rust workspace 158 + 6 源码级 gate + CI 双 job + C1 bench gate；LLM Eval N/A
+description: prompt-hub 测试规格——前端 Vitest 395 用例 + Rust workspace 168 + 6 源码级 gate + CI 双 job + C1 bench gate；LLM Eval N/A
 related:
   - 06-prd
   - 07-features
   - 10-ops-spec
   - 025-unified-anchored-editing
+  - 027-configurable-global-hotkey
 ---
 
 # Test Spec: prompt-hub
@@ -23,7 +24,9 @@ related:
 > **标注约定**（沿用文档体系三标）：📊 实测（有命令输出背书，标注口径日期）/ 🎯 目标（规格要求，未必已落地）/ ⚠️ 红线（违反即 block）。
 > 本版所有 📊 数字口径：**2026-08-20** 本机 `pnpm test`（JSON reporter 逐文件计数）+ `cargo test --workspace` 全绿输出。
 >
-> **v0.3 全量刷新**：v0.2 的口径停在 2026-07-02，其间前端 154→**373**、Rust 135→**158**、源码级 gate 4→**6**、IPC 命令 48→**51**。数字标了日期不算说谎，但**差了一个半月和两倍用例量的规格文件已无参考价值**——本版把全部 📊 推到今日实测。
+> **v0.3 全量刷新**：v0.2 的口径停在 2026-07-02，其间前端 154→**373**、Rust 135→**158**、源码级 gate 4→**6**、IPC 命令 48→**51**。数字标了日期不算说谎，但**差了一个半月和两倍用例量的规格文件已无参考价值**——v0.3 把全部 📊 推到当日实测。
+>
+> **v0.4（同日第二笔 · ADR-027 涟漪）**：前端 373→**395**、Rust 158→**168**、IPC 命令 51→**53**、新增真机门 **G3 四项**。源码级 gate 仍 6 个。
 
 ---
 
@@ -45,7 +48,11 @@ v0.1 规划的四层金字塔已落地为下表实际形态（Playwright E2E 层
 
 ## §2 前端 Vitest 盘面
 
-📊 **373 用例 / 37 测试文件，全绿**（2026-08-20 实测，逐文件计数）。
+📊 **395 用例 / 39 测试文件，全绿**（2026-08-20 实测，逐文件计数）。
+
+> v0.3 记 373 / 37。**+22 的逐文件构成经 worktree 对拍取得，不是估算**：新增 `utils/__tests__/accelerator.test.ts` **9** + `components/__tests__/HotkeyRecorder.test.tsx` **7**；既有文件 `settingsStore` 8→11、`HotkeyBanner` 5→7；**`token-gate` 39→40 是它自己长出来的**——该 gate 按 CSS module 文件枚举用例，新增的 `HotkeyRecorder.module.css` 自动入册并通过。这一条顺带证明 [[CLAUDE#§4]] 4.1 的 token 纪律确实盖住了新组件，而不靠人记得去查。
+>
+> ⚠️ 手数 `it(` 会漏：多个文件用 `it.each` / 按文件枚举生成用例，源码里的 `it(` 数与运行时用例数**不等**。本轮首次改用 vitest JSON reporter 逐文件对拍，是查出 token-gate 那 +1 的唯一原因。
 
 | 分组 | 用例 📊 | 文件 | 覆盖对象 |
 |---|---|---|---|
@@ -75,7 +82,7 @@ v0.1 规划的四层金字塔已落地为下表实际形态（Playwright E2E 层
 
 ### 3.3 ipc-contract（`src/ipc/ipc-contract.test.ts`）
 
-守护 Tauri IPC 三方契约：`commands.rs` 的 `#[tauri::command]` 集合 ↔ `lib.rs` 的 `generate_handler![…]` 注册表 ↔ `src/ipc/index.ts` 的 `invoke("…")` 字面量，三向名字集合等价。动因：前端测试 mock `invoke`、Rust 测试打 command 层以下的 repo fn，命令「定义了没注册 / 名字漂移」只会在运行时炸（ADR-015 补遗-2 踩过同类坑）。📊 当前覆盖 **51 个命令**（2026-08-20 实测：`commands.rs` 51 个 `#[tauri::command]` ↔ `src/ipc/index.ts` 51 个 `invoke<>` 字面量。v0.2 记 48，其后 `move_phrase` 等入册使集合增长——gate 动态解析源码，无需随命令数改测试）。
+守护 Tauri IPC 三方契约：`commands.rs` 的 `#[tauri::command]` 集合 ↔ `lib.rs` 的 `generate_handler![…]` 注册表 ↔ `src/ipc/index.ts` 的 `invoke("…")` 字面量，三向名字集合等价。动因：前端测试 mock `invoke`、Rust 测试打 command 层以下的 repo fn，命令「定义了没注册 / 名字漂移」只会在运行时炸（ADR-015 补遗-2 踩过同类坑）。📊 当前覆盖 **53 个命令**（2026-08-20 实测：`commands.rs` 53 个 `#[tauri::command]` ↔ `src/ipc/index.ts` 53 个 `invoke<>` 字面量；v0.4 增 `get_global_hotkey` / `set_global_hotkey`。v0.2 记 48，其后 `move_phrase` 等入册使集合增长——gate 动态解析源码，无需随命令数改测试）。
 
 ### 3.4 doc-governance 引用契约（`scripts/doc-governance/doc-refs-gate.test.ts`，本轮新增）
 
@@ -95,17 +102,17 @@ v0.1 规划的四层金字塔已落地为下表实际形态（Playwright E2E 层
 
 ## §4 Rust workspace 测试盘面
 
-📊 **158 用例，全绿**（2026-08-20 实测 `cargo test --workspace --manifest-path src-tauri/Cargo.toml`）：
+📊 **168 用例，全绿**（2026-08-20 实测 `cargo test --workspace --manifest-path src-tauri/Cargo.toml`）：
 
 | crate / suite | 用例数 📊 | 覆盖对象 |
 |---|---|---|
-| repo-write（unit） | 94 | 全部写路径 CRUD / promote 4 arm / reorder / `move_phrase` + MoveReceipt / 软删（tempfile SQLite fixture） |
-| repo-core（unit） | 40 | 读路径 / 迁移 / `count_pending_drafts` 等 free fn |
+| repo-write（unit） | 95 | 全部写路径 CRUD / promote 4 arm / reorder / `move_phrase` + MoveReceipt / 软删（tempfile SQLite fixture） |
+| repo-core（unit） | 44 | 读路径 / 迁移 / `count_pending_drafts` 等 free fn |
 | prompt-hub-mcp（unit） | 8 | MCP server 工具层 |
 | prompt-hub-mcp `tests/e2e.rs` | 6 | MCP 14 tool 端到端 |
 | prompt-hub-mcp `tests/trybuild_negative.rs` | 1 | 编译期负例（禁 import repo-write 写面，B 类边界的类型层强制） |
 | repo-write `tests/backup_e2e.rs` | 3 | 备份端到端 |
-| prompt_hub_lib（bin crate unit） | 6 | app 壳层 |
+| prompt_hub_lib（bin crate unit） | 11 | app 壳层 |
 
 ⚠️ **`--workspace` 必须**：裸 `cargo test` 只测 bin pkg（≈0 用例），真实用例在 repo-core / repo-write / prompt-hub-mcp 三个子 crate（[[CLAUDE#§2]]）。
 
@@ -122,6 +129,22 @@ E2E 层缺位期间，**布局 / 层叠 / 定位类改动一律由带编号的�
 | G1（六项）| ADR-025 P1-a 容器单点验证 | **全通过**。项 1/3/4 为 omar 目视；项 6 为 `bench:hotkey-wake` 实测；项 2 拆两半分别取证；项 5 因「P1-a 阶段该对象尚不存在」deferred 至 P1-b 门后通过 |
 | P1-b 门（两项）| ADR-025 P1-b 容器迁移 | **全通过**，且**首次取得 AI 侧逐像素证据**：hover-lift 卡上浮层 diff bbox `None` / 最大通道差 `0`（同帧卡片区 `231`）；纵向滚动位移锚点 `-168px` vs 浮层 `-166px`，差值恒为 1 逻辑点、不累积（已 A/B 排除高度上限成因，记为已知量）|
 | G2（五项）| ADR-025 P2 键盘动作层 | **未跑**（P2 未落地）|
+| **G3（四项）**| ADR-027 全局唤起键可配置 | **未跑**（代码已落地，见 §4.2）|
+
+#### 4.2 G3 门项（v0.4 新增 · 涟漪 [[027-configurable-global-hotkey]]）
+
+前三项**物理不可自动化**：`register()` 要向 macOS 真正申请组合键，`RunEvent::Reopen` 要真实的 Dock 点击，重启持久化要真实的进程生命周期——jsdom 没有 OS，CI 没有窗口服务器。
+
+| # | 门项 | 期望 | 为什么自动化测不了 |
+|---|---|---|---|
+| 1 | 在设置 › 快捷键把绑定改成 `⌃⇧P`，按新键唤起 | 窗口唤起；旧的 `⌥Space` **不再**唤起 | 需要真实 `RegisterEventHotKey` 与系统级按键分发 |
+| 2 | 改绑到一个已被占用的组合键（如 Spotlight 的 `⌘Space`） | 报「已被其他应用占用」；**旧组合键仍能唤起**（回滚生效） | 占用方是另一个真实进程 |
+| 3 | 退出应用 → 重新打开 `.app` / 点 Dock 图标 | 窗口唤起（reopen 逃生口）；顺带确认「点 Dock 无反应」的旧缺陷已修 | `applicationShouldHandleReopen` 只由真实 AppKit 事件触发 |
+| 4 | 改绑后完全退出并重启应用 | 新绑定仍生效（读自 SQLite，非 localStorage） | 需要真实进程重启 + 真实 app data 目录 |
+
+> **门项自检（照 §4.1 教训 1 逐项过）**：四项引用的对象——设置弹窗快捷键页、`settings` 表、reopen 分支——**在本阶段全部已存在**，无一依赖后续阶段才落地的东西。验不过时看得见的现象已逐项写在「期望」列。
+>
+> **走查前置**：须先退出 `/Applications/prompt-hub.app`，否则两个实例争抢同一组合键（同 [[HANDOFF]] 既有告警）。项 2 建议用 `⌘Space`（Spotlight）而非随手挑一个——它是**确定**被占用的，否则「没报错」分不清是回滚没生效还是那个键本来就空闲。
 
 **三条方法教训**（写进规格以免重犯）：
 

@@ -6,11 +6,16 @@ vi.mock("@tauri-apps/api/core", () => ({
   invoke: (...args: unknown[]) => invokeMock(...args),
 }));
 
+import { useSettingsStore } from "../../stores/settingsStore";
 import { HotkeyBanner } from "../HotkeyBanner";
 
-describe("HotkeyBanner — ⌥Space registration warning", () => {
+describe("HotkeyBanner — wake-chord registration warning", () => {
   beforeEach(() => {
     invokeMock.mockReset();
+    useSettingsStore.setState({
+      globalHotkey: "Alt+Space",
+      settingsOpen: false,
+    });
   });
 
   it("stays silent while the probe is pending", () => {
@@ -42,9 +47,32 @@ describe("HotkeyBanner — ⌥Space registration warning", () => {
     invokeMock.mockResolvedValue(false);
     render(<HotkeyBanner />);
     const alert = await screen.findByRole("alert");
-    expect(alert).toHaveTextContent(/⌥Space/);
+    expect(alert).toHaveTextContent(/⌥ Space/);
     expect(alert).toHaveTextContent(/其他应用占用/);
     expect(screen.getByRole("button", { name: "关闭" })).toBeInTheDocument();
+  });
+
+  // ADR-027: the banner must name the chord that is actually bound. Hardcoding
+  // ⌥Space here (as the copy did before the chord became configurable) would
+  // send a user who rebound to Ctrl+Shift+P hunting for the wrong conflict.
+  it("names the currently configured chord, not the shipped default", async () => {
+    useSettingsStore.setState({ globalHotkey: "Control+Shift+KeyP" });
+    invokeMock.mockResolvedValue(false);
+    render(<HotkeyBanner />);
+    const alert = await screen.findByRole("alert");
+    expect(alert).toHaveTextContent(/⌃ ⇧ P/);
+    expect(alert).not.toHaveTextContent(/Space/);
+  });
+
+  // The conflict is now fixable from inside the app, so the banner offers the
+  // fix rather than only telling the user to go quit some other application.
+  it("opens settings from the banner and then removes itself", async () => {
+    invokeMock.mockResolvedValue(false);
+    render(<HotkeyBanner />);
+    await screen.findByRole("alert");
+    fireEvent.click(screen.getByRole("button", { name: "更改快捷键" }));
+    expect(useSettingsStore.getState().settingsOpen).toBe(true);
+    expect(screen.queryByRole("alert")).toBeNull();
   });
 
   it("removes itself after dismiss", async () => {

@@ -10,7 +10,7 @@ use crate::repo::{parse_ts, parse_ts_opt};
 
 // The data-layer schema version of the export envelope (PRD §6.9 / §7.7). This is
 // the `major.minor` contract for the JSON file itself, NOT the SQLite migration
-// `user_version` (currently 11). Bump it when the export shape changes; minor for
+// `user_version` (currently 12). Bump it when the export shape changes; minor for
 // backward-compatible additions, major for breaking changes.
 pub const DATA_SCHEMA_VERSION: &str = "1.1";
 
@@ -21,6 +21,11 @@ pub const DATA_SCHEMA_VERSION: &str = "1.1";
 // Excluded vs PRD §6.9: `sops` (no SOP model/table writes shipped yet) and
 // `usage_records` (D2 — usage history is non-portable churn; per-asset usage_count
 // already round-trips). Both keys are simply absent rather than empty arrays.
+//
+// `settings` is excluded BY DESIGN, not by omission (ADR-027 sub-decision 1):
+// it holds machine-local configuration — today the global wake chord — and the
+// export exists so assets can leave with the user, not so one machine's key
+// bindings can overwrite another's. Do not "fix" this by adding it.
 #[derive(Debug, Serialize, Deserialize)]
 pub struct ExportBundle {
     pub schema_version: String,

@@ -1,7 +1,7 @@
 ---
 type: features
 project: prompt-hub
-version: v1.14
+version: v1.15
 created: 2026-05-19
 last_modified: 2026-08-20
 status: in-progress  # S1 进行中（M0 四项全绿）；进度叙事见 §4 节奏表与 CHANGELOG
@@ -22,6 +22,7 @@ related:
   - 017-enable-auto-update
   - 018-absorb-promptscape-design
   - 020-restore-protocol-dark-band
+  - 027-configurable-global-hotkey
 ---
 
 # Features: prompt-hub
@@ -93,6 +94,7 @@ related:
 | Phase 可配置编辑 | P1 | `planned` | v1.3 | 0% | omar | [[06-prd#6.5]] |
 | 数据导入导出（JSON） | P1 | `done` | v1.3 | repo-core export 3 test + repo-write import 5 test（含整库替换 / 含弃用行 / 拒不兼容 major / FK 原子回滚）；前端 SettingsModal 数据页（save/open dialog + 整库替换确认弹窗）；不导出 usage_records（决策 D2）/ 整库替换（决策 D1） | omar | [[06-prd#6.9]] |
 | 主形态界面布局可配置 | P1 | `planned` | v1.3 | 0% | omar | [[01-spec#2.9]] |
+| **全局唤起键可配置** | P1 | `done` | v1.3 | repo-core settings 4 test（seed 默认 / upsert 不重复行 / 缺行回落）+ commands 5 test（accelerator 校验：默认可注册 / 拒裸键 / 拒乱码 / 多修饰键 / seed 与解析器不脱节）+ repo-write 1 test（导入不清 settings）+ 前端 accelerator 8 test + HotkeyRecorder 7 test + settingsStore 4 test + HotkeyBanner 2 test。**注册/回滚与 Reopen 逃生口不可自动化**，归 G3 真机门 | omar | [[06-prd#5.8]] · [[06-prd]] §6.8-bis |
 
 ### 3.5 辅形态副屏（S5 / 第五阶段）
 
@@ -106,7 +108,7 @@ related:
 
 | 功能 | 优先级 | 状态 | 目标版本 | 测试覆盖 | 责任人 | 引用 |
 |---|---|---|---|---|---|---|
-| 全局快捷键注册（默认 ⌥ Space） | P0 | `done` | v1.0 | M0 手动 verified | omar | [[prompt-hub-mvp#第一阶段]] |
+| 全局快捷键注册（默认 ⌥ Space） | P0 | `done` | v1.0 | M0 手动 verified；v1.15 起绑定读自 SQLite `settings` 而非硬编码，注册失败仍走 `HotkeyBanner` 告警。**改绑能力见 §3.4「全局唤起键可配置」** | omar | [[prompt-hub-mvp#第一阶段]] · [[027-configurable-global-hotkey]] |
 | 主形态唤起 ≤200ms（P95） | P0 | `done` | v1.0 | M0-3 实测 P95=10.49ms ✓ | omar | [[02-constitution#C1]] |
 | 复制即隐藏 / ESC 关闭 | P0 | `done` | v1.0 | Phase 5 视觉+功能验收 11/11 ✓（2026-06-03） | omar | [[prompt-hub-mvp#第一阶段]] |
 | UsageRecord 持续记录 | P0 | `in-progress` | v1.0 | 数据层 done / 链路待 S2 | omar | [[06-prd#6.8]] |
@@ -294,13 +296,15 @@ related:
 | UX 任务流批次 B（跨 Scene 移动，ADR-022）| v1.11 | 1 功能 | `done`（verifier 对抗审查 PASS；真机移动/撤销链路待验）|
 | 统一锚定编辑容器（ADR-025）| v1.14 | 1 功能 | `done`（P0+P1-a+P1-b 落地并合入 `main`；**P2 键盘动作层 + P3 合流 `planned`**，G2 未跑）|
 | S3 SOP 导航 | v1.2 | 3 功能 | `planned` |
-| S4 配置个性化 | v1.3 | 4 功能 | `in-progress`（1/4：数据导入导出 JSON `done`，真机待验；配置入口 / Phase 编辑 / 布局可配置仍 `planned`）|
+| S4 配置个性化 | v1.3 | **5 功能** | `in-progress`（2/5：数据导入导出 JSON `done`，真机待验；**全局唤起键可配置 `done`**，G3 未跑；配置入口 / Phase 编辑 / 布局可配置仍 `planned`）|
 | S5 辅形态副屏 | v2.0 | 3 功能 | `planned` |
-| **合计** | — | **87 项** | — |
+| **合计** | — | **88 项** | — |
 
 **注**：版本号语义为 prompt-hub 自身版本，与 prd / spec / methodology 各自独立。v1.0 = 第一阶段 MVP 可发布；v2.0 = 辅形态加入（双形态完整）。
 
-> ⚠️ **本表缺 ADR-026「固定空间布局」行**（v1.12 只写进了 §3.8 表，未回写本节奏表）——**既有欠账，本次未补**：属 [[HANDOFF#Next-Actions]] 旧账八步范围，omar 已定本轮只做 ADR-025 涟漪，不夹带。补账时须同步复核合计数。
+> ⚠️ **本表缺 ADR-026「固定空间布局」行**（v1.12 只写进了 §3.8 表，未回写本节奏表）——**既有欠账，v1.15 仍未补**：属 [[HANDOFF#Next-Actions]] 旧账八步范围，omar 已定不夹带。补账时须同步复核合计数（现记 88）。
+>
+> ⚠️ **本表也不为 ADR-027 单开行**：全局唤起键落在 **S4 配置个性化**既有分区内（该行功能数 4→5），不是一个新批次。这与上一条的欠账性质不同——上一条是漏记，本条是刻意归位。
 
 ---
 
@@ -345,6 +349,7 @@ related:
 | 2026-07-12 | v1.10 bump：新增 §3.13 UX 任务流批次 A（6 功能 → `done`：显式整理模式 D-0 / promote 落地定位 A1-03 / discard 可撤销 A1-04 / 保存 toast A1-07 / ⌘Enter 统一 A1-08 / footer wrap A3-02）；§4 节奏表加批次 A 行，合计 79→85 项（附带修正 §4 合计行 2026-07-06 漏更的 78→79）。前端 301 测试（+24）/ cargo --workspace 147 全绿，verifier 对抗审查 PASS；NEEDS HUMAN 4 项真机待验，确认前整理模式不入对外发布说明。涟漪 [[03-product-spec]] v0.15（新增 §4.0.7 交互模式契约 + §4.3 整理态行 + §4.4 三条新反馈）；同日 [[022-cross-scene-phrase-move]] Accepted（子决策 2 = 双路径共存，批次 B 启动）| 2026-07-12 UX 任务流审计批次 A 收口涟漪 |
 | 2026-07-12 | v1.11 bump：新增 §3.14 UX 任务流批次 B（1 功能 → `done`：跨 Scene/跨子阶段话术移动 `move_phrase` + MoveReceipt 撤销 + 分层选择器，A1-01/A1-06 收口）；§4 节奏表加批次 B 行，合计 85→86。前端 308→309 测试 / cargo 155 全绿，verifier 对抗审查 PASS（P2 空移动已修：同目标确认禁用）；真机移动/撤销链路待验。涟漪 [[03-product-spec]] v0.16 §13.3 移动动作契约（双路径语义等价显式记档） | [[022-cross-scene-phrase-move]] 批次 B 收口涟漪 |
 | 2026-08-20 | v1.14 bump：§3.8 新增「统一锚定编辑容器」→ `done`（ADR-025 的 P0+P1-a+P1-b）——编辑器脱离宿主文档流改原生 `popover` top layer 锚定，四个编辑面共用 `AnchoredEditor`+`PhraseFormEditor`；Macro / 草稿两份手搓表单删除收编（净删约 180 行，各自重复实现过草稿状态/autofocus/IME 护栏/提交键）；顺带修掉两处 P1-a 既存缺陷（超高面板 footer 出界 → `maxHeight` 按 frame 相对上报；焦点后代卸载后 Esc 失聪）。**零后端/IPC/schema 改动**。前端 373 全绿 / cargo 158 全绿；**真机验收门 G1 六项 + P1-b 门两项全通过**，项 5 与项 2-B 首取 AI 侧逐像素证据（P1-a 三轮 135 帧从未拍到浮层，改窗口 ID 定向 + 按需截图后一次拍中）。**清单纠偏**：ADR 原写「其余五个编辑面」，核实后只有 4 个（`RecentList` 无编辑器，属 P2 键盘层口径被误收）。§4 节奏表加 ADR-025 行，合计 86→87 项。**P2 键盘动作层 + P3 合流未落地**，G2 五项未跑。涟漪 [[03-product-spec]] v0.19（新增 §13.3 编辑容器统一契约 + §13.4 两行快捷键）/ [[05-design-spec]] v0.18（新增 §2.6 层叠标尺 + §10.2.2 `AnchoredEditor` 接口契约）/ [[11-test-spec]] v0.3 | [[025-unified-anchored-editing]] P1 收口涟漪 |
+| 2026-08-20 | v1.15 bump：§3.4 新增「全局唤起键可配置」→ `done`（ADR-027）——**销一笔自 product-spec v0.5 起挂了三个月的账**：§13.4「⌥ Space 默认值，可配置」在册，实现一直硬编码于 `lib.rs:165`。绑定改存 SQLite `settings` 表（migration `0012`，`user_version` 11→12）而非 localStorage——唯一理由是 Rust 在 `setup()` 注册快捷键时 webview 尚不存在；localStorage 方案会让每次启动必然先错误注册一次，而改键者正是默认键冲突的那批人。新增 `get_global_hotkey`/`set_global_hotkey` 两 IPC（51→**53**），改绑走「校验→注销旧→注册新→落库」并在任一步失败回滚。**顺带修掉「点 Dock 图标无反应」**——`RunEvent::Reopen` 既是该 bug 的修复，也是「把自己锁在门外」的逃生口。前端 373→**395** / cargo 158→**168** 全绿，lint/tsc/build/clippy/fmt clean，`bench:hotkey-wake` p95 `13.708ms` 无回归。§4 节奏表 S4 行 4→5 功能，合计 87→**88** 项。**G3 四项未跑**，其中 reopen 逃生口与重启持久化 jsdom/CI 均不可验。涟漪 [[03-product-spec]] v0.20（§13.3 区域 9 快捷键页 + 设置持久化归属表 + §13.4 两行）/ [[06-prd]] v0.13（§5.8 补项 + 新增 §6.8-bis Setting）/ [[11-test-spec]] v0.4 | [[027-configurable-global-hotkey]] 收口涟漪 |
 | 2026-06-28 | v1.7 bump：§3.4「数据导入导出（JSON）」`planned`→`done`——repo-core `export.rs`（全保真聚合，独立无过滤 SELECT 以纳入弃用/隐藏行，data schema_version `1.1`，**不含 usage_records**=决策 D2）+ repo-write `import.rs`（**整库替换**=决策 D1，`defer_foreign_keys` 破 phases↔alignment_phrases FK 环，按 major 版本拒不兼容备份）；2 path-based Tauri IPC（`export_data`/`import_data`，前端 dialog 选路 + Rust `std::fs` 读写，避开 fs-plugin scope）；接 `tauri-plugin-dialog`（决策 D3）；SettingsModal 新增「数据」页（导出 save dialog / 导入 open dialog + 整库替换确认弹窗 + 完成后 `refreshAll`）。后端 export 3 + import 5 单测，前端 109 测试全绿（clippy/fmt/lint/prettier clean）；**真机导入导出待验**。B2 复检通过（导出/导入按表搬运，不混协议层与任务层）；A2 不出站（仅写用户选定本地路径）。涟漪 [[06-prd#6.9]] | 数据导入导出功能收口涟漪 |
 
 ---

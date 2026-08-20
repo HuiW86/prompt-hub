@@ -1,6 +1,8 @@
 import { create } from "zustand";
 import { persist } from "zustand/middleware";
 
+import { ipc } from "../ipc";
+
 export type ThemeMode = "light" | "dark" | "system";
 export type Accent = "neutral" | "blue" | "green" | "violet" | "amber";
 // Density tier. 舒适 (comfortable): the default — keeps the reshape-v2
@@ -15,6 +17,18 @@ export type Density = "comfortable" | "compact";
 // user who lives in organize mode does not re-toggle every summon.
 export type InteractionMode = "invoke" | "organize";
 
+// Where a preference lives (ADR-027 sub-decision 1). The rule is mechanical —
+// it asks WHEN the value is read, not how important it is:
+//
+//   localStorage  only the renderer needs it → theme, accent, density,
+//                 interaction mode, layout splits
+//   SQLite        Rust needs it BEFORE the webview mounts → globalHotkey, which
+//                 is registered inside setup() where localStorage is
+//                 unreachable
+//
+// Nothing else qualifies today. Adding a key to SQLite that the renderer could
+// have owned splits the settings story for no gain.
+//
 // Appearance prefs persist to localStorage only (never SQLite, never uploaded —
 // constitution A2). Theme + accent ride root classes consumed by tokens.css:
 // `.light`/`.dark` flip the palette (system = neither, the @media guard decides),
@@ -40,6 +54,10 @@ function applyAppearance(
 }
 
 interface SettingsState {
+  // Mirror of the chord registered in Rust. Hydrated by loadGlobalHotkey at
+  // App mount; never written directly — setGlobalHotkey goes through IPC and
+  // only adopts the value the backend confirms is live, so the UI cannot show
+  // a chord that does not actually wake the window.
   globalHotkey: string;
   hiddenPhaseIds: string[];
   themeMode: ThemeMode;
@@ -47,7 +65,8 @@ interface SettingsState {
   density: Density;
   interactionMode: InteractionMode;
   settingsOpen: boolean;
-  setGlobalHotkey: (combo: string) => void;
+  loadGlobalHotkey: () => Promise<void>;
+  setGlobalHotkey: (combo: string) => Promise<void>;
   togglePhaseVisibility: (phaseId: string) => void;
   setThemeMode: (mode: ThemeMode) => void;
   setAccent: (accent: Accent) => void;
@@ -61,6 +80,8 @@ interface SettingsState {
 export const useSettingsStore = create<SettingsState>()(
   persist(
     (set, get) => ({
+      // Matches the value seeded by migration 0012 so the settings row reads
+      // correctly for the one frame before loadGlobalHotkey resolves.
       globalHotkey: "Alt+Space",
       hiddenPhaseIds: [],
       // Reshape v2: DARK is the cockpit identity — the summoned overlay
@@ -74,7 +95,24 @@ export const useSettingsStore = create<SettingsState>()(
       // Default 调用态 so the tool opens as a launcher (D-0 / T0 zero-regression).
       interactionMode: "invoke",
       settingsOpen: false,
-      setGlobalHotkey: (globalHotkey) => set({ globalHotkey }),
+      // Hydrate from the live registration. A failure (dev/web shell with no
+      // bridge) leaves the shipped default in place rather than blanking the
+      // field — the settings row stays readable, it just isn't authoritative.
+      loadGlobalHotkey: async () => {
+        try {
+          set({ globalHotkey: await ipc.getGlobalHotkey() });
+        } catch {
+          // Keep the current value.
+        }
+      },
+      // Adopt only what the backend confirms. Errors propagate so the settings
+      // UI can show why a chord was refused (already taken / no modifier);
+      // swallowing them here would let the field display a chord that does
+      // nothing.
+      setGlobalHotkey: async (combo) => {
+        const live = await ipc.setGlobalHotkey(combo);
+        set({ globalHotkey: live });
+      },
       togglePhaseVisibility: (phaseId) =>
         set((state) => ({
           hiddenPhaseIds: state.hiddenPhaseIds.includes(phaseId)
@@ -118,8 +156,11 @@ export const useSettingsStore = create<SettingsState>()(
         if (version < 2) return { ...state, themeMode: "dark" as ThemeMode };
         return state;
       },
-      // globalHotkey + hiddenPhaseIds stay in-memory MVP state; appearance prefs
-      // + the interaction mode are durable. settingsOpen is transient UI.
+      // globalHotkey is deliberately absent: it is durable, but SQLite owns it
+      // (ADR-027) and a localStorage copy would be a second source of truth
+      // that goes stale the moment a rebind fails. hiddenPhaseIds stays
+      // in-memory MVP state; appearance prefs + the interaction mode are
+      // durable here. settingsOpen is transient UI.
       partialize: (s) => ({
         themeMode: s.themeMode,
         accent: s.accent,

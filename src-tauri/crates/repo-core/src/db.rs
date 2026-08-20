@@ -68,6 +68,11 @@ const MIGRATIONS: &[Migration] = &[
         name: "0011_seed_sub_stages",
         sql: include_str!("../migrations/0011_seed_sub_stages.sql"),
     },
+    Migration {
+        target_version: 12,
+        name: "0012_settings",
+        sql: include_str!("../migrations/0012_settings.sql"),
+    },
 ];
 
 struct Migration {

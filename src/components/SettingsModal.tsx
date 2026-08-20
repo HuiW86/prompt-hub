@@ -9,6 +9,7 @@ import {
   Check,
   Database,
   Download,
+  Keyboard,
   Monitor,
   Moon,
   Palette,
@@ -34,13 +35,15 @@ import { useToastStore } from "../stores/toastStore";
 import { useUpdaterStore } from "../stores/updaterStore";
 import { toUserMessage } from "../utils/errorMessage";
 
+import { HotkeyRecorder } from "./HotkeyRecorder";
 import { cx } from "./primitives/cx";
 import styles from "./SettingsModal.module.css";
 
-type Tab = "appearance" | "update" | "data";
+type Tab = "appearance" | "hotkey" | "update" | "data";
 
 const TAB_TITLES: Record<Tab, string> = {
   appearance: "外观",
+  hotkey: "快捷键",
   update: "更新",
   data: "数据",
 };
@@ -296,6 +299,15 @@ export function SettingsModal() {
           </button>
           <button
             type="button"
+            className={cx(styles.navItem, tab === "hotkey" && styles.active)}
+            aria-current={tab === "hotkey"}
+            onClick={() => setTab("hotkey")}
+          >
+            <Keyboard size={14} strokeWidth={2} aria-hidden />
+            快捷键
+          </button>
+          <button
+            type="button"
             className={cx(styles.navItem, tab === "update" && styles.active)}
             aria-current={tab === "update"}
             onClick={() => setTab("update")}
@@ -414,6 +426,17 @@ export function SettingsModal() {
                     </button>
                   ))}
                 </div>
+              </div>
+            </div>
+          ) : tab === "hotkey" ? (
+            <div className={styles.body}>
+              <div className={styles.field}>
+                <span className={styles.fieldLabel}>全局唤起</span>
+                <span className={styles.fieldHint}>
+                  在任何应用中按下该组合键即可唤起仪表盘。组合键必须包含至少一个
+                  修饰键；若提示已被占用，说明另一个应用先注册了它，换一组即可。
+                </span>
+                <HotkeyRecorder />
               </div>
             </div>
           ) : tab === "update" ? (
