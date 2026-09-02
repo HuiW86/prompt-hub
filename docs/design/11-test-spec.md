@@ -4,7 +4,7 @@ project: prompt-hub
 version: v0.7
 created: 2026-05-19
 last_modified: 2026-09-02
-status: draft # v0.7（2026-09-02 D1 修复留证：§2 398→405、§4.3 D1 行）与 v0.6（同日 G4 走查记录 §4.3）合并待人审；v0.5 于 2026-09-01 人审批次 ③ ratified
+status: draft # v0.7（2026-09-02 D1 修复留证：§2 398→405、§4.3 D1 行；同日第三笔 W3 发布形态复跑通过，D1 闭合）与 v0.6（同日 G4 走查记录 §4.3）合并待人审；v0.5 于 2026-09-01 人审批次 ③ ratified
 author: ai # 🤖 AI 主笔 + 人审（CLAUDE §5.2）
 audience: [ai, human]
 description: prompt-hub 测试规格——前端 Vitest 405 用例 + Rust workspace 168 + 6 源码级 gate + CI 双 job + C1 bench gate；LLM Eval N/A
@@ -30,7 +30,7 @@ related:
 >
 > **v0.5（同日第三笔 · 冲突提示）**：前端 395→**398**（`HotkeyRecorder` +3）。**G3 项 2 由「不可达」转为「通过」**——补上提示后该场景终于可观测，见 §4.2。
 >
-> **v0.7（2026-09-02 第二笔 · D1 修复）**：前端 398→**405**（AnchoredEditor 17→23 / ScenePanel 53→54）。jsdom shim 新增 **focus 拒绝隐藏元素** 规则——仅此一步 6 条既有用例变红，证明 D1 此前对整个套件不可见；修后 402 全绿。§4.3 D1 行记修复，W3 待发布形态复跑。
+> **v0.7（2026-09-02 第二笔 · D1 修复）**：前端 398→**405**（AnchoredEditor 17→23 / ScenePanel 53→54）。jsdom shim 新增 **focus 拒绝隐藏元素** 规则——仅此一步 6 条既有用例变红，证明 D1 此前对整个套件不可见；修后 402 全绿。§4.3 D1 行记修复，W3 待发布形态复跑。**同日第三笔**：W3 按发布形态复跑通过（按 `main` 重建裸 release + 隔离 `HOME`，Swift 事件工具驱动 + 窗口定向截图 + SQL 反查；Macro / 场景属性 / 添加话术三入口），D1 闭合，新增观察 O7 / O8，见 §4.3。
 
 ---
 
@@ -190,7 +190,7 @@ E2E 层缺位期间，**布局 / 层叠 / 定位类改动一律由带编号的�
 |---|---|---|---|
 | W1 | ⌘K 聚焦 / 分组结果 / Enter 复制 | ✅ | 隐藏 + `usage_records` +1 + 剪贴板全文 |
 | W2 | 最近使用去重 / 空态 | ✅ | 同资产复制 2 次 → 1 条；导入清空后「复制过的话术会这里出现」 |
-| W3 | Macro 新建 / 改名 / 删除 | ✅ | `macros` 逐步反查；删除走 `ConfirmInline`。**D1 修后待复跑**：打开新增 → 不点第二次直接键入 |
+| W3 | Macro 新建 / 改名 / 删除 | ✅ | `macros` 逐步反查；删除走 `ConfirmInline`。**D1 修后复跑通过（2026-09-02 第三笔）**：`/review` 对抗审查指出首轮用的 05:08 二进制内嵌 chunk `BA-6NYDY` 与 `main` 产物不同（第二轮审查改过 `heldFocusRef` 运行时逻辑），遂按 `main`（`d2260f6`，代码同 `0f01261`）重建裸 release（chunk `BXzTJiZI`）重跑。**三个入口各一次全新打开**，点开后不做第二次点击直接键入，名称框均自带焦点环、首字符即落字：Macro「新增」（`rerun macro b` 经 Tab → 内容 → ⌘Enter 落库 1 行，`native=0` 与 O5 一致）/ 场景属性面板铅笔（`方案设计` 追加成 `方案设计z`）/ 子阶段「添加话术」（`y` 落字）。对齐话术 / 草稿两面与 Macro 同走 `PhraseFormEditor`，推定通过、未单独真机开。附带发现 O7 / O8（见下）。走查工具注意：macOS 首字母大写建议气泡会吃掉紧随键入之后的第一次 Esc；⌘Enter 在内容为空时由 `handleSave` 静默早退（`canSave` 为 false），不会保存也不提示 |
 | W4 | 对齐话术新建 / 设为默认 / 改内容 | ✅ | `alignment_phrases.is_default` + `phases.default_alignment_phrase_id` 同步 |
 | W5 | 话术新建 / 上移 / 改名 / 删除 | ✅ | `phrases.order_index` 0→1；删除后 3 条 `usage_records` 成孤儿（见观察 O3） |
 | W6 | Scene 属性：改名 / 颜色 / 角色预设 / 前移 / 删非空 | ✅ | `scenes.color=#2f9e6e`、`role_presets` +1、`order_index` 1→0；删非空 → 琥珀 toast「该场景仍有子阶段或话术」 |
@@ -217,11 +217,11 @@ E2E 层缺位期间，**布局 / 层叠 / 定位类改动一律由带编号的�
 
 | # | 现象 | 根因（已读代码） | 级别 |
 |---|---|---|---|
-| D1 | 四个锚定编辑面（Macro / 对齐话术 / 话术 / 草稿）打开后名称框**没有焦点**，键入落空；必须再点一次 | `AnchoredEditor` 在 `useAnchoredPosition` 给出坐标前把面板设为 `visibility: hidden`，而 `PhraseFormEditor` 的挂载 effect在此之前调 `focus()`，对不可见元素静默失败。jsdom `popover` shim 不模拟可见性，故 373 条测试全绿。dev / release 均复现，与 StrictMode 无关。**已修（2026-09-02 第二笔）**：`AnchoredEditor` 新增 `initialFocus` prop，首焦点改在 `position` 首次非空的 layout effect 里触发；shim 补 focus 拒绝规则后 6 条既有用例先红后绿，+7 回归用例；**W3 发布形态复跑待做** | P1 |
+| D1 | 四个锚定编辑面（Macro / 对齐话术 / 话术 / 草稿）打开后名称框**没有焦点**，键入落空；必须再点一次 | `AnchoredEditor` 在 `useAnchoredPosition` 给出坐标前把面板设为 `visibility: hidden`，而 `PhraseFormEditor` 的挂载 effect在此之前调 `focus()`，对不可见元素静默失败。jsdom `popover` shim 不模拟可见性，故 373 条测试全绿。dev / release 均复现，与 StrictMode 无关。**已修（2026-09-02 第二笔）**：`AnchoredEditor` 新增 `initialFocus` prop，首焦点改在 `position` 首次非空的 layout effect 里触发；shim 补 focus 拒绝规则后 6 条既有用例先红后绿，+7 回归用例；**W3 复跑通过（同日第三笔，按 `main` 重建的裸 release）：Macro 新增 / 场景属性 / 添加话术三入口真机各验一次，对齐话术 / 草稿同走 `PhraseFormEditor` 推定；本缺陷闭合**。Codex 提出的「WebKit 同 commit 样式刷新时序」疑虑随之证伪，不加 rAF 重试。派生观察 O7 | P1 |
 | D2 | 设置弹窗开着按 Esc，弹窗与仪表盘**一起**隐藏 | 弹窗 Esc 监听与仪表盘隐藏监听同在 window 冒泡阶段，前者未 `stopPropagation`；与 ADR-025 编辑器「Esc 不冒泡」契约不一致（product-spec 区域 9 写「关闭：Esc」指关弹窗） | P2 |
 | D3 | 数据库损坏时**没有**阻断式错误对话框，进程静默存活、窗口隐藏 | `fail_startup` 在 `std::thread::spawn` 里调 `dialog().message().blocking_show()`；macOS 上非主线程的 NSAlert 不会呈现。prd §7.7 承诺的「含路径的阻断对话框 + exit(1)」实际一项都没兑现 | P1 |
 
-**观察（不构成缺陷，供裁决）**：O1 窗口隐藏期间 MCP 写入的草稿，唤起**不刷新** badge，只有导入后 `refreshAll` 才刷新（HANDOFF 第 21 项附带疑问的答案）；O2 焦点不在编辑器内时按 Esc 会隐藏整个仪表盘而编辑器状态保留在 React 里，下次唤起编辑器仍开着——D1 让这种情况更常见；O3 硬删话术后 `usage_records` 成孤儿，最近使用区仍显示墓碑条目（与 prd §6.1 soft-delete 悬案同源，归 HANDOFF 21.2）；O4 新建的空场景只有「新增子阶段」入口，没有「添加话术」；O5 UI 新建的 Macro `native=0`，种子 Macro `native=1`，`native` 语义待 prd 明确；O6 面板宽度随角色 chip 增加而变化、设置弹窗随页面高度重新居中——对人无害，对自动化点击是坑。
+**观察（不构成缺陷，供裁决）**：O1 窗口隐藏期间 MCP 写入的草稿，唤起**不刷新** badge，只有导入后 `refreshAll` 才刷新（HANDOFF 第 21 项附带疑问的答案）；O2 焦点不在编辑器内时按 Esc 会隐藏整个仪表盘而编辑器状态保留在 React 里，下次唤起编辑器仍开着——D1 让这种情况更常见；O3 硬删话术后 `usage_records` 成孤儿，最近使用区仍显示墓碑条目（与 prd §6.1 soft-delete 悬案同源，归 HANDOFF 21.2）；O4 新建的空场景只有「新增子阶段」入口，没有「添加话术」；O5 UI 新建的 Macro `native=0`，种子 Macro `native=1`，`native` 语义待 prd 明确；O6 面板宽度随角色 chip 增加而变化、设置弹窗随页面高度重新居中——对人无害，对自动化点击是坑；**O7（第三笔新增，确定性）** Macro 编辑器开着时再点「新增」：`AnchoredEditor` 的外部点击处理跳过锚点（`Editor.tsx:195`），按钮 `data-nav-item tabIndex=-1` 拿走焦点，编辑器不关、焦点却已在面板外——之后键入全部丢失，按 Esc 走 O2 藏掉整个仪表盘（截图 S3 / S3b / R1a）。这正是 D1 留下的肌肉记忆（以为没打开再点一次）会触发的路径；首轮 05:08 构建上同操作后焦点留在名称框（截图 05），两构建差异原因未查；**O8（第三笔新增，OS 行为）** 名称框键入后 macOS 弹首字母大写建议气泡，此时第一次 Esc 只关气泡不关编辑器（截图 S1 → S2）；真人也会碰到，非缺陷但走查与用户认知都要算上。另：用「取消」关编辑器后焦点落到 body，随后的可打印键被路由进搜索框并切到搜索结果视图（截图 S5），是否为有意的 type-to-search 待确认。
 
 **取证方法教训（续 §4.2 三条）**：
 
