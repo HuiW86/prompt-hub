@@ -14,6 +14,37 @@ description: prompt-hub 设计文档体系变更日志——记录文档结构�
 
 ---
 
+## 2026-09-02（三）· 第二段 — G4 缺陷 D1 修复：锚定编辑器首焦点改随定位
+
+> 触发：HANDOFF 第 23 项（G4 缺陷 D1 · P1）。四个锚定编辑面（Macro / 对齐话术 / 话术 / 草稿）+ 场景属性面板打开后名称框没有焦点，键入落空，必须再点一次。v0.2.0 带着它发布。
+
+### 做了什么
+
+- **先让测试看得见缺陷，再修**：`src/test/setup.ts` 的 jsdom shim 新增 focus 拒绝规则——`visibility: hidden`（含继承）或祖先链 `display: none` 的元素 `focus()` 静默不生效，与 WebKit 一致。仅此一步，398 用例中 **6 条变红**（AnchoredEditor 2 / ScenePanel 2 / MacroGrid 1 / ScenePanelFocusRestore 1），全是「名称框从未获得焦点」的下游断言。此前 shim 只模拟 popover 开合，不模拟可见性，所以 373→398 一路全绿而缺陷始终在
+- **修法（`AnchoredEditor` 收编首焦点）**：打开固定为「定位 → 显示 → 聚焦」三步，全部由持有 `visibility` 的容器负责——新增 `initialFocus?: RefObject<HTMLElement>` prop，在 `position` 首次非空的那次 commit 里用 `useLayoutEffect` 聚焦（键 `placed` 布尔而非坐标，滚动 / resize 重算不会把焦点拽回首字段）；`heldFocusRef` 在同一 effect 里直接落定，不依赖与 passive 的 `focusin` 监听的相对顺序。`PhraseFormEditor` 的挂载 `focus()` 只在 `inline` 形态保留，`anchored` 形态改传 `initialFocus={nameRef}`；`ScenePropertiesEditor` 去掉 `autoFocus` 改同一路径。`attachPanel` 里的 `showPopover()` 保留但注释改写——它的职责是让面板能被测量（`display: none` 量出 0×0 永远不会翻转），不再是「为子组件 autofocus 铺路」
+- **回归测试 +7**（398→**405**）：AnchoredEditor +6（shim 自检「隐藏元素拒绝 focus」visibility 与 display:none 自身/祖先两条 / 打开即名称框聚焦 / **`anchor=null` 时不聚焦、anchor 到位后才聚焦**——验的是时序门，不只是终态 / **滚动·resize·换锚点不重聚焦**——守住「键 `placed` 布尔而非坐标」这条不变量 / inline 形态挂载聚焦）+ ScenePanel 属性面板 +1。反向验证：撤掉 `initialFocus` 一行，4 条红（2 旧 + 2 新）
+- **零后端 / IPC / schema 改动**。`pnpm test` 405 / `pnpm lint` / `prettier --check src` / `pnpm build` 全绿
+- **[[11-test-spec]] v0.6 → v0.7**：§2 盘面 398→405、§4.3 D1 行记修复与留证、W3 标「D1 修后待复跑」；**[[07-features]] v1.20 → v1.21**：§7 留证索引 3.8 行与 G4 段落补 D1 修复留证；**[[05-design-spec]] v0.20 → v0.21（ratified → draft）**：§10.2.2 接口契约加第 5 条「首焦点归容器 / `initialFocus`」——`/review` 文档过期检查点出契约与代码分家，omar 拍板当轮回流；MANIFEST v1.19
+
+### `/review` 审查结果（同日）
+
+- 结构审查无关键项（无 SQL / LLM / shell / enum）；测试专项 3 条 + 可维护性专项 5 条 + Codex 对抗 5 条；Claude 对抗子代理因用量限制未完成
+- **采纳**：三条回归测试（上文 +7 中的后三条）；四处过期注释改写（`PhraseFormEditor` 文件头「拥有 autofocus」、`inline`「五个面等待 P1-b 迁移」——grep 证实 P1-b 后零消费者、`[inline]` 依赖语义、`ScenePropertiesEditor` 重复理由）；`initialFocus` JSDoc 补「一次性触发，目标须无条件挂载」；design-spec 契约回流
+- **不采纳并记理由**：Codex「WebKit 同 commit 内样式未刷新致 focus 被拒」——WebKit `focus()` 先强制样式/布局刷新再判可聚焦，且 W3 真机复跑本就验证此点，先用真机证据说话，不预加 rAF 重试；Codex「渲染期写 ref」——与同文件 `dismissRef` / `anchorRef` 同一既有模式，中止的 render 会被提交的 render 覆写；Codex「`heldFocusRef` 在 focus 失败时记 false」——焦点不在面板内则不归还焦点本就正确，非回归；可维护性「抽 `useLatest`」——一致性改动，不动
+- **待裁（记 HANDOFF）**：`PhraseFormEditor` 的 `inline` 形态零消费者，去留是 design-spec §10.2.2 契约第 1 条的独立决策
+- **第二轮（补上轮失败的 Claude 对抗子代理；Codex 复审因代理账户余额不足 403 未跑）**：无关键项，四条信息级全部采纳——① 「重定位不重聚焦」测试在 jsdom 下所有矩形都是 0×0，滚动 / 换锚点算出的坐标完全相同，只能抓「按对象触发」抓不住「按坐标触发」→ 改为手动移动锚点矩形并断言面板 `top` 确实变了（变异测试：依赖改成 `[position?.top, position?.left]` 时恰好只此一条红）② `initialFocus` 从可选改**必填**——漏传的消费者会原样复现 D1 外加 Esc 失聪，类型层面拦住；design-spec §10.2.2 第 5 条同步 ③ `heldFocusRef` 改按**面板**而非目标判定包含，与 teardown / Esc 两处的问法一致 ④ 两条新测试补 `try/finally`，失败时不把 body 节点漏给后面的用例。对方另追溯清零了五条疑虑（`placed` 不会回翻 / 三次 commit 同步冲刷故监听先于首焦点注册 / StrictMode 只重跑 `placed=false` 的挂载 commit / 编辑器 A→B 切换终态焦点正确 / 无 `showPopover` 的旧 webview 仍能定位聚焦），记为已核实。覆盖缺口一条未动：套件不在 StrictMode 下跑，dev 却是
+
+### 待办
+
+- **G4 W3 复跑（真机 · 发布形态）**：`pnpm tauri build --no-bundle` 裸 release，打开 Macro 新增 → 不点第二次直接键入。通过后本条与 HANDOFF 第 23 项闭合。jsdom 只能证明「首焦点在定位之后」，证明不了 WebKit 上 `visibility` 翻转与 `focus()` 在同一帧内生效
+- 顺带留意 G4 观察 O2（焦点不在编辑器内按 Esc 隐藏仪表盘而编辑器留在 React 里）：D1 修后该情况应明显减少，复跑时一并看
+
+### 方法记一笔
+
+「测试环境比真实环境宽松」是这一类缺陷的共同形态——shim 为了让用例能跑，把平台会拒绝的事放行了，于是绿灯只证明「代码按 shim 的规则跑得通」。补 shim 时先问：真实平台在这里会拒绝什么？拒绝的那一半才是守得住缺陷的一半。
+
+---
+
 ## 2026-09-02（三）· G4 真机走查 — 按发布形态覆盖 features §7 缺口清单，39 → 7，三个真实缺陷
 
 > 触发：人审批次收官后 omar 选「一次覆盖 features §7 缺口清单的真机走查」。方案 W1–W24 先出、omar 确认后执行。全程隔离 `HOME`，真实资产库未触碰；正式版走查前退出、结束后拉回；WebKit 偏好目录备份复原；OS 外观短暂翻转后复原。

@@ -523,6 +523,12 @@ describe("ScenePanel properties panel — full-field save link", () => {
     ).toBeUndefined();
   });
 
+  it("opens with the name field focused (G4 缺陷 D1)", () => {
+    render(<ScenePanel />);
+    openProperties();
+    expect(screen.getByLabelText("场景名称")).toHaveFocus();
+  });
+
   it("Escape from the name field closes the panel", () => {
     render(<ScenePanel />);
     openProperties();

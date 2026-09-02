@@ -6,7 +6,7 @@ import {
   Trash2,
   X,
 } from "lucide-react";
-import { type KeyboardEvent, useState } from "react";
+import { type KeyboardEvent, useRef, useState } from "react";
 
 import type { Scene } from "../ipc/types";
 
@@ -101,6 +101,8 @@ export function ScenePropertiesEditor({
   const [rolePresets, setRolePresets] = useState<string[]>(scene.rolePresets);
   const [roleDraft, setRoleDraft] = useState("");
   const [confirmingDelete, setConfirmingDelete] = useState(false);
+  // First focus is the container's job (AnchoredEditorProps.initialFocus).
+  const nameRef = useRef<HTMLInputElement>(null);
 
   const trimmedName = name.trim();
   const canSave = trimmedName.length > 0;
@@ -170,12 +172,13 @@ export function ScenePropertiesEditor({
       ariaLabel="场景属性"
       className={styles.panel}
       onDismiss={handleDismiss}
+      initialFocus={nameRef}
     >
       {/* name — required */}
       <label className={styles.field}>
         <span className={styles.label}>名称</span>
         <Input
-          autoFocus
+          ref={nameRef}
           aria-label="场景名称"
           placeholder="场景名称"
           value={name}

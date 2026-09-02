@@ -75,8 +75,9 @@ interface PhraseFormEditorBaseProps {
  *
  * - `anchored` — the top-layer floating panel (子决策 1); `anchor` is the
  *   trigger to pin against, `null` while its ref is still settling.
- * - `inline` — the legacy in-flow `EditorPanel`, still used by the five
- *   surfaces awaiting P1-b migration.
+ * - `inline` — the in-flow `EditorPanel`. No production caller uses it since
+ *   P1-b moved the last surface into the anchored layer (2026-08-20); it is
+ *   kept as the flow-bound fallback and owns its own first focus (see below).
  */
 export type PhraseFormEditorProps = PhraseFormEditorBaseProps &
   (
@@ -85,9 +86,10 @@ export type PhraseFormEditorProps = PhraseFormEditorBaseProps &
   );
 
 // Shared name + content editor for the four-grid phrase editors (AlignmentPhrases
-// protocol phrases + ScenePanel task phrases). Owns the draft state, autofocus,
+// protocol phrases + ScenePanel task phrases). Owns the draft state, the
 // IME-guarded Enter-to-save, and the trim/validation gate so callers only wire
-// persistence. Enter in the name field commits; Cmd/Ctrl+Enter in the content
+// persistence. First focus is owned by the container in anchored mode
+// (AnchoredEditorProps.initialFocus) and by this form only when inline. Enter in the name field commits; Cmd/Ctrl+Enter in the content
 // textarea commits; Escape closes. The optional extraFields slot lets a caller
 // inject additional controls (e.g. a sub-stage picker) without forking the form.
 export function PhraseFormEditor(props: PhraseFormEditorProps) {
@@ -114,9 +116,16 @@ export function PhraseFormEditor(props: PhraseFormEditorProps) {
   const nameRef = useRef<HTMLInputElement>(null);
   const contentRef = useRef<HTMLTextAreaElement>(null);
 
+  // Inline mode focuses on mount; anchored mode hands the ref to the container
+  // instead, which focuses it once the panel is placed and visible. Focusing
+  // here in anchored mode would run against a hidden panel and do nothing
+  // (G4 缺陷 D1) — see AnchoredEditorProps.initialFocus. `presentation` is
+  // fixed at the call site for the life of the form, so the dependency below
+  // only satisfies exhaustive-deps; in practice this fires once.
+  const inline = props.presentation === "inline";
   useEffect(() => {
-    nameRef.current?.focus();
-  }, []);
+    if (inline) nameRef.current?.focus();
+  }, [inline]);
 
   const canSave = name.trim().length > 0 && content.trim().length > 0;
   // Dirty is measured against WHAT IS PERSISTED, never against "was this field
@@ -270,6 +279,7 @@ export function PhraseFormEditor(props: PhraseFormEditorProps) {
         ariaLabel={ariaLabel}
         className={className}
         onDismiss={handleDismiss}
+        initialFocus={nameRef}
       >
         {fields}
       </AnchoredEditor>

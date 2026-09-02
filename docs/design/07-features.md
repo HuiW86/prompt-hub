@@ -1,7 +1,7 @@
 ---
 type: features
 project: prompt-hub
-version: v1.20
+version: v1.21
 created: 2026-05-19
 last_modified: 2026-09-02
 status: in-progress  # S1 进行中；v0.2.0 已发布（2026-08-20）；进度叙事见 §4 节奏表与 CHANGELOG，当前基线见 §7；v1.19 矩阵（37 verified / 39 done / 1 in-progress / 14 planned）omar 2026-09-01 人审批次 ⑦ 认可
@@ -359,6 +359,7 @@ related:
 | 2026-09-01 | v1.18 bump（**对账，不含新功能**）：① §4 节奏表补三行（Phrase 编辑 v1.4 / Scene 编辑分层化 v1.9 / 固定空间布局 v1.12）+ S1 模块数 5→6 + 显式计数规则，合计 88→**91**（按 §3 逐行重数，非累加）；② §4 S1 行 `planned`→`in-progress`（六模块自 v0.2 起全 `done`，本表三个月未改）；③ §3.9「真机验收」`planned`→`done`（ADR-017 Phase 6 2026-08-20 随 v0.2.0 发布实测通过），§4 ADR-017 行 4/5→5/5；④ §3.6 唤起 P95 由失效的 10.49ms 改 13.708ms；⑤ §7 从 ADR-012 时代（57/57）重写为当前基线（398 / 168 / v0.2.0）并**首次点名 §1 `verified` 铁律缺口**待 omar 裁决；⑥ 头部导语与覆盖率列口径说明更新。同批：prd / ops-spec / user-flows / spec 四份 `status: pre-code` 转出（v0.2.0 已发布，pre-code 不再成立）| 2026-09-01 文档对账日（全面评价建议 1）|
 | 2026-09-01 | v1.19 bump（**人审批次 ① 裁决落地**）：① §1 `verified` 判据修订——旧判据「E2E 通过 + 使用者 ≥1 周」不可满足（Playwright 未落地，test-spec §4 明写），新判据 = 真机门或持续自动化 gate 留证 + 进过 publish release + 自用 ≥1 周无回归；② 铁律引用 [[01-spec#10.5]]「验收节奏」判为**失效引用**（该节实为「多人使用的可能性」，spec 全文无「验收节奏」），改指 [[11-test-spec#4.1]]；③ 按新判据逐行核对：**37 行 `done`→`verified`**（3.1 四区 / 3.4 唤起键可配置 / 3.6 六行 / 3.7 十七行 / 3.8 三行 / 3.9 五行 / 3.10 裸值 gate），39 行缺留证保持 `done`；④ §7 新增留证索引 + 缺口清单（升 `verified` 必须登记）。矩阵计数 91 不变。v0.2.0 后零代码 commit，全部 `done` 行均在已 publish 的 release 内 | omar 拍板「改规则，然后逐个标」（2026-09-01 人审批次 ①）|
 | 2026-09-02 | v1.20 bump（**G4 真机走查落账**）：按 §1 新判据补留证——发布形态（`pnpm tauri build --no-bundle` 裸 release 二进制 + 隔离 `HOME` + MCP 造草稿）覆盖 §7 缺口清单，24 门项 21 通过 / 3 不可达（W13 窄 Header · W20 复制失败 · W22 更新失败路径）。**32 行 `done`→`verified`**（3.1 ×2 / 3.4 / 3.7 ×3 / 3.8 ×5 / 3.10 ×3 / 3.11 ×6 / 3.12 ×7 / 3.13 ×4 / 3.14），7 行保持 `done`。**三个真实缺陷**记入 [[HANDOFF]]：D1 锚定编辑器 autofocus 不生效（`AnchoredEditor` 在定位前 `visibility:hidden`，子组件 `focus()` 静默失败；jsdom shim 不模拟可见性所以 373 测试全绿）· D2 设置弹窗 Esc 连仪表盘一起隐藏 · D3 数据库损坏时阻断式对话框从不出现（`fail_startup` 在后台线程 `blocking_show`）。另答 HANDOFF 第 21 项附带疑问：窗口隐藏期间 MCP 写入的草稿，唤起**不刷新** badge，导入后 `refreshAll` 才刷新。走查记录与门项表见 [[11-test-spec#4.3]] | 2026-09-02 G4 真机走查 |
+| 2026-09-02 | v1.21 bump（**D1 修复留证**，矩阵状态不变）：`AnchoredEditor` 新增 `initialFocus` prop，首焦点改在定位后的 layout effect 触发，`PhraseFormEditor` 锚定形态与 `ScenePropertiesEditor` 改走该路径；jsdom shim 补「隐藏元素拒绝 focus」规则——此前 373→398 全绿而 D1 始终在，补规则后 6 条既有用例变红，修后 405 全绿（+7 回归：时序门「`anchor=null` 不聚焦、到位后才聚焦」/ 重定位·换锚点不重聚焦 / shim 三路径自检 / inline 挂载聚焦 + 属性面板首焦点）。**零后端 / IPC / schema 改动**。§7 留证索引 3.8 行与 G4 段落补记；**W3 发布形态复跑待做**，通过后 HANDOFF 第 23 项闭合。涟漪 [[11-test-spec]] v0.7 / [[05-design-spec]] v0.21（§10.2.2 接口契约第 5 条） | HANDOFF 第 23 项 |
 
 ---
 
@@ -367,7 +368,7 @@ related:
 - **当前基线**（2026-09-01 本机实测，`main` @ `9fc9fad`）：Vitest **398/398**（39 文件）/ `cargo test --workspace` **168** / lint · tsc · build · clippy · fmt 全绿 / doc-governance 0 error 6 warn / `bench:hotkey-wake` p95 13.708ms（2026-08-20）
 - **已发布**：v0.1.0（2026-08-05 draft，公证被静默跳过未 publish，见 [[2026-08-05-notarization-fail-open]]）/ v0.1.1（2026-08-10）/ **v0.2.0（2026-08-20，Developer ID 签名公证 + 自动更新链路真机跑通）**
 - **状态分布**（§3 逐行，§3.12 治理项 7 行不计）：`verified` **69** / `done` **7** / `in-progress` 1 / `planned` 14 / `withdrawn` 1（不计）→ 计数 91，与 §4 一致（2026-09-02 G4 走查后 37→69 / 39→7）
-- **G4 真机走查（2026-09-02，v1.20）**：按发布形态（`pnpm tauri build --no-bundle` 裸 release 二进制 + 隔离 `HOME`）覆盖下表缺口清单，24 门项 21 通过、3 不可达、**发现三个真实缺陷**（D1 锚定编辑器打开后 autofocus 不生效 · P1 / D2 设置弹窗 Esc 连仪表盘一起隐藏 · P2 / D3 数据库损坏时阻断式对话框从不出现 · P1），明细见 [[11-test-spec#4.3]]；32 行升 `verified`，7 行保持 `done`（其中 1 行因缺陷未通过）
+- **G4 真机走查（2026-09-02，v1.20）**：按发布形态（`pnpm tauri build --no-bundle` 裸 release 二进制 + 隔离 `HOME`）覆盖下表缺口清单，24 门项 21 通过、3 不可达、**发现三个真实缺陷**（D1 锚定编辑器打开后 autofocus 不生效 · P1 / D2 设置弹窗 Esc 连仪表盘一起隐藏 · P2 / D3 数据库损坏时阻断式对话框从不出现 · P1），明细见 [[11-test-spec#4.3]]；32 行升 `verified`，7 行保持 `done`（其中 1 行因缺陷未通过）。**D1 已修（v1.21，同日第二笔）**：jsdom 回归 +7，发布形态 W3 复跑待做
 - **§1 `verified` 判据已修订（v1.19，omar 2026-09-01 拍板）**：旧判据「E2E 通过 + 使用者 ≥1 周」不可满足（Playwright 未落地），且铁律引用的 [[01-spec#10.5]]「验收节奏」在 spec 里并不存在。新判据见 §1；按新判据逐行核对留证，37 行升 `verified`、39 行因缺留证保持 `done`。**留证索引与缺口清单见下**——它同时是下一次真机走查的待办面
 - **下一动作**：见 [[HANDOFF#Next-Actions]]
 
@@ -395,7 +396,7 @@ related:
 | 3.1 搜索区 / 最近使用区 | G4 W1–W2（2026-09-02）：⌘K 聚焦 → 分组结果 → Enter 复制并隐藏，`usage_records` +1、剪贴板核对；同资产复制两次最近区去重为 1 条、空态文案 |
 | 3.4 数据导入导出 | G4 W24：导出文件 11.8 KB 十表无 `usage_records`；SQL 篡改后导入整库替换回滚、`settings` 表保留、`refreshAll` 清空最近区并刷新 badge |
 | 3.7 草稿 tab / 待审 badge / promote IPC | G4 W8–W10：MCP 造 3 条草稿 → badge「3 条待审」+ 草稿 tab 最左；编辑水合 → `update_draft` 落库；归档 → `alignment_phrases` +1 且草稿 `discarded`；丢弃 → 撤销回 `pending`；composition 草稿归档 / 编辑禁用、丢弃可用 |
-| 3.8 Macro / AlignmentPhrase / Phrase 编辑 · Scene/SubStage 结构编辑 · 分层化 | G4 W3–W7：每步 SQL 反查——Macro 新建 / 改名 / 删除；对齐话术新建 / 设为默认（`phases` 指针同步）/ 改内容；话术新建 / 上移 / 改名 / 删除；子阶段新建 / 改名 / 删除解绑；Scene 改名 / 颜色 `#2f9e6e` / 角色预设 / 前移 / 删非空被阻止（琥珀 toast）/ 新建空场景自动开面板 / 删空场景。**附带缺陷 D1**：四个锚定编辑面打开后名称框未获焦点 |
+| 3.8 Macro / AlignmentPhrase / Phrase 编辑 · Scene/SubStage 结构编辑 · 分层化 | G4 W3–W7：每步 SQL 反查——Macro 新建 / 改名 / 删除；对齐话术新建 / 设为默认（`phases` 指针同步）/ 改内容；话术新建 / 上移 / 改名 / 删除；子阶段新建 / 改名 / 删除解绑；Scene 改名 / 颜色 `#2f9e6e` / 角色预设 / 前移 / 删非空被阻止（琥珀 toast）/ 新建空场景自动开面板 / 删空场景。**附带缺陷 D1**：四个锚定编辑面打开后名称框未获焦点——**已修**（`AnchoredEditor.initialFocus`，jsdom 回归 +7，W3 复跑待做） |
 | 3.10 primitives / editor 簇 / surface-control | G4 截图 R03–R09：共享 `PhraseFormEditor` 五件套、`ConfirmInline`「永久删除? ✓ ✕」、DraftCard 中性 CardSurface + ghost Button 在发布形态渲染并可操作 |
 | 3.11 主题三态 / 强调色 / 设置弹窗 / slim Header / ProtocolBand / 2 列 | G4 W16–W19：首启默认深色（canvas `14,14,16`）、浅色 `#F2F2F0`、跟随系统随 OS 外观翻转、重启保留（localStorage `themeMode`）；强调色绿 / 蓝 / 中性像素采样 logo 与 Macro 芯片同步、Scene 图标不变；`⌘,` 唤起、× 关闭、密度 56→44 逻辑像素列扫描实测；Header / 暗 band / 2 列布局截图 R00。**附带缺陷 D2**：弹窗内 Esc 连仪表盘一起隐藏 |
 | 3.12 Draft 编辑 / Composition 暂缓 / 设为默认 / 暗 band / light 明度 / auto-fit / 像素对齐包 | G4：同上各项；暗 band + `ModifierGrid`「协议层 · 参考」pill + 最近区中性徽标（R00）；light 明度 muted canvas + 白卡（R16c）；调研场景两列 auto-fit + 「未分组」列头（R07b）；Macro 图标盒 accent 填充 + 最近区富空态（R24i） |

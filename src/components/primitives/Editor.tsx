@@ -1,8 +1,10 @@
 import {
   type ComponentPropsWithRef,
   type ReactNode,
+  type RefObject,
   useCallback,
   useEffect,
+  useLayoutEffect,
   useRef,
   useState,
 } from "react";
@@ -65,6 +67,24 @@ export interface AnchoredEditorProps {
    * what that buys.
    */
   onDismiss: (reason: DismissReason) => boolean | void;
+  /**
+   * The field to focus once the panel is placed. Children must NOT focus
+   * themselves on mount (no `autoFocus`, no mount-time `focus()`): the panel is
+   * `visibility: hidden` until its first measurement lands, and focus() on a
+   * hidden element is a silent no-op in WebKit — that was G4 缺陷 D1, every
+   * editor in v0.2.0 opening with nothing focused.
+   *
+   * One shot: it fires in the commit that carries the first position and
+   * never again, so the target must be mounted unconditionally with the panel
+   * (both consumers render their name field that way). A target that appears
+   * later — behind a condition or Suspense — would open unfocused.
+   *
+   * Required, not optional: a panel that nobody focuses is D1 all over again,
+   * plus a panel deaf to Escape until clicked (the Escape handler only listens
+   * while focus is inside). There is no legitimate "no first focus" case — a
+   * panel without a field points this at itself with `tabIndex={-1}`.
+   */
+  initialFocus: RefObject<HTMLElement | null>;
   children: ReactNode;
 }
 
@@ -93,12 +113,25 @@ export interface AnchoredEditorProps {
 // `null` for `open={false}` while staying mounted would swallow that focus
 // return, silently, for any caller that reached for the prop instead of
 // unmounting. One way to close is the only safe number.
+//
+// Opening is three steps in a fixed order — place, show, focus — and this
+// component owns all three because it is the one that hides the panel:
+//   1. the ref callback promotes the node to the top layer so it can be
+//      measured (a `display: none` node measures 0×0 and would never flip);
+//   2. useAnchoredPosition measures and places it in a layout effect, and the
+//      inline `visibility` flips to visible in the commit that carries the
+//      first position;
+//   3. the layout effect below, keyed on that first position, moves focus into
+//      `initialFocus`.
+// A child that focused itself on mount would run between 1 and 2, against a
+// hidden element, and do nothing (G4 缺陷 D1).
 export function AnchoredEditor({
   anchor,
   layer = "neutral",
   ariaLabel,
   className,
   onDismiss,
+  initialFocus,
   children,
 }: AnchoredEditorProps) {
   const [panel, setPanel] = useState<HTMLDivElement | null>(null);
@@ -118,11 +151,16 @@ export function AnchoredEditor({
   // Whether focus was inside the panel, sampled while it still is.
   const heldFocusRef = useRef(false);
 
-  // Promoted into the TOP LAYER here rather than in an effect, on purpose: ref
-  // callbacks run during commit, before any effect, and until the popover is
-  // shown the UA sheet keeps it `display: none` — so a child's mount-time
-  // autofocus (PhraseFormEditor focusing the name field) would land on an
-  // unfocusable element and silently do nothing.
+  // Read through a ref so the first-focus effect below keys on placement
+  // alone; a caller re-creating the ref object per render must not re-focus.
+  const initialFocusRef = useRef(initialFocus);
+  initialFocusRef.current = initialFocus;
+
+  // Step 1 (see the opening-order note above). Promoted into the TOP LAYER
+  // here rather than in an effect, on purpose: ref callbacks run during
+  // commit, before the layout effect that measures the panel, and until the
+  // popover is shown the UA sheet keeps it `display: none` — a node that
+  // measures 0×0 could never be placed.
   const attachPanel = useCallback((el: HTMLDivElement | null) => {
     setPanel(el);
     if (!el) return;
@@ -201,8 +239,8 @@ export function AnchoredEditor({
     // Whether focus lives in the panel has to be tracked as it happens: by the
     // time the teardown below runs, React has already detached the panel, so
     // asking "does it contain activeElement" would always answer no (the answer
-    // is `body`). Seeded from the current state because the child's mount-time
-    // autofocus has already fired by the time this effect gets to run.
+    // is `body`). Seeded from the current state so a re-subscription (anchor
+    // change) does not forget focus that is already inside.
     heldFocusRef.current = panel.contains(document.activeElement);
     const onFocusIn = () => {
       heldFocusRef.current = panel.contains(document.activeElement);
@@ -219,6 +257,24 @@ export function AnchoredEditor({
       document.removeEventListener("focusin", onFocusIn, true);
     };
   }, [panel, anchor]);
+
+  // Step 3: first focus, in the commit that made the panel visible. A layout
+  // effect so it lands before paint, like the placement it follows. Keyed on
+  // "has a position" rather than the position itself: repositioning on scroll
+  // or resize must not yank focus back to the first field mid-edit.
+  const placed = position !== null;
+  useLayoutEffect(() => {
+    if (!placed) return;
+    const target = initialFocusRef.current?.current;
+    if (!target) return;
+    target.focus();
+    // The focusin listener above also records this, but it is subscribed in a
+    // passive effect and this is a layout effect — settle the fact directly
+    // rather than lean on their relative order. Measured against the PANEL,
+    // which is what the teardown and Escape paths ask about: a target outside
+    // the panel must not count as the panel holding focus.
+    heldFocusRef.current = panel?.contains(document.activeElement) ?? false;
+  }, [placed, panel]);
 
   // Focus returns to the trigger when the panel goes away, so a keyboard user
   // lands back on the chip they opened rather than at the top of the region.

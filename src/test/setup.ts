@@ -106,6 +106,33 @@ Object.defineProperty(navigator, "platform", {
   };
 }
 
+// Focus refuses elements that are not rendered, as it does in a browser.
+//
+// jsdom's focus() checks disabled / disconnected but never visibility, so a
+// field inside a `visibility: hidden` panel takes focus here and silently does
+// not in WebKit. That gap is exactly how G4 缺陷 D1 (2026-09-02) shipped in
+// v0.2.0: AnchoredEditor hides itself until its first placement, the form
+// focused its name field before that, every test said "focused", and every
+// real editor opened with nothing focused. A suite that cannot see the
+// defect cannot keep it fixed either.
+//
+// `visibility` inherits, so the element's own computed value is enough for it;
+// `display` does not, so the ancestor chain is walked for `none`.
+{
+  const nativeFocus = HTMLElement.prototype.focus;
+  HTMLElement.prototype.focus = function (
+    this: HTMLElement,
+    options?: FocusOptions,
+  ) {
+    if (getComputedStyle(this).visibility === "hidden") return;
+    if (getComputedStyle(this).display === "none") return;
+    for (let el = this.parentElement; el; el = el.parentElement) {
+      if (getComputedStyle(el).display === "none") return;
+    }
+    nativeFocus.call(this, options);
+  };
+}
+
 // jsdom has no ResizeObserver; @dnd-kit/dom instantiates one at import time.
 // A no-op stub lets MacroGrid (and any dnd-kit consumer) render under jsdom.
 if (!("ResizeObserver" in globalThis)) {

@@ -18,6 +18,7 @@ import { useAppStore } from "../../stores/appStore";
 import { usePromptStore } from "../../stores/promptStore";
 import { useToastStore } from "../../stores/toastStore";
 import { AlignmentPhrases } from "../AlignmentPhrases";
+import { PhraseFormEditor } from "../primitives/PhraseFormEditor";
 
 const promptInitial = usePromptStore.getState();
 const appInitial = useAppStore.getState();
@@ -336,5 +337,177 @@ describe("AnchoredEditor — a refused dismissal locks the press (ADR-025 子决
     fireEvent.change(nameField, { target: { value: "改名协议" } });
     fireEvent.pointerDown(document.body);
     expect(call("update_alignment_phrase")).toBeTruthy();
+  });
+});
+
+describe("AnchoredEditor — first focus follows placement (G4 缺陷 D1)", () => {
+  beforeEach(seed);
+
+  it("test environment: focus() refuses a hidden element", () => {
+    // Guards the setup.ts focus shim. Without it the two tests below pass for
+    // the wrong reason — stock jsdom focuses hidden elements, which is exactly
+    // how D1 shipped behind a green suite.
+    const box = document.createElement("div");
+    box.style.visibility = "hidden";
+    const input = document.createElement("input");
+    box.appendChild(input);
+    document.body.appendChild(box);
+    try {
+      input.focus();
+      expect(input).not.toHaveFocus();
+      box.style.visibility = "visible";
+      input.focus();
+      expect(input).toHaveFocus();
+    } finally {
+      box.remove();
+    }
+  });
+
+  it("opens with the name field focused", () => {
+    // The first thing a user does after opening an editor is type. No 真机门
+    // asked this before G4, and v0.2.0 shipped with every editor opening blind.
+    render(<AlignmentPhrases />);
+    fireEvent.click(screen.getByLabelText("编辑 默认协议"));
+    expect(screen.getByPlaceholderText("名称")).toHaveFocus();
+  });
+
+  it("refuses focus on display:none, on the element and on any ancestor", () => {
+    // The popover's pre-showPopover state is UA-sheet `display: none`, and
+    // `display` does not inherit — so this is the shim path that guards the
+    // container itself, and the one a careless "simplification" (stop at
+    // body, check inline style only) would break without any test noticing.
+    const outer = document.createElement("div");
+    const inner = document.createElement("div");
+    const input = document.createElement("input");
+    inner.appendChild(input);
+    outer.appendChild(inner);
+    document.body.appendChild(outer);
+    try {
+      outer.style.display = "none";
+      input.focus();
+      expect(input).not.toHaveFocus();
+      outer.style.removeProperty("display");
+      input.style.display = "none";
+      input.focus();
+      expect(input).not.toHaveFocus();
+      input.style.removeProperty("display");
+      input.focus();
+      expect(input).toHaveFocus();
+    } finally {
+      outer.remove();
+    }
+  });
+
+  it("holds focus back until the panel is placed, then moves it in", () => {
+    const anchor = document.createElement("button");
+    document.body.appendChild(anchor);
+    const props = {
+      presentation: "anchored" as const,
+      layer: "protocol" as const,
+      mode: "create" as const,
+      ariaLabel: "编辑对齐话术",
+      submitLabel: "新增",
+      onSubmit: () => {},
+      onClose: () => {},
+    };
+    try {
+      // No anchor → never placed → the panel stays hidden. A mount-time focus
+      // would fire here, against the hidden panel, and land nowhere.
+      const { rerender } = render(
+        <PhraseFormEditor {...props} anchor={null} />,
+      );
+      expect(screen.getByPlaceholderText("名称")).not.toHaveFocus();
+      // The anchor settles, the panel is placed and shown, focus follows.
+      rerender(<PhraseFormEditor {...props} anchor={anchor} />);
+      expect(screen.getByPlaceholderText("名称")).toHaveFocus();
+    } finally {
+      anchor.remove();
+    }
+  });
+
+  it("repositioning or swapping the anchor does not re-focus the first field", () => {
+    // The effect is keyed on "has a position", not the position itself. Keying
+    // on the coordinates would pass every test above and still yank focus back
+    // to the name field on every scroll or resize mid-edit.
+    //
+    // jsdom has no layout, so every rect is 0×0 and a scroll would recompute
+    // the SAME coordinates — which would let an effect keyed on `top`/`left`
+    // slip through. The anchor's rect is stubbed and moved by hand so each
+    // recompute lands somewhere new, and the panel's inline `top` is asserted
+    // to prove a recompute actually happened.
+    const anchorAt = (top: number) => {
+      const node = document.createElement("button");
+      let rect = {
+        top,
+        left: 0,
+        right: 40,
+        bottom: top + 20,
+        width: 40,
+        height: 20,
+      };
+      node.getBoundingClientRect = () => rect as DOMRect;
+      Object.assign(node, {
+        moveTo: (nextTop: number) => {
+          rect = { ...rect, top: nextTop, bottom: nextTop + 20 };
+        },
+      });
+      document.body.appendChild(node);
+      return node as HTMLButtonElement & { moveTo: (top: number) => void };
+    };
+    const anchor = anchorAt(100);
+    const anchor2 = anchorAt(400);
+    const props = {
+      presentation: "anchored" as const,
+      layer: "protocol" as const,
+      mode: "create" as const,
+      ariaLabel: "编辑对齐话术",
+      submitLabel: "新增",
+      onSubmit: () => {},
+      onClose: () => {},
+    };
+    try {
+      const { rerender } = render(
+        <PhraseFormEditor {...props} anchor={anchor} />,
+      );
+      const panel = screen.getByRole("group", { name: "编辑对齐话术" });
+      const content = screen.getByPlaceholderText("话术内容");
+      content.focus();
+      expect(content).toHaveFocus();
+      const placedAt = panel.style.top;
+
+      anchor.moveTo(250);
+      act(() => {
+        window.dispatchEvent(new Event("scroll"));
+        window.dispatchEvent(new Event("resize"));
+      });
+      expect(panel.style.top).not.toBe(placedAt);
+      expect(content).toHaveFocus();
+
+      const scrolledTo = panel.style.top;
+      rerender(<PhraseFormEditor {...props} anchor={anchor2} />);
+      expect(panel.style.top).not.toBe(scrolledTo);
+      expect(content).toHaveFocus();
+    } finally {
+      anchor.remove();
+      anchor2.remove();
+    }
+  });
+
+  it("inline presentation focuses the name field on mount", () => {
+    // The in-flow fallback keeps its own mount-time focus; nothing in
+    // production renders it today, so this is the only thing keeping that
+    // branch honest.
+    render(
+      <PhraseFormEditor
+        presentation="inline"
+        layer="protocol"
+        mode="create"
+        ariaLabel="编辑对齐话术"
+        submitLabel="新增"
+        onSubmit={() => {}}
+        onClose={() => {}}
+      />,
+    );
+    expect(screen.getByPlaceholderText("名称")).toHaveFocus();
   });
 });

@@ -1,13 +1,13 @@
 ---
 type: test-spec
 project: prompt-hub
-version: v0.6
+version: v0.7
 created: 2026-05-19
 last_modified: 2026-09-02
-status: draft # v0.6（2026-09-02 G4 真机走查记录 §4.3）待人审；v0.5 于 2026-09-01 人审批次 ③ ratified
+status: draft # v0.7（2026-09-02 D1 修复留证：§2 398→405、§4.3 D1 行）与 v0.6（同日 G4 走查记录 §4.3）合并待人审；v0.5 于 2026-09-01 人审批次 ③ ratified
 author: ai # 🤖 AI 主笔 + 人审（CLAUDE §5.2）
 audience: [ai, human]
-description: prompt-hub 测试规格——前端 Vitest 398 用例 + Rust workspace 168 + 6 源码级 gate + CI 双 job + C1 bench gate；LLM Eval N/A
+description: prompt-hub 测试规格——前端 Vitest 405 用例 + Rust workspace 168 + 6 源码级 gate + CI 双 job + C1 bench gate；LLM Eval N/A
 related:
   - 06-prd
   - 07-features
@@ -29,6 +29,8 @@ related:
 > **v0.4（同日第二笔 · ADR-027 涟漪）**：前端 373→**395**、Rust 158→**168**、IPC 命令 51→**53**、新增真机门 **G3 四项**。源码级 gate 仍 6 个。
 >
 > **v0.5（同日第三笔 · 冲突提示）**：前端 395→**398**（`HotkeyRecorder` +3）。**G3 项 2 由「不可达」转为「通过」**——补上提示后该场景终于可观测，见 §4.2。
+>
+> **v0.7（2026-09-02 第二笔 · D1 修复）**：前端 398→**405**（AnchoredEditor 17→23 / ScenePanel 53→54）。jsdom shim 新增 **focus 拒绝隐藏元素** 规则——仅此一步 6 条既有用例变红，证明 D1 此前对整个套件不可见；修后 402 全绿。§4.3 D1 行记修复，W3 待发布形态复跑。
 
 ---
 
@@ -50,17 +52,19 @@ v0.1 规划的四层金字塔已落地为下表实际形态（Playwright E2E 层
 
 ## §2 前端 Vitest 盘面
 
-📊 **398 用例 / 39 测试文件，全绿**（2026-08-20 实测，逐文件计数）。
+📊 **405 用例 / 39 测试文件，全绿**（2026-09-02 实测；v0.5 口径 398 于 2026-08-20 逐文件计数，+7 见下）。
 
 > v0.3 记 373 / 37。**+22 的逐文件构成经 worktree 对拍取得，不是估算**：新增 `utils/__tests__/accelerator.test.ts` **9** + `components/__tests__/HotkeyRecorder.test.tsx` **7**；既有文件 `settingsStore` 8→11、`HotkeyBanner` 5→7；**`token-gate` 39→40 是它自己长出来的**——该 gate 按 CSS module 文件枚举用例，新增的 `HotkeyRecorder.module.css` 自动入册并通过。这一条顺带证明 [[CLAUDE#§4]] 4.1 的 token 纪律确实盖住了新组件，而不靠人记得去查。
 >
 > ⚠️ 手数 `it(` 会漏：多个文件用 `it.each` / 按文件枚举生成用例，源码里的 `it(` 数与运行时用例数**不等**。本轮首次改用 vitest JSON reporter 逐文件对拍，是查出 token-gate 那 +1 的唯一原因。
+>
+> v0.7 +7（D1 修复回归）：`AnchoredEditor` +6（shim 自检 ×2：visibility 与 display:none 自身/祖先 / 打开即聚焦 / `anchor=null` 时不聚焦、到位后才聚焦 / 滚动·resize·换锚点不重聚焦 / inline 形态挂载聚焦）+ `ScenePanel` 属性面板 +1。后三条来自 `/review` 测试专项与可维护性专项的缺口指认。另 `src/test/setup.ts` 新增 focus 拒绝规则（`visibility: hidden` 或祖先 `display: none` 时 `focus()` 不生效），不计用例但改变了全套件的判定口径——它让 6 条既有用例在修复前变红。
 
 | 分组 | 用例 📊 | 文件 | 覆盖对象 |
 |---|---|---|---|
 | stores（7 文件） | 73 | `src/stores/__tests__/{appStore 2, promptStore 36, searchStore 4, settingsStore 8, toastStore 10, updaterStore 12}.test.ts` + `src/stores/prompt/__tests__/helpers 1` | Zustand store actions / 复制失败可见 + toast intent 分级 / updater 状态机 / draft 计数联动 |
 | hooks（4 文件） | 28 | `src/hooks/__tests__/{useAnchoredPosition 13, useRegionNav 8, useCopy 4, useSearchResults 3}` | **锚定定位与滚动祖先订阅**（ADR-025）/ 区域内漫游导航 / 复制 / 搜索结果派生 |
-| 组件（19 文件） | 201 | `src/App.test.tsx` 25 + `src/components/__tests__/*`：ScenePanel 53 / ScenePropertiesEditor 22 / **AnchoredEditor 17** / SearchOverlay 17 / DraftInbox 15 / SettingsModal 8 / AlignmentPhrases 7 / HotkeyBanner 5 / MacroGrid 5 / ScenePanelFocusRestore 5 / ModifierGrid 4 / UpdaterBanner 4 / ErrorBoundary 3 / ModeToggle 3 / PhaseBar 3 / SearchBar 3 / RecentList 1 / StatusBar 1 | 组件渲染 / 交互 / Tab cycle 6 区断言（[[03-product-spec#13.4]]）/ 编辑器关闭规则表分支 |
+| 组件（19 文件） | 208 | `src/App.test.tsx` 25 + `src/components/__tests__/*`：ScenePanel 54 / ScenePropertiesEditor 22 / **AnchoredEditor 23** / SearchOverlay 17 / DraftInbox 15 / SettingsModal 8 / AlignmentPhrases 7 / HotkeyBanner 5 / MacroGrid 5 / ScenePanelFocusRestore 5 / ModifierGrid 4 / UpdaterBanner 4 / ErrorBoundary 3 / ModeToggle 3 / PhaseBar 3 / SearchBar 3 / RecentList 1 / StatusBar 1 | 组件渲染 / 交互 / Tab cycle 6 区断言（[[03-product-spec#13.4]]）/ 编辑器关闭规则表分支 |
 | utils（1 文件） | 8 | `src/utils/__tests__/errorMessage.test.ts` | IPC 错误信息归一 |
 | 源码级 gate（6 文件） | 63 | token-gate 39 / theme-parity 8 / ipc-contract 6 / b2-separation 5 / density-gate 3 / doc-refs-gate 2 | 见 §3 |
 
@@ -186,7 +190,7 @@ E2E 层缺位期间，**布局 / 层叠 / 定位类改动一律由带编号的�
 |---|---|---|---|
 | W1 | ⌘K 聚焦 / 分组结果 / Enter 复制 | ✅ | 隐藏 + `usage_records` +1 + 剪贴板全文 |
 | W2 | 最近使用去重 / 空态 | ✅ | 同资产复制 2 次 → 1 条；导入清空后「复制过的话术会这里出现」 |
-| W3 | Macro 新建 / 改名 / 删除 | ✅ | `macros` 逐步反查；删除走 `ConfirmInline` |
+| W3 | Macro 新建 / 改名 / 删除 | ✅ | `macros` 逐步反查；删除走 `ConfirmInline`。**D1 修后待复跑**：打开新增 → 不点第二次直接键入 |
 | W4 | 对齐话术新建 / 设为默认 / 改内容 | ✅ | `alignment_phrases.is_default` + `phases.default_alignment_phrase_id` 同步 |
 | W5 | 话术新建 / 上移 / 改名 / 删除 | ✅ | `phrases.order_index` 0→1；删除后 3 条 `usage_records` 成孤儿（见观察 O3） |
 | W6 | Scene 属性：改名 / 颜色 / 角色预设 / 前移 / 删非空 | ✅ | `scenes.color=#2f9e6e`、`role_presets` +1、`order_index` 1→0；删非空 → 琥珀 toast「该场景仍有子阶段或话术」 |
@@ -213,7 +217,7 @@ E2E 层缺位期间，**布局 / 层叠 / 定位类改动一律由带编号的�
 
 | # | 现象 | 根因（已读代码） | 级别 |
 |---|---|---|---|
-| D1 | 四个锚定编辑面（Macro / 对齐话术 / 话术 / 草稿）打开后名称框**没有焦点**，键入落空；必须再点一次 | `AnchoredEditor` 在 `useAnchoredPosition` 给出坐标前把面板设为 `visibility: hidden`，而 `PhraseFormEditor` 的挂载 effect在此之前调 `focus()`，对不可见元素静默失败。jsdom `popover` shim 不模拟可见性，故 373 条测试全绿。dev / release 均复现，与 StrictMode 无关 | P1 |
+| D1 | 四个锚定编辑面（Macro / 对齐话术 / 话术 / 草稿）打开后名称框**没有焦点**，键入落空；必须再点一次 | `AnchoredEditor` 在 `useAnchoredPosition` 给出坐标前把面板设为 `visibility: hidden`，而 `PhraseFormEditor` 的挂载 effect在此之前调 `focus()`，对不可见元素静默失败。jsdom `popover` shim 不模拟可见性，故 373 条测试全绿。dev / release 均复现，与 StrictMode 无关。**已修（2026-09-02 第二笔）**：`AnchoredEditor` 新增 `initialFocus` prop，首焦点改在 `position` 首次非空的 layout effect 里触发；shim 补 focus 拒绝规则后 6 条既有用例先红后绿，+7 回归用例；**W3 发布形态复跑待做** | P1 |
 | D2 | 设置弹窗开着按 Esc，弹窗与仪表盘**一起**隐藏 | 弹窗 Esc 监听与仪表盘隐藏监听同在 window 冒泡阶段，前者未 `stopPropagation`；与 ADR-025 编辑器「Esc 不冒泡」契约不一致（product-spec 区域 9 写「关闭：Esc」指关弹窗） | P2 |
 | D3 | 数据库损坏时**没有**阻断式错误对话框，进程静默存活、窗口隐藏 | `fail_startup` 在 `std::thread::spawn` 里调 `dialog().message().blocking_show()`；macOS 上非主线程的 NSAlert 不会呈现。prd §7.7 承诺的「含路径的阻断对话框 + exit(1)」实际一项都没兑现 | P1 |
 

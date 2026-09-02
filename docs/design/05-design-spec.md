@@ -1,10 +1,10 @@
 ---
 type: design-spec
 project: prompt-hub
-version: v0.20
+version: v0.21
 created: 2026-05-18
-last_modified: 2026-09-01
-status: ratified  # 2026-09-01 人审批次 ⑥：v0.20 补齐 ADR-024 回流（§2.1/§2.4.6/§2.5/§8.1/§9）+ 两个死 token 退役后，omar 审阅 v0.11–v0.20 全部增量通过，draft → ratified（前序 v0.10 于 2026-06-21 审定）
+last_modified: 2026-09-02
+status: draft  # v0.21（2026-09-02 D1 修复涟漪：§10.2.2 接口契约加第 5 条 `initialFocus`）待人审；v0.20 于 2026-09-01 人审批次 ⑥：补齐 ADR-024 回流（§2.1/§2.4.6/§2.5/§8.1/§9）+ 两个死 token 退役后，omar 审阅 v0.11–v0.20 全部增量通过，draft → ratified（前序 v0.10 于 2026-06-21 审定）
 author: co  # 🤝 人机共创（CLAUDE §5.2）
 related: [[01-spec]], [[02-constitution]], [[03-product-spec]], [[012-lock-visual-quality-anchor]], [[023-ui-reshape-before-release]], [[024-dark-cockpit-identity]], [[019-supersede-flat-visual-anchor]], [[020-restore-protocol-dark-band]], [[021-scene-layered-editing]], [[025-unified-anchored-editing]], [[CLAUDE-DESIGN]], [[015-expose-mcp-write-pipeline]], [[016-choose-dnd-and-resizable-layout]], [[018-absorb-promptscape-design]], [[026-fixed-spatial-layout]], [[asset-editing-and-adaptive-layout]]
 description: 手动 AI 编程仪表盘的视觉规范——tokens.css 单一真源 + 主题/elevation/组件视觉契约；写 CSS / 视觉时召回。版本叙事见 CHANGELOG
@@ -674,6 +674,7 @@ bundle 派生的 3 个跨组件 chrome primitive：
 > 2. **挂载即打开**：浮层生命周期由宿主的条件渲染决定，不额外暴露 `open` prop（两个真相源必然漂移）
 > 3. **`mode: "create" | "edit"` 决定 dirty 基准**：`edit` 以传入初值为基准，`create` 以空串为基准。dirty 判定用初始值快照，不用「是否聚焦过」
 > 4. **`contentPlaceholder` 可覆写**：共享表单的正文占位符默认「话术内容」，而 Macro / 草稿的正文不是话术——直接收编会造成文案回归
+> 5. **首焦点归容器，子组件不得自行 autofocus**（v0.21 · G4 缺陷 D1 涟漪）：`AnchoredEditor` 接 **必填** `initialFocus: RefObject<HTMLElement>`（没有「不聚焦」的合法情形——无字段的面板以 `tabIndex={-1}` 指向自身；可选会让漏传的第三个消费者原样复现 D1 外加 Esc 失聪），在首次定位落地的那次 commit 里聚焦；打开固定为「定位 → 显示 → 聚焦」三步，由持有 `visibility` 的容器全部负责。子组件在挂载时调 `focus()` 或写 `autoFocus` 会落在 `visibility: hidden` 的面板上静默失效——这正是 v0.2.0 四个编辑面打开后打不了字的根因。目标须随面板无条件挂载（一次性触发，不重试）；`PhraseFormEditor` 仅 `inline` 形态保留自身挂载聚焦
 >
 > **`max-height` 为什么不能写进 CSS**：面板高度上限是相对 **overlay frame**（`--r-frame` 内缩的 inset 浮动框）而非视口，CSS 里没有可引用的该矩形；`useAnchoredPosition` 测量后逐帧上报，超限时面板内部滚动。**只夹取原点不够**——高于 frame 的面板会被钉在顶部内缩处、footer（保存 / 取消）跑出画面下沿，这正是触发 ADR-025 的原始缺陷在另一块面板上原样复现。
 
@@ -1071,6 +1072,14 @@ bundle 派生的 3 个跨组件 chrome primitive：
 ---
 
 ## 修订记录
+
+### v0.21（2026-09-02）— G4 缺陷 D1 涟漪：锚定浮层接口契约加「首焦点归容器」
+
+> 触发：G4 真机走查缺陷 D1（四个锚定编辑面打开后名称框无焦点）当日修复，修法是给 `AnchoredEditor` 加 `initialFocus` prop、把首焦点收进容器。§10.2.2 把这两个 primitive 的接口形状列为契约（四条），新 prop 与「子组件不得自行 autofocus」规则等于第 5 条，不回流就是契约与代码分家。`/review` 文档过期检查点出，omar 拍板当轮回流。**不含新视觉决策**。
+
+- **§10.2.2 接口契约加第 5 条**：首焦点归容器，打开为「定位 → 显示 → 聚焦」三步；子组件禁止挂载聚焦 / `autoFocus`；目标须无条件挂载（一次性触发）；`inline` 形态例外保留自身聚焦
+- 代码侧：`Editor.tsx` / `PhraseFormEditor.tsx` / `ScenePropertiesEditor.tsx`；jsdom shim 补 focus 拒绝隐藏元素规则；回归测试 +7（前端 398→405）。明细见 CHANGELOG 2026-09-02 第二段、[[11-test-spec]] v0.7 §4.3
+- frontmatter：ratified → draft 送审
 
 ### v0.20（2026-09-01）— ADR-024 回流补账 + 两个死 token 退役（人审批次 ⑥）
 
