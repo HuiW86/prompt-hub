@@ -3,7 +3,8 @@ type: user-flows
 project: prompt-hub
 version: v0.1
 created: 2026-05-19
-status: pre-code
+last_modified: 2026-09-01
+status: draft  # 2026-09-01 对账：v0.2.0 已发布，pre-code 不再成立；v0.1 自写成未再校对，待 omar 人审后转 ratified
 author: co  # 🤝 人机共创（CLAUDE §5.2）
 audience: [human]
 description: prompt-hub 关键用户流程补充——product-spec §4.5 未覆盖的边缘/异常/跨形态流程

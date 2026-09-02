@@ -3,8 +3,8 @@ type: spec
 project: prompt-hub
 version: v0.7
 created: 2026-04-23
-last_modified: 2026-07-12
-status: pre-code
+last_modified: 2026-09-01
+status: active  # 2026-09-01 对账：v0.2.0 已发布，pre-code 不再成立。人主笔文档不设人审环节，取 active；此 status 改动由 AI 执行，待 omar 确认（内容未动）
 author: human  # 🧑 人主笔，AI 禁止起草（CLAUDE §5.2）
 related: [[03-product-spec]], [[05-design-spec]], [[06-prd]], [[prompt-hub-mvp]]
 description: 手动 AI 编程仪表盘的产品 spec——What/Why/九条哲学/边界/未决决策

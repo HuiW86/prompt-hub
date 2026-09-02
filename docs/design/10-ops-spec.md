@@ -3,8 +3,8 @@ type: ops-spec
 project: prompt-hub
 version: v0.3
 created: 2026-05-19
-last_modified: 2026-06-17
-status: pre-code
+last_modified: 2026-09-01
+status: draft  # 2026-09-01 对账：v0.2.0 已发布，pre-code 不再成立；§3 定时备份未实装（底座 backup.rs 已有），待 omar 人审后转 ratified
 author: ai  # 🤖 AI 主笔 + 人审（CLAUDE §5.2）
 audience: [ai, human]
 description: prompt-hub 运营规格——部署/性能预算/备份/升级回滚/监控（本地单人语境）

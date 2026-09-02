@@ -1,12 +1,12 @@
 ---
 type: manifest
 project: prompt-hub
-version: v1.15
+version: v1.16
 status: active
 created: 2026-05-24
-last_modified: 2026-08-20
+last_modified: 2026-09-01
 audience: [human, ai]
-description: prompt-hub 项目前期准备文件总清单——按方法论 v1.3 六层架构（L0 宪法 / L1 产品契约 / L2 工程规格 / L3 实施规格 / L4 索引 / L5 协作契约）+ ADR + 实施方案 + 视觉原型 + AI 上下文 + 工程护栏（CI/gate 测试）。AI 进项目读完 CLAUDE.md 后接读本文件能 1 分钟拿全貌；不写行数（参考性强但易过期）。v1.15：ADR-027 回流 + 冲突提示 + 密度层立论重写 + ADR-026 两项遗留裁决——product-spec v0.22 / design-spec v0.19 / prd v0.13 / features v1.17 / test-spec v0.5，另修正 prd 行的**版本漂移**（本表记 v0.11，实际早已 v0.12）。⚠️ 其余行仍停在 2026-07-06 口径（未随 ADR-022/025/026 更新），属旧账
+description: prompt-hub 项目前期准备文件总清单——按方法论 v1.3 六层架构（L0 宪法 / L1 产品契约 / L2 工程规格 / L3 实施规格 / L4 索引 / L5 协作契约）+ ADR + 实施方案 + 视觉原型 + AI 上下文 + 工程护栏（CI/gate 测试）。AI 进项目读完 CLAUDE.md 后接读本文件能 1 分钟拿全貌；不写行数（参考性强但易过期）。v1.16：2026-09-01 文档对账日——features v1.18（合计 88→91、S1/ADR-017 状态纠正、§7 重写）+ prd/ops-spec/user-flows/spec 四份 `pre-code` 转出 + learnings v0.5 收编 HANDOFF 长期风险。v1.15：ADR-027 回流 + 冲突提示 + 密度层立论重写 + ADR-026 两项遗留裁决——product-spec v0.22 / design-spec v0.19 / prd v0.13 / features v1.17 / test-spec v0.5，另修正 prd 行的**版本漂移**（本表记 v0.11，实际早已 v0.12）。⚠️ 其余行仍停在 2026-07-06 口径（未随 ADR-022/025/026 更新），属旧账
 related:
   - CLAUDE
   - 02-constitution
@@ -62,8 +62,8 @@ related:
 
 | 路径 | 内容 | 状态 |
 |---|---|---|
-| `docs/design/06-prd.md` | 数据契约 / API / 状态机 / 错误码 | pre-code **v0.13**（2026-08-20 ADR-027 涟漪：§5.8 补全局唤起键 + 新增 §6.8-bis Setting 表，`user_version` 11→12；前 v0.12 走查修缮 `get_draft` / v0.11 scene-substage-editing §6.4 写入口归属。⚠️ 本表此前记 v0.11 属版本漂移，v1.12 修正。⚠️ `status: pre-code` 与「表已落地」矛盾，属旧账）|
-| `docs/design/07-features.md` | **88** 功能矩阵 S1–S5 + AE + 自动更新 + Promptscape 吸收 + 结构编辑 + 数据导入导出 + 走查修缮 + Scene 编辑分层 + UX 任务流 A/B + 锚定编辑容器 | in-progress **v1.17**（2026-08-20 层 pill 减二留一 + SOP 退出 Tab；同日 v1.16 冲突提示；同日 v1.15 ADR-027：§3.4 全局唤起键可配置 done + §4 节奏表 87→88；同日 v1.14 ADR-025：§3.8 统一锚定编辑容器 done + §4 节奏表 86→87；前 v1.13/v1.12 ADR-026 / v1.11 ADR-022 / v1.10 UX 批次 A / v1.9 ADR-021 Scene 编辑分层化）|
+| `docs/design/06-prd.md` | 数据契约 / API / 状态机 / 错误码 | draft **v0.13**（2026-09-01 对账 `pre-code`→`draft`，待人审；2026-08-20 ADR-027 涟漪：§5.8 补全局唤起键 + 新增 §6.8-bis Setting 表，`user_version` 11→12；前 v0.12 走查修缮 `get_draft` / v0.11 scene-substage-editing §6.4 写入口归属。⚠️ 本表此前记 v0.11 属版本漂移，v1.12 修正。`status: pre-code` 与「表已落地」的矛盾已于 2026-09-01 对账解决）|
+| `docs/design/07-features.md` | **91** 功能矩阵 S1–S5 + AE + 自动更新 + Promptscape 吸收 + 结构编辑 + 数据导入导出 + 走查修缮 + Scene 编辑分层 + UX 任务流 A/B + 锚定编辑容器 | in-progress **v1.18**（2026-09-01 对账：§4 补三行 + 计数规则显式化 88→91、S1 `planned`→`in-progress`、ADR-017 5/5、§7 重写并点名 `verified` 铁律缺口；2026-08-20 v1.17 层 pill 减二留一 + SOP 退出 Tab；同日 v1.16 冲突提示；同日 v1.15 ADR-027：§3.4 全局唤起键可配置 done + §4 节奏表 87→88；同日 v1.14 ADR-025：§3.8 统一锚定编辑容器 done + §4 节奏表 86→87；前 v1.13/v1.12 ADR-026 / v1.11 ADR-022 / v1.10 UX 批次 A / v1.9 ADR-021 Scene 编辑分层化）|
 | `docs/design/08-sitemap.md` | 资产对象树 + 区域地图 + 焦点导航 | ratified v0.2（2026-07-02 omar 人审通过；同日全量重写对齐 product-spec v0.13「单窗口一屏全景 + 浮层」现状；前 v0.1 视图清单已失真）|
 
 ---
@@ -175,7 +175,7 @@ related:
 
 | 路径 | 内容 | 状态 |
 |---|---|---|
-| `docs/learnings.md` | 7 条可迁移信条 + 技术栈速查（M0 阶段经验提炼） | active v0.1（2026-06-04）|
+| `docs/learnings.md` | 7 条可迁移信条 + 技术栈速查 + 附录 B 真机走查/发布/本地环境陷阱（2026-09-01 自 HANDOFF Risks 收编） | active v0.5（2026-09-01；前 v0.4 2026-08-05）|
 | `docs/postmortems/2026-08-05-notarization-fail-open.md` | v0.1.0 公证被静默跳过复盘：fail-open 断言的三个同形实例 + 「能力≠行使」滑移 + 6 问自查清单 | closed v0.1（2026-08-05）|
 
 ---

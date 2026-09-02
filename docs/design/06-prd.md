@@ -3,8 +3,8 @@ type: prd
 project: prompt-hub
 version: v0.13
 created: 2026-05-18
-last_modified: 2026-08-20
-status: pre-code
+last_modified: 2026-09-01
+status: draft  # 2026-09-01 对账：v0.2.0 已发布，pre-code 不再成立；v0.12/v0.13 增量待 omar 人审后转 ratified。§6.1 soft-delete 承诺与硬删除实现的矛盾仍在（HANDOFF 旧账）
 author: ai  # 🤖 AI 主笔 + 人审（CLAUDE §5.2）
 related: [[01-spec]], [[03-product-spec]], [[prompt-hub-mvp]], [[015-expose-mcp-write-pipeline]], [[027-configurable-global-hotkey]], [[mcp-write-pipeline]]
 description: 手动 AI 编程仪表盘的工程契约——数据模型/状态机/NFR/Boundaries/IPC + MCP 接口契约；写后端 / 数据层时召回。版本叙事见 CHANGELOG

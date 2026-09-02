@@ -1,9 +1,9 @@
 ---
 type: learnings
 project: prompt-hub
-version: v0.4
+version: v0.5
 created: 2026-06-04
-last_modified: 2026-08-05
+last_modified: 2026-09-01
 status: living
 author: co  # 🤝 人机共创（CLAUDE §5.2），人审
 related:
@@ -16,12 +16,12 @@ related:
   - 015-expose-mcp-write-pipeline
   - m0-4-macos-signing
   - 2026-08-05-notarization-fail-open
-description: prompt-hub 走到 M0 收口为止，反复出现、被真实踩坑或决策验证过的判断，提炼成 7 条可迁移信条 + 技术栈速查。不是变更日志、不是工程 checklist；新会话/新成员进项目读 CLAUDE.md 之后接读，理解"这个项目用什么方式做判断"。
+description: prompt-hub 从 M0 到 v0.2.0 发布，反复出现、被真实踩坑或决策验证过的判断，提炼成 7 条可迁移信条 + 技术栈速查 + 附录 B 真机走查/发布/本地环境陷阱（自 HANDOFF 收编）。不是变更日志、不是工程 checklist；新会话/新成员进项目读 CLAUDE.md 之后接读，理解"这个项目用什么方式做判断"。
 ---
 
 # Learnings — prompt-hub 开发经验沉淀
 
-> 这份文档**不是**变更日志，也**不是**工程 checklist。它把项目走到 M0 收口为止，反复出现、被真实踩坑或决策验证过的判断，提炼成可迁移的**信条**——每条先讲为什么（心智模型），再挂真实证据（出处），最后给可操作落点。
+> 这份文档**不是**变更日志，也**不是**工程 checklist。它把项目从 M0 到 v0.2.0 发布为止，反复出现、被真实踩坑或决策验证过的判断，提炼成可迁移的**信条**——每条先讲为什么（心智模型），再挂真实证据（出处），最后给可操作落点。
 >
 > 读法：CLAUDE.md 告诉你"项目的规矩是什么"，这份文档告诉你"这些规矩背后是怎么想的、踩过哪些坑换来的"。规矩会变，判断方式相对稳定。
 >
@@ -67,6 +67,9 @@ description: prompt-hub 走到 M0 收口为止，反复出现、被真实踩坑�
 - **NSPanel key-window**（ADR-014）：borderless NSPanel 默认 `canBecomeKeyWindow=false` 收不到键盘，是个会"全做完才发现键盘全废"的坑。先验证 isa-swizzle 子类方案可行再铺开。
 - **已实机验证回流**（2026-06-05）：① dnd-kit 键盘 sensor 经 #6 手测通过（PhaseBar 点击解耦后窗口驻留 → AlignmentPhrase 管理面板增删改排序，commit `441764b`）；② `react-resizable-panels` 分隔条**指针拖拽 + localStorage 持久化**经 P4 手测通过（拖出比例 → 退出重进恢复，commit `a347d17`）；③ 分隔条**键盘 focus（Tab 聚焦 + ←→ 调宽）**经**全量重启后**实机确认通过（2026-06-05，先冷启动杜绝 HMR 中间态干扰再测）——至此 dnd 键盘层 + 分隔条指针/键盘三项全部实测闭环。这条印证了出口要预先写好——验证逐项落地、不一次性结案。
 - **附加教训**（2026-06-05）：P4 改动曾在真实 Tauri webview 抛运行时报错、被误判为 bug，全量重启后不复现——根因是 `Group`/`Panel` 在 **HMR 热替换**时挂载顺序错乱（jsdom 测不到、build/test 全绿也不代表 webview 不报错）。落点：resizable/布局类组件改动若 HMR 期间报错，先全量 reload 复核再判 bug，别急着 revert。
+- **「拍不到」可能是取证方法的结论，不是被测对象的性质**（2026-07 至 2026-08 三次以不同面孔命中）：ADR-025 P1-a 三轮 135 帧从未拍到浮层，改窗口 ID 定向 + 按需截图后一次拍中；`screencapture -l` 会返回隐藏窗口的陈旧 backing store。判「不存在」之前先换一种取证方法。
+- **走查会发现「通过」之外的东西**：ADR-027 G3 四项里最大产出来自那一项「不可达」——被占用的组合键被持有方在 OS 层消费，录键器根本收不到，由此长出冲突提示这个功能。
+- **修好的缺陷会在别的面上原样复现**：修根因时要问「这个根因还能从哪个方向再进来一次」（Dock 图标无反应与快捷键唤起共用一条 wake 路径，修一处时另一处才一起好）。
 
 **落点**：遇到"不可逆 + 全有全无"的点，先问能不能用一个下午的 spike 证伪它；并预先写好"如果失败，降级到什么"。
 
@@ -81,6 +84,9 @@ description: prompt-hub 走到 M0 收口为止，反复出现、被真实踩坑�
 - dnd-kit / resizable-panels 是运行时库、不进启动路径，**预期**无回归——但 plan 仍要求 `pnpm bench:hotkey-wake` 回归证伪，不靠推断结案。
 - bench 方法论本身被认真对待：cold-start 走 subprocess + Swift CGWindow probe，hotkey-wake 走 Rust auto-cycle，P95 而非均值（M0-3 inline instrumentation 版 P95=10.49ms）。
 - **「有 bench 脚本 ≠ 测量发生过」**（2026-06-05）：hotkey-wake auto-cycle 版（替换 M0-3 已剥离的 inline instrumentation）把 wake/hide 放进 tokio worker 线程直调 AppKit `show()`/`order_front`，违反 macOS 主线程约束 → `Must only be used from the main thread` SIGTRAP、零样本，**重构后从未在 macOS 真正跑通过**；HANDOFF 沿用的 baseline 10.49ms 实为旧 inline 版数字。修复（每次 wake/hide 经 `run_on_main_thread` 派发、timing 在主线程闭包内测）后首次跑通 auto-cycle 版：**P95=14.696ms**（+OS dispatch ~10ms ≈ 25ms，仍远低于 200ms）。脚本存在、注释完整、build 全绿，都不等于那条路径被测量过——这正是本信条的自指注脚。
+- **必然失败或做不出来的检查 = 没有检查**（2026-08-20 一天内三次同形态命中）：G3 项 2 的门项前提（被占的键根本到不了本应用）/ release-runbook §3 第 1 项「与本地构建逐字节比对」（本地与 CI 不可能相同）/ 第 4 项要先 `brew install minisign` 才能验签（为验一次装个工具 = 这步被跳过）。起草检查项时要问「这一步真的做得出来吗」，不只是「这个对象存在吗」。与「有 bench 脚本 ≠ 测量发生过」同族。
+- **估数会混进「落地进度」而看起来像实测**（2026-08-20）：ADR-027 §2 曾写「前端 373→388 / Rust 158→170」，那是动手前的估计，实测 395 / 168。更隐蔽，因为它长得就像刚跑完的结果。AI 主笔的对外文档里每一个数字都要能指回一条命令输出。
+- **手数 `it(` 会漏**（2026-08-20）：多个测试文件用 `it.each` / 按文件枚举生成用例，`token-gate` 39→40 是它按 CSS module 枚举自己长出来的。数测试用 vitest JSON reporter 或 worktree 对拍，不用 grep。
 
 **落点**：凡触碰启动路径的改动，附 benchmark；"应该不影响性能"这句话不算数，跑一次 P95 才算数；且"有 bench 脚本"不等于"跑通过"，定期实跑确认它没在某次重构里悄悄坏掉。
 
@@ -120,6 +126,9 @@ description: prompt-hub 走到 M0 收口为止，反复出现、被真实踩坑�
 - **CSS 禁裸值**（CLAUDE §4.1）：任何组件 CSS/内联样式禁裸 px/hex/ms，必须引 `--fs-*` / `--space-*` / `--color-*` / `--duration-*`。
 - 真实教训：旧 `#1D9E75` 字面量混入代码导致颜色不一致，2026-05-18 全量替换为 `var(--color-task-border)`。一个裸 hex 就能撕开一致性。
 - 交互层同源：编辑入口集中（单一编辑形态，禁 Notion 式 side/center/full 多弹窗并存）、删除分级（软删→undo toast / 硬删→明示"永久"二次确认），都是"一致性 > 灵活性"的同一判断。
+- **承重件必须显式标注**（2026-08-19/20）：`.phase.active::after` 对比度仅 `1.145:1`，看着像可删的装饰，实为活动相位的唯一标识，已注释 LOAD-BEARING；三枚层标记 pill 外观像一组对称装饰，其中 `ModifierGrid`「协议层 · 参考」承重（aside 列无 band 无位置线索）。减法快车道（CLAUDE §5.1.1）只降「删装饰」的成本，前提是承重件不长得像装饰——长得像的就得标出来。
+- **实现扩张比实现错误更难发现**（ADR-026 起因）：dual-layout 越过 product-spec 三处已批准契约且从未开 ADR，测试全绿。审查实现时要问「这是谁批准的」，不只问「这对不对」。
+- **测试可以保护偏差**：待审注释不是决策，挂账不等于合规——给偏差写了测试只会让它更难被推翻。
 
 **落点**：视觉/交互的一致性，优先做成"不一致写不出来"（token、单一入口），而不是写进规范靠人遵守。
 
@@ -151,6 +160,40 @@ description: prompt-hub 走到 M0 收口为止，反复出现、被真实踩坑�
 ### 测试 / 质量
 - jsdom 测不了真实快捷键/全屏窗口/透明背景——这些推到 Playwright/实机，E2E 留 v1.0+。
 - 性能基准取 **P95** 而非均值；触碰启动路径必跑 `bench:hotkey-wake` / `bench:cold-start`。
+
+---
+
+## 附录 B：真机走查 / 发布与更新 / 本地环境陷阱
+
+> 2026-09-01 自 HANDOFF.md Risks 段收编。这些不是「本轮风险」，是每次动手都要重新记起的项目常识；HANDOFF 只留本轮新增。按场景分三组，每条一句现象 + 一句应对。
+
+### B.1 真机走查（macOS）
+
+- **主形态是 non-activating panel**：`macos::wake` 用 `orderFrontRegardless` + `makeKeyWindow`，不 activate 整个 app。唤起后**第一次点击被吞掉用于取焦点**——自动化点击序列开头补一次无害空点（Header 空白处，不是卡片本体）。
+- **app 会 hide-on-blur / hide-on-copy**：走查时只能点铅笔，不能点卡片 / chip 本体，否则窗口消失。
+- **同时只能有一个实例持有同一组合键**：走查前先退出 `/Applications/prompt-hub.app`。反过来也可利用——用第二个实例占键即可构造冲突场景。
+- **禁止全屏截图**：截图须按窗口 ID 定向抓取（曾拍到前台机密会话）。且 `screencapture -l` 会返回隐藏窗口的陈旧 backing store，看着实时实为上次可见画面——截图前后都用窗口列表确认在屏。
+- **debug 裸二进制走 `devUrl`，不跑 vite 就是空窗口**：截图全黑 + 键鼠全失效，极易误判成「渲染不出来」或「权限没给」。抓别的 app 的窗口做控制组是分辨关键。
+- **自研 Swift 事件工具三个坑**（`/tmp/ph-g3/` 会被清理，按此重建）：① `mouse.swift` 的 click 不设 `kCGMouseEventClickState`，WebKit 不认作点击，现象是「能悬停不能点」；② CGEvent modifier flag 会泄漏到后续鼠标事件，发完 `⌃⇧P` 再点击 = 右键菜单，原生菜单吞掉全部输入——鼠标事件显式 `e.flags = []`；③ `key.swift` 只打修饰键标志位不发修饰键自身按下/抬起，忠实版 `chord.swift` 先发修饰键 keydown → 主键 → 反序抬起。
+- **`interactionMode` 由 persist 中间件固化**：改默认值对已有安装无效。
+- **jsdom 验不了布局**，但订阅逻辑、规则表分支、焦点契约都能验且应当验。人工目视的证据不可回归，能取像素证据的门项优先取。
+- **挤压阈值窗口高 `684px`**，两条常驻横幅同时出现时约 `750px`，与常见最小 768px 仅差 18px。
+- **hover 动作簇遮挡标题（未修）**：`src/components/ScenePanel.module.css` float phrase actions，随 ADR-025 P2 子决策 3.3 落地时顺带解决。
+
+### B.2 发布与更新
+
+- **更新会重写 `/Applications` 里的包，签名链要在更新后再验一次**：若解包替换弄坏签名或丢了公证票据，Gatekeeper 要到下一次冷启动才发作，届时很难回溯到更新那一刻。判据同 runbook §3：`codesign --verify --strict` / `stapler validate` / `spctl accepted`。
+- **`user_version` 迁移是唯一不可逆项**：MCP 进程共享同库，分发 MCP 二进制须与主 app 同批。反悔的正确做法是留空表 + 新开 migration 标废弃，不是降版本。
+- **`release.yml` 的 secret→变量映射是故意交叉的**：`APPLE_API_KEY: ${{ secrets.APPLE_API_KEY_ID }}`，不要「顺手改正」。
+- **Developer ID 证书有效期仅 8 个月**（2026-06-04 → 2027-02-01），到期前需续。
+- dev 裸二进制 WebKit 存储在 `~/Library/WebKit/prompt-hub`，正式 `.app` 在 `dev.prompt-hub`，两套界面偏好互不相通。
+
+### B.3 本地环境
+
+- **`pnpm bench:*` 会拿真实数据库跑**：bench 直接 spawn dev 二进制，用真实 `app_data_dir`，会把线上库迁到最新 `user_version`（自动留 `pre-migrate-*.db`）。
+- **`HOME` 覆盖只隔离数据库，隔离不了界面偏好**：SQLite 落到临时目录，但 WebKit localStorage 不认 `HOME` 覆盖，照旧读写真实的 `~/Library/WebKit/prompt-hub/...`。后果：「空白配置」不空白（据此误报过一次「首装是浅色」），且走查会写到真实界面偏好里。
+- **`prettier --check .` 在本地必挂，不是本仓的问题**：报错文件全在未跟踪的 `dsh-plugin-ziwuliuzhu/`（归 omar），CI 检出的树不含它们。照 runbook 跑时用 `prettier --check src/ docs/ CLAUDE.md HANDOFF.md`，不要「顺手格式化」。`.codex/` / `AGENTS.md` / `dsh-plugin-ziwuliuzhu/` 三者保持未跟踪。
+- **`pkill` tauri 父进程会留下 vite 子进程占住 1420**：清理须补 `lsof -ti :1420 | xargs kill`。
 
 ---
 

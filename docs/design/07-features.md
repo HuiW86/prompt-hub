@@ -1,10 +1,10 @@
 ---
 type: features
 project: prompt-hub
-version: v1.17
+version: v1.18
 created: 2026-05-19
-last_modified: 2026-08-20
-status: in-progress  # S1 进行中（M0 四项全绿）；进度叙事见 §4 节奏表与 CHANGELOG
+last_modified: 2026-09-01
+status: in-progress  # S1 进行中；v0.2.0 已发布（2026-08-20）；进度叙事见 §4 节奏表与 CHANGELOG，当前基线见 §7
 author: ai  # 🤖 AI 主笔 + 人审（CLAUDE §5.2）
 audience: [human, ai]
 description: prompt-hub 功能清单运营视图——功能 × 状态 × 测试覆盖 × 版本的单一事实源；查/改功能状态时召回。版本叙事见 CHANGELOG
@@ -31,8 +31,8 @@ related:
 > **不重复 prd**：本文件只承载状态/覆盖率，功能定义见 [[06-prd#5]] 各章节。
 > **不替代 issue tracker**：单条 bug / task 走 git history，本文件追全局功能层面。
 >
-> ✅ **当前 S1 in-progress（ADR-012 Phase 1-5 全 done）**：5 模块 + 7 跨模块 P0 已 done（commit `acf8229`）；Phase 4 spec 涟漪已落、Phase 5 视觉+功能验收 11/11 收口（2026-06-03）。
-> 覆盖率列暂以「55 集成测试 / 单元未量化」表达，待 [[11-test-spec]] 启动后量化。
+> ✅ **当前 S1 in-progress，v0.2.0 已签名公证发布（2026-08-20）**：§3.1 六模块全 `done`，§3.6 跨模块 6/8 `done`；ADR 001–027 中 24 Accepted。计数规则与各阶段进度见 §4，当前基线见 §7。
+> 覆盖率列里「55 集成 / 单元未量化」「73 前端」「144 前端全绿」这类数字是**该行落地当时的全量测试数**，不是该功能专属用例数，不再逐行追更；当前全量基线只在 §7 维护，量化口径待 [[11-test-spec]] §5。
 
 ---
 
@@ -109,7 +109,7 @@ related:
 | 功能 | 优先级 | 状态 | 目标版本 | 测试覆盖 | 责任人 | 引用 |
 |---|---|---|---|---|---|---|
 | 全局快捷键注册（默认 ⌥ Space） | P0 | `done` | v1.0 | M0 手动 verified；v1.15 起绑定读自 SQLite `settings` 而非硬编码，注册失败仍走 `HotkeyBanner` 告警。**改绑能力见 §3.4「全局唤起键可配置」** | omar | [[prompt-hub-mvp#第一阶段]] · [[027-configurable-global-hotkey]] |
-| 主形态唤起 ≤200ms（P95） | P0 | `done` | v1.0 | M0-3 实测 P95=10.49ms ✓ | omar | [[02-constitution#C1]] |
+| 主形态唤起 ≤200ms（P95） | P0 | `done` | v1.0 | `bench:hotkey-wake` P95=13.708ms ✓（2026-08-20，auto-cycle 主线程口径；旧 10.49ms 是 M0-3 inline 版数字，见 [[learnings]] 信条四）| omar | [[02-constitution#C1]] |
 | 复制即隐藏 / ESC 关闭 | P0 | `done` | v1.0 | Phase 5 视觉+功能验收 11/11 ✓（2026-06-03） | omar | [[prompt-hub-mvp#第一阶段]] |
 | UsageRecord 持续记录 | P0 | `in-progress` | v1.0 | 数据层 done / 链路待 S2 | omar | [[06-prd#6.8]] |
 | 三层资产模型（Modifier/Composition/Macro） | P0 | `planned` | v1.0 | 0% | omar | [[02-constitution#B1]] |
@@ -187,7 +187,7 @@ related:
 | opt-in 总开关 + 检查/下载/安装 UI（updaterStore + UpdaterBanner 四态 + StatusBar 入口）| P1 | `done` | v1.1 | updaterStore 5 test（总开关关闭零触网，守 A2）| omar | [[adr-017-auto-update#Phase-2]] |
 | Vite 密钥泄漏加固（`envPrefix` 白名单挡 `TAURI_SIGNING_*`，GHSA-2rcp-jvr4-r259）| P1 | `done` | v1.1 | 源码级 envPrefix 锁 | omar | [[adr-017-auto-update#Phase-3]] |
 | CI 自动出包（`release.yml` two-job 隔离 + minisign 签名 + latest.json + draft）| P1 | `done` | v1.1 | dry-run 端到端验证（run 27855601462 全绿，双架构 + 签名 + latest.json 核验）| omar | [[adr-017-auto-update#Phase-4]] |
-| 真机验收（opt-in/检查/提示链路 + hotkey-wake 复测守 C1）| P1 | `planned` | v1.1 | Phase 6 待办 | omar | [[adr-017-auto-update#Phase-6]] |
+| 真机验收（opt-in/检查/提示链路 + hotkey-wake 复测守 C1）| P1 | `done` | v1.1 | **Phase 6 于 2026-08-20 随 v0.2.0 发布实测**：已装 0.1.1 →「发现新版本 0.2.0」→ 下载安装 → 进程重启 → 安装目录 0.2.0；更新后复验签名链（`codesign --verify --strict` / `stapler validate` / `spctl accepted`）；`bench:hotkey-wake` p95 13.708ms 守 C1 | omar | [[adr-017-auto-update#Phase-6]] |
 
 ### 3.10 UI 风格一致性治理（design-spec v0.10 A 阶段）
 
@@ -281,30 +281,33 @@ related:
 
 ## §4 阶段交付节奏
 
+**计数规则（v1.18 起显式）**：§3 每个功能行计 1；`withdrawn` 行、`└` 注释行、§3.12 治理项表不计。合计按此规则从 §3 逐行重数，不再累加历史 delta——v1.9 / v1.12 两次「合计 +1」都没有对应的表行，累加口径已经对不上。
+
 | 阶段 | 版本 | 功能数 | 状态 |
 |---|---|---|---|
-| S1 主形态 MVP | v1.0 | 5 模块 + 8 跨模块能力 | `planned` |
-| S2 闭环沉淀 | v1.1 | 4 功能 | `planned` |
-| M-X MCP write pipeline | v1.1 | 6 支撑能力 + 14 MCP tool | `done` |
-| AE 资产编辑 + 自适应布局 | v1.1 | 3 功能 | `done`（3/3 在用：Macro/AlignmentPhrase 编辑+排序 + 可拖列布局；Modifier/Composition 编辑 v1.3 `withdrawn` 移出主仪表盘）|
-| ADR-017 自动更新 | v1.1 | 5 功能 | `done`（4/5：客户端 + CI 出包 done / 真机验收 planned）|
-| UI 一致性治理（design-spec v0.10 A 阶段）| v1.1 | 4 功能 | `done`（4/4 实装 + 测试零回归；真机验证待补）|
-| Promptscape 设计吸收（ADR-018）| v1.5 | 6 功能 | `done`（6/6 实装：主题三态 + 强调色 + 设置弹窗 + Header + ProtocolBand + 2 列全景；真机验证待补）|
-| Scene/SubStage 结构编辑（scene-substage-editing）| v1.6 | 1 功能 | `done`（后端 74 / 前端 109 全绿；补 [[scene-phrase-editing]] 当初 defer 的 Scene 容器 + SubStage CRUD；真机 CRUD 落盘待验）|
-| 产品走查修缮批次（P0/P3 + ADR-020）| v1.7 | 12 功能 | `done`（12/12 实装 + 前端/后端测试全绿；另 7 项质量/治理不计数；真机视觉复核待补）|
-| UX 任务流批次 A（整理模式）| v1.10 | 6 功能 | `done`（6/6 实装 + verifier 对抗审查 PASS；NEEDS HUMAN 4 项真机待验）|
-| UX 任务流批次 B（跨 Scene 移动，ADR-022）| v1.11 | 1 功能 | `done`（verifier 对抗审查 PASS；真机移动/撤销链路待验）|
-| 统一锚定编辑容器（ADR-025）| v1.14 | 1 功能 | `done`（P0+P1-a+P1-b 落地并合入 `main`；**P2 键盘动作层 + P3 合流 `planned`**，G2 未跑）|
-| S3 SOP 导航 | v1.2 | 3 功能 | `planned` |
-| S4 配置个性化 | v1.3 | **5 功能** | `in-progress`（2/5：数据导入导出 JSON `done`，真机待验；**全局唤起键可配置 `done`**，G3 四项全通过；配置入口 / Phase 编辑 / 布局可配置仍 `planned`）|
-| S5 辅形态副屏 | v2.0 | 3 功能 | `planned` |
-| **合计** | — | **88 项** | — |
+| S1 主形态 MVP | v1.0 | 6 模块 + 8 跨模块能力 = 14 | `in-progress`（§3.1 六模块 6/6 `done`；§3.6 6/8 `done`，UsageRecord 链路 `in-progress`、三层资产模型 `planned`。**已发布自用但无一行 `verified`**，见 §7 铁律缺口）|
+| S2 闭环沉淀 | v1.1 | 4 | `planned` |
+| M-X MCP write pipeline | v1.1 | 6 支撑能力 + 14 MCP tool = 20 | `done`（⚠️ v0.2.0 release 不含 MCP 二进制；`user_version` 12 与主进程共库，下次分发 MCP 须同批）|
+| AE 资产编辑 + 自适应布局 | v1.1 | 3 | `done`（3/3 在用：Macro/AlignmentPhrase 编辑+排序 + 可拖列布局；Modifier/Composition 编辑 v1.3 `withdrawn` 不计）|
+| Scene 话术（Phrase）编辑（scene-phrase-editing）| v1.4 | 1 | `done`（**v1.18 补行**：v1.4 落地时只进 §3.8 未进本表）|
+| Scene/SubStage 结构编辑（scene-substage-editing）| v1.6 | 1 | `done`（后端 74 / 前端 109 当时全绿；真机 CRUD 落盘待验）|
+| Scene 编辑分层化（ADR-021）| v1.9 | 1 | `done`（**v1.18 补行**：v1.9 日志记「合计 78→79」但未加行；真机观感待验；`scene.color` 用户内容色定性待 omar 复核）|
+| ADR-017 自动更新 | v1.1 | 5 | `done`（**5/5**：Phase 6 真机验收 2026-08-20 随 v0.2.0 发布实测通过，见 §3.9）|
+| UI 一致性治理（design-spec v0.10 A 阶段）| v1.1 | 4 | `done`（4/4 实装 + 测试零回归；真机验证待补）|
+| Promptscape 设计吸收（ADR-018）| v1.5 | 6 | `done`（6/6 实装：主题三态 + 强调色 + 设置弹窗 + Header + ProtocolBand + 2 列全景；真机验证待补）|
+| 产品走查修缮批次（P0/P3 + ADR-020）| v1.7 | 12 | `done`（12/12 实装；另 7 项质量/治理不计数；真机视觉复核待补）|
+| UX 任务流批次 A（整理模式）| v1.10 | 6 | `done`（6/6 实装 + verifier 对抗审查 PASS；NEEDS HUMAN 4 项真机待验）|
+| UX 任务流批次 B（跨 Scene 移动，ADR-022）| v1.11 | 1 | `done`（verifier 对抗审查 PASS；真机移动/撤销链路待验）|
+| 固定空间布局（ADR-026）| v1.12 | 1 | `done`（**v1.18 补行**：v1.12/v1.13 落地时只进 §3.8 未进本表；真机走查三项通过，三项缺陷 v1.13 已裁）|
+| 统一锚定编辑容器（ADR-025）| v1.14 | 1 | `done`（P0+P1-a+P1-b 落地并合入 `main`；**P2 键盘动作层 + P3 合流 `planned`**，omar 2026-08-20 明示暂不做；G2 未跑）|
+| S3 SOP 导航 | v1.2 | 3 | `planned` |
+| S4 配置个性化 | v1.3 | 5 | `in-progress`（2/5：数据导入导出 JSON `done`，真机待验；全局唤起键可配置 `done`，G3 四项全通过；配置入口 / Phase 编辑 / 布局可配置 `planned`）|
+| S5 辅形态副屏 | v2.0 | 3 | `planned` |
+| **合计** | — | **91** | — |
 
 **注**：版本号语义为 prompt-hub 自身版本，与 prd / spec / methodology 各自独立。v1.0 = 第一阶段 MVP 可发布；v2.0 = 辅形态加入（双形态完整）。
 
-> ⚠️ **本表缺 ADR-026「固定空间布局」行**（v1.12 只写进了 §3.8 表，未回写本节奏表）——**既有欠账，v1.15 仍未补**：属 [[HANDOFF#Next-Actions]] 旧账八步范围，omar 已定不夹带。补账时须同步复核合计数（现记 88）。
->
-> ⚠️ **本表也不为 ADR-027 单开行**：全局唤起键落在 **S4 配置个性化**既有分区内（该行功能数 4→5），不是一个新批次。这与上一条的欠账性质不同——上一条是漏记，本条是刻意归位。
+> **v1.18 对账（2026-09-01）**：旧表合计 88 与 §3 逐行数 91 不符。差额来自三行从未进表（Phrase 编辑 v1.4 / 分层化 v1.9 / 固定空间布局 v1.12）与 S1 模块数 5→6（对齐话术 chip 行 v0.2 追认时未改本表），减去旧表把 ADR-017 的「真机验收」计成已数的 1。ADR-027 不单开行，落在 S4 既有分区内（4→5），是刻意归位不是漏记。
 
 ---
 
@@ -353,18 +356,19 @@ related:
 | 2026-08-20 | v1.16 bump：§3.4「全局唤起键可配置」补**冲突提示**（omar 走查后拍板）——真机证明冲突有两种形态，而只有一种能报错：`register()` 被拒会报「已被占用」，但**更常见的是按键压根没到**（占用方在系统层截走），此时既无错误也无反应，用户只看到「按下去没反应而另一个应用跳出来」。判据不用计时器（会误伤犹豫的用户），用「**修饰键按下又抬起、期间没收到任何主键**」。前端 395→**398**。**G3 项 2 由「不可达」转为「通过」**——该场景补上提示后才终于可观测。涟漪 [[03-product-spec]] v0.21（§13.3 区域 9 冲突形态改写）/ [[11-test-spec]] v0.5 | omar 走查裁决（不新开 ADR：单选项、可逆、不改已批子决策）|
 | 2026-08-20 | v1.17 bump：ADR-026 两项遗留裁决落地——① **层标记 pill 减二留一**：删 `ProtocolBand`「协议层」+ 任务列「任务层」（层级已由位置+形状冗余编码，文字属解释性 UI），**保留 `ModifierGrid`「协议层 · 参考」**（aside 列无 band 无位置线索，唯一标识，删了真丢信息）——**三枚不是一组对称装饰，其中一枚承重**；② **SOP 退出 Tab cycle**，区域级 6 站→**5 站**：占位区在屏（哲学二）但不值一个键盘停靠点，键盘用户每轮都要在「第三阶段实现」上白停一次，真导航器落地时 `tabIndex` 随它回来。398 测试全绿（`App.test.tsx` 区域 tabindex 断言由 6 改 5 并显式钉「在屏但不可 Tab」）。涟漪 [[03-product-spec]] v0.22 / [[05-design-spec]] v0.19 | omar 裁决（[[026-fixed-spatial-layout]] 当初显式不裁的两项）|
 | 2026-06-28 | v1.7 bump：§3.4「数据导入导出（JSON）」`planned`→`done`——repo-core `export.rs`（全保真聚合，独立无过滤 SELECT 以纳入弃用/隐藏行，data schema_version `1.1`，**不含 usage_records**=决策 D2）+ repo-write `import.rs`（**整库替换**=决策 D1，`defer_foreign_keys` 破 phases↔alignment_phrases FK 环，按 major 版本拒不兼容备份）；2 path-based Tauri IPC（`export_data`/`import_data`，前端 dialog 选路 + Rust `std::fs` 读写，避开 fs-plugin scope）；接 `tauri-plugin-dialog`（决策 D3）；SettingsModal 新增「数据」页（导出 save dialog / 导入 open dialog + 整库替换确认弹窗 + 完成后 `refreshAll`）。后端 export 3 + import 5 单测，前端 109 测试全绿（clippy/fmt/lint/prettier clean）；**真机导入导出待验**。B2 复检通过（导出/导入按表搬运，不混协议层与任务层）；A2 不出站（仅写用户选定本地路径）。涟漪 [[06-prd#6.9]] | 数据导入导出功能收口涟漪 |
+| 2026-09-01 | v1.18 bump（**对账，不含新功能**）：① §4 节奏表补三行（Phrase 编辑 v1.4 / Scene 编辑分层化 v1.9 / 固定空间布局 v1.12）+ S1 模块数 5→6 + 显式计数规则，合计 88→**91**（按 §3 逐行重数，非累加）；② §4 S1 行 `planned`→`in-progress`（六模块自 v0.2 起全 `done`，本表三个月未改）；③ §3.9「真机验收」`planned`→`done`（ADR-017 Phase 6 2026-08-20 随 v0.2.0 发布实测通过），§4 ADR-017 行 4/5→5/5；④ §3.6 唤起 P95 由失效的 10.49ms 改 13.708ms；⑤ §7 从 ADR-012 时代（57/57）重写为当前基线（398 / 168 / v0.2.0）并**首次点名 §1 `verified` 铁律缺口**待 omar 裁决；⑥ 头部导语与覆盖率列口径说明更新。同批：prd / ops-spec / user-flows / spec 四份 `status: pre-code` 转出（v0.2.0 已发布，pre-code 不再成立）| 2026-09-01 文档对账日（全面评价建议 1）|
 
 ---
 
-## §7 当前阶段说明（in-progress · ADR-012 Phase 1-5 全 done）
+## §7 当前阶段说明（in-progress · v0.2.0 已发布 · 2026-09-01 对账）
 
-- 通过测试: Vitest 57/57 ✓ / cargo test --workspace 48/48 ✓ / pnpm build ✓ / lint 0 errors
-- 已落盘 commit: M0-1/M0-2/M0-3 + ADR-012 Phase 1（`b932ab4`）/ Phase 2（`9a822d8`）/ Phase 3（`acf8229`）+ M-X.1/.2/.3 + Phase 5 验收收口
-- ADR-012 Phase 5 验收（2026-06-03）: 视觉+功能 11/11 done — screencapture 自动化过 9/11，用户手点 promote/discard 补 2/11，DB 核对落库内容无误
-- M0-4 签名公证链路（2026-06-03）: M0 四项全绿 — Developer ID 签名 + 公证 Accepted + Gatekeeper 放行 + release 运行时不黑屏（runbook [[m0-4-macos-signing]]）
-- 下一动作：bench 脚本回归（`bench:cold-start`/`hotkey-wake`）；P2 defer：`create_draft` 单写 size-cap（M-X.4）
+- **当前基线**（2026-09-01 本机实测，`main` @ `9fc9fad`）：Vitest **398/398**（39 文件）/ `cargo test --workspace` **168** / lint · tsc · build · clippy · fmt 全绿 / doc-governance 0 error 6 warn / `bench:hotkey-wake` p95 13.708ms（2026-08-20）
+- **已发布**：v0.1.0（2026-08-05 draft，公证被静默跳过未 publish，见 [[2026-08-05-notarization-fail-open]]）/ v0.1.1（2026-08-10）/ **v0.2.0（2026-08-20，Developer ID 签名公证 + 自动更新链路真机跑通）**
+- **状态分布**（§3 逐行，§3.12 治理项 7 行不计）：`done` 76 / `in-progress` 1 / `planned` 14 / `withdrawn` 1（不计）→ 计数 91，与 §4 一致
+- ⚠️ **§1 铁律缺口，待 omar 裁决**：§1 规定「已发布到生产（自用）的功能必须 `verified`」，判据是 E2E 通过 + 使用者使用 ≥1 周。v0.2.0 自用已满一周，但 `verified` 在本表零使用——AI 无法替使用者证明「使用 ≥1 周」，项目也尚无外部使用者。两个出路：① omar 按自用一周逐批把已发布行标 `verified`；② 修订 §1，把 `verified` 判据改成可由 AI 核验的形态（如「真机走查门通过 + 进入过一次 publish 的 release」）。本次对账不擅自二选一。
+- **下一动作**：见 [[HANDOFF#Next-Actions]]
 
-**同步约定**（v0.3+ 启用）：
-- 每次 commit 主分支后**手动**同步本清单状态（原设想的 `scripts/update-features.sh` 自动化脚本从未落地，现状为手动维护；若未来补脚本再回改本条）
-- 单元测试覆盖率由 vitest coverage report 直接填入（替换当前「集成 / 单元未量化」占位）
+**同步约定**（v0.3+ 启用，v1.18 修订）：
+- 每次 commit 主分支后**手动**同步本清单状态（原设想的 `scripts/update-features.sh` 从未落地）
+- 覆盖率列的全量测试数**不再逐行追更**（会立刻过期），全量基线只在本节维护；单元覆盖率待 vitest coverage report 接入后填
 - 责任人字段单人项目暂时全为 `omar`，多人协作时按 commit author 自动填
