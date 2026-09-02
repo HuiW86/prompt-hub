@@ -1,9 +1,9 @@
 ---
 type: learnings
 project: prompt-hub
-version: v0.5
+version: v0.6
 created: 2026-06-04
-last_modified: 2026-09-01
+last_modified: 2026-09-02
 status: living
 author: co  # 🤝 人机共创（CLAUDE §5.2），人审
 related:
@@ -178,7 +178,16 @@ description: prompt-hub 从 M0 到 v0.2.0 发布，反复出现、被真实踩�
 - **`interactionMode` 由 persist 中间件固化**：改默认值对已有安装无效。
 - **jsdom 验不了布局**，但订阅逻辑、规则表分支、焦点契约都能验且应当验。人工目视的证据不可回归，能取像素证据的门项优先取。
 - **挤压阈值窗口高 `684px`**，两条常驻横幅同时出现时约 `750px`，与常见最小 768px 仅差 18px。
-- **hover 动作簇遮挡标题（未修）**：`src/components/ScenePanel.module.css` float phrase actions，随 ADR-025 P2 子决策 3.3 落地时顺带解决。
+- **hover 动作簇遮挡标题（未修）**：`src/components/ScenePanel.module.css` float phrase actions，随 ADR-025 P2 子决策 3.3 落地时顺带解决。窄卡上簇盖住标题，宽卡上簇右对齐不遮（2026-09-02 截图对照）。
+- **走发布形态，不走 dev**（2026-09-02 G4）：`pnpm tauri build --no-bundle` 产出 `src-tauri/target/release/prompt-hub`（内嵌 dist，无需 vite）；**单独 `cargo build --release` 出来的仍走 devUrl，是空窗口**。裸 release 的 WebKit 目录仍是 `~/Library/WebKit/prompt-hub`，但源是 `tauri://localhost`，localStorage 与 dev 的 `localhost:1420` 不同源——等于一台「首装」机器（默认深色、首启 opt-in 横幅都能验到），且不碰正式版 `dev.prompt-hub` 目录。
+- **稳妥的点击序列**：唤起 → 空白处（Macro 区空档）点一下取焦 → `mouse move` 悬停 → 截图确认簇位置 → 再点。唤起后悬停簇未出现就点卡片 = 调用态复制 + 隐藏 + 写 usage（G4 误写 3 条）。窗口在两次工具调用之间会自行隐藏，`click` 前先查 `onscreen` 再决定是否重发 ⌥Space。
+- **锚定编辑器打开后不能直接打字（缺陷 D1，HANDOFF 第 23 项）**：自动化里必须先点名称框再 `type`；修复前不要把「键入落空」判成工具问题。
+- **原生对话框可驱动**：NSSavePanel / NSOpenPanel 用 `⌘⇧G` → 输入路径 → Return → Return；确认类 NSAlert 是 prompt-hub 名下的独立小窗口（约 260×155），按窗口 ID 截图再点 OK。
+- **像素工具先自检方向**：自研 `px` 的 y 轴曾上下颠倒，靠读一块已知颜色的区域发现。列扫描（沿 x 找颜色跃变）测卡片高度比目视可靠：舒适 111 px / 紧凑 87 px @2x。
+- **模态与面板会移动**：设置弹窗按页面高度重新居中，Scene 属性面板随角色 chip 增多变宽——同一按钮换页后坐标不同，每次换页重新截图定位。
+- **`HOME` 隔离下 MCP 也能对准**：`PROMPT_HUB_DB` 指向隔离库路径即可用 `prompt-hub-mcp` 造草稿，JSON-RPC 三行（initialize / initialized / tools/call）。
+- **OS 外观可临时翻转**：`osascript -e 'tell application "System Events" to tell appearance preferences to set dark mode to true'`，验「跟随系统」后立刻翻回。
+- **「今日复制」按本机时区计日**：本机 UTC−7，跨夜后计数归零不是 bug。
 
 ### B.2 发布与更新
 

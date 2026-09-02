@@ -1,10 +1,10 @@
 ---
 type: test-spec
 project: prompt-hub
-version: v0.5
+version: v0.6
 created: 2026-05-19
-last_modified: 2026-09-01
-status: ratified # 2026-09-01 人审批次 ③：omar 审阅 v0.3–v0.5 三次增量通过，draft → ratified（v0.2 曾于 2026-07-02 ratified）
+last_modified: 2026-09-02
+status: draft # v0.6（2026-09-02 G4 真机走查记录 §4.3）待人审；v0.5 于 2026-09-01 人审批次 ③ ratified
 author: ai # 🤖 AI 主笔 + 人审（CLAUDE §5.2）
 audience: [ai, human]
 description: prompt-hub 测试规格——前端 Vitest 398 用例 + Rust workspace 168 + 6 源码级 gate + CI 双 job + C1 bench gate；LLM Eval N/A
@@ -132,6 +132,7 @@ E2E 层缺位期间，**布局 / 层叠 / 定位类改动一律由带编号的�
 | P1-b 门（两项）| ADR-025 P1-b 容器迁移 | **全通过**，且**首次取得 AI 侧逐像素证据**：hover-lift 卡上浮层 diff bbox `None` / 最大通道差 `0`（同帧卡片区 `231`）；纵向滚动位移锚点 `-168px` vs 浮层 `-166px`，差值恒为 1 逻辑点、不累积（已 A/B 排除高度上限成因，记为已知量）|
 | G2（五项）| ADR-025 P2 键盘动作层 | **未跑**（P2 未落地）|
 | **G3（四项）**| ADR-027 全局唤起键可配置 | **四项全通过**（2026-08-20，见 §4.2）。项 2 一度判为「不可达」，补上冲突提示后**转为可观测并通过**。**omar 当日另行真机走查，未发现问题**（人工目视，不可回归；覆盖到哪几项未逐条记录）|
+| **G4（二十四项）**| features §7 留证缺口清单（v1.19） | **21 通过 / 3 不可达 / 1 未通过**（2026-09-02，见 §4.3）。首次按**发布形态**走查（裸 release 二进制内嵌 dist，非 dev + vite）；发现三个此前所有门都没抓到的缺陷 D1–D3 |
 
 #### 4.2 G3 门项（v0.4 新增 · 涟漪 [[027-configurable-global-hotkey]]）
 
@@ -174,6 +175,56 @@ E2E 层缺位期间，**布局 / 层叠 / 定位类改动一律由带编号的�
 **走查工具链**（可复用）：`screencapture -x -o -l<窗口ID>` 定向截图（⚠️ **禁止全屏截图**）+ CGEvent 合成鼠标移动/点击/滚轮 + PIL 模板匹配测位移；坐标换算 @2x 下物理像素 ÷ 2 = 逻辑点。
 
 ---
+
+### 4.3 G4 走查记录（v0.6 新增 · 2026-09-02 · 覆盖 [[07-features#§7]] 留证缺口清单）
+
+**为什么这次不同**：此前所有真机门都跑在「dev 二进制 + vite」上。本轮先在 dev 上撞见「编辑器打开后键入进不去」，一度归咎 StrictMode 双跑 effect，改跑 release 后**同样复现**——于是全程改用 `pnpm tauri build --no-bundle` 产出的裸 release 二进制（内嵌 `dist`，`tauri://localhost` 源，localStorage 与 dev 不同源、与正式 `.app` 也不同目录），隔离 `HOME` 落库。**`verified` 对着的是发布形态，证据也该来自发布形态。**
+
+**环境**：macOS，1470×956 逻辑 / @2x；正式版 `/Applications/prompt-hub.app` 先退出（组合键独占）；MCP 二进制走 stdio JSON-RPC 造 3 条草稿；每步以 `sqlite3` 反查隔离库为主证据，截图为辅；像素证据用自研 `px`（列扫描测高、区域均值测色）。
+
+| # | 门项 | 结果 | 证据 |
+|---|---|---|---|
+| W1 | ⌘K 聚焦 / 分组结果 / Enter 复制 | ✅ | 隐藏 + `usage_records` +1 + 剪贴板全文 |
+| W2 | 最近使用去重 / 空态 | ✅ | 同资产复制 2 次 → 1 条；导入清空后「复制过的话术会这里出现」 |
+| W3 | Macro 新建 / 改名 / 删除 | ✅ | `macros` 逐步反查；删除走 `ConfirmInline` |
+| W4 | 对齐话术新建 / 设为默认 / 改内容 | ✅ | `alignment_phrases.is_default` + `phases.default_alignment_phrase_id` 同步 |
+| W5 | 话术新建 / 上移 / 改名 / 删除 | ✅ | `phrases.order_index` 0→1；删除后 3 条 `usage_records` 成孤儿（见观察 O3） |
+| W6 | Scene 属性：改名 / 颜色 / 角色预设 / 前移 / 删非空 | ✅ | `scenes.color=#2f9e6e`、`role_presets` +1、`order_index` 1→0；删非空 → 琥珀 toast「该场景仍有子阶段或话术」 |
+| W7 | 子阶段新建 / 改名 / 删除解绑 | ✅ | `sub_stages` 增删；删除后话术 `sub_stage_id` 置空；编辑器下拉第二路径改分组同样落库（ADR-022 双路径） |
+| W8 | 待审 badge 仅 N>0 / 草稿 tab 最左 | ✅ | 首启「3 条待审」；归档后 3→2 |
+| W9 | 草稿编辑水合 / 归档落地 / 丢弃撤销 | ✅ | `payload_json.name` 更新；归档 → `alignment_phrases` +1、草稿 `discarded`；丢弃 → 撤销 → `pending` |
+| W10 | composition 草稿归档 / 编辑禁用、丢弃可用 | ✅ | 截图 R08a |
+| W11 | 跨 Scene 移动 → 撤销 | ✅ | `scene_id/sub_stage_id/order_index`：调研/∅/2 → 方案/生成/3 → 撤销回 调研/∅/2；usage 不变 |
+| W12 | 整理态整卡点击 = 展开 / 驻留 / 不计 usage；连续整理；显式复制计 usage 不隐藏 | ✅ | usage 5→5→6，窗口始终在屏 |
+| W13 | 窄 Header 下 ModeToggle | ⛔ 不可达 | 主形态窗口恒等于显示器宽（`fit_to_active_monitor`），无法缩窄 |
+| W14 | 长话术展开不溢出 | ✅ | 275 字正文在列内换行五行，未出卡 / 列（R12b） |
+| W15 | 撤销 toast 存活 6 s | ✅ | 逐秒截图：+5.4 s 在、+6.4 s 消失；`toastStore` `action: 6000` |
+| W16 | 主题三态 + 重启保留 + 跟随系统 | ✅ | 首启深色 canvas `14,14,16`；浅色 `242,242,240`；跟随系统 + OS 翻转 → `6,6,7`；重启后浅色仍在；localStorage `themeMode` |
+| W17 | 强调色接管 brand，语义层不变 | ✅ | logo / Macro 芯片：绿 `50,97,77` / 蓝 `62,90,140` / 中性 `89,82,140`；Scene 图标恒 `19,48,36` |
+| W18 | `⌘,` / × / Esc / 密度 | ⚠️ 部分 | `⌘,` 与 × 通过；密度紧凑 Macro 磁贴 111→87 px（56→44 逻辑）通过；**Esc 连仪表盘一起隐藏 → 缺陷 D2** |
+| W19 | slim Header / 暗 band / 2 列 | ✅（omar 目视） | R00 首启截图 |
+| W20 | 复制失败可见 | ⛔ 不可达 | 剪贴板写失败无法在本机构造 |
+| W21 | 启动 DB 失败阻断对话框 | ❌ **未通过 → 缺陷 D3** | 4 KB 随机字节当库：主窗口短暂现身「加载失败 · 重试」后隐藏，**无任何对话框**，进程持续存活；裸二进制与 `/Applications` 发布版均复现 |
+| W22 | 更新检查 manual 分级 | ⚠️ 部分 | 总开关关时点击零反应（零触网）；开后「已是最新版本」+ StatusBar 入口；失败路径需断网未构造 |
+| W23 | 空态 / 未分组列头 / light 明度 / primitives 观感 | ✅（omar 目视） | R07b / R16c / R24i；新建空场景只有「新增子阶段」入口（观察 O4） |
+| W24 | 导出 / 导入（原生对话框） | ✅ | `⌘⇧G` 驱动面板；导出十表无 `usage_records`；SQL 篡改后导入回滚、`settings` 保留、`refreshAll` |
+
+**缺陷（三条，全部首次发现）**：
+
+| # | 现象 | 根因（已读代码） | 级别 |
+|---|---|---|---|
+| D1 | 四个锚定编辑面（Macro / 对齐话术 / 话术 / 草稿）打开后名称框**没有焦点**，键入落空；必须再点一次 | `AnchoredEditor` 在 `useAnchoredPosition` 给出坐标前把面板设为 `visibility: hidden`，而 `PhraseFormEditor` 的挂载 effect在此之前调 `focus()`，对不可见元素静默失败。jsdom `popover` shim 不模拟可见性，故 373 条测试全绿。dev / release 均复现，与 StrictMode 无关 | P1 |
+| D2 | 设置弹窗开着按 Esc，弹窗与仪表盘**一起**隐藏 | 弹窗 Esc 监听与仪表盘隐藏监听同在 window 冒泡阶段，前者未 `stopPropagation`；与 ADR-025 编辑器「Esc 不冒泡」契约不一致（product-spec 区域 9 写「关闭：Esc」指关弹窗） | P2 |
+| D3 | 数据库损坏时**没有**阻断式错误对话框，进程静默存活、窗口隐藏 | `fail_startup` 在 `std::thread::spawn` 里调 `dialog().message().blocking_show()`；macOS 上非主线程的 NSAlert 不会呈现。prd §7.7 承诺的「含路径的阻断对话框 + exit(1)」实际一项都没兑现 | P1 |
+
+**观察（不构成缺陷，供裁决）**：O1 窗口隐藏期间 MCP 写入的草稿，唤起**不刷新** badge，只有导入后 `refreshAll` 才刷新（HANDOFF 第 21 项附带疑问的答案）；O2 焦点不在编辑器内时按 Esc 会隐藏整个仪表盘而编辑器状态保留在 React 里，下次唤起编辑器仍开着——D1 让这种情况更常见；O3 硬删话术后 `usage_records` 成孤儿，最近使用区仍显示墓碑条目（与 prd §6.1 soft-delete 悬案同源，归 HANDOFF 21.2）；O4 新建的空场景只有「新增子阶段」入口，没有「添加话术」；O5 UI 新建的 Macro `native=0`，种子 Macro `native=1`，`native` 语义待 prd 明确；O6 面板宽度随角色 chip 增加而变化、设置弹窗随页面高度重新居中——对人无害，对自动化点击是坑。
+
+**取证方法教训（续 §4.2 三条）**：
+
+4. **发布形态才是 `verified` 的对象**：`cargo build --release` 单独跑出来的二进制仍走 devUrl（空窗口），必须经 `pnpm tauri build --no-bundle`；`tauri://localhost` 源的 localStorage 与 dev 不同源，天然给出「首装」观感（本轮据此验到默认深色）
+5. **调用态整卡点击 = 复制 + 隐藏**：唤起后悬停簇尚未出现就点卡片，会误复制并写 usage（本轮误写 3 条）。稳妥序列：唤起 → 空白处点一下取焦 → 悬停 → 截图确认簇位置 → 再点
+6. **像素工具先对已知区域自检方向**：自研 `px` 的 y 轴一度上下颠倒，靠「已知 toast 区域读出 canvas 色」发现；列扫描测高（56→44）比目视可靠
+7. **状态栏「今日复制」按本机时区计日**：本机为 UTC−7，昨夜 23:59 的复制在「今日」不计，不是 bug
 
 ## §5 性能基准（regression test）
 

@@ -1,4 +1,4 @@
-# Handoff — 2026-09-01 文档对账日（全面评价建议 1 + 2）
+# Handoff — 2026-09-01/02 文档对账日 + 人审批次 + G4 真机走查
 
 <!-- Rewritten 2026-09-01. 长期风险与操作常识已迁 docs/learnings.md 附录 B；本文件只留本轮与指针 -->
 
@@ -13,6 +13,7 @@
 - **learnings v0.4 → v0.5**：HANDOFF 二十余条 `(carried)` 风险收编——判断类并入信条三 / 四 / 七证据段（不新增信条），操作类收成附录 B（B.1 真机走查 / B.2 发布与更新 / B.3 本地环境）
 - **MANIFEST v1.15 → v1.16** 三行（features / prd / learnings）+ CLAUDE.md §7 指针（features v1.18 / MANIFEST v1.16 / ADR-017 Phase 6 销账）；CHANGELOG 新增 2026-09-01 条目
 - 全面评价本身：五维评级 + 实测基线 + 七项风险，正文在会话中，未落盘为文档
+- **G4 真机走查（2026-09-02，omar 确认方案后执行）**：发布形态（`pnpm tauri build --no-bundle` 裸 release + 隔离 `HOME` + MCP 造草稿）覆盖 features §7 缺口清单，24 门项 21 通过 / 3 不可达 / 1 未通过；features v1.20 32 行升 `verified`（69 / 7 / 1 / 14），test-spec v0.6 §4.3 走查记录（draft 待人审）；**三个真实缺陷 D1–D3 转第 23–25 项**；第 21 项附带疑问已答。环境已复原（正式版重新拉起、WebKit 偏好复原、OS 外观复原）。**本段改动未 commit**
 - **人审批次 ① 已裁（2026-09-01 第二段，omar 拍板「改规则，然后逐个标」）**：features v1.19——§1 `verified` 判据改为「真机门 / 持续自动化 gate 留证 + 进过 publish release + 自用 ≥1 周」，失效引用 [[01-spec#10.5]] 改指 test-spec §4.1；37 行升 `verified`、39 行缺留证保持 `done`，§7 新增留证索引 + 缺口清单。涟漪 MANIFEST v1.17 / CLAUDE.md §7 / CHANGELOG 第二段。对账 commit `c417c36` 已提交。**批次 ②–⑧ 同日续完**：test-spec v0.5 / prd v0.13 ratified；ops-spec / user-flows 保持 draft 并挂重写条件（21.3 / 22）；product-spec v0.23 / design-spec v0.20 补 ADR-024 与 reshape 旧账回流后 ratified，`--t-18` / `--h-modifier-tray` 自 tokens.css 删除（398 / lint / prettier / build 全绿）；features v1.19 矩阵认可；ADR-027 全文 + ADR-023/024 措辞 + 图标 + ADR-021 scene.color 四件追认。MANIFEST v1.17 纠正 ops-spec / user-flows 两处 ratified 误标。**批次 ②–⑧ 改动未 commit**
 
 ## In Progress
@@ -50,11 +51,15 @@
     - 21.4 **S2 最小闭环**：只做「复制过但未归类的内容提示保存」一件，验证「沉淀」假设再定其余三项
     - 21.5 **外部使用者**：即第 19 项，21.1–21.4 完成前所有优先级判断只有作者一个样本
 22. **（新，2026-09-01 人审批次 ④）user-flows v0.1 重写**（共创文档，与 omar 同会话做）。反查 v0.2.0 实装，六处不符：§2 升级迁移写 major 弹窗 + 强制导出，实装只有 ADR-017 minor 自动更新；§3 导入写「成功导入 N 条」，实装为整库替换 + 确认弹窗（prd 决策 D1）；§4 删除写取消 / 弃用 / 永久删除三选项，实装为二次确认硬删（与 prd §6.1 同源，等 21.2 ADR 后一并改）；§5 快捷键冲突写弹窗三备选，实装为 `HotkeyBanner` + 设置改绑（ADR-027）；§6 首次使用写三屏引导页，实装无 onboarding、`0002_seed` 直接灌示范数据；§7/§8 iPad 只读 / localStorage 配额 / ADR-003 待议均已过时。**建议顺序：等 21.2 裁完再重写**，否则 §4 要改两次
-    - 附带待核实：MCP 在窗口隐藏期间写入的草稿，唤起时是否刷新（`refreshAll` 只见于挂载 / 手动重试 / 导入后）；SOP 占位区「第三阶段实现」在 0.2.0 生产界面常驻，是否该收起
+    - 附带（G4 已核实）：MCP 在窗口隐藏期间写入的草稿，唤起时**不刷新** badge，导入后 `refreshAll` 才刷新——是否在 `show()` 后补一次 `count_pending` 待裁；SOP 占位区「第三阶段实现」在 0.2.0 生产界面常驻，是否该收起
+23. **（新，G4 缺陷 D1 · P1）锚定编辑器打开后 autofocus 不生效**：`src/components/primitives/Editor.tsx` 在 `position` 未解出前 `visibility: hidden`，`PhraseFormEditor` 挂载 effect 的 `focus()` 静默失败，四个编辑面都要再点一次。修法方向：把首焦点挪到 `position` 首次解出之后（effect 依赖 `position !== null`），或先定位再显示；**测试要能抓到**——jsdom `popover` shim 不模拟可见性，须在 shim 层让 `visibility:hidden` 元素拒绝 `focus()`，否则修了也守不住。修复后重跑 G4 W3 一项即可闭合
+24. **（新，G4 缺陷 D3 · P1）数据库损坏时阻断对话框从不出现**：`src-tauri/src/lib.rs` `fail_startup` 在 `std::thread::spawn` 里 `blocking_show()`，macOS 不呈现非主线程 NSAlert；裸二进制与发布 `.app` 均复现，进程静默存活、窗口隐藏。修法：`run_on_main_thread` 或在 `RunEvent::Ready` 后主线程弹；prd §7.7 承诺的「含路径 + exit(1)」两条都要复验（复验法：4 KB 随机字节当库，见 test-spec §4.3 W21）
+25. **（新，G4 缺陷 D2 · P2）设置弹窗内 Esc 连仪表盘一起隐藏**：`SettingsModal` 的 Esc 监听补 `stopPropagation`（或与 AnchoredEditor 同走 document 捕获阶段）；product-spec 区域 9「关闭：Esc」语义是关弹窗不关仪表盘。同族观察：焦点不在编辑器内按 Esc 会隐藏仪表盘而编辑器状态留在 React 里，下次唤起仍开着
+26. **（新，G4 观察）**：硬删话术后 `usage_records` 成孤儿、最近使用区留墓碑（并入 21.2 soft-delete ADR）；新建空场景无「添加话术」入口只能先建子阶段（product-spec 区域 4 待裁）；UI 新建 Macro `native=0` 而种子 `native=1`，`native` 语义待 prd §6.3 明确；features §7 余下 7 行 `done` 的补法已写在表下
 
 ## Dropped
 
-- 无。本轮净销 3 项（旧 2 / 旧 3 / 旧 7 整项八步），新增第 22 项，新增 3 项（19、20、21），净计 **20 项**（含旧 2 已划线）。第 21 项是分析结论转账，omar 明示暂不动手。
+- 无。本轮净销 3 项（旧 2 / 旧 3 / 旧 7 整项八步），新增第 22–26 项（22 为文档重写，23–25 为 G4 缺陷，26 为观察），新增 3 项（19、20、21），净计 **20 项**（含旧 2 已划线）。第 21 项是分析结论转账，omar 明示暂不动手。
 
 ## Risks & Decisions
 
@@ -62,6 +67,8 @@
 
 - **对账不等于人审**（new 2026-09-01）：本轮把四份 frontmatter 从「说谎」改成「待审」，把 features 合计改成能对上 §3 的数——这些都是让文档停止陈述假事实，不是让它们变成 ratified。人审积压（第 7 项）不因本轮减少，只是合成了一个批次
 - **历史 delta 累加会静默漂移**（new 2026-09-01）：features §4 合计从 2026-05 起靠每次 +N 维护，v1.9 / v1.12 各「+1」却没加表行，三个月后差 3。凡「合计」类数字，应从明细重数而不是累加，与信条四「手数会漏」同族
+- **真机门验容器不验第一件事**（new 2026-09-02）：ADR-025 G1 六项 + P1-b 两项全过、还有逐像素证据，但没有一项问「打开后能直接打字吗」，autofocus 缺陷 D1 就这样带进了 v0.2.0。起草门项时加一问：**用户打开它之后的第一个动作，门里有吗**
+- **dev 形态不是 `verified` 的对象**（new 2026-09-02）：此前 G1–G3 全跑在 dev 二进制 + vite 上；G4 改跑 `pnpm tauri build --no-bundle` 裸 release，立刻多验到默认深色首装观感、`tauri://localhost` 独立 localStorage 等 dev 上看不到的事实。操作细节已入 [[learnings]] B.1
 - **AI 改人主笔文档的 status 是灰区**（new 2026-09-01）：01-spec 由 `pre-code` 改 `active` 是本轮唯一触碰 🧑 文档的动作。内容一字未动，但 status 是治理信号；已在 frontmatter 注释与第 7 项②留痕，omar 若不认可直接改回即可
 
 ## Verify
@@ -72,6 +79,7 @@
 - `cargo test --workspace --manifest-path src-tauri/Cargo.toml` → **168** ✅
 - `pnpm lint` / `pnpm exec tsc --noEmit` / `pnpm build` / clippy / fmt → 全绿 ✅
 - `node scripts/doc-governance/index.mjs --config doc-governance.config.mjs` → 改动后复跑 **0 error / 6 warn** ✅（6 warn 为既有失效引用，未新增）
+- **G4 走查（2026-09-02）**：`pnpm tauri build --no-bundle` 成功；隔离库终态 macros 4 / phrases 6 / alignment 10 / drafts 4 / usage 0（导入清空）；截图 137 张在 `/tmp/ph-walk/shots`（易失）；工具 `/tmp/ph-walk/{wid,mouse,kb,px}`（易失，重建法见 learnings B.1）
 
 **恢复工作前**：跑 `pnpm test` + doc-governance 确认基线。动代码须补 `pnpm lint` + `pnpm build` + `cargo test --workspace`；涉及主形态启动路径还须 `pnpm bench:hotkey-wake`（⚠️ 它会拿真实数据库跑，见 learnings B.3）。
 
@@ -85,4 +93,5 @@
 - `docs/MANIFEST.md` — v1.16（三行）
 - `docs/design/CHANGELOG.md` — 2026-09-01 条目
 - `CLAUDE.md` — §3 冷区 MANIFEST 指针 + §7 文档体系 / 自动更新两行
+- `docs/design/11-test-spec.md` — v0.6（§4.1 G4 行 + §4.3 走查记录，draft 待人审）
 - `HANDOFF.md` — 本文件重写

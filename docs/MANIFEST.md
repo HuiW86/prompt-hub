@@ -1,7 +1,7 @@
 ---
 type: manifest
 project: prompt-hub
-version: v1.17
+version: v1.18
 status: active
 created: 2026-05-24
 last_modified: 2026-09-01
@@ -63,7 +63,7 @@ related:
 | 路径 | 内容 | 状态 |
 |---|---|---|
 | `docs/design/06-prd.md` | 数据契约 / API / 状态机 / 错误码 | **ratified v0.13**（2026-09-01 人审批次 ④ omar 审阅 v0.12/v0.13 通过；§6.1 soft-delete drift 已登记，归 HANDOFF 第 21.2 项 ADR；2026-08-20 ADR-027 涟漪：§5.8 补全局唤起键 + 新增 §6.8-bis Setting 表，`user_version` 11→12；前 v0.12 走查修缮 `get_draft` / v0.11 scene-substage-editing §6.4 写入口归属。⚠️ 本表此前记 v0.11 属版本漂移，v1.12 修正。`status: pre-code` 与「表已落地」的矛盾已于 2026-09-01 对账解决）|
-| `docs/design/07-features.md` | **91** 功能矩阵 S1–S5 + AE + 自动更新 + Promptscape 吸收 + 结构编辑 + 数据导入导出 + 走查修缮 + Scene 编辑分层 + UX 任务流 A/B + 锚定编辑容器 | in-progress **v1.19**（2026-09-01 人审批次 ①：§1 `verified` 判据修订 + 失效引用改指 test-spec §4.1，37 行 `done`→`verified`、39 行缺留证保持 `done`，§7 新增留证索引 + 缺口清单；同日 v1.18 对账：§4 补三行 + 计数规则显式化 88→91、S1 `planned`→`in-progress`、ADR-017 5/5、§7 重写并点名 `verified` 铁律缺口；2026-08-20 v1.17 层 pill 减二留一 + SOP 退出 Tab；同日 v1.16 冲突提示；同日 v1.15 ADR-027：§3.4 全局唤起键可配置 done + §4 节奏表 87→88；同日 v1.14 ADR-025：§3.8 统一锚定编辑容器 done + §4 节奏表 86→87；前 v1.13/v1.12 ADR-026 / v1.11 ADR-022 / v1.10 UX 批次 A / v1.9 ADR-021 Scene 编辑分层化）|
+| `docs/design/07-features.md` | **91** 功能矩阵 S1–S5 + AE + 自动更新 + Promptscape 吸收 + 结构编辑 + 数据导入导出 + 走查修缮 + Scene 编辑分层 + UX 任务流 A/B + 锚定编辑容器 | in-progress **v1.20**（2026-09-02 G4 真机走查：32 行升 verified → 69 / 7 / 1 / 14，缺口清单 39→7，三缺陷 D1–D3；前 v1.19 2026-09-01 人审批次 ①：§1 `verified` 判据修订 + 失效引用改指 test-spec §4.1，37 行 `done`→`verified`、39 行缺留证保持 `done`，§7 新增留证索引 + 缺口清单；同日 v1.18 对账：§4 补三行 + 计数规则显式化 88→91、S1 `planned`→`in-progress`、ADR-017 5/5、§7 重写并点名 `verified` 铁律缺口；2026-08-20 v1.17 层 pill 减二留一 + SOP 退出 Tab；同日 v1.16 冲突提示；同日 v1.15 ADR-027：§3.4 全局唤起键可配置 done + §4 节奏表 87→88；同日 v1.14 ADR-025：§3.8 统一锚定编辑容器 done + §4 节奏表 86→87；前 v1.13/v1.12 ADR-026 / v1.11 ADR-022 / v1.10 UX 批次 A / v1.9 ADR-021 Scene 编辑分层化）|
 | `docs/design/08-sitemap.md` | 资产对象树 + 区域地图 + 焦点导航 | ratified v0.2（2026-07-02 omar 人审通过；同日全量重写对齐 product-spec v0.13「单窗口一屏全景 + 浮层」现状；前 v0.1 视图清单已失真）|
 
 ---
@@ -74,7 +74,7 @@ related:
 |---|---|---|
 | `docs/design/09-tech-stack.md` | 全栈技术决议 | ratified v1.3（2026-06-19 ADR-017 涟漪：D14 自动更新 + §4.4 updater 子系统 + plugin-process 依赖锁）|
 | `docs/design/10-ops-spec.md` | 运维规格 | draft v0.3（2026-09-01 人审批次 ④：保持 draft，§3 备份未实装 / §7 发布流程 ADR-001 前措辞，随 HANDOFF 第 21.3 项同批重写；此前 MANIFEST 标 ratified 无人审记录，属误标。2026-06-17 ADR-017 C4：§5.2 telemetry 措辞澄清 + §9.4 反向指针）|
-| `docs/design/11-test-spec.md` | 测试规格 | **ratified v0.5**（2026-09-01 人审批次 ③ omar 审阅 v0.3–v0.5 通过；2026-08-20 冲突提示：前端 **398**，G3 项 2 由不可达转通过；同日 v0.4 ADR-027 涟漪：前端 395 + Rust **168** + IPC **53** + 新增 §4.2 G3 门四项；同日 v0.3 全量刷新 📊 口径：前端 373 + Rust 158 + **6** 源码级 gate + IPC 51，另加 §4.1 真机验收门 / jsdom `popover` shim，均待人审；前 v0.2 2026-07-02 omar 人审通过，口径 154/135/4）|
+| `docs/design/11-test-spec.md` | 测试规格 | draft **v0.6**（2026-09-02 新增 §4.3 G4 走查记录：24 门项 + 三缺陷 + 六观察 + 四教训，待人审；v0.5 于 2026-09-01 人审批次 ③ omar 审阅 v0.3–v0.5 通过；2026-08-20 冲突提示：前端 **398**，G3 项 2 由不可达转通过；同日 v0.4 ADR-027 涟漪：前端 395 + Rust **168** + IPC **53** + 新增 §4.2 G3 门四项；同日 v0.3 全量刷新 📊 口径：前端 373 + Rust 158 + **6** 源码级 gate + IPC 51，另加 §4.1 真机验收门 / jsdom `popover` shim，均待人审；前 v0.2 2026-07-02 omar 人审通过，口径 154/135/4）|
 
 ---
 
@@ -175,7 +175,7 @@ related:
 
 | 路径 | 内容 | 状态 |
 |---|---|---|
-| `docs/learnings.md` | 7 条可迁移信条 + 技术栈速查 + 附录 B 真机走查/发布/本地环境陷阱（2026-09-01 自 HANDOFF Risks 收编） | active v0.5（2026-09-01；前 v0.4 2026-08-05）|
+| `docs/learnings.md` | 7 条可迁移信条 + 技术栈速查 + 附录 B 真机走查/发布/本地环境陷阱（2026-09-01 自 HANDOFF Risks 收编） | active v0.6（2026-09-02 B.1 增 G4 走查九条：发布形态构建、点击序列、原生对话框驱动、像素自检等；前 v0.5 2026-09-01）|
 | `docs/postmortems/2026-08-05-notarization-fail-open.md` | v0.1.0 公证被静默跳过复盘：fail-open 断言的三个同形实例 + 「能力≠行使」滑移 + 6 问自查清单 | closed v0.1（2026-08-05）|
 
 ---
