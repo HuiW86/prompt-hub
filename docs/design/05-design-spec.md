@@ -1,12 +1,12 @@
 ---
 type: design-spec
 project: prompt-hub
-version: v0.19
+version: v0.20
 created: 2026-05-18
-last_modified: 2026-08-20
-status: ratified  # v0.10 已 omar 审定（2026-06-21）；v0.11–v0.18 增量待人审
+last_modified: 2026-09-01
+status: ratified  # 2026-09-01 人审批次 ⑥：v0.20 补齐 ADR-024 回流（§2.1/§2.4.6/§2.5/§8.1/§9）+ 两个死 token 退役后，omar 审阅 v0.11–v0.20 全部增量通过，draft → ratified（前序 v0.10 于 2026-06-21 审定）
 author: co  # 🤝 人机共创（CLAUDE §5.2）
-related: [[01-spec]], [[02-constitution]], [[03-product-spec]], [[012-lock-visual-quality-anchor]], [[019-supersede-flat-visual-anchor]], [[020-restore-protocol-dark-band]], [[021-scene-layered-editing]], [[025-unified-anchored-editing]], [[CLAUDE-DESIGN]], [[015-expose-mcp-write-pipeline]], [[016-choose-dnd-and-resizable-layout]], [[018-absorb-promptscape-design]], [[026-fixed-spatial-layout]], [[asset-editing-and-adaptive-layout]]
+related: [[01-spec]], [[02-constitution]], [[03-product-spec]], [[012-lock-visual-quality-anchor]], [[023-ui-reshape-before-release]], [[024-dark-cockpit-identity]], [[019-supersede-flat-visual-anchor]], [[020-restore-protocol-dark-band]], [[021-scene-layered-editing]], [[025-unified-anchored-editing]], [[CLAUDE-DESIGN]], [[015-expose-mcp-write-pipeline]], [[016-choose-dnd-and-resizable-layout]], [[018-absorb-promptscape-design]], [[026-fixed-spatial-layout]], [[asset-editing-and-adaptive-layout]]
 description: 手动 AI 编程仪表盘的视觉规范——tokens.css 单一真源 + 主题/elevation/组件视觉契约；写 CSS / 视觉时召回。版本叙事见 CHANGELOG
 ---
 
@@ -45,8 +45,11 @@ description: 手动 AI 编程仪表盘的视觉规范——tokens.css 单一真�
 | `--t-12` | 12px | 0.75rem | 元数据（使用次数 / 时间）/ kbd / empty hint |
 | `--t-13` | 13px | 0.8125rem | body 默认 / Phrase 卡片 / Phase 名 / Tab 标签 |
 | `--t-14` | 14px | 0.875rem | region header / card title（500-600 加粗）|
+| `--t-15` | 15px | 0.9375rem | Macro 命令牌名称——页面标题之下的 hero 档（v0.20 补登记 · [[024-dark-cockpit-identity]]）|
 | `--t-16` | 16px | 1rem | strong title / 大字号 body |
 | `--t-20` | 20px | 1.25rem | 卡片标题强调（PhaseBar / hero）|
+
+> **已退役**：`--t-18`（ADR-024 引入的活动相位 display 档）随 [[025-unified-anchored-editing]] §6 去掉 PhaseBar 字号漂移后无消费者，v0.20 自 `tokens.css` 删除。字号档位增减属本表契约，不走减法快车道。
 
 **字重约定**：`--w-400`（默认）/ `--w-500`（card title）/ `--w-600`（region header / strong）。
 
@@ -298,22 +301,52 @@ ADR-012 Phase 2 已实装 dark default + light @media override。Dark mode 实�
 
 **用法 hard rule**：`--band-*` 只允许在 `ProtocolBand` 作用域使用（band 内经 CSS 变量重映射把 `--surface-*`/`--border-*`/`--fg-*`/`--aux`/`--accent` 整体指向 `--band-*`，使 PhaseBar / AlignmentPhrases / Chip / Kbd / Button 等子组件零改动即在暗底可读，见 §10.8.2）；band 外组件禁止引用。band 内若未来引用未重映射 token（`--skeleton` / `--shadow-*`）需补映射（ADR-020 反向后果）。
 
-### 2.5 暗色模式 + 主题三态（v0.11 已实装外观面板）
+#### 2.4.6 品牌 token 系 + light 身份加深（v0.20 补回流 — 涟漪 [[024-dark-cockpit-identity]]，2026-07-21 落地）
+
+> ADR-024 影响范围写明「design-spec §2/§8/§9 下轮八步回流」，该轮一直没跑；本节在 2026-09-01 人审批次补记。**品牌色是身份维度，不是资产语义**——它与 ADR-019「颜色不承载 ontology」不冲突，也不触 [[02-constitution#B2]]。
+
+| Token | dark（bare root）| 角色 |
+|-------|----|------|
+| `--brand` | `#8B7BFF` | 身份时刻专用：Header logo / 活动相位下划线与序号章 / Macro 图标芯片 / RecentList 时间线焦点 / StatusBar 相位点 |
+| `--brand-fg` | `#FFFFFF` | brand 填充上的前景 |
+| `--brand-dim` | `rgba(139,123,255,.14)` | brand 染色填充（活动相位底、芯片底）。⚠️ 单独不承重——对比度 `1.145:1`，活动态由下划线 + 序号章 + `--w-600` 承载（§修订记录 v0.17） |
+| `--brand-ghost` | `rgba(139,123,255,.32)` | brand 描边 / 下划线辉光 |
+| `--selection` | brand 22% 染色 | `::selection`；此前直引 `--surface-3`，浅色下对白底约 1.1:1 几乎不可见 |
+
+**与 accent 的关系（ADR-024 补遗，omar 反馈「强调色不起作用」后）**：默认 `neutral` 时 `--brand` 恒为 violet、与 `--accent` 解耦；选 blue / green / violet / amber 任一彩色 swatch 时，**该 swatch 同时接管 `--brand` 系**（`--brand` / `--brand-dim` / `--brand-ghost` 随之换色），即「强调色 = 身份主题色」。中性 swatch 不接管，保证 zero-config 下品牌身份稳定。
+
+**light 身份加深（tokens.css §1d）**：§1b 的 brand / accent 色相为暗色驾驶舱调校，落到白底只剩 2.2–2.9:1，身份时刻发虚。浅色下换用**同色相加深锚点**：
+
+| 色相 | dark 原值 | light 加深值 | surface-1 白底对比度 |
+|---|---|---|---|
+| violet（默认 brand）| `#8B7BFF` | `#5D4DE0` | ≥ 4.4:1 |
+| blue | `#4C8DFF` | `#2F6BDD` | ≥ 4.4:1（canvas `#F2F2F0` 上 4.39——只作填充 / 焦点环，不作 canvas 文字色）|
+| green | `#2F9E6E` | `#1E7A55` | ≥ 4.4:1 |
+| amber | `#E0962F` | `#B0640A` | ≥ 4.4:1（canvas 上 4.01，同 blue 限制）|
+| `--aux` 元信息灰 | — | `#6F6E66` | 浅色 canvas 上由 2.8:1 加深至约 4.6:1 |
+
+`--brand-dim` / `--brand-ghost` / `--selection` 在 light 侧按加深色相重算（.14 / .38 / .22）。**band token 不动**——暗 band 是双主题恒定的暗岛（§2.4.5），仍用亮 swatch。
+
+**双轨防漂移**：`:root.light…` 每个块在 `@media (prefers-color-scheme: light)` 内都有一个 `:root.system…` 孪生块，两套手工镜像由 `src/styles/theme-parity.test.ts` 逐 token 断言相等——扩一侧不扩另一侧则 gate 失败。
+
+### 2.5 暗色模式 + 主题三态（v0.11 已实装外观面板 · v0.20 按 ADR-024 订正）
 
 **状态**：暗色 token 已实装（ADR-012 Phase 2 / commit `9a822d8`）；**主题三态切换 UI 已实装**（v0.11 / 涟漪 [[018-absorb-promptscape-design]]，设置弹窗「外观」页）。
 
 **实装方式**：
 1. **Dark 为 default** — `:root` 直接定义 dark neutral scale
-2. **Light @media override** — `prefers-color-scheme: light` 自动切换（`:root:not(.dark)` selector）
-3. **`.light` / `.dark` class override** — 手动 class 切换（绕开系统偏好）。`.dark` 显式钉死暗色（屏蔽 light @media guard），`.light` 钉死亮色，二者皆无 = `system`（跟随系统）
+2. **Light 只在两种显式情形出现**（v0.20 订正 · [[024-dark-cockpit-identity]]）：`.light` class 钉死亮色；或 `.system` class **且** OS 为 `prefers-color-scheme: light`（@media guard 内只匹配 `:root.system`）。裸 root 恒为暗色——**不再**有「无 class 即跟随系统」的默认
+3. **class 三态互斥** — `applyAppearance` 先移除 `light` / `dark` / `system` 三者再加其一；`.dark` 与裸 root 等价，保留只为显式语义
 
 **主题三态**（settingsStore.themeMode，persist localStorage，A2 不出站）：
 - `light` → root 加 `.light` class
 - `dark` → root 加 `.dark` class
-- `system` → 不加 class，由 `prefers-color-scheme` @media guard 决定
+- `system` → root 加 `.system` class，再由 `prefers-color-scheme` @media guard 决定（v0.20 订正，原文「不加 class」已随 ADR-024 失效）
+- **默认 `dark`，persist v2 迁移一次性重置**：v1 默认曾是 `light`，装机带着一个从未显式选择过的「浅色」；升 v2 时重置为深色**一次**，之后用户在设置里选浅色照常持久化
 - 水合时 `onRehydrateStorage` 调 `applyAppearance` 落 class；启动即生效，无闪烁
 
-**为何 Dark 是 default**：
+**为何 Dark 是 default 且恒定（ADR-024 定为身份）**：
+- 哲学三（时间分离）：唤起的 overlay 与桌面形成模式切换感，跟随 OS 亮暗反而削弱分离；light 降为显式设置项，推翻 ADR-018 补遗「light 为参考观感」锚点
 - 扫视优先场景下 dark UI 降低眼睛疲劳（驾驶舱仪表盘类比 — 夜航主导）
 - 协议/任务/辅助三色（紫/绿/米灰）在 dark canvas 上对比度更高（待 §2.3.2 dark mode 实测确认）
 - bundle 视觉锚点（Linear-class polish，[[012-lock-visual-quality-anchor]]）默认 dark surface
@@ -324,7 +357,8 @@ ADR-012 Phase 2 已实装 dark default + light @media override。Dark mode 实�
 // settingsStore.setThemeMode 内部经 applyAppearance 落 class（示意，非实现）
 root.classList.remove('light', 'dark')
 if (mode === 'light') root.classList.add('light')
-else if (mode === 'dark') root.classList.add('dark') // system 不加 class
+else if (mode === 'dark') root.classList.add('dark')
+else root.classList.add('system') // v0.20：system 也落 class，@media guard 只认 .system
 ```
 
 **未来扩展锚点**（v1.x backlog）：
@@ -486,12 +520,13 @@ else if (mode === 'dark') root.classList.add('dark') // system 不加 class
 > 旧锚点「a Bloomberg terminal that read Linear's typography manual」（反 shadow 的 flat 调性）已被 ADR-019 推翻。新目标：**Linear typography + 密度 + subtle elevation**——拿回设计稿「抬起感」，同时保留高密度 / 锐排版 / 反渐变玻璃感。
 
 视觉锚点来源：
+- [[024-dark-cockpit-identity]] ADR-024 深色驾驶舱身份（v0.20 补记，2026-07-21 Accepted）：主形态**恒定深色**为身份默认、light 降为显式设置；`--brand` 系恒定品牌 token 用于身份时刻；协议舱活动相位主角化 / Macro 命令牌化 / Recent 时间线形态。**推翻 ADR-018 补遗「light 为参考观感」**——Promptscape 设计稿自此只作结构与密度参照，不作亮暗参照
 - [[019-supersede-flat-visual-anchor]] ADR-019 视觉决策（推翻 flat，引入 elevation + 放弃颜色本体论，全面对齐 Promptscape）
 - [[018-absorb-promptscape-design]] Promptscape 设计稿吸收（中性强调 + 主题三态）
 - [[CLAUDE-DESIGN]] sticky context（须同步移除「No box-shadow」hard exclusion 并 bump 重传，见 §8.3）
 - [[012-lock-visual-quality-anchor]] ADR-012（**Superseded by ADR-019**；其 Linear typography / 密度遗产仍沿用，仅反阴影底线被推翻）
 
-任何视觉决策与上述源冲突时，**优先级**：ADR-019 > Promptscape 设计稿 > CLAUDE-DESIGN > bundle preview。
+任何视觉决策与上述源冲突时，**优先级**：ADR-024（亮暗与身份）> ADR-019（elevation 与颜色语义）> Promptscape 设计稿（结构与密度）> CLAUDE-DESIGN > bundle preview。
 
 ### 8.2 Hard exclusions（never generate）
 
@@ -559,9 +594,9 @@ bundle / Claude Design 视觉锚点变更时（如 Linear 大版本视觉重做 
 
 **hard rule**：组件 CSS 写 typography 时优先引 preset，不重复散写字段组合。preset 不够用时**新增 preset**而非裸写——新 preset 视为 design-spec 扩展，需 bump。
 
-> **v0.15 draft（reshape W1/W2，ADR-023，⏳ 待人审）**：新增 5 角色（page-title / action / label / note / num），正文层 13→14（`ph-card-body`/`ph-empty`/body 基线，对应审计 D-3「正文 14」）、`ph-code` 12→13（Modifier 文本是内容不是装饰）。全仓 64 处 `font:` 简写清零迁移至 composes；可点击文字 12px 根因（primitives `.btn`）由 `ph-action` 修复（D-3「可点击 ≥13」）。v0.13 随注 3 的「mono 计数分叉」由 `.ph-num` 正式收编为角色，不再是豁免；`.ph-code` 有了消费者。有语义的偏差保留为 longhand + `preset-equivalent` 注释（现例：PhaseBar 权重梯度、SettingsModal mono navHead）。
+> **v0.15（reshape W1/W2，[[023-ui-reshape-before-release]]；2026-09-01 随 v0.20 送审，修订记录已补 v0.15 条目）**：新增 5 角色（page-title / action / label / note / num），正文层 13→14（`ph-card-body`/`ph-empty`/body 基线，对应审计 D-3「正文 14」）、`ph-code` 12→13（Modifier 文本是内容不是装饰）。全仓 64 处 `font:` 简写清零迁移至 composes；可点击文字 12px 根因（primitives `.btn`）由 `ph-action` 修复（D-3「可点击 ≥13」）。v0.13 随注 3 的「mono 计数分叉」由 `.ph-num` 正式收编为角色，不再是豁免；`.ph-code` 有了消费者。有语义的偏差保留为 longhand + `preset-equivalent` 注释（现例：PhaseBar 权重梯度、SettingsModal mono navHead）。
 
-> **v0.13 已落地**（P3-7）：7 个 preset 全量落盘 **`src/styles/typography.module.css`（真源）**，组件经 CSS Modules `composes` 引用（longhand 写法，允许 composing class 覆盖单轴）。落地随注三条：
+> **v0.13 已落地**（P3-7；v0.15 扩为上表 12 个）：7 个 preset 全量落盘 **`src/styles/typography.module.css`（真源）**，组件经 CSS Modules `composes` 引用（longhand 写法，允许 composing class 覆盖单轴）。落地随注三条：
 > 1. **覆盖 preset 属性须加倍类名**——Vite 将 typography module 发射在 bundle 中段，等 specificity 本地覆盖不保序（dev/build 顺序不同）；现例 `primitives .emptyRow.emptyRow`
 > 2. **Input 例外**：采 `.ph-card-body` 度量但输入文本 `color` 保 `--fg-1`（preset 的 `--fg-2` 会压暗用户输入；grouped selector 不能 composes 故用 longhand）
 > 3. **登记遗留分叉**：mono 计数惯例（RegionHeader count / MacroGrid `.uses` / PhaseBar `.shortcut` / RecentList `.itemTime` / DraftInbox `.time`——mono + tabular-nums + `--aux`）与 `.ph-meta`（sans）系统性分叉，按「工作区现状优先」未强迁，待后续收编为 mono 变体或显式豁免；`.ph-code` 已落地但暂无消费者（Modifier raw text 现 UI 只显名字）
@@ -970,7 +1005,7 @@ bundle 派生的 3 个跨组件 chrome primitive：
 
 合规——属于「用户内容」分类（即使是 seed 数据，本质仍是用户可编辑字段）。
 
-**用户内容色（v0.14 · [[021-scene-layered-editing]] 子决策 2，待 omar 复核）**：`scenes.color` 与 `scenes.icon` 同属用户内容，沿用本节 chrome/用户内容二分——
+**用户内容色（v0.14 · [[021-scene-layered-editing]] 子决策 2，2026-09-01 omar 复核通过）**：`scenes.color` 与 `scenes.icon` 同属用户内容，沿用本节 chrome/用户内容二分——
 
 - **染色范围**：只染场景**自身图标 glyph**（Scene tab + 卡头，`style={{ color }}` 注入 wrapper，lucide 走 `currentColor`）；**不染任何 chrome**（tab pill 边框/底色、列头、卡面均不受影响）。与 [[019-supersede-flat-visual-anchor]]「放弃颜色本体论」不冲突：ADR-019 禁的是 chrome 层 ontology 装饰色，用户内容色是用户表达
 - **预设与存储**：属性面板提供 6 色预设 swatch + 清除；hex 常量定义在 `ScenePropertiesEditor.tsx` 组件内（注释标注 user-content presets, not chrome tokens），**不入 §2.4 token 表**；swatch 填充与 glyph 染色都走 inline style，CSS 保持全 token（token-gate 不豁免 CSS 文件）
@@ -1037,6 +1072,19 @@ bundle 派生的 3 个跨组件 chrome primitive：
 
 ## 修订记录
 
+### v0.20（2026-09-01）— ADR-024 回流补账 + 两个死 token 退役（人审批次 ⑥）
+
+> 触发：2026-09-01 人审批次走到本文档，发现 [[024-dark-cockpit-identity]]（2026-07-21 Accepted）影响范围写明「design-spec §2/§8/§9 下轮八步回流」而该轮从未发生——§2.5 仍写「无 class 即跟随系统」、§8.1 锚点不含深色身份、`--brand` 系与 light 加深值全无记载。omar 裁「先补完回流再定稿」，本版补齐后送审。**不含新设计决策**，全部是 2026-07-21/22 已落地代码事实的回流。
+
+- **新增 §2.4.6 品牌 token 系 + light 身份加深**：`--brand` / `--brand-fg` / `--brand-dim` / `--brand-ghost` / `--selection` 五枚与用途；ADR-024 补遗「彩色 accent swatch 同时接管 brand 系」；tokens.css §1d 五路 light 加深值与对比度口径（surface-1 ≥ 4.4:1；blue / amber 在 canvas 上 4.39 / 4.01 只作填充与焦点环）；`--aux` 浅色加深；theme-parity gate 双轨镜像
+- **§2.5 三处订正**：light 只在 `.light` 或 `.system` + OS 浅色时出现，裸 root 恒为暗色；`system` 落 `.system` class（原文「不加 class」已失效）；默认 `dark` + persist v2 一次性迁移；「为何 Dark 是 default」补哲学三与 ADR-024 推翻 ADR-018 补遗锚点
+- **§2.1 补 `--t-15`**（Macro 命令牌名称 hero 档）；**`--t-18` 退役**——ADR-024 引入的活动相位 display 档随 ADR-025 §6 去掉 PhaseBar 字号漂移后无消费者，自 `tokens.css` 删除
+- **`--h-modifier-tray` 退役**（基础层 132px + 紧凑层 104px 两条）：Modifier 底部托盘随 ADR-026 固定空间布局撤除，token 无消费者；代码里留着的理由正是「删 tokens.css 条目属契约变更须走八步」，本版即那次八步。`density-gate` / `token-gate` / `theme-parity` 三 gate 复跑全绿
+- **§8.1 锚点来源补 ADR-024**，优先级改为 ADR-024（亮暗与身份）> ADR-019 > Promptscape（结构与密度）> CLAUDE-DESIGN > bundle
+- **§9 摘掉 v0.15「⏳ 待人审」标记**，随本版送审；「v0.13 7 个 preset」注补「v0.15 扩为 12 个」
+- **修订记录补 v0.15 条目**（2026-07-21 当日漏记，v0.16 时登记为遗留）
+- frontmatter 改正：旧 `status: ratified` 与注释「v0.11–v0.18 待人审」自相矛盾，本版置 `draft` 送审
+
 ### v0.19（2026-08-20）— 密度层立论重写并首次收录（omar 裁「留」）
 
 > 起因是旧账复核：紧凑档写下的唯一存在理由是「640px 基准窗口」，而**该基准不存在**——窗口恒等于显示器高度。omar 裁定档位**保留**，理由重写。
@@ -1082,7 +1130,14 @@ bundle 派生的 3 个跨组件 chrome primitive：
 
 > ⚠️ 走查另发现三项缺陷未纳入本版（Scene 下限 / Separator 死区 / `--brand-dim` 对比度），**已于 v0.17 逐项裁决**。
 
-> 📌 遗留：frontmatter 自 v0.15 起版本号已 bump 但**修订记录缺 v0.15 条目**（本次未补，不在 ADR-026 回流范围）。
+> 📌 遗留：frontmatter 自 v0.15 起版本号已 bump 但**修订记录缺 v0.15 条目**（本次未补，不在 ADR-026 回流范围）→ **v0.20 已补账**（见下方 v0.15 条目）。
+
+### v0.15（2026-07-21）— ADR-023 涟漪：排版角色体系扩充（v0.20 补账登记）
+
+> 当日漏记，v0.16 登记为遗留，v0.20 补账。涟漪源 [[023-ui-reshape-before-release]]（重塑 W1/W2）。
+
+- **§9 角色表 7 → 12 preset**：新增 `ph-page-title` / `ph-action` / `ph-label` / `ph-note` / `ph-num`；正文层 13 → 14（`ph-card-body` / `ph-empty` / body 基线，审计 D-3「正文 14」）；`ph-code` 12 → 13（Modifier 文本是内容不是装饰）；v0.13 随注 3 的 mono 计数分叉由 `ph-num` 收编
+- 代码事实：全仓 64 处 `font:` 简写清零迁移至 composes；可点击文字 12px 根因（primitives `.btn`）修复
 
 ### v0.14（2026-07-06）— ADR-021 涟漪：scene.color 用户内容色 + 就地动作簇视觉
 

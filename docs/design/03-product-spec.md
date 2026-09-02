@@ -1,12 +1,12 @@
 ---
 type: product-spec
 project: prompt-hub
-version: v0.22
+version: v0.23
 created: 2026-05-18
-last_modified: 2026-08-20
-status: draft  # v0.10 起增量待 omar 人审；前序 v0.8 已 ratified
+last_modified: 2026-09-01
+status: ratified  # 2026-09-01 人审批次 ⑤：v0.23 补齐话术卡解剖 / 密度档 / 默认深色三处回流后，omar 审阅 v0.10–v0.23 全部增量通过，draft → ratified（前序 v0.8 ratified）
 author: co  # 🤝 人机共创（CLAUDE §5.2）
-related: [[01-spec]], [[05-design-spec]], [[06-prd]], [[012-lock-visual-quality-anchor]], [[019-supersede-flat-visual-anchor]], [[020-restore-protocol-dark-band]], [[021-scene-layered-editing]], [[022-cross-scene-phrase-move]], [[025-unified-anchored-editing]], [[027-configurable-global-hotkey]], [[013-alignment-phrases-tab-inclusion]], [[015-expose-mcp-write-pipeline]], [[017-enable-auto-update]], [[018-absorb-promptscape-design]], [[026-fixed-spatial-layout]]
+related: [[01-spec]], [[05-design-spec]], [[06-prd]], [[012-lock-visual-quality-anchor]], [[024-dark-cockpit-identity]], [[019-supersede-flat-visual-anchor]], [[020-restore-protocol-dark-band]], [[021-scene-layered-editing]], [[022-cross-scene-phrase-move]], [[025-unified-anchored-editing]], [[027-configurable-global-hotkey]], [[013-alignment-phrases-tab-inclusion]], [[015-expose-mcp-write-pipeline]], [[017-enable-auto-update]], [[018-absorb-promptscape-design]], [[026-fixed-spatial-layout]]
 description: 手动 AI 编程仪表盘的 UI 契约——双形态架构/布局/点击路径/状态反馈/用户旅程/主形态 UI 草案；写 UI / 改交互时召回。版本叙事见 CHANGELOG
 ---
 
@@ -766,6 +766,7 @@ dirty 判定以**初始值快照**比对，不以「是否聚焦过」判定。
 - **下方内容**：当前 Scene 展开
   - 如果 Scene 有 SubStage：按 SubStage 分组显示，每组列头「序号 + 子阶段名」；**未归组话术的列头无条件渲染为「未分组」**（v0.13 · P3-1：复用同结构含序号保各列头基线对齐，文案 muted——此前无列头，多列布局下裸卡起排与邻列不齐）
   - 每组下挂 Phrase 卡片（13px，比 Macro 卡片更紧凑）
+  - **话术卡解剖：静息态只显标题（v0.23 补回流 · omar 2026-07-23 裁决）**——名称即把手，正文**不上卡面**（原 2 行 line-clamp 预览已移除）；内容只在**整理态整卡点击展开**时上屏，是预览语义（§4.0.7）唯一的内容呈现时刻。承载量提升来自卡片解剖而非只靠间距收紧，**不分密度档生效**（[[05-design-spec#2.7]] 紧凑档只收结构 token，不改本条）
   - **📥 草稿 tab 激活时**：渲染 pending drafts 列表（数据源 [[06-prd#10.3]] `list_drafts`，按 created_at 倒序）。每张草稿卡片信息架构：
     - 左上：target_type 角标（modifier / composition / macro / alignment_phrase 四类之一）
     - 标题行：draft name
@@ -778,7 +779,7 @@ dirty 判定以**初始值快照**比对，不以「是否聚焦过」判定。
   - 点击 Phrase → 复制 → 自动隐藏窗口
   - 长按 Phrase → 升级为 Macro / 添加到 Composition 队列
   - **就地编辑（三层，v0.14 · [[021-scene-layered-editing]]，推翻 v0.11–v0.13「统一编辑态」契约）**：全局 editMode 已废除，编辑什么点什么（Tauri-only 不经 MCP，[[scene-substage-editing]] D3 沿用；历史谱系：[[scene-phrase-editing]] v1.4 / [[scene-substage-editing]] v1.6 的编辑态承载被本层级模型取代，删除语义与链路不变）——
-    - **属性层**：卡头铅笔 → 属性面板（`ScenePropertiesEditor`，v0.19 起为锚定在卡头铅笔上的 top layer 浮层，**点外拒绝关闭 + `Esc` 逐层退栈**，见本节「编辑容器统一契约」c）：name 必填 / icon（lucide 6 预设 + emoji 自由输入 + 「无」）/ color（6 预设 swatch + 清除；用户内容色只染场景自身图标，[[05-design-spec#12.4]]，ADR-021 子决策 2 待 omar 复核）/ rolePresets（chip + × 删除 + 回车添加，Enter 带 IME `isComposing` 守卫）；底部动作行收编 **场景前移/后移**（`reorder_scenes`）与**删除**（二次确认；非空 Scene 后端 `RepoError::SceneNotEmpty` 阻止并 toast，[[06-prd#6.4]]）。面板内控件走原生焦点序、不进 `data-nav-item` 漫游（模态编辑上下文，设计选择）；保存 payload 全字段透传 `update_scene`；卡头 meta 行消费 rolePresets chips
+    - **属性层**：卡头铅笔 → 属性面板（`ScenePropertiesEditor`，v0.19 起为锚定在卡头铅笔上的 top layer 浮层，**点外拒绝关闭 + `Esc` 逐层退栈**，见本节「编辑容器统一契约」c）：name 必填 / icon（lucide 6 预设 + emoji 自由输入 + 「无」）/ color（6 预设 swatch + 清除；用户内容色只染场景自身图标，[[05-design-spec#12.4]]，ADR-021 子决策 2 于 2026-09-01 复核通过）/ rolePresets（chip + × 删除 + 回车添加，Enter 带 IME `isComposing` 守卫）；底部动作行收编 **场景前移/后移**（`reorder_scenes`）与**删除**（二次确认；非空 Scene 后端 `RepoError::SceneNotEmpty` 阻止并 toast，[[06-prd#6.4]]）。面板内控件走原生焦点序、不进 `data-nav-item` 漫游（模态编辑上下文，设计选择）；保存 payload 全字段透传 `update_scene`；卡头 meta 行消费 rolePresets chips
     - **结构层**：子阶段列头 hover / `:focus-within` 双通道显隐动作簇——✎ 行内改名（`update_sub_stage`，IME 守卫）/ ←→ 相邻交换（`reorder_sub_stages`）/ 🗑 二次确认删除（`delete_sub_stage`，**其下 Phrase 解绑为「无分组」**，[[06-prd#6.4]]）；网格尾「＋ 新增子阶段」ghost 列（`create_sub_stage`）
     - **内容层**：话术卡 hover / `:focus-within` 动作簇——✎ **锚定在该话术卡上的浮层编辑器**（`update_phrase`；v0.19 起，原为「原位换行内编辑器」即卡片被编辑器替换，见本节「编辑容器统一契约」a。卡片现保持挂载充当锚点；列尾「＋ 添加话术」ghost 卡的新建编辑器锚在该 ghost 按钮上）/ ↑↓ 组内相邻交换（`reorder_phrases`，per-(scene, sub_stage) 分区不跨组）/ 🗑 二次确认删除（`delete_phrase`）；每列底「＋ 添加话术」ghost 卡预填该列 subStageId（`create_phrase`）；**动作簇全部 `stopPropagation`，不触发整卡 copy 主动作**；移动（跨 Scene / 跨子阶段）走动作簇「移动到…」分层选择器——先选目标 Scene 再选其子阶段（含「未分组」），目标 == 当前位置时确认禁用（防空移动），确认后 toast「已移至 X / Y」+ 撤销（凭 MoveReceipt 反向恢复原 Scene/子阶段/精确排序位，仅 toast 生命周期内有效，[[022-cross-scene-phrase-move]]）；话术编辑器子阶段下拉**保留**为就地改分组第二路径，**两径底层语义等价**（均落目标分区末尾，ADR-022 子决策 2）；移动不计 usage；一律不做拖拽
     - **排序一律按钮不拖拽**（ADR-021 子决策 1）：视图网格 copy 主动作与拖拽 affordance 互斥，原 v0.13 · P3-6 的 SubStage 结构编辑器 dnd 随编辑态移除，←→/↑↓ 按钮等价承接同一 IPC 链路（能力不回退）；order_index 分区语义（Scene 全局单序 / SubStage per-scene 单序 / 活动场景按 id 追踪）不变
@@ -852,7 +853,9 @@ dirty 判定以**初始值快照**比对，不以「是否聚焦过」判定。
 - **唤起**：Header gear 点击 / `⌘,`
 - **关闭**：Esc / 点击遮罩 / 右上角 X
 - **结构**：左导航（外观 / **快捷键** / 更新 / 数据）+ 右内容
-  - **外观页**：主题模式三态分段控件（浅色 / 深色 / 跟随系统）+ 强调色 5 色 swatch（中性 / 蓝 / 绿 / 紫 / 琥珀）；偏好 persist localStorage（[[02-constitution#A2]] 不出站）
+  - **外观页**：主题模式三态分段控件（浅色 / 深色 / 跟随系统）+ 强调色 5 色 swatch（中性 / 蓝 / 绿 / 紫 / 琥珀）+ **密度两档分段控件（舒适 / 紧凑，v0.23 补回流）**——紧凑档收紧行高与区块留白、字号不变，契约见 [[05-design-spec#2.7]]；偏好 persist localStorage（[[02-constitution#A2]] 不出站）
+    - **默认深色且恒定（v0.23 补回流 · [[024-dark-cockpit-identity]]）**：主形态以深色为身份默认，**不随 OS 亮暗**；浅色是显式设置项，「跟随系统」也须显式选。旧装机带的 `light` 默认在 persist v2 迁移时一次性重置为深色，之后用户选浅色照常持久化。视觉依据见 [[05-design-spec#2.5]] / §2.4.6
+    - **选彩色强调色 = 同时换品牌身份色**（ADR-024 补遗）：蓝 / 绿 / 紫 / 琥珀任一 swatch 同时接管 logo / 活动相位 / Macro 芯片的 `--brand` 系；中性不接管
   - **快捷键页（v0.20 新增 · 涟漪 [[027-configurable-global-hotkey]]）**：单字段「全局唤起」——当前组合键 keycap + 「更改」/「恢复默认」两键。**为什么独立成页而不并入外观**：唤起键是行为绑定不是外观偏好，且两者持久化归属不同（见下方「设置持久化归属」）
     - **录键是一种模式，不是输入框**：值是物理组合键，唯一诚实的录入方式是按下它。「更改」进入录键态 → window `keydown` **capture 阶段全量捕获 + `stopPropagation`**，否则正在录的组合键会同时触发它当前绑定的应用内动作
     - **ESC 语义在录键态被局部改写**：一次 ESC 取消录制，**第二次才关闭设置弹窗**。这是本页与 §13.3「编辑容器统一契约」ESC 规则的**唯一交叉面**——弹窗的 ESC 监听在 window 冒泡阶段，录键态的 capture 监听先于它执行。取舍理由：录制中途把弹窗关掉，用户无法判断组合键是否已保存
@@ -926,6 +929,18 @@ dirty 判定以**初始值快照**比对，不以「是否聚焦过」判定。
 ---
 
 ## 修订记录
+
+### v0.23（2026-09-01）— 三处旧账回流：话术卡解剖 / 密度档 / 默认深色（人审批次 ⑤）
+
+> 触发：2026-09-01 人审批次走到本文档。HANDOFF 第 3 项自 2026-07-21 挂着三笔「随八步回流」——话术卡 title-only（omar 2026-07-23 裁决）、密度档外观设置（2026-07-22 落地）、SOP 占位形态（2026-08-10）——其中 SOP 一笔 v0.22 已用「目标形态 ≠ 当前实现」告示块销掉，其余两笔本版补齐；顺带补 [[024-dark-cockpit-identity]] 从未回流到本文档的「默认深色恒定」。omar 裁「先补完回流再定稿」。**不含新决策**。
+
+| 落点 | 改动 | 依据 |
+|---|---|---|
+| §13.3 区域 4 | 新增「话术卡解剖」条：静息态只显标题，正文不上卡面，内容只在整理态整卡点击展开时呈现；不分密度档 | omar 2026-07-23 裁决（CHANGELOG 2026-07-22 密度档条目）|
+| §13.3 区域 9 外观页 | 补密度两档分段控件（舒适 / 紧凑）；补「默认深色且恒定、浅色为显式设置、persist v2 一次性重置」；补「彩色强调色同时接管品牌身份色」 | 2026-07-22 密度档落地 / ADR-024 + 补遗 |
+| frontmatter related | 加 [[024-dark-cockpit-identity]] | 随上 |
+
+**未动**：§4.0.7 两态语义表——「选择/预览」一格已隐含预览是唯一内容时刻，区域 4 新条把它写明即可，不改表。
 
 ### v0.22（2026-08-20）— ADR-026 两项遗留裁决：层标记 pill 减二留一 + SOP 退出 Tab cycle
 
@@ -1036,7 +1051,7 @@ dirty 判定以**初始值快照**比对，不以「是否聚焦过」判定。
 | §13.3 区域 4 尺寸 | 「编辑态保留纵向行」删除；**空子阶段列常显**（muted 列头 + 添加占位——编辑态废除后空子阶段唯一可见可管理入口，密度变化列真机复验）| ADR-021 |
 | §13.3 区域 4 顶部 Tab | tab 行尾新增「＋ 新建场景」ghost 按钮（`data-nav-item`）——创建后跳新 tab 自动开属性面板，替代原编辑态行内改名流 | ADR-021 |
 | §13.3 区域 4 行为 | **「管理话术」「管理结构」两条统一编辑态契约整体推翻**，重写为三层就地编辑：属性层（铅笔→`ScenePropertiesEditor`：name/icon/color/rolePresets + 场景前移/后移/删除收编，PRD §6.4 三字段首次获 UI 承载）/ 结构层（列头 hover/`:focus-within` 动作簇 + ghost 新增列）/ 内容层（话术卡动作簇 + ghost 添加卡，`stopPropagation` 守 copy 主动作）；**排序一律按钮不拖拽**（SubStage dnd 随编辑态移除，←→/↑↓ 等价承接，ADR-021 子决策 1）| ADR-021 |
-| §13.3 区域 4 行为 | scene.color 定性用户内容色只染场景自身图标（[[05-design-spec#12.4]]，ADR-021 子决策 2 **待 omar 复核**，否决降级仅存储）；属性面板内控件走原生焦点序不进漫游（设计选择，显式记档）| ADR-021 |
+| §13.3 区域 4 行为 | scene.color 定性用户内容色只染场景自身图标（[[05-design-spec#12.4]]，ADR-021 子决策 2 **2026-09-01 omar 复核通过**）；属性面板内控件走原生焦点序不进漫游（设计选择，显式记档）| ADR-021 |
 
 ### v0.13（2026-07-01）— 产品走查修缮批次涟漪（Draft 编辑 / Modifier 管理口 / 设为默认 / 排序 UI / composition 暂缓）
 

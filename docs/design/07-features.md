@@ -1,10 +1,10 @@
 ---
 type: features
 project: prompt-hub
-version: v1.18
+version: v1.19
 created: 2026-05-19
 last_modified: 2026-09-01
-status: in-progress  # S1 进行中；v0.2.0 已发布（2026-08-20）；进度叙事见 §4 节奏表与 CHANGELOG，当前基线见 §7
+status: in-progress  # S1 进行中；v0.2.0 已发布（2026-08-20）；进度叙事见 §4 节奏表与 CHANGELOG，当前基线见 §7；v1.19 矩阵（37 verified / 39 done / 1 in-progress / 14 planned）omar 2026-09-01 人审批次 ⑦ 认可
 author: ai  # 🤖 AI 主笔 + 人审（CLAUDE §5.2）
 audience: [human, ai]
 description: prompt-hub 功能清单运营视图——功能 × 状态 × 测试覆盖 × 版本的单一事实源；查/改功能状态时召回。版本叙事见 CHANGELOG
@@ -43,10 +43,10 @@ related:
 | `planned` | 已立项，未开始编码 | spec / prd 收录 |
 | `in-progress` | 编码中 | 第一个 commit 提交 |
 | `done` | 编码完成，本地跑通 | PR merged to main |
-| `verified` | 测试覆盖达标，已上线给真实使用者 | E2E 通过 + 使用者使用 ≥1 周 |
+| `verified` | 已进入 publish 的 release，且有**留证**的验证通过，发布后自用 ≥1 周无回归 | ① 真机验收门通过（行为 / 布局类：ADR §6 编号门项或 runbook 留证）**或**持续运行的自动化 gate（结构 / 纪律类：源码级 gate、真实进程 e2e）+ ② 进入过一次已 publish 的 release + ③ 自用 ≥1 周无回归。留证逐行登记在 §7 索引。Playwright E2E 层落地后加回「E2E 通过」 |
 | `deprecated` | 已废弃，待移除 | 开 ADR 决议废弃 |
 
-**铁律**：已发布到生产（自用）的功能必须 `verified`，否则违反 [[01-spec#10.5]] 验收节奏。
+**铁律**：已进入 publish 的 release 的功能，满足上述三条者**必须**标 `verified`；不满足者保持 `done`，并在 §7 留证索引写明缺哪条。`verified` **不等于**外部使用者验证——外部验证是下一级门槛（[[HANDOFF]] 第 19 项），本表不设该状态。留证机制见 [[11-test-spec#4.1]]（真机验收门临时承接 E2E）。
 
 ## §2 优先级定义
 
@@ -63,10 +63,10 @@ related:
 | 功能 | 优先级 | 状态 | 目标版本 | 测试覆盖 | 责任人 | prd 引用 |
 |---|---|---|---|---|---|---|
 | 搜索区（⌘K 全局搜索） | P0 | `done` | v1.0 | 55 集成 / 单元未量化 | omar | [[06-prd#5.0]] |
-| 相位带（Phase Bar） | P0 | `done` | v1.0 | 55 集成 / 单元未量化 | omar | [[06-prd#5.1]] |
-| 对齐话术（AlignmentPhrases）chip 行 | P0 | `done` | v1.0 | 55 集成 / 单元未量化 | omar | [[013-alignment-phrases-tab-inclusion]] |
-| Macro 快捷区 | P0 | `done` | v1.0 | 55 集成 / 单元未量化 | omar | [[06-prd#5.2]] |
-| Scene 全景区 | P0 | `done` | v1.0 | 55 集成 / 单元未量化 | omar | [[06-prd#5.3]] |
+| 相位带（Phase Bar） | P0 | `verified` | v1.0 | 55 集成 / 单元未量化 | omar | [[06-prd#5.1]] |
+| 对齐话术（AlignmentPhrases）chip 行 | P0 | `verified` | v1.0 | 55 集成 / 单元未量化 | omar | [[013-alignment-phrases-tab-inclusion]] |
+| Macro 快捷区 | P0 | `verified` | v1.0 | 55 集成 / 单元未量化 | omar | [[06-prd#5.2]] |
+| Scene 全景区 | P0 | `verified` | v1.0 | 55 集成 / 单元未量化 | omar | [[06-prd#5.3]] |
 | 最近使用区 | P0 | `done` | v1.0 | 55 集成 / 单元未量化 | omar | [[06-prd#5.5]] |
 
 ### 3.2 闭环沉淀（S2 / 第二阶段）
@@ -94,7 +94,7 @@ related:
 | Phase 可配置编辑 | P1 | `planned` | v1.3 | 0% | omar | [[06-prd#6.5]] |
 | 数据导入导出（JSON） | P1 | `done` | v1.3 | repo-core export 3 test + repo-write import 5 test（含整库替换 / 含弃用行 / 拒不兼容 major / FK 原子回滚）；前端 SettingsModal 数据页（save/open dialog + 整库替换确认弹窗）；不导出 usage_records（决策 D2）/ 整库替换（决策 D1） | omar | [[06-prd#6.9]] |
 | 主形态界面布局可配置 | P1 | `planned` | v1.3 | 0% | omar | [[01-spec#2.9]] |
-| **全局唤起键可配置** | P1 | `done` | v1.3 | repo-core settings 4 test（seed 默认 / upsert 不重复行 / 缺行回落）+ commands 5 test（accelerator 校验：默认可注册 / 拒裸键 / 拒乱码 / 多修饰键 / seed 与解析器不脱节）+ repo-write 1 test（导入不清 settings）+ 前端 accelerator 9 test + HotkeyRecorder 10 test + settingsStore 4 test + HotkeyBanner 2 test。**注册/回滚与 Reopen 逃生口不可自动化**，归 G3 真机门 —— **2026-08-20 走查四项全通过**（项 2 一度判不可达，补冲突提示后转为可观测并通过，见 [[11-test-spec#4.2]]）| omar | [[06-prd#5.8]] · [[06-prd]] §6.8-bis |
+| **全局唤起键可配置** | P1 | `verified` | v1.3 | repo-core settings 4 test（seed 默认 / upsert 不重复行 / 缺行回落）+ commands 5 test（accelerator 校验：默认可注册 / 拒裸键 / 拒乱码 / 多修饰键 / seed 与解析器不脱节）+ repo-write 1 test（导入不清 settings）+ 前端 accelerator 9 test + HotkeyRecorder 10 test + settingsStore 4 test + HotkeyBanner 2 test。**注册/回滚与 Reopen 逃生口不可自动化**，归 G3 真机门 —— **2026-08-20 走查四项全通过**（项 2 一度判不可达，补冲突提示后转为可观测并通过，见 [[11-test-spec#4.2]]）| omar | [[06-prd#5.8]] · [[06-prd]] §6.8-bis |
 
 ### 3.5 辅形态副屏（S5 / 第五阶段）
 
@@ -108,14 +108,14 @@ related:
 
 | 功能 | 优先级 | 状态 | 目标版本 | 测试覆盖 | 责任人 | 引用 |
 |---|---|---|---|---|---|---|
-| 全局快捷键注册（默认 ⌥ Space） | P0 | `done` | v1.0 | M0 手动 verified；v1.15 起绑定读自 SQLite `settings` 而非硬编码，注册失败仍走 `HotkeyBanner` 告警。**改绑能力见 §3.4「全局唤起键可配置」** | omar | [[prompt-hub-mvp#第一阶段]] · [[027-configurable-global-hotkey]] |
-| 主形态唤起 ≤200ms（P95） | P0 | `done` | v1.0 | `bench:hotkey-wake` P95=13.708ms ✓（2026-08-20，auto-cycle 主线程口径；旧 10.49ms 是 M0-3 inline 版数字，见 [[learnings]] 信条四）| omar | [[02-constitution#C1]] |
-| 复制即隐藏 / ESC 关闭 | P0 | `done` | v1.0 | Phase 5 视觉+功能验收 11/11 ✓（2026-06-03） | omar | [[prompt-hub-mvp#第一阶段]] |
+| 全局快捷键注册（默认 ⌥ Space） | P0 | `verified` | v1.0 | M0 手动 verified；v1.15 起绑定读自 SQLite `settings` 而非硬编码，注册失败仍走 `HotkeyBanner` 告警。**改绑能力见 §3.4「全局唤起键可配置」** | omar | [[prompt-hub-mvp#第一阶段]] · [[027-configurable-global-hotkey]] |
+| 主形态唤起 ≤200ms（P95） | P0 | `verified` | v1.0 | `bench:hotkey-wake` P95=13.708ms ✓（2026-08-20，auto-cycle 主线程口径；旧 10.49ms 是 M0-3 inline 版数字，见 [[learnings]] 信条四）| omar | [[02-constitution#C1]] |
+| 复制即隐藏 / ESC 关闭 | P0 | `verified` | v1.0 | Phase 5 视觉+功能验收 11/11 ✓（2026-06-03） | omar | [[prompt-hub-mvp#第一阶段]] |
 | UsageRecord 持续记录 | P0 | `in-progress` | v1.0 | 数据层 done / 链路待 S2 | omar | [[06-prd#6.8]] |
 | 三层资产模型（Modifier/Composition/Macro） | P0 | `planned` | v1.0 | 0% | omar | [[02-constitution#B1]] |
-| 协议层与任务层物理分离 | P0 | `done` | v1.0 | 结构分离落地（B2 纯结构）；视觉区分自 ADR-019 改靠位置+形状（弃颜色本体论）/ 数据层待 S2。**v1.17 起不再叠文字标签**——「协议层」「任务层」两枚 pill 删除（位置+形状已冗余编码），仅 `ModifierGrid` 保留「协议层 · 参考」（aside 列无 band 无位置线索，是唯一标识）| omar | [[02-constitution#B2]] · [[05-design-spec#5]] |
-| 本地数据存储（无服务端） | P0 | `done` | v1.0 | M0-3 SQLite 落盘 / cargo 12 测试 ✓ | omar | [[02-constitution#A2]] |
-| 设计 Token 系统（无裸值） | P0 | `done` | v1.0 | Phase 1-3 全量 token 化 ✓ | omar | [[prompt-hub-mvp#§0-T1]] |
+| 协议层与任务层物理分离 | P0 | `verified` | v1.0 | 结构分离落地（B2 纯结构）；视觉区分自 ADR-019 改靠位置+形状（弃颜色本体论）/ 数据层待 S2。**v1.17 起不再叠文字标签**——「协议层」「任务层」两枚 pill 删除（位置+形状已冗余编码），仅 `ModifierGrid` 保留「协议层 · 参考」（aside 列无 band 无位置线索，是唯一标识）| omar | [[02-constitution#B2]] · [[05-design-spec#5]] |
+| 本地数据存储（无服务端） | P0 | `verified` | v1.0 | M0-3 SQLite 落盘 / cargo 12 测试 ✓ | omar | [[02-constitution#A2]] |
+| 设计 Token 系统（无裸值） | P0 | `verified` | v1.0 | Phase 1-3 全量 token 化 ✓ | omar | [[prompt-hub-mvp#§0-T1]] |
 
 ### 3.7 MCP write pipeline（M-X / 反向 AI 写入）
 
@@ -127,9 +127,9 @@ related:
 
 | 功能 | 优先级 | 状态 | 目标版本 | 测试覆盖 | 责任人 | 引用 |
 |---|---|---|---|---|---|---|
-| drafts 收件箱数据层（migration 0003 + payload_hash 去重）| P1 | `done` | v1.1 | repo-core 21 test | omar | [[06-prd#10.1]] |
-| `prompt-hub-mcp` binary（rmcp 1.7 stdio + tracing→stderr）| P1 | `done` | v1.1 | mcp crate 14 test（8 unit + 5 e2e spawn JSON-RPC + 1 trybuild）；/review 后补 confidence/schema_version 信任边界 + Mutex 恢复 | omar | [[06-prd#10.0]] |
-| Cargo workspace 4 crate 物理拆分（编译期写入隔离）| P1 | `done` | v1.1 | trybuild compile_fail | omar | [[09-tech-stack#4.3.1]] |
+| drafts 收件箱数据层（migration 0003 + payload_hash 去重）| P1 | `verified` | v1.1 | repo-core 21 test | omar | [[06-prd#10.1]] |
+| `prompt-hub-mcp` binary（rmcp 1.7 stdio + tracing→stderr）| P1 | `verified` | v1.1 | mcp crate 14 test（8 unit + 5 e2e spawn JSON-RPC + 1 trybuild）；/review 后补 confidence/schema_version 信任边界 + Mutex 恢复 | omar | [[06-prd#10.0]] |
+| Cargo workspace 4 crate 物理拆分（编译期写入隔离）| P1 | `verified` | v1.1 | trybuild compile_fail | omar | [[09-tech-stack#4.3.1]] |
 | Scene 全景区「📥 草稿」tab（promote/discard + Modifier 四象限 popover）| P1 | `done` | v1.1 | promptStore 7 test + App e2e（草稿 tab + DraftInbox 卡片）| omar | [[06-prd#10.3]] |
 | 主形态顶部待审 badge（仅 N>0 显示，跳转收件箱，排除 Tab 循环）| P1 | `done` | v1.1 | App e2e render（badge 条件渲染）| omar | [[06-prd#10.3]] |
 | promote 跨表事务（4 类 arm）+ 5 Tauri IPC（promote/list/count/update/discard）+ mid-session schema recheck（v1.8 起 +`get_draft` 共 6 IPC，见 §3.12）| P1 | `done` | v1.1 | repo-write 9 test（4 promote arm）+ commands schema-guard 2 test + count_pending 1 test | omar | [[06-prd#10.2]] |
@@ -138,20 +138,20 @@ related:
 
 | 类别 | tool | 优先级 | 状态 | 目标版本 | 责任人 | 引用 |
 |---|---|---|---|---|---|---|
-| CRUD | `create_draft` | P1 | `done` | v1.1 | omar | [[06-prd#10.4.1]] |
-| CRUD | `list_drafts` | P1 | `done` | v1.1 | omar | [[06-prd#10.4.1]] |
-| CRUD | `get_draft` | P1 | `done` | v1.1 | omar | [[06-prd#10.4.1]] |
-| CRUD | `update_draft` | P1 | `done` | v1.1 | omar | [[06-prd#10.4.1]] |
-| CRUD | `delete_draft` | P1 | `done` | v1.1 | omar | [[06-prd#10.4.1]] |
-| Helper | `bootstrap_from_markdown` | P1 | `done` | v1.1 | omar | [[06-prd#10.4.2]] |
-| Helper | `save_conversation_as_macro` | P1 | `done` | v1.1 | omar | [[06-prd#10.4.2]] |
-| Helper | `import_json`（6 条加固）| P1 | `done` | v1.1 | omar | [[06-prd#10.4.2]] |
-| Read | `list_phases` | P1 | `done` | v1.1 | omar | [[06-prd#10.4.3]] |
-| Read | `list_alignment_phrases` | P1 | `done` | v1.1 | omar | [[06-prd#10.4.3]] |
-| Read | `list_modifiers` | P1 | `done` | v1.1 | omar | [[06-prd#10.4.3]] |
-| Read | `list_compositions` | P1 | `done` | v1.1 | omar | [[06-prd#10.4.3]] |
-| Read | `list_macros` | P1 | `done` | v1.1 | omar | [[06-prd#10.4.3]] |
-| Read | `list_scenes` | P1 | `done` | v1.1 | omar | [[06-prd#10.4.3]] |
+| CRUD | `create_draft` | P1 | `verified` | v1.1 | omar | [[06-prd#10.4.1]] |
+| CRUD | `list_drafts` | P1 | `verified` | v1.1 | omar | [[06-prd#10.4.1]] |
+| CRUD | `get_draft` | P1 | `verified` | v1.1 | omar | [[06-prd#10.4.1]] |
+| CRUD | `update_draft` | P1 | `verified` | v1.1 | omar | [[06-prd#10.4.1]] |
+| CRUD | `delete_draft` | P1 | `verified` | v1.1 | omar | [[06-prd#10.4.1]] |
+| Helper | `bootstrap_from_markdown` | P1 | `verified` | v1.1 | omar | [[06-prd#10.4.2]] |
+| Helper | `save_conversation_as_macro` | P1 | `verified` | v1.1 | omar | [[06-prd#10.4.2]] |
+| Helper | `import_json`（6 条加固）| P1 | `verified` | v1.1 | omar | [[06-prd#10.4.2]] |
+| Read | `list_phases` | P1 | `verified` | v1.1 | omar | [[06-prd#10.4.3]] |
+| Read | `list_alignment_phrases` | P1 | `verified` | v1.1 | omar | [[06-prd#10.4.3]] |
+| Read | `list_modifiers` | P1 | `verified` | v1.1 | omar | [[06-prd#10.4.3]] |
+| Read | `list_compositions` | P1 | `verified` | v1.1 | omar | [[06-prd#10.4.3]] |
+| Read | `list_macros` | P1 | `verified` | v1.1 | omar | [[06-prd#10.4.3]] |
+| Read | `list_scenes` | P1 | `verified` | v1.1 | omar | [[06-prd#10.4.3]] |
 
 ### 3.8 资产编辑 + 自适应布局（AE / asset-editing plan）
 
@@ -167,11 +167,11 @@ related:
 | Scene/SubStage 结构编辑（D1 Scene+SubStage CRUD 一起做 / D2 seed `0011` 灌示范 SubStage / D3 Tauri-only 不上 MCP / D4 删非空 Scene 阻止 · 删 SubStage 解绑 Phrase；Scene 全局序 + SubStage per-scene 序）| P1 | `done` | v1.6 | 后端 74（repo-write scenes/sub_stages 19 单测）/ 前端 109（store 5 + ScenePanel 组件 6）；真机 CRUD 落盘待验 | omar | [[scene-substage-editing]] |
 | Modifier / Composition 编辑（增删改名/改内容/排序）| P1 | `withdrawn` | v1.3 | ~~ModifierGrid 6 + CompositionWorkbench 6 + composition-b2 gate~~（v1.3 移除）| omar | [[asset-editing-and-adaptive-layout#P2]] |
 | └ v1.3 UI 减负：两编辑面板移出主仪表盘（[[03-product-spec#修订记录]] v0.9）。资产类型、数据层、DraftInbox promote 分支保留（「只进不显」），随时可重挂或落地 ⌘N 子窗口；未改 [[02-constitution#B1]] | — | — | — | — | — | — |
-| Dashboard 可拖列布局（react-resizable-panels v4 `Group`/`Panel`/`Separator` + localStorage 持久化）| P1 | `done` | v1.1 | 73 前端 / 手测 拖拽+持久化 ✓（键盘 focus 待补）| omar | [[asset-editing-and-adaptive-layout#P4]] |
+| Dashboard 可拖列布局（react-resizable-panels v4 `Group`/`Panel`/`Separator` + localStorage 持久化）| P1 | `verified` | v1.1 | 73 前端 / 手测 拖拽+持久化 ✓（键盘 focus 待补）| omar | [[asset-editing-and-adaptive-layout#P4]] |
 | Scene 编辑分层化（废除全局 editMode → 属性面板 `ScenePropertiesEditor`：name/icon/color/rolePresets 首获 UI 承载 + 场景前移/后移/删除收编；子阶段列头 / 话术卡 hover+`:focus-within` 就地动作簇 + ghost 新增入口；空子阶段列常显；排序拖拽→按钮等价）| P1 | `done` | v1.9 | 前端 222 全绿（ScenePanel 34 含 12 格实体×CRUD 矩阵/异步失败/键盘可达 + ScenePropertiesEditor 18）；真机观感待验 | omar | [[021-scene-layered-editing]] |
 | └ v1.9 分层化推翻上方 v1.4/v1.6 两行及 §3.12「Scene/SubStage 排序 UI」行的**编辑态 UI 承载**（能力零回退：同 IPC 链路，SubStage dnd → ←→ 按钮）——旧行保留作历史；契约见 [[03-product-spec#13.3]] 区域 4 v0.14 | — | — | — | — | — | — |
-| 固定空间布局（`interactionMode` 停止驱动区域重排；两态共用一套区域图 + 同一组持久化键；task 列新增用户可拖纵向分配 `task-2row`，Macro 46%/min `132px` · Scene 54%/min `288px`——**下限取像素不取百分比**；两区下限语义一致 = 一个完整单元 + 下一个露半截）| P1 | `done` | v1.12 | 335 前端全绿（`App.test.tsx` 两条模式分歧断言合并为不分模式 `it.each`）+ **真机走查三项通过**（纵向下限 / Separator 命中与光标 / PhaseBar 等宽后活动相位）| omar | [[026-fixed-spatial-layout]] |
-| 统一锚定编辑容器（编辑器脱离宿主文档流 → 原生 `popover` top layer 锚定；四个编辑面共用 `AnchoredEditor` + `PhraseFormEditor`；Macro / 草稿两份手搓表单删除收编，净删约 180 行；保存语义规则表五行；Scene 属性面板点外拒绝关闭 + Esc 逐层退栈为唯一例外；提交键统一 A1-08）| P1 | `done` | v1.14 | 373 前端全绿（新增 `AnchoredEditor` 17 / `useAnchoredPosition` 13，11 条 P1-b 新测逐条反向验证）+ **真机验收门 G1 六项 + P1-b 门两项全通过**，其中项 5 与项 2-B 取得逐像素证据 | omar | [[025-unified-anchored-editing]] |
+| 固定空间布局（`interactionMode` 停止驱动区域重排；两态共用一套区域图 + 同一组持久化键；task 列新增用户可拖纵向分配 `task-2row`，Macro 46%/min `132px` · Scene 54%/min `288px`——**下限取像素不取百分比**；两区下限语义一致 = 一个完整单元 + 下一个露半截）| P1 | `verified` | v1.12 | 335 前端全绿（`App.test.tsx` 两条模式分歧断言合并为不分模式 `it.each`）+ **真机走查三项通过**（纵向下限 / Separator 命中与光标 / PhaseBar 等宽后活动相位）| omar | [[026-fixed-spatial-layout]] |
+| 统一锚定编辑容器（编辑器脱离宿主文档流 → 原生 `popover` top layer 锚定；四个编辑面共用 `AnchoredEditor` + `PhraseFormEditor`；Macro / 草稿两份手搓表单删除收编，净删约 180 行；保存语义规则表五行；Scene 属性面板点外拒绝关闭 + Esc 逐层退栈为唯一例外；提交键统一 A1-08）| P1 | `verified` | v1.14 | 373 前端全绿（新增 `AnchoredEditor` 17 / `useAnchoredPosition` 13，11 条 P1-b 新测逐条反向验证）+ **真机验收门 G1 六项 + P1-b 门两项全通过**，其中项 5 与项 2-B 取得逐像素证据 | omar | [[025-unified-anchored-editing]] |
 | └ v1.14 本行覆盖 ADR-025 的 **P0 + P1-a + P1-b**；**P2 键盘动作层（子决策 3.1–3.4 + 4）与 P3 合流未落地**，验收门 G2 五项未跑。清单纠偏：ADR 原写「其余五个编辑面」，逐文件核实后**只有 4 个**——`RecentList.tsx` 是只读复制列表、根本没有编辑器，被 §1 影响范围（P2 键盘层口径）误收进迁移清单。契约见 [[03-product-spec#13.3]] 编辑容器统一契约 v0.19 / [[05-design-spec#2.6]] + §10.2.2 v0.18 | — | — | — | — | — | — |
 | └ v1.12 本行**移除**上方 v1.1「Dashboard 可拖列布局」行的按态分列键（`panorama-2col` / `cockpit-2col` → `dashboard-2col`），并退役 `--h-macro-strip` 硬封顶（token 改名 `--h-modifier-card-max`）；能力零回退，列宽可拖与持久化不变。**走查 3 项缺陷 v1.13 已裁**：Scene 下限 `196px`→`288px`（非取舍，是未满足 ADR-026 子决策 2 的验收条件，实测 0 条话术）；Separator 9px 死区记为已知可接受（扩 hover 会吞点击）；`--brand-dim` 对比度 `1.145:1` 不调色，改为把 `.phase.active::after` 标注承重件防减法快车道误删 | — | — | — | — | — | — |
 
@@ -183,11 +183,11 @@ related:
 
 | 功能 | 优先级 | 状态 | 目标版本 | 测试覆盖 | 责任人 | 引用 |
 |---|---|---|---|---|---|---|
-| updater 客户端接入（plugin 注册 + capabilities + pubkey 嵌入）| P1 | `done` | v1.1 | cargo build / 真机待 Phase 6 | omar | [[adr-017-auto-update#Phase-1]] |
-| opt-in 总开关 + 检查/下载/安装 UI（updaterStore + UpdaterBanner 四态 + StatusBar 入口）| P1 | `done` | v1.1 | updaterStore 5 test（总开关关闭零触网，守 A2）| omar | [[adr-017-auto-update#Phase-2]] |
-| Vite 密钥泄漏加固（`envPrefix` 白名单挡 `TAURI_SIGNING_*`，GHSA-2rcp-jvr4-r259）| P1 | `done` | v1.1 | 源码级 envPrefix 锁 | omar | [[adr-017-auto-update#Phase-3]] |
-| CI 自动出包（`release.yml` two-job 隔离 + minisign 签名 + latest.json + draft）| P1 | `done` | v1.1 | dry-run 端到端验证（run 27855601462 全绿，双架构 + 签名 + latest.json 核验）| omar | [[adr-017-auto-update#Phase-4]] |
-| 真机验收（opt-in/检查/提示链路 + hotkey-wake 复测守 C1）| P1 | `done` | v1.1 | **Phase 6 于 2026-08-20 随 v0.2.0 发布实测**：已装 0.1.1 →「发现新版本 0.2.0」→ 下载安装 → 进程重启 → 安装目录 0.2.0；更新后复验签名链（`codesign --verify --strict` / `stapler validate` / `spctl accepted`）；`bench:hotkey-wake` p95 13.708ms 守 C1 | omar | [[adr-017-auto-update#Phase-6]] |
+| updater 客户端接入（plugin 注册 + capabilities + pubkey 嵌入）| P1 | `verified` | v1.1 | cargo build / 真机待 Phase 6 | omar | [[adr-017-auto-update#Phase-1]] |
+| opt-in 总开关 + 检查/下载/安装 UI（updaterStore + UpdaterBanner 四态 + StatusBar 入口）| P1 | `verified` | v1.1 | updaterStore 5 test（总开关关闭零触网，守 A2）| omar | [[adr-017-auto-update#Phase-2]] |
+| Vite 密钥泄漏加固（`envPrefix` 白名单挡 `TAURI_SIGNING_*`，GHSA-2rcp-jvr4-r259）| P1 | `verified` | v1.1 | 源码级 envPrefix 锁 | omar | [[adr-017-auto-update#Phase-3]] |
+| CI 自动出包（`release.yml` two-job 隔离 + minisign 签名 + latest.json + draft）| P1 | `verified` | v1.1 | dry-run 端到端验证（run 27855601462 全绿，双架构 + 签名 + latest.json 核验）| omar | [[adr-017-auto-update#Phase-4]] |
+| 真机验收（opt-in/检查/提示链路 + hotkey-wake 复测守 C1）| P1 | `verified` | v1.1 | **Phase 6 于 2026-08-20 随 v0.2.0 发布实测**：已装 0.1.1 →「发现新版本 0.2.0」→ 下载安装 → 进程重启 → 安装目录 0.2.0；更新后复验签名链（`codesign --verify --strict` / `stapler validate` / `spctl accepted`）；`bench:hotkey-wake` p95 13.708ms 守 C1 | omar | [[adr-017-auto-update#Phase-6]] |
 
 ### 3.10 UI 风格一致性治理（design-spec v0.10 A 阶段）
 
@@ -200,7 +200,7 @@ related:
 | primitives 基础层（`CardSurface`/`ListRowSurface`/`Button`/`IconButton`/`Input`+`EditorInput`/`EditorPanel`+`EditorActions`/`Chip`/`ActionCluster`/`ConfirmInline` + `ph-flash` + `--layer-*` 变体）| P1 | `done` | v1.1 | 110 前端（既有组件测试零回归）| omar | [[05-design-spec#10.2.2]] |
 | editor 簇迁移（MacroGrid / AlignmentPhrases；~~ModifierGrid / CompositionWorkbench~~ v1.3 删）| P1 | `done` | v1.1 | 94 前端 / 真机验证待补 | omar | [[05-design-spec#10.6]] |
 | surface/control 迁移（ScenePanel flash + focus / DraftInbox+DraftCard → neutral CardSurface + ghost Button）| P1 | `done` | v1.1 | 110 前端 / 真机验证待补 | omar | [[05-design-spec#10.4.3]] |
-| CSS 裸值 gate（`token-gate.test.ts` 扫 px/hex/ms，仅 tokens.css 豁免）+ SearchBar `outline-offset`→`var(--hairline)` | P1 | `done` | v1.1 | token-gate 18 file scan | omar | [[05-design-spec#10.2.2]] |
+| CSS 裸值 gate（`token-gate.test.ts` 扫 px/hex/ms，仅 tokens.css 豁免）+ SearchBar `outline-offset`→`var(--hairline)` | P1 | `verified` | v1.1 | token-gate 18 file scan | omar | [[05-design-spec#10.2.2]] |
 
 ### 3.11 Promptscape 设计吸收（ADR-018 / A1+B1+C1+D+E）
 
@@ -291,7 +291,7 @@ related:
 | AE 资产编辑 + 自适应布局 | v1.1 | 3 | `done`（3/3 在用：Macro/AlignmentPhrase 编辑+排序 + 可拖列布局；Modifier/Composition 编辑 v1.3 `withdrawn` 不计）|
 | Scene 话术（Phrase）编辑（scene-phrase-editing）| v1.4 | 1 | `done`（**v1.18 补行**：v1.4 落地时只进 §3.8 未进本表）|
 | Scene/SubStage 结构编辑（scene-substage-editing）| v1.6 | 1 | `done`（后端 74 / 前端 109 当时全绿；真机 CRUD 落盘待验）|
-| Scene 编辑分层化（ADR-021）| v1.9 | 1 | `done`（**v1.18 补行**：v1.9 日志记「合计 78→79」但未加行；真机观感待验；`scene.color` 用户内容色定性待 omar 复核）|
+| Scene 编辑分层化（ADR-021）| v1.9 | 1 | `done`（**v1.18 补行**：v1.9 日志记「合计 78→79」但未加行；真机观感待验；`scene.color` 用户内容色定性 2026-09-01 omar 复核通过）|
 | ADR-017 自动更新 | v1.1 | 5 | `done`（**5/5**：Phase 6 真机验收 2026-08-20 随 v0.2.0 发布实测通过，见 §3.9）|
 | UI 一致性治理（design-spec v0.10 A 阶段）| v1.1 | 4 | `done`（4/4 实装 + 测试零回归；真机验证待补）|
 | Promptscape 设计吸收（ADR-018）| v1.5 | 6 | `done`（6/6 实装：主题三态 + 强调色 + 设置弹窗 + Header + ProtocolBand + 2 列全景；真机验证待补）|
@@ -357,6 +357,7 @@ related:
 | 2026-08-20 | v1.17 bump：ADR-026 两项遗留裁决落地——① **层标记 pill 减二留一**：删 `ProtocolBand`「协议层」+ 任务列「任务层」（层级已由位置+形状冗余编码，文字属解释性 UI），**保留 `ModifierGrid`「协议层 · 参考」**（aside 列无 band 无位置线索，唯一标识，删了真丢信息）——**三枚不是一组对称装饰，其中一枚承重**；② **SOP 退出 Tab cycle**，区域级 6 站→**5 站**：占位区在屏（哲学二）但不值一个键盘停靠点，键盘用户每轮都要在「第三阶段实现」上白停一次，真导航器落地时 `tabIndex` 随它回来。398 测试全绿（`App.test.tsx` 区域 tabindex 断言由 6 改 5 并显式钉「在屏但不可 Tab」）。涟漪 [[03-product-spec]] v0.22 / [[05-design-spec]] v0.19 | omar 裁决（[[026-fixed-spatial-layout]] 当初显式不裁的两项）|
 | 2026-06-28 | v1.7 bump：§3.4「数据导入导出（JSON）」`planned`→`done`——repo-core `export.rs`（全保真聚合，独立无过滤 SELECT 以纳入弃用/隐藏行，data schema_version `1.1`，**不含 usage_records**=决策 D2）+ repo-write `import.rs`（**整库替换**=决策 D1，`defer_foreign_keys` 破 phases↔alignment_phrases FK 环，按 major 版本拒不兼容备份）；2 path-based Tauri IPC（`export_data`/`import_data`，前端 dialog 选路 + Rust `std::fs` 读写，避开 fs-plugin scope）；接 `tauri-plugin-dialog`（决策 D3）；SettingsModal 新增「数据」页（导出 save dialog / 导入 open dialog + 整库替换确认弹窗 + 完成后 `refreshAll`）。后端 export 3 + import 5 单测，前端 109 测试全绿（clippy/fmt/lint/prettier clean）；**真机导入导出待验**。B2 复检通过（导出/导入按表搬运，不混协议层与任务层）；A2 不出站（仅写用户选定本地路径）。涟漪 [[06-prd#6.9]] | 数据导入导出功能收口涟漪 |
 | 2026-09-01 | v1.18 bump（**对账，不含新功能**）：① §4 节奏表补三行（Phrase 编辑 v1.4 / Scene 编辑分层化 v1.9 / 固定空间布局 v1.12）+ S1 模块数 5→6 + 显式计数规则，合计 88→**91**（按 §3 逐行重数，非累加）；② §4 S1 行 `planned`→`in-progress`（六模块自 v0.2 起全 `done`，本表三个月未改）；③ §3.9「真机验收」`planned`→`done`（ADR-017 Phase 6 2026-08-20 随 v0.2.0 发布实测通过），§4 ADR-017 行 4/5→5/5；④ §3.6 唤起 P95 由失效的 10.49ms 改 13.708ms；⑤ §7 从 ADR-012 时代（57/57）重写为当前基线（398 / 168 / v0.2.0）并**首次点名 §1 `verified` 铁律缺口**待 omar 裁决；⑥ 头部导语与覆盖率列口径说明更新。同批：prd / ops-spec / user-flows / spec 四份 `status: pre-code` 转出（v0.2.0 已发布，pre-code 不再成立）| 2026-09-01 文档对账日（全面评价建议 1）|
+| 2026-09-01 | v1.19 bump（**人审批次 ① 裁决落地**）：① §1 `verified` 判据修订——旧判据「E2E 通过 + 使用者 ≥1 周」不可满足（Playwright 未落地，test-spec §4 明写），新判据 = 真机门或持续自动化 gate 留证 + 进过 publish release + 自用 ≥1 周无回归；② 铁律引用 [[01-spec#10.5]]「验收节奏」判为**失效引用**（该节实为「多人使用的可能性」，spec 全文无「验收节奏」），改指 [[11-test-spec#4.1]]；③ 按新判据逐行核对：**37 行 `done`→`verified`**（3.1 四区 / 3.4 唤起键可配置 / 3.6 六行 / 3.7 十七行 / 3.8 三行 / 3.9 五行 / 3.10 裸值 gate），39 行缺留证保持 `done`；④ §7 新增留证索引 + 缺口清单（升 `verified` 必须登记）。矩阵计数 91 不变。v0.2.0 后零代码 commit，全部 `done` 行均在已 publish 的 release 内 | omar 拍板「改规则，然后逐个标」（2026-09-01 人审批次 ①）|
 
 ---
 
@@ -364,9 +365,47 @@ related:
 
 - **当前基线**（2026-09-01 本机实测，`main` @ `9fc9fad`）：Vitest **398/398**（39 文件）/ `cargo test --workspace` **168** / lint · tsc · build · clippy · fmt 全绿 / doc-governance 0 error 6 warn / `bench:hotkey-wake` p95 13.708ms（2026-08-20）
 - **已发布**：v0.1.0（2026-08-05 draft，公证被静默跳过未 publish，见 [[2026-08-05-notarization-fail-open]]）/ v0.1.1（2026-08-10）/ **v0.2.0（2026-08-20，Developer ID 签名公证 + 自动更新链路真机跑通）**
-- **状态分布**（§3 逐行，§3.12 治理项 7 行不计）：`done` 76 / `in-progress` 1 / `planned` 14 / `withdrawn` 1（不计）→ 计数 91，与 §4 一致
-- ⚠️ **§1 铁律缺口，待 omar 裁决**：§1 规定「已发布到生产（自用）的功能必须 `verified`」，判据是 E2E 通过 + 使用者使用 ≥1 周。v0.2.0 自用已满一周，但 `verified` 在本表零使用——AI 无法替使用者证明「使用 ≥1 周」，项目也尚无外部使用者。两个出路：① omar 按自用一周逐批把已发布行标 `verified`；② 修订 §1，把 `verified` 判据改成可由 AI 核验的形态（如「真机走查门通过 + 进入过一次 publish 的 release」）。本次对账不擅自二选一。
+- **状态分布**（§3 逐行，§3.12 治理项 7 行不计）：`verified` 37 / `done` 39 / `in-progress` 1 / `planned` 14 / `withdrawn` 1（不计）→ 计数 91，与 §4 一致
+- **§1 `verified` 判据已修订（v1.19，omar 2026-09-01 拍板）**：旧判据「E2E 通过 + 使用者 ≥1 周」不可满足（Playwright 未落地），且铁律引用的 [[01-spec#10.5]]「验收节奏」在 spec 里并不存在。新判据见 §1；按新判据逐行核对留证，37 行升 `verified`、39 行因缺留证保持 `done`。**留证索引与缺口清单见下**——它同时是下一次真机走查的待办面
 - **下一动作**：见 [[HANDOFF#Next-Actions]]
+
+**`verified` 留证索引（v1.19 起维护；升 `verified` 必须在此登记）**：
+
+| §3 行 | 留证 |
+|---|---|
+| 3.1 相位带 | ADR-026 走查项 3（等宽后活动相位醒目度，2026-08-19）+ ADR-025 P0 落地 |
+| 3.1 对齐话术 chip 行 | G1 项 2（chip 行滚动跟随：A 半 jsdom 5 条反向验证 + B 半 omar 目视，2026-08-19） |
+| 3.1 Macro 快捷区 | ADR-026 走查项 1（纵向下限 `132px` 合成拖拽至极限） |
+| 3.1 Scene 全景区 | ADR-026 走查项 1 + Scene 下限 `288px` 真机复测（2026-08-19）+ P1-b 门项 2（纵向滚动跟随） |
+| 3.4 全局唤起键可配置 | G3 四项全通过（2026-08-20，[[11-test-spec#4.2]] 逐项证据） |
+| 3.6 全局快捷键注册 | M0 runbook + G3 项 1（旧键不再唤起）/ 项 4（重启后绑定读自 SQLite） |
+| 3.6 主形态唤起 ≤200ms | `bench:hotkey-wake` p95 13.708ms（2026-08-20，G1 项 6 同口径） |
+| 3.6 复制即隐藏 / ESC | ADR-012 Phase 5 11/11（2026-06-03）；此后每轮真机走查都以 hide-on-copy / hide-on-blur 为操作约束（[[learnings]] B.1），行为持续在真机被观察 |
+| 3.6 协议层与任务层物理分离 | `b2-separation.test.ts` 源码级 gate（CI 持续） |
+| 3.6 本地数据存储 | G3 项 4（真实进程重启 + 真实 app data 目录，数据落 SQLite） |
+| 3.6 设计 Token 系统 | `token-gate.test.ts`（CI 持续，18 file scan） |
+| 3.7 drafts 数据层 / `prompt-hub-mcp` binary / workspace 拆分 / 14 MCP tool | `prompt-hub-mcp tests/e2e.rs` 真实进程 JSON-RPC 端到端（CI 持续）+ trybuild compile_fail |
+| 3.8 Dashboard 可拖列布局 | v1.1 手测拖拽+持久化 ✓ + ADR-026 走查项 2（Separator 命中与光标） |
+| 3.8 固定空间布局 | ADR-026 走查三项 + `288px` 复测 |
+| 3.8 统一锚定编辑容器 | G1 六项 + P1-b 门两项（含逐像素证据） |
+| 3.9 五行（客户端 / opt-in UI / Vite 加固 / CI 出包 / 真机验收） | Phase 6：已装 0.1.1 → 发现 0.2.0 → 下载安装 → 重启 → 签名链复验（2026-08-20）；Vite 加固另有 `envPrefix` 源码锁 |
+| 3.10 CSS 裸值 gate | `token-gate.test.ts`（CI 持续） |
+
+**留证缺口（39 行保持 `done` 的原因；补齐即可升级）**：
+
+| §3 行 | 缺什么 |
+|---|---|
+| 3.1 搜索区 / 最近使用区 | 无带编号门项——v0.2.0 自用中但从未单独走查留证 |
+| 3.4 数据导入导出 | 「真机导入导出待验」自 v1.7（2026-06-28）挂至今 |
+| 3.7 草稿 tab / 待审 badge / promote IPC | 数据层与 MCP 端有 e2e，promote **UI 侧**无真机留证 |
+| 3.8 Macro 编辑 / AlignmentPhrase 编辑面板 / Phrase 编辑 / Scene-SubStage 结构编辑 / Scene 编辑分层化 | 「真机 CRUD 落盘待验」「真机观感待验」自 v1.6 / v1.9 挂至今；G1 只验了容器不验 CRUD |
+| 3.10 primitives / editor 簇 / surface-control 迁移 | 「真机验证待补」自 v1.1 挂至今 |
+| 3.11 六行（主题三态 / 强调色 / 设置弹窗 / slim Header / ProtocolBand / 2 列重构） | 「真机验证待补」自 v1.5 挂至今；v0.2.0 截图只证明 band 与任务列无孤立空白 |
+| 3.12 十二行 | 源码级走查修缮批次，无真机留证 |
+| 3.13 六行 | NEEDS HUMAN 4 项（整理态连续整理 / ModeToggle 窄 Header / 长话术展开溢出 / 撤销 toast 6s）未确认 |
+| 3.14 跨 Scene 话术移动 | 「真机移动/撤销视觉链路待验」自 v1.11 挂至今 |
+
+> 一次覆盖上表的真机走查（估 1 会话）即可把 `done` 39 → 个位数；它与 [[HANDOFF]] 第 19 项外部使用者是两回事，不互相替代。
 
 **同步约定**（v0.3+ 启用，v1.18 修订）：
 - 每次 commit 主分支后**手动**同步本清单状态（原设想的 `scripts/update-features.sh` 从未落地）

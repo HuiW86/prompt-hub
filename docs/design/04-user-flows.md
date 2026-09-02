@@ -4,7 +4,7 @@ project: prompt-hub
 version: v0.1
 created: 2026-05-19
 last_modified: 2026-09-01
-status: draft  # 2026-09-01 对账：v0.2.0 已发布，pre-code 不再成立；v0.1 自写成未再校对，待 omar 人审后转 ratified
+status: draft  # 2026-09-01 人审批次 ④ omar 裁决：保持 draft。反查 v0.2.0 实装，§2–§8 六处 flow 与实装不符（升级弹窗/导入语义/删除三选项/快捷键冲突/onboarding/iPad 与 localStorage 口径），差异清单见 HANDOFF 第 22 项；共创文档，重写另开会话
 author: co  # 🤝 人机共创（CLAUDE §5.2）
 audience: [human]
 description: prompt-hub 关键用户流程补充——product-spec §4.5 未覆盖的边缘/异常/跨形态流程

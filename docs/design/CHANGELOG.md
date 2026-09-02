@@ -14,6 +14,37 @@ description: prompt-hub 设计文档体系变更日志——记录文档结构�
 
 ---
 
+## 2026-09-01（二）· 第二段 — 人审批次 ①：`verified` 判据修订，37 行升 verified
+
+> 触发：对账日把 features §1 `verified` 铁律缺口交 omar 二选一。人审时反查出两条让「硬标」不成立的事实：判据里的「E2E 通过」在本项目**不可满足**（[[11-test-spec]] §4 明写 Playwright 未落地），铁律引用的 [[01-spec#10.5]]「验收节奏」**不存在**（该节实为「多人使用的可能性」，spec 全文无此词，属早期失效引用）。omar 拍板「改规则，然后逐个标」。
+
+### [[07-features]] v1.18 → v1.19
+
+- **§1 判据改成项目现在真能做到、AI 能核验的形态**：① 真机验收门通过（行为 / 布局类，ADR §6 编号门项或 runbook 留证）**或**持续运行的自动化 gate（结构 / 纪律类：源码级 gate、真实进程 e2e）+ ② 进过一次 publish 的 release + ③ 自用 ≥1 周无回归。「真实使用者」不删，移到 [[HANDOFF]] 第 19 项作为下一级门槛，本表不设该状态
+- **铁律改指 [[11-test-spec#4.1]]**（真机门临时承接 E2E 的条款），并加一句：不满足者保持 `done` 且在 §7 写明缺哪条——铁律从此可由 AI 执行，而不是一条谁也满足不了的宣言
+- **逐行核对留证，37 行 `done` → `verified`**：3.1 相位带 / chip 行 / Macro / Scene（ADR-026 走查 + G1）、3.4 唤起键可配置（G3）、3.6 六行（G3 / bench / Phase 5 / 源码 gate）、3.7 十七行（真实进程 e2e）、3.8 可拖列 / 固定空间布局 / 锚定容器（ADR-026 走查 + G1 + P1-b）、3.9 五行（Phase 6 真机更新链）、3.10 裸值 gate。前提核实：v0.2.0 之后 `src` / `src-tauri` 零 commit，全部 `done` 行都在已 publish 的 release 内
+- **39 行缺留证保持 `done`**，§7 新增「留证索引」+「缺口清单」两表。缺口集中在一个模式：「真机验证待补」在 3.10 / 3.11 / 3.8 / 3.14 各行里挂了一到三个月，没有人去补——新铁律让这类挂账第一次有了可见的后果（不能升 `verified`）。一次覆盖缺口表的真机走查即可把 39 收到个位数
+- 3.1 搜索区与最近使用区**没有**标 `verified`：它们每天在用，但从未有带编号的门项。这是规则有牙的证明，不是漏标
+
+### 人审批次进度（同日，逐项追记）
+
+- ② [[01-spec]] status `active`：omar 确认（frontmatter 注释改为已确认）
+- ③ [[11-test-spec]] v0.5：omar 审阅 v0.3 / v0.4 / v0.5 三次增量（数字刷新 + §4.1 真机验收门 + §4.2 G3 门）通过，**draft → ratified**
+- ⑤⑥ [[03-product-spec]] v0.22 → **v0.23** / [[05-design-spec]] v0.19 → **v0.20**：omar 裁「先补完旧账回流再定稿」（与 ops-spec 判法一致：有过时陈述不定稿）。反查发现真正的欠账比 HANDOFF 第 3 项写的更大——[[024-dark-cockpit-identity]]（2026-07-21）影响范围写明「design-spec §2/§8/§9 下轮回流」而该轮从未发生：§2.5 仍写「无 class 即跟随系统」，`--brand` 系与 light 加深值全无记载，product-spec 也不知道默认已恒定深色。本次补齐：product-spec 区域 4 话术卡 title-only 解剖 + 区域 9 密度档 / 默认深色 / 彩色 accent 接管 brand；design-spec 新增 §2.4.6 品牌 token 系 + light 身份加深、§2.5 三处订正、§2.1 补 `--t-15`、§8.1 锚点补 ADR-024 并重排优先级、§9 摘掉 v0.15 待审标记、修订记录补 v0.15 漏记条目。**`--t-18` / `--h-modifier-tray` 两个无消费者 token 自 `tokens.css` 删除**（代码里留着它们的唯一理由就是「删 token 须走八步」，本次即那次八步）；398 测试 / lint / build 全绿，三个样式 gate 无异议。SOP 占位形态一笔已由 product-spec v0.22 销掉，第 3 项误记为仍欠。两份补齐后 omar 审阅通过，**双双 draft → ratified**
+- ⑦ [[07-features]] v1.19 矩阵（37 verified / 39 done / 1 in-progress / 14 planned）omar 认可
+- ⑧ 四件追认：[[027-configurable-global-hotkey]] 全文、[[023-ui-reshape-before-release]] / [[024-dark-cockpit-identity]] 措辞（前者口头拍板落档、后者授权 AI 自主设计落档）均复核追认，三份 §2 Status 留痕；**应用图标图形追认**（AI 代笔、7 月真机认可、已随 v0.1.1 / v0.2.0 发布）；**[[021-scene-layered-editing]] 子决策 2 `scene.color` 用户内容色复核通过**——自 2026-07-06 挂账 57 天，是本批次唯一一件真正的决策；ADR / product-spec / design-spec / features / CLAUDE.md 五处「待 omar 复核」标记同步摘除，「否决则降级仅存储」回退协议作废
+
+**批次收官**：HANDOFF 第 7 项八步全部销账。人审积压自 2026-07-06 起累计近两个月，本日一次清零；代价是 ops-spec / user-flows 两份明确保持 draft 并各自挂了可执行的重写条件（第 21.3 / 22 项）
+- ④ [[06-prd]] v0.13：v0.12 / v0.13 增量均为代码事实回流，**draft → ratified**；§6.1 soft-delete drift 已登记，解法归 soft-delete ADR（HANDOFF 第 21.2 项）。[[10-ops-spec]] v0.3 **保持 draft**：§3 自动备份四种触发均未实装、§7 发布流程仍为 ADR-001 前措辞，随第 21.3 项实装备份时同批重写。[[04-user-flows]] v0.1 **保持 draft**：反查实装发现 §2–§8 六处不符（升级弹窗 / 导入语义 / 删除三选项 / 快捷键冲突 / onboarding / iPad 与 localStorage），登记为 HANDOFF 第 22 项。**顺带纠正 [[MANIFEST]] 两处误标**：ops-spec 与 user-flows 此前标 ratified，CHANGELOG 全文无对应人审记录
+
+### 未做（刻意）
+
+- 没有把「每天在用」当留证——那正是旧判据「使用者 ≥1 周」AI 不可核验的部分，新判据只认可回溯的证据
+- 没有动 [[01-spec]] §10.5：失效引用在 features 侧改指，spec 本身无需为此新增「验收节奏」一节
+- 没有 commit
+
+---
+
 ## 2026-09-01（二）· 文档对账日 — 把文档账追平代码账
 
 > 触发：2026-09-01 全面评价指出「文档账严重滞后于代码账」——features §7 停在 ADR-012 时代、§4 写 S1 为 `planned` 而 v0.2.0 已发布、四份设计文档 `status: pre-code` 与已发布事实矛盾。omar 拍板执行评价建议 1（对账）与 2（HANDOFF 瘦身）。**本段不含任何功能改动，不含新决策**；凡需 omar 裁决处只点名不擅断。

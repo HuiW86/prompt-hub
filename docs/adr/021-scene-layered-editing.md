@@ -2,7 +2,7 @@
 type: adr
 project: prompt-hub
 status: Accepted
-description: Scene 编辑分层化——废除全局编辑态，改属性/结构/内容三层就地编辑；拖拽让位按钮移动；scene.color 定性用户内容色（子项待 omar 复核）
+description: Scene 编辑分层化——废除全局编辑态，改属性/结构/内容三层就地编辑；拖拽让位按钮移动；scene.color 定性用户内容色（子项 2026-09-01 omar 复核通过）
 ---
 
 # ADR-021: Scene 编辑分层化——废除全局编辑态，改三层就地编辑
@@ -11,12 +11,12 @@ description: Scene 编辑分层化——废除全局编辑态，改属性/结构
 
 - **标题**：废除 ScenePanel 全局 editMode，拆分为属性面板 + 结构层/内容层就地动作簇
 - **日期**：2026-07-06
-- **决策者**：omar（2026-07-06 拍板分层方案；scene.color 定性子项待复核，见 §5）
+- **决策者**：omar（2026-07-06 拍板分层方案；scene.color 定性子项 2026-09-01 复核通过，见 §5）
 - **影响范围**：`ScenePanel.tsx`（1706→949 行）/ 新增 `ScenePropertiesEditor.tsx`；[[03-product-spec#13.3]] 区域 4 契约重写；[[05-design-spec#12.4]] 用户内容色扩展；[[07-features#3.8]] 回写；[[016-choose-dnd-and-resizable-layout]] 的 dnd 适用范围收缩（Scene 链路退出，MacroGrid / AlignmentPhrases 不变）
 
 ## 2. Status
 
-`Accepted`（分层方案 2026-07-06 用户拍板；**scene.color「用户内容色」定性为待 omar 复核的子决策**——否决则降级为仅存储不消费，隔离可回退，见 §5）
+`Accepted`（分层方案 2026-07-06 用户拍板；scene.color「用户内容色」子决策 **2026-09-01 omar 复核通过**（人审批次 ⑧）——原留的「否决则降级为仅存储不消费」回退协议不再需要，见 §5）
 
 ## 3. Context
 
@@ -58,7 +58,7 @@ description: Scene 编辑分层化——废除全局编辑态，改属性/结构
 
 **子决策 1 — 拖拽→按钮移动**：视图网格中 copy 主动作与拖拽 affordance 互斥（拖拽手柄会侵占整卡点击热区、误触率高），P3-6 落地的 SubStage 结构编辑器 dnd 随 editMode 一并移除，以 ←→（子阶段）/ ↑↓（话术组内）相邻交换按钮等价替换，走同一 `reorder_sub_stages` / `reorder_phrases` 链路——**能力不回退，交互形态降级换语义清晰**。[[016-choose-dnd-and-resizable-layout]] 的 dnd 决策在 MacroGrid / AlignmentPhrases 范围内不变。
 
-**子决策 2 — scene.color 定性为用户内容色（待 omar 复核）**：[[019-supersede-flat-visual-anchor]]「放弃颜色本体论」禁的是 chrome 层装饰色；scene.color 与 scene.icon 同属用户内容（[[05-design-spec#12.4]] 先例），只染场景自身图标（tab + 卡头 glyph），不染任何 chrome。6 色预设为组件内 hex 常量（非 token，注释标注 user-content presets），swatch 填充走 inline style，CSS 保持全 token。**omar 否决此定性 → 降级为仅存储不消费**（撤 tab/卡头的 color 注入两处 inline style 即可，隔离可回退）。
+**子决策 2 — scene.color 定性为用户内容色（omar 2026-09-01 人审批次 ⑧ 复核通过）**：[[019-supersede-flat-visual-anchor]]「放弃颜色本体论」禁的是 chrome 层装饰色；scene.color 与 scene.icon 同属用户内容（[[05-design-spec#12.4]] 先例），只染场景自身图标（tab + 卡头 glyph），不染任何 chrome。6 色预设为组件内 hex 常量（非 token，注释标注 user-content presets），swatch 填充走 inline style，CSS 保持全 token。**omar 否决此定性 → 降级为仅存储不消费**（撤 tab/卡头的 color 注入两处 inline style 即可，隔离可回退）。
 
 ## 6. Consequences
 

@@ -9,10 +9,11 @@
 ## Completed
 
 - **features v1.17 → v1.18**：§4 合计 **88 → 91**（补三行：Phrase 编辑 v1.4 / 分层化 v1.9 / 固定空间布局 v1.12，其中第三行正是旧账第 2 项；S1 模块数 5→6；显式计数规则改为从 §3 逐行重数）；S1 行 `planned`→`in-progress`；ADR-017 行 4/5→5/5，§3.9 真机验收 `planned`→`done`；§3.6 唤起 P95 失效数字 10.49→13.708ms；**§7 整节重写**为当前基线并首次点名 §1 `verified` 铁律缺口
-- **四份 `status: pre-code` 转出**（内容未动）：prd v0.13 / ops-spec v0.3 / user-flows v0.1 → `draft`；01-spec v0.7 → `active`（人主笔无人审环节；**此改动由 AI 执行，待 omar 确认**）
+- **四份 `status: pre-code` 转出**（内容未动）：prd v0.13 / ops-spec v0.3 / user-flows v0.1 → `draft`；01-spec v0.7 → `active`（人主笔无人审环节；AI 执行，omar 同日人审批次 ② 确认）
 - **learnings v0.4 → v0.5**：HANDOFF 二十余条 `(carried)` 风险收编——判断类并入信条三 / 四 / 七证据段（不新增信条），操作类收成附录 B（B.1 真机走查 / B.2 发布与更新 / B.3 本地环境）
 - **MANIFEST v1.15 → v1.16** 三行（features / prd / learnings）+ CLAUDE.md §7 指针（features v1.18 / MANIFEST v1.16 / ADR-017 Phase 6 销账）；CHANGELOG 新增 2026-09-01 条目
 - 全面评价本身：五维评级 + 实测基线 + 七项风险，正文在会话中，未落盘为文档
+- **人审批次 ① 已裁（2026-09-01 第二段，omar 拍板「改规则，然后逐个标」）**：features v1.19——§1 `verified` 判据改为「真机门 / 持续自动化 gate 留证 + 进过 publish release + 自用 ≥1 周」，失效引用 [[01-spec#10.5]] 改指 test-spec §4.1；37 行升 `verified`、39 行缺留证保持 `done`，§7 新增留证索引 + 缺口清单。涟漪 MANIFEST v1.17 / CLAUDE.md §7 / CHANGELOG 第二段。对账 commit `c417c36` 已提交。**批次 ②–⑧ 同日续完**：test-spec v0.5 / prd v0.13 ratified；ops-spec / user-flows 保持 draft 并挂重写条件（21.3 / 22）；product-spec v0.23 / design-spec v0.20 补 ADR-024 与 reshape 旧账回流后 ratified，`--t-18` / `--h-modifier-tray` 自 tokens.css 删除（398 / lint / prettier / build 全绿）；features v1.19 矩阵认可；ADR-027 全文 + ADR-023/024 措辞 + 图标 + ADR-021 scene.color 四件追认。MANIFEST v1.17 纠正 ops-spec / user-flows 两处 ratified 误标。**批次 ②–⑧ 改动未 commit**
 
 ## In Progress
 
@@ -24,11 +25,11 @@
 
 1. **ADR-025 P2 键盘动作层** —— omar 2026-08-20 明示「先记录着，暂时不需要做」。3.1 去掉动作簇 `data-nav-item`（`src/components/AlignmentPhrases.tsx` / `src/components/scene/ViewPhraseCard.tsx` / `src/components/MacroGrid.tsx`）；3.2 键位表挂 `src/hooks/useRegionNav.ts`；3.3 动作簇改选中态跟随，顺带解 `ScenePanel.module.css` hover 遮挡标题。ADR §6 要求先在对齐话术一个区域跑通再铺开，验收门 G2（5 项）。已议免重复讨论：动作键不做可自定义；键盘布局差异用 `e.code`。落地时须兑现 product-spec §13.3「P2 目标」：`⌘Enter` 保存并推进到下一条（`PhraseFormEditor.tsx` 现只保存并关闭）(carried from 2026-08-20)
 2. ~~补 ADR-026 的 features 回写缺口~~ → **本轮已销**（v1.18 §4 补行 + 合计重数）
-3. **契约回流旧账（部分）**：仍欠 `03-product-spec.md` §4.0/§13.4 卡片解剖（title-only）+ 外观设置（density）；`05-design-spec.md` §2/§8/§9；§3c 两个 unbound token（`--t-18` / `--h-modifier-tray`，后者已无消费者属死 token）。⚠️ `docs/MANIFEST.md` **除本轮三行外**其余仍停在 2026-07-06 口径 (carried from 2026-07-21)
+3. ~~契约回流旧账~~ → **2026-09-01 人审批次 ⑤⑥ 已销**：product-spec v0.23 补话术卡 title-only + 密度档 + ADR-024 默认深色；design-spec v0.20 补 ADR-024 全套（§2.4.6 / §2.5 / §2.1 / §8.1 / §9 + v0.15 补账）；`--t-18` / `--h-modifier-tray` 已自 `tokens.css` 删除。**仍余**：⚠️ `docs/MANIFEST.md` 除人审批次触及的行外其余仍停在 2026-07-06 口径 (carried from 2026-07-21)
 4. **memory 层待 omar 点头**：新增 feedback「AI 主笔对外文档必须逐句反查代码」（与 `feedback_walkthrough_coverage` / `feedback_gate_executability` 同族）。本轮又添一例：features 矩阵挂着 learnings 早已判失效的 10.49ms 三个月 (carried from 2026-08-05)
 5. 发布收尾（非阻塞）：`latest.json` 最低版本字段（`release.yml` sign job `jq -n` 处）；落盘日志 tauri-plugin-log 立项；`release-signing` 环境 secret 作用域整理 (carried from 2026-08-05)
 6. `a24c7c0` / `4b722c1` / `716bd4c` 三 commit 补 verifier 对抗审查 (carried from 2026-07-07)
-7. **omar 人审批次（本轮重组为一个批次，建议按此顺序过）**：① **features §7 `verified` 铁律二选一**（逐批标 `verified` / 修订 §1 判据）② 01-spec status `active` 确认 ③ test-spec v0.2→v0.5（唯一从 ratified 降回 draft 的）④ prd v0.12→v0.13 + ops-spec v0.3 + user-flows v0.1（本轮转 `draft`）⑤ product-spec v0.10→v0.22 ⑥ design-spec v0.11→v0.19 ⑦ features v1.10→v1.18 ⑧ ADR-027 全文 + ADR-023/024 措辞 + 图标定稿追认 + 旧账 ADR-021/`scene.color` (carried from 2026-07-06, restructured 2026-09-01)
+7. **omar 人审批次（本轮重组为一个批次，建议按此顺序过）**：~~① features §7 `verified` 铁律二选一~~ → **已裁（修订判据 + 逐行标，见 Completed）**；~~② 01-spec status `active` 确认~~ → **已确认**；~~③ test-spec v0.2→v0.5~~ → **已定稿 ratified**；~~④ prd / ops-spec / user-flows~~ → **prd ratified；ops-spec 保持 draft 归 21.3；user-flows 保持 draft 归第 22 项**；~~⑤ product-spec~~ → **v0.23 ratified**；~~⑥ design-spec~~ → **v0.20 ratified**；~~⑦ features~~ → **v1.19 矩阵认可**；~~⑧ ADR-027 全文 + ADR-023/024 措辞 + 图标定稿追认 + ADR-021/`scene.color`~~ → **四件全部追认 / 复核通过**。**第 7 项八步全部销账（2026-09-01）** (carried from 2026-07-06, closed 2026-09-01)
 8. 可发现性裁决 ×3：场景删除入口外露 / 整理态保窗 vs 改 D-0 契约 / title-only 后卡面无内容线索 (carried from 2026-07-06)
 9. 补 `src/components/__tests__/ScenePanelFocusRestore.test.tsx` 焦点恢复负路径测试（正路径已改走 `AnchoredEditor` teardown）(carried from 2026-07-21)
 10. `.github/workflows/ci.yml` bench-c1 `continue-on-error` 处置复核——全面评价再次点名：C1 铁律目前在 CI 上不设防 (carried from 2026-07-12)
@@ -45,14 +46,15 @@
 21. **（新，2026-09-01 第一性原理分析，omar 认可、明示先不动手）主环五件事**，按此顺序，后一项的优先级判断依赖前一项：
     - 21.1 **主环度量**：给 `usage_records` 补唤起时间戳（migration `user_version` 12→13），算「唤起→复制」分布与空手关闭率。先出方案再改
     - 21.2 **全面 soft-delete + 撤销**：8 处 `DELETE FROM` 只有草稿软删。**先开 ADR 裁 prd §6.1 矛盾**（与第 13 项合并），也是第 1 项 ADR-025 P2 可撤销删除的前置
-    - 21.3 **启动 `PRAGMA quick_check` + 每日 `VACUUM INTO` 备份（`backup.rs` 底座已有，接 ops-spec §3）+ 落盘日志（tauri-plugin-log，与第 5 项合并）**。不动数据契约、不需 ADR，一个会话可完成
+    - 21.3 **启动 `PRAGMA quick_check` + 每日 `VACUUM INTO` 备份（`backup.rs` 底座已有，接 ops-spec §3）+ 落盘日志（tauri-plugin-log，与第 5 项合并）**。不动数据契约、不需 ADR，一个会话可完成。**同批重写 ops-spec §3（备份触发改成实装事实）+ §7（发布流程改成 release.yml + 签名 runbook + ADR-017 口径，删 ADR-001 前措辞）后送审转 ratified**（2026-09-01 人审批次 ④ omar 裁决）
     - 21.4 **S2 最小闭环**：只做「复制过但未归类的内容提示保存」一件，验证「沉淀」假设再定其余三项
     - 21.5 **外部使用者**：即第 19 项，21.1–21.4 完成前所有优先级判断只有作者一个样本
+22. **（新，2026-09-01 人审批次 ④）user-flows v0.1 重写**（共创文档，与 omar 同会话做）。反查 v0.2.0 实装，六处不符：§2 升级迁移写 major 弹窗 + 强制导出，实装只有 ADR-017 minor 自动更新；§3 导入写「成功导入 N 条」，实装为整库替换 + 确认弹窗（prd 决策 D1）；§4 删除写取消 / 弃用 / 永久删除三选项，实装为二次确认硬删（与 prd §6.1 同源，等 21.2 ADR 后一并改）；§5 快捷键冲突写弹窗三备选，实装为 `HotkeyBanner` + 设置改绑（ADR-027）；§6 首次使用写三屏引导页，实装无 onboarding、`0002_seed` 直接灌示范数据；§7/§8 iPad 只读 / localStorage 配额 / ADR-003 待议均已过时。**建议顺序：等 21.2 裁完再重写**，否则 §4 要改两次
     - 附带待核实：MCP 在窗口隐藏期间写入的草稿，唤起时是否刷新（`refreshAll` 只见于挂载 / 手动重试 / 导入后）；SOP 占位区「第三阶段实现」在 0.2.0 生产界面常驻，是否该收起
 
 ## Dropped
 
-- 无。本轮净销 1 项（旧 2），新增 3 项（19、20、21），净计 **20 项**（含旧 2 已划线）。第 21 项是分析结论转账，omar 明示暂不动手。
+- 无。本轮净销 3 项（旧 2 / 旧 3 / 旧 7 整项八步），新增第 22 项，新增 3 项（19、20、21），净计 **20 项**（含旧 2 已划线）。第 21 项是分析结论转账，omar 明示暂不动手。
 
 ## Risks & Decisions
 

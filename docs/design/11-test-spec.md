@@ -3,8 +3,8 @@ type: test-spec
 project: prompt-hub
 version: v0.5
 created: 2026-05-19
-last_modified: 2026-08-20
-status: draft # v0.2 曾 ratified（2026-07-02 口径）；v0.3 全量刷新数字 + ADR-025 涟漪、v0.4 ADR-027 涟漪，均待人审
+last_modified: 2026-09-01
+status: ratified # 2026-09-01 人审批次 ③：omar 审阅 v0.3–v0.5 三次增量通过，draft → ratified（v0.2 曾于 2026-07-02 ratified）
 author: ai # 🤖 AI 主笔 + 人审（CLAUDE §5.2）
 audience: [ai, human]
 description: prompt-hub 测试规格——前端 Vitest 398 用例 + Rust workspace 168 + 6 源码级 gate + CI 双 job + C1 bench gate；LLM Eval N/A

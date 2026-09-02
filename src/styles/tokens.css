@@ -347,7 +347,6 @@
   --t-14: 14px;
   --t-15: 15px; /* macro tile names — hero tier below page titles */
   --t-16: 16px;
-  --t-18: 18px; /* unbound — active-phase display tier retired by ADR-025 §6 */
   --t-20: 20px;
 
   /* Line heights */
@@ -430,11 +429,6 @@
   --h-macro-tile: 56px; /* hero command tiles (reshape v2) */
   --col-min-macro: 220px;
   --col-min-substage: 184px;
-
-  /* unbound — the Modifier bottom tray was removed by ADR-026 (region 6 sits in
-     the aside in both modes). Kept because deleting a tokens.css entry is a
-     design-spec §3c contract change (CLAUDE §5.1.1 boundary), not a subtraction. */
-  --h-modifier-tray: 132px;
 
   /* Scroll-edge fade. A capped strip of opaque cards cut at an arbitrary offset
      reads as a rendering fault, not as "there is more" — the last tile is
@@ -563,7 +557,6 @@
   --h-region-header: 32px;
   --h-modifier-card-max: 156px;
   --h-macro-tile: 44px;
-  --h-modifier-tray: 104px;
 
   /* Sub-grid spacing (§3): primarily region horizontal padding and the
      region-header inner gap. These two tokens also reach some off-primary
