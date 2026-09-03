@@ -1,12 +1,12 @@
 ---
 type: manifest
 project: prompt-hub
-version: v1.20
+version: v1.21
 status: active
 created: 2026-05-24
 last_modified: 2026-09-03
 audience: [human, ai]
-description: prompt-hub 项目前期准备文件总清单——按方法论 v1.3 六层架构（L0 宪法 / L1 产品契约 / L2 工程规格 / L3 实施规格 / L4 索引 / L5 协作契约）+ ADR + 实施方案 + 视觉原型 + AI 上下文 + 工程护栏（CI/gate 测试）。AI 进项目读完 CLAUDE.md 后接读本文件能 1 分钟拿全貌；不写行数（参考性强但易过期）。v1.20：2026-09-03 人审批次 ⑦ + 新治理规则「日志不签字」（[[CLAUDE#§5.1.2]]）——product-spec **v0.24 ratified** / design-spec **v0.21 ratified** / test-spec **v0.7 ratified**（首份按 5.1.2 由 AI 反查代码后直接归档的文档，非人审）。v1.16：2026-09-01 文档对账日——features v1.18（合计 88→91、S1/ADR-017 状态纠正、§7 重写）+ prd/ops-spec/user-flows/spec 四份 `pre-code` 转出 + learnings v0.5 收编 HANDOFF 长期风险。v1.15：ADR-027 回流 + 冲突提示 + 密度层立论重写 + ADR-026 两项遗留裁决——product-spec v0.22 / design-spec v0.19 / prd v0.13 / features v1.17 / test-spec v0.5，另修正 prd 行的**版本漂移**（本表记 v0.11，实际早已 v0.12）。⚠️ 其余行仍停在 2026-07-06 口径（未随 ADR-022/025/026 更新），属旧账
+description: prompt-hub 项目前期准备文件总清单——按方法论 v1.3 六层架构（L0 宪法 / L1 产品契约 / L2 工程规格 / L3 实施规格 / L4 索引 / L5 协作契约）+ ADR + 实施方案 + 视觉原型 + AI 上下文 + 工程护栏（CI/gate 测试）。AI 进项目读完 CLAUDE.md 后接读本文件能 1 分钟拿全貌；不写行数（参考性强但易过期）。v1.21：2026-09-03 [[028-reversible-delete]] Accepted 登记——ADR 总数 27 → **28**、Accepted 24 → **25**；§8 决策表补齐 022–028 七行（该表自 2026-07-06 起停在 021，表头「21 份」与 §1 概览的 27 长期不符，本版一并订正）。v1.20：2026-09-03 人审批次 ⑦ + 新治理规则「日志不签字」（[[CLAUDE#§5.1.2]]）——product-spec **v0.24 ratified** / design-spec **v0.21 ratified** / test-spec **v0.7 ratified**（首份按 5.1.2 由 AI 反查代码后直接归档的文档，非人审）。v1.16：2026-09-01 文档对账日——features v1.18（合计 88→91、S1/ADR-017 状态纠正、§7 重写）+ prd/ops-spec/user-flows/spec 四份 `pre-code` 转出 + learnings v0.5 收编 HANDOFF 长期风险。v1.15：ADR-027 回流 + 冲突提示 + 密度层立论重写 + ADR-026 两项遗留裁决——product-spec v0.22 / design-spec v0.19 / prd v0.13 / features v1.17 / test-spec v0.5，另修正 prd 行的**版本漂移**（本表记 v0.11，实际早已 v0.12）。⚠️ 其余行仍停在 2026-07-06 口径（未随 ADR-022/025/026 更新），属旧账
 related:
   - CLAUDE
   - 02-constitution
@@ -29,7 +29,7 @@ related:
 | 🤝 共创 | 6 | 5/6 ratified（含 product-spec **v0.24** / design-spec **v0.21**，2026-09-03 人审批次 ⑦）+ user-flows v0.1 draft（六处与 v0.2.0 不符，[[HANDOFF]] 第 22 项待重写）。⚠️ v1.19 前此格记 6/6，与 user-flows 实况不符 |
 | 🤖 AI 主笔（人审） | 6 | 4/6 ratified（tech-stack / sitemap / prd v0.13 · 2026-09-01 人审批次 ④ / **test-spec v0.7 · 2026-09-03 按 [[CLAUDE#§5.1.2]] 反查归档**）+ ops-spec draft + features in-progress。⚠️ v1.19 前此格记「ops-spec + test-spec v0.2 人审通过 + prd pre-code」，三处均已漂移 |
 | 🤖 AI 派生人审（L5） | 2 | 2/2 active |
-| ADR 决策记录 | **27** | **24 Accepted** + 1 Superseded（012 by 019）+ 1 Proposed（005）+ 1 Reserved（011）。⚠️ 本行 v1.11 前记「21 / 18 Accepted」已漂移多轮，v1.12 按 `docs/adr/*.md` 逐文件 `status:` 实数重列 |
+| ADR 决策记录 | **28** | **25 Accepted** + 1 Superseded（012 by 019）+ 1 Proposed（005）+ 1 Reserved（011）。2026-09-03 新增 028（删除可撤销）。⚠️ 本行 v1.11 前记「21 / 18 Accepted」已漂移多轮，v1.12 按 `docs/adr/*.md` 逐文件 `status:` 实数重列 |
 | 实施方案 | 7 | 5 done + 1 active + 1 phased（adr-017 Phase 6 待办）|
 | 技术调研 | 2 | active（索引 + 1 份调研）|
 | 视觉原型 | 1 | v1 已归档至 archive/（2026-05-25）|
@@ -106,7 +106,7 @@ related:
 
 ---
 
-## §8 ADR 决策记录（21 份）
+## §8 ADR 决策记录（28 份）
 
 | 编号 | 标题 | 状态 |
 |---|---|---|
@@ -132,6 +132,13 @@ related:
 | 019 | supersede-flat-visual-anchor（推翻 ADR-012 反 polish / Bloomberg-flat 锚点，omar 拍板 Option A：引 subtle elevation + 放弃颜色本体论改靠位置+形状，全面对齐 Promptscape；校正：颜色/反阴影住 design-spec 非 constitution，无人主笔门槛） | Accepted（2026-06-26） |
 | 020 | restore-protocol-dark-band（恢复协议层暗色 band——调和 ADR-018「吸收暗 band」与 ADR-019「全面中性化」实现冲突：新增 `--band-*` 层级固定色 token 族（双主题恒深底浅字）+ band 作用域整体重映射中性 token + 层级编码修缮（ModifierGrid 层标记 / RecentList 徽标撤 accent 实底）；澄清「层级固定色 ≠ 语义色」不属 ADR-019 废除的颜色本体论） | Accepted（2026-07-01） |
 | 021 | scene-layered-editing（废除 ScenePanel 全局 editMode，拆属性/结构/内容三层就地编辑；子决策 1 排序拖拽→按钮，ADR-016 dnd 范围收缩至 MacroGrid/AlignmentPhrases；子决策 2 scene.color 定性「用户内容色」2026-09-01 omar 复核通过） | Accepted（2026-07-06） |
+| 022 | cross-scene-phrase-move（跨 Scene 话术移动——新增独立 `move_phrase` 命令含撤销 receipt，而非扩展 `update_phrase`；交互走分层选择器不做拖拽；子决策 2 裁定双路径共存、子决策 3 把 Phrase soft-delete 推给独立立项） | Accepted（2026-07-12） |
+| 023 | ui-reshape-before-release（v0.1.0 发布前做 UI + 组件架构系统性重塑，推翻审计 D-6「批次 C/D 放发布后」的排序） | Accepted（2026-07-21；措辞由 omar 2026-09-01 人审批次 ⑧ 复核追认） |
+| 024 | dark-cockpit-identity（主形态视觉身份定为深色驾驶舱 + 恒定 violet 品牌色，light 降为显式设置项；推翻 ADR-018 补遗「light 为参考观感」锚点） | Accepted（2026-07-21；措辞由 omar 2026-09-01 人审批次 ⑧ 复核追认） |
+| 025 | unified-anchored-editing（编辑器脱离宿主文档流改原生 `popover` top layer 锚定；organize 升级为选择驱动的键盘处理模式；子决策 6 局部修订 ADR-024 的 PhaseBar 主角化；`:125` 立下「撤销优于确认，仅限真正可逆」规矩） | Accepted（2026-08-17，六条子决策全数采纳；P0 + P1-a + P1-b 已落地，P2/P3 待排） |
+| 026 | fixed-spatial-layout（`interactionMode` 回归「只改交互语义」，不再驱动区域重排；双布局收敛为单布局 + 用户可拖拽的纵向分配。起因是实现层 dual-layout 越过 product-spec 三处已批准契约且从未开 ADR） | Accepted（2026-08-18；同日落地，2026-08-19 真机走查通过） |
+| 027 | configurable-global-hotkey（全局唤起键可配置——绑定存 SQLite `settings` 表，`user_version` 11→12；冲突只有 `register()` 失败一种形态；新增 macOS `RunEvent::Reopen` 逃生口，顺带修掉「点 Dock 图标无反应」） | Accepted（2026-08-20；同日落地 + 回流八步完成，G3 门四项全过） |
+| 028 | reversible-delete（删除改为**原地软删除**：七张资产表加 `deleted_at`，行不搬走，恢复是单行 UPDATE，保住 id / created_at / order_index / usage 历史；新增**第七道源码级闸门**强制读路径带过滤；六处「永久删除？」确认框换一键 + 撤销 toast；废纸篓不自动过期、只由用户手动清空） | Accepted（2026-09-03；**实施未开始**，P0/P1/P2 见该 ADR §5） |
 
 ---
 
