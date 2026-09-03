@@ -95,16 +95,17 @@ describe("AnchoredEditor — top-layer container (ADR-025 子决策 1)", () => {
     expect(document.activeElement).toBe(chip);
   });
 
-  it("treats pressing the anchor itself as a toggle, not an outside dismissal", () => {
+  it("does not treat a press on the anchor as an outside dismissal", () => {
     render(<AlignmentPhrases />);
     fireEvent.click(screen.getByLabelText("编辑 默认协议"));
     fireEvent.change(screen.getByPlaceholderText("名称"), {
       target: { value: "改名协议" },
     });
     fireEvent.pointerDown(screen.getByRole("button", { name: "默认协议" }));
-    // Saving here would fight the chip's own click handler and re-open the
-    // editor on the very element that dismissed it.
+    // The anchor is the container's own footprint: pressing it neither saves
+    // nor closes, it just stays put.
     expect(call("update_alignment_phrase")).toBeUndefined();
+    expect(screen.getByRole("group", { name: "编辑对齐话术" })).toBeTruthy();
   });
 
   it("still answers Escape after a focused descendant unmounts", () => {
@@ -509,5 +510,87 @@ describe("AnchoredEditor — first focus follows placement (G4 缺陷 D1)", () =
       />,
     );
     expect(screen.getByPlaceholderText("名称")).toHaveFocus();
+  });
+});
+
+describe("AnchoredEditor — the container owns the anchor re-press (G4 缺陷 O7)", () => {
+  beforeEach(seed);
+
+  // A bare anchor with its own click handler, so these cases measure the
+  // primitive rather than any one host's wiring.
+  const mountWithAnchor = () => {
+    const anchor = document.createElement("button");
+    const onAnchorClick = vi.fn();
+    anchor.addEventListener("click", onAnchorClick);
+    document.body.appendChild(anchor);
+    const onClose = vi.fn();
+    render(
+      <PhraseFormEditor
+        presentation="anchored"
+        layer="protocol"
+        mode="create"
+        ariaLabel="编辑对齐话术"
+        submitLabel="新增"
+        anchor={anchor}
+        onSubmit={() => {}}
+        onClose={onClose}
+      />,
+    );
+    return { anchor, onAnchorClick, onClose };
+  };
+
+  const pressAnchor = (anchor: HTMLElement) => {
+    fireEvent.pointerDown(anchor);
+    fireEvent.click(anchor);
+  };
+
+  it("swallows the anchor's own click instead of dismissing", () => {
+    const { anchor, onAnchorClick, onClose } = mountWithAnchor();
+    try {
+      pressAnchor(anchor);
+      // No host implements a toggle, and on the chip / card hosts this click
+      // is COPY — letting it through would copy out from under an open editor
+      // (and hide the window in 调用态).
+      expect(onAnchorClick).not.toHaveBeenCalled();
+      expect(onClose).not.toHaveBeenCalled();
+      expect(screen.getByRole("group", { name: "编辑对齐话术" })).toBeTruthy();
+    } finally {
+      anchor.remove();
+    }
+  });
+
+  it("pulls focus back to the first field when it had fallen out", () => {
+    const { anchor } = mountWithAnchor();
+    try {
+      // O7 as observed: the press moved focus onto the anchor, typing went
+      // nowhere and Escape reached the window instead of the panel. jsdom
+      // cannot run mousedown's default focus action, so the state it produces
+      // is staged directly — focus sitting outside the panel.
+      act(() => {
+        (document.activeElement as HTMLElement | null)?.blur();
+      });
+      expect(document.activeElement).toBe(document.body);
+
+      pressAnchor(anchor);
+      expect(screen.getByPlaceholderText("名称")).toHaveFocus();
+    } finally {
+      anchor.remove();
+    }
+  });
+
+  it("leaves focus alone when it is already inside the panel", () => {
+    const { anchor } = mountWithAnchor();
+    try {
+      const content = screen.getByPlaceholderText("话术内容");
+      content.focus();
+      expect(content).toHaveFocus();
+
+      // Reclaiming focus unconditionally would yank the caret out of the field
+      // being typed into and back to the name — a fix worse than the defect.
+      pressAnchor(anchor);
+      expect(content).toHaveFocus();
+    } finally {
+      anchor.remove();
+    }
   });
 });

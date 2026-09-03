@@ -190,9 +190,36 @@ export function AnchoredEditor({
       const target = e.target as Node | null;
       if (!target) return;
       if (panel.contains(target)) return;
-      // Pressing the anchor itself is a toggle, not an outside dismissal —
-      // letting it through would save here and immediately re-open there.
-      if (anchor?.contains(target)) return;
+      // The anchor is the container's own footprint, not "outside", and the
+      // container owns a re-press on it outright: no close, no save, no host
+      // click, and focus stays in the editor.
+      //
+      // It is emphatically NOT a toggle, which is what this branch used to
+      // claim. Not one of the four hosts implements one: the Macro header
+      // 新增 button re-sets the same editing target (same React key → the very
+      // same panel stays mounted), the draft inbox 编辑 button re-opens, and on
+      // the chip / phrase-card hosts the anchor's own click is COPY — which
+      // would put the phrase on the clipboard, and in 调用态 hide the window,
+      // out from under an open editor. So the click has to be swallowed.
+      if (anchor?.contains(target)) {
+        // Both mechanisms are the refused-dismissal branch's, for the same
+        // reason. preventDefault cancels the compatibility mousedown, whose
+        // default action would move focus onto the anchor (every one of them
+        // carries `tabIndex={-1}`, so it takes focus happily) — typing would
+        // then go nowhere and Escape would reach the window instead of the
+        // panel, which is G4 缺陷 O7. The swallow keeps the host's click
+        // handler from running at all.
+        e.preventDefault();
+        swallowClickRef.current = true;
+        // Focus is only reclaimed if it had already fallen out of the panel;
+        // pressing the anchor mid-edit must leave the caret in the field the
+        // user was typing into, not yank it back to the first one.
+        if (!heldFocusRef.current || !panel.contains(document.activeElement)) {
+          initialFocusRef.current?.current?.focus();
+          heldFocusRef.current = panel.contains(document.activeElement);
+        }
+        return;
+      }
       if (dismissRef.current("outside") !== false) return;
       swallowClickRef.current = true;
       // Also suppress the compatibility mousedown, whose default action would

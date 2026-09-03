@@ -1,10 +1,10 @@
 ---
 type: product-spec
 project: prompt-hub
-version: v0.23
+version: v0.24
 created: 2026-05-18
-last_modified: 2026-09-01
-status: ratified  # 2026-09-01 人审批次 ⑤：v0.23 补齐话术卡解剖 / 密度档 / 默认深色三处回流后，omar 审阅 v0.10–v0.23 全部增量通过，draft → ratified（前序 v0.8 ratified）
+last_modified: 2026-09-03
+status: draft  # v0.24（2026-09-03 G4 观察 O7 涟漪：§13.3 保存语义规则表加第六行「锚点再次按下 = 无操作」）待人审；v0.23 于 2026-09-01 人审批次 ⑤：补齐话术卡解剖 / 密度档 / 默认深色三处回流后，omar 审阅 v0.10–v0.23 全部增量通过，draft → ratified（前序 v0.8 ratified）
 author: co  # 🤝 人机共创（CLAUDE §5.2）
 related: [[01-spec]], [[05-design-spec]], [[06-prd]], [[012-lock-visual-quality-anchor]], [[024-dark-cockpit-identity]], [[019-supersede-flat-visual-anchor]], [[020-restore-protocol-dark-band]], [[021-scene-layered-editing]], [[022-cross-scene-phrase-move]], [[025-unified-anchored-editing]], [[027-configurable-global-hotkey]], [[013-alignment-phrases-tab-inclusion]], [[015-expose-mcp-write-pipeline]], [[017-enable-auto-update]], [[018-absorb-promptscape-design]], [[026-fixed-spatial-layout]]
 description: 手动 AI 编程仪表盘的 UI 契约——双形态架构/布局/点击路径/状态反馈/用户旅程/主形态 UI 草案；写 UI / 改交互时召回。版本叙事见 CHANGELOG
@@ -679,6 +679,7 @@ graph TD
 | 点击浮层外部、内容未改动（not dirty） | 直接关闭，不发 IPC |
 | `Esc`、内容 dirty | 关闭并放弃；**创建态**给撤销 toast（编辑态原值仍在库中，无需 toast） |
 | `⌘Enter` | 保存并关闭；关闭后焦点归还触发元素 |
+| **再次按下锚点本身**（v0.24 · G4 观察 O7）| **无操作**——不关闭、不保存、不触发锚点自身的点击（chip / 话术卡的锚点点击是复制，不会跑；调用态也不会因此隐藏窗口）。焦点留在编辑器内：正在编辑的字段不被夺走，仅当焦点已掉出面板时回到首字段 |
 
 dirty 判定以**初始值快照**比对，不以「是否聚焦过」判定。
 
@@ -929,6 +930,18 @@ dirty 判定以**初始值快照**比对，不以「是否聚焦过」判定。
 ---
 
 ## 修订记录
+
+### v0.24（2026-09-03）— G4 观察 O7 涟漪：锚点再次按下 = 无操作
+
+> 触发：G4 走查观察 O7（[[11-test-spec#4.3]]）——Macro 编辑器开着时再点「新增」，编辑器不关而焦点被按钮拿走，之后键入丢失、Esc 走 O2 藏掉整个仪表盘。omar 2026-09-03 确认按结构修法：容器接管锚点二次按下，**否决「二次按下 = 关闭」**（与 D1 留下的「以为没打开再点一次」肌肉记忆相反，且会把「点外保存」语义扩到触发器上）。**不改任何既有行数的规则**，只补一行此前没人写过的空白。
+
+| 落点 | 改动 | 依据 |
+|---|---|---|
+| §13.3 保存语义规则表 | **五行 → 六行**，新增「再次按下锚点本身 = 无操作」：不关、不保存、不触发锚点自身的点击，焦点留在编辑器内（已失焦才回首字段）| omar 2026-09-03 裁决 |
+
+**为什么必须吞掉锚点的点击**：四个宿主没有一个把锚点实现成 toggle——Macro「新增」重复设同一个编辑目标（面板压根不重挂）、草稿卡「编辑」重开，而对齐话术 chip 与 Scene 话术卡的锚点点击是**复制**（调用态还会隐藏窗口）。放行等于在一个开着的编辑器底下写剪贴板并关窗。
+
+**落地范围**：`src/components/primitives/Editor.tsx` 单文件，四个宿主零改动；jsdom 回归 +5（前端 409 → **414**），发布形态复跑通过（见 [[11-test-spec#4.3]] O7）。
 
 ### v0.23（2026-09-01）— 三处旧账回流：话术卡解剖 / 密度档 / 默认深色（人审批次 ⑤）
 

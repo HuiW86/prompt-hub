@@ -160,3 +160,43 @@ describe("MacroGrid — anchored editor rules (ADR-025 子决策 2)", () => {
     expect(screen.getByPlaceholderText("内容")).toHaveValue("宏内容");
   });
 });
+
+describe("MacroGrid — re-pressing 新增 while its editor is open (G4 缺陷 O7)", () => {
+  beforeEach(() => {
+    usePromptStore.setState(promptInitial, true);
+    usePromptStore.setState({ macros });
+    useToastStore.getState().clear();
+    invokeMock.mockReset();
+    invokeMock.mockResolvedValue({ ok: true });
+  });
+
+  it("keeps the single editor open with focus still inside it", () => {
+    render(<MacroGrid />);
+    const trigger = screen.getByLabelText("新增 Macro");
+    const reachedTrigger = vi.fn();
+    trigger.addEventListener("click", reachedTrigger);
+    fireEvent.click(trigger);
+    expect(screen.getByPlaceholderText("名称")).toHaveFocus();
+    reachedTrigger.mockClear();
+
+    // The button's onClick re-sets the same create target, so React keeps the
+    // very same panel mounted — there is no toggle to fall back on. On a
+    // release build the press instead moved focus onto the button (tabIndex
+    // -1), losing every subsequent keystroke and handing Escape to the window.
+    // jsdom runs no mousedown default action, so that focus loss is staged by
+    // hand; the swallowed click is the half it can observe directly.
+    act(() => {
+      (document.activeElement as HTMLElement | null)?.blur();
+    });
+    fireEvent.pointerDown(trigger);
+    fireEvent.click(trigger);
+
+    expect(reachedTrigger).not.toHaveBeenCalled();
+    expect(screen.getAllByRole("group", { name: "新增 Macro" })).toHaveLength(
+      1,
+    );
+    const panel = screen.getByRole("group", { name: "新增 Macro" });
+    expect(panel.contains(document.activeElement)).toBe(true);
+    expect(screen.getByPlaceholderText("名称")).toHaveFocus();
+  });
+});

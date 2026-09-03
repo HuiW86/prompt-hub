@@ -14,6 +14,30 @@ description: prompt-hub 设计文档体系变更日志——记录文档结构�
 
 ---
 
+## 2026-09-03（四）· 第一段 — G4 观察 O7 裁决并修复：`AnchoredEditor` 接管锚点二次按下；product-spec v0.24
+
+> 触发：HANDOFF 第 30 项（G4 观察 O7 · P2「Macro 编辑器开着时再点『新增』，焦点被按钮拿走、编辑器不关」）。G4 三缺陷已全部销账，本段是走查观察的第一笔裁决。
+
+### 做了什么
+
+- **根因先纠正**：走查记录写的是「外部点击处理跳过锚点」，读代码后要补一句关键的——`AnchoredEditor` 的 pointerdown 分支之所以放行锚点，是因为旧注释断言「锚点即 toggle，放行让宿主自己收」。**四个宿主没有一个兑现这个假设**：Macro「新增」重复 `setEditing` 同一个 key（同 React key，面板压根不重挂）、草稿卡「编辑」是重开，而对齐话术 chip 与 Scene 话术卡的锚点 `onClick` 是**复制**（调用态还会隐藏窗口）。放行之后真正生效的只剩兼容 mousedown 的默认动作：把焦点带到 `tabIndex={-1}` 的按钮上——之后键入丢失，Esc 落到窗口走 O2 藏掉整个仪表盘
+- **裁决走结构修法**（Fable 策划、omar 确认）：由**容器**接管锚点二次按下，而不是让四个宿主各自实现 toggle。**否决「二次按下 = 关闭」**：它与 D1 留下的肌肉记忆（以为没打开，再点一次）正好相反，且会把「点外保存」的语义扩到触发器上
+- **修法**（`src/components/primitives/Editor.tsx` 唯一改动，四个宿主零改动）：pointerdown 命中锚点时 `e.preventDefault()`（压掉兼容 mousedown，焦点不离开面板）+ 武装既有 `swallowClickRef`（宿主 click 不再跑：不重开、不复制）+ 仅在面板已不持有焦点时回到 `initialFocus`（焦点仍在面板内则不动，不把光标从正文拽回名称字段）。**不调 `onDismiss`**；Esc / teardown 焦点归还 / 点外三条分支未动。注释改写成真实契约——原文写的是宿主会做什么，而不是宿主实际做了什么
+- **测试**：前端 409→**414**（+5）。`AnchoredEditor` +3（吞掉锚点自身 click 不 dismiss / 焦点落 body 时回首字段 / 焦点已在面板内则不动）+ 改写 1 条旧用例标题（原「treats pressing the anchor itself as a toggle」→「does not treat a press on the anchor as an outside dismissal」——标题本身在断言一件不存在的事）；`MacroGrid` +1（再点「新增」：单实例仍挂载、宿主 click 未触发、焦点在面板内）；`AlignmentPhrases` +1（编辑中再点 chip：编辑器仍开、`writeText` 与 `record_usage` 未调用）。**变异验证**：撤回修法后 4 条新用例变红，第 5 条「焦点已在面板内则不动」两态皆绿——它是防过度修正的守卫，不是回归用例。**jsdom 跑不了 mousedown 的默认聚焦动作**，所以「`preventDefault` 挡住焦点外移」这半边只能靠真机。lint / prettier（四个改动文件）/ build 全绿
+- **真机复跑**（Fable 验收）：按 `main` + 本改动 `pnpm tauri build --no-bundle` 重建裸 release（内嵌 chunk `BTngK09y` 与 `dist/assets/` 一致），隔离 `HOME=/tmp/ph-o7-home`，正式版走查前退出、结束后拉回。序列：点「新增」→ 名称框有焦点 → **再点「新增」→ 编辑器仍开、焦点仍在名称框** → 键入 `o7z` 落进名称框（同时弹 macOS 首字母大写气泡，即 O8）→ 第一次 Esc 只关气泡（O8 既知）→ 第二次 Esc 关编辑器、窗口仍在屏（`onscreen=true`）；`macros` 仍 4 条、`usage_records` 0。chip / 话术卡 / 草稿三宿主同走该 primitive，推定通过、未单独真机开（与第三段 W3 的推定同口径）。截图 `/tmp/ph-walk/shots/O7r-*`
+- **涟漪**：[[03-product-spec]] **v0.24**（§13.3 保存语义规则表 五行 → **六行**，新增「再次按下锚点本身 = 无操作」；ratified → draft 待人审）/ [[05-design-spec]] v0.21 **同版补记**（§10.2.2 接口契约四条 → 六条，第 6 条「容器拥有锚点的二次按下」）/ [[11-test-spec]] v0.7（§2 计数 409→414 与第七笔、§4.3 O7 行改写为「已裁决并修复」含真机证据与 jsdom 覆盖边界）/ [[07-features]] v1.21 同版补记行 + §7 留证索引 3.10 与 G4 段落。HANDOFF 第 30 项闭合
+- **O7 派生两小项（`o7-probe` 探查，只读）**：①「用『取消』关编辑器后焦点落到 body」是**既有缺陷**——macOS WebKit 点 `<button>` 不聚焦按钮而是沿 DOM 祖先链找可鼠标聚焦节点，popover 不改祖先链，焦点落到宿主 `<section tabIndex={0}>`，`focusin` 把 `heldFocusRef` 记成 false，卸载时的归还门禁被绕过；jsdom 无 mousedown 聚焦、现有归还测试只走 Esc，所以两层都看不见。记 HANDOFF **第 34 项**待裁（门禁放宽 vs 显式关闭路径传意图），未随本笔修 ②「可打印键被路由进搜索框」**非缺陷**：不存在 type-to-search，`setQuery` 只有输入框 `onChange` 一个调用点；搜索框只在 ⌘K 与「唤起时 `activeElement` 是 body」拿焦点（product-spec §13.4 唤起聚焦契约），走查看到的是 ① 留下的 body 焦点在隐藏再唤起后被搜索框按契约接管
+
+### 工作模式记一笔
+
+本段是 **Fable 策划 / Opus 执行**模式跑的第一个任务：Fable 负责裁决、验收与真机复跑，三个 Opus 子代理分工——`o7-fix` 写码与测试、`o7-probe` 探查两小项、`o7-docs` 做文档涟漪。过程中**两个子代理中途撞上用量上限**；修法当时已经落盘，Fable 自己跑完了验证与真机复跑，未因此改动结论。
+
+### 方法记一笔
+
+**primitive 的注释里写「宿主会做 X」，要拿四个宿主逐个对过再信**——注释是写的时候的假设，不是契约。这次「锚点即 toggle」一条假设没有任何一个宿主兑现，而它决定了一整个分支放行还是拦截；写下它的时候大概只看了一个宿主。同类检查成本很低（四次 grep），但没人做的原因是注释读起来像结论。
+
+---
+
 ## 2026-09-02（三）· 第六段 — G4 W18 Esc 段按 `main` 重建复跑通过，缺陷 D2 闭合；G4 三缺陷全部销账
 
 > 触发：第五段「验证」末条 / HANDOFF 第 25 项余下的最后一步。jsdom 证明了捕获阶段认领与 `e.repeat` 守卫，WebKit 上事件是否按同样顺序到达、OS 长按重复是否真被挡住，只有发布形态能答。

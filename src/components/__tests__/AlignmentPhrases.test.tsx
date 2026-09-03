@@ -159,3 +159,28 @@ describe("AlignmentPhrases — in-place editing (ADR-021)", () => {
     ).toBeTruthy();
   });
 });
+
+describe("AlignmentPhrases — re-pressing the chip while editing (G4 缺陷 O7)", () => {
+  beforeEach(() => seed(twoPhrases));
+
+  it("holds the editor open and does not copy", () => {
+    const writeText = vi.mocked(navigator.clipboard.writeText);
+    writeText.mockClear();
+    render(<AlignmentPhrases />);
+    fireEvent.click(screen.getByLabelText("编辑 默认协议"));
+    const chip = screen.getByRole("button", { name: "默认协议" });
+
+    // The chip IS the anchor and its own click is copy — which would put the
+    // phrase on the clipboard, and in 调用态 hide the window, out from under
+    // the editor the user is still typing in.
+    fireEvent.pointerDown(chip);
+    fireEvent.click(chip);
+
+    expect(screen.getByRole("group", { name: "编辑对齐话术" })).toBeTruthy();
+    expect(writeText).not.toHaveBeenCalled();
+    expect(
+      invokeMock.mock.calls.find((c) => c[0] === "record_usage"),
+    ).toBeUndefined();
+    expect(screen.getByPlaceholderText("名称")).toHaveFocus();
+  });
+});
