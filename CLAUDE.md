@@ -83,7 +83,7 @@ pnpm bench:hotkey-wake                                    # show()+set_focus() R
 - `docs/adr/*` — 决策追溯时
 
 ### 冷区（仅显式查询时取）
-- `docs/MANIFEST.md` v1.19 — 项目全文件清单（六层架构总览，AI 进项目读完 CLAUDE.md 接读拿全貌）
+- `docs/MANIFEST.md` v1.20 — 项目全文件清单（六层架构总览，AI 进项目读完 CLAUDE.md 接读拿全貌）
 - `~/Vault/知识库/方案模板/产品文档体系方法论.md` v1.3 — 文档体系治理时
 - git history — 变更追溯
 
@@ -141,6 +141,20 @@ pnpm bench:hotkey-wake                                    # show()+set_focus() R
 
 **留痕要求**：CHANGELOG 那一行必须写明删了什么 + 依据哪一类，否则半年后无法与"手滑删掉"区分。
 
+#### 5.1.2 日志不签字（2026-09-03 omar 拍板）
+
+**人审只签「图纸类」改动**——[[01-spec]] / [[02-constitution]] / [[03-product-spec]] / [[05-design-spec]] / [[06-prd]] 里回答「应该长什么样」的契约条款。
+
+**「记录类」内容不进人审队列**——[[11-test-spec]] §2 计数与 §4.x 走查记录、[[07-features]] §7 留证、`docs/design/CHANGELOG.md`、[[HANDOFF]]。这类内容由 AI 逐句反查代码后**直接归档**（`status` 可直接写 `ratified`），omar 想抽查随时翻。
+
+**一份文档两类并存时按章节分**：test-spec §1 / §3 / §5 是图纸（改测试分层、改 gate 契约、改性能预算走人审），§2 / §4.x 是日志。
+
+**反查怎么做**：起**只读**子代理，对增量逐句出三列——一致 / 不一致（附 `file:line`）/ 无法核（真机观测、截图、退出码这类代码里没有对应物的）。不一致的**先改再归档**；无法核的条目保留原文并在归档说明里标明条数。
+
+**送审图纸时只给「一句话的决定 + 推荐选项」**，不把 diff 落点逐条列成裁点——裁点数量应该等于决策数量，不等于改动数量。
+
+**为什么开这条**：八步对「改图纸」和「记日志」收一样的签字费，于是每段工作都攒出一批待人审，人审成了瓶颈而不是防线。而记录类内容的真实风险根本不是「omar 没看」，是**AI 凭印象写错**——G4 的 D1 / D2 / D3 三个根因走查当天全写错，纠错靠的是回头读代码不是人签；本规则首跑就在 [[11-test-spec]] 的增量里抓出 8 处不一致。**签字签不出正确性，反查才行。**比喻：房主签图纸，不签施工日志。
+
 ### 5.2 文档主笔人分工
 - 🧑 人主笔：`docs/design/01-spec.md` / `docs/design/02-constitution.md`
 - 🤝 共创：`CLAUDE.md` / `docs/adr/*` / `docs/design/04-user-flows.md` / `docs/design/03-product-spec.md` / `docs/design/05-design-spec.md` / `docs/plans/prompt-hub-mvp.md`
@@ -174,7 +188,7 @@ AI 不得擅自起草人主笔文档（spec / constitution），可起草共创 
 3. **不要在 Macro 里展示 AlignmentPhrase**——违反 [[02-constitution#B2]]，破坏协议/任务分离
 4. **不要引入 Scene/Macro/Phase 的嵌套子层级**——违反 spec §8.4
 5. **不要把数据上传到任何外部服务**——违反 [[02-constitution#A2]]，话术含隐私指纹
-6. **不要给设计文档就地补丁**——必须走方法论 §7 八步上游回流（唯一例外：§5.1.1 减法快车道，四类纯删除改动只记 CHANGELOG）
+6. **不要给设计文档就地补丁**——必须走方法论 §7 八步上游回流（例外两条：§5.1.1 减法快车道，四类纯删除改动只记 CHANGELOG；§5.1.2 记录类内容反查归档，不进人审队列）
 7. **任何 dependency major version bump 必须开 ADR**——技术栈全部锁定见 [[09-tech-stack#§3]]，bump 流程见 [[09-tech-stack#§8]]
    - ✅ **已解锁**：D1（Tauri 2.x）/ D2（React 19.2）/ D3（rusqlite 0.32）/ D4（pnpm 10.x）/ D6（Zustand 5）/ D9（macos-private-api）/ D10（CSS Modules）/ D11（测试栈）；D5（Vite 7.x）+ D7（quick-shortcut plugin）由 D1 自动锁定
    - ⏳ **仍 pending**：D8（prompt-combiner 复用，[[005-prompt-combiner-reuse]] Proposed）— 等 omar 提供仓库后调研，不阻塞第一阶段 MVP
@@ -189,7 +203,7 @@ AI 不得擅自起草人主笔文档（spec / constitution），可起草共创 
 > 本节只留指针，不留编年史。事实明细以 `docs/design/CHANGELOG.md` 日期条目、对应 ADR 与 [[HANDOFF]] 为准。
 
 - **项目阶段**：S1 进行中，**M0 四项交付全绿**（含 M0-4 Developer ID 签名公证，runbook [[m0-4-macos-signing]]）；MCP 写管线 M-X.1–X.4 + 草稿收件箱 UI 已收口（ADR-015，明细见 [[07-features#§4]] 节奏表 2026-06-03 起各行）；资产编辑 AE P1–P4 收口，后随「UI 减负」Modifier/Composition 编辑 UI `withdrawn`、Tab cycle 回落 6 区（[[07-features#3.8]] + [[03-product-spec#13.4]]）；Promptscape 设计吸收落地（ADR-018 + 补遗-1，CHANGELOG 2026-06-25）；flat 视觉锚点被推翻转 subtle elevation（ADR-019，CHANGELOG 2026-06-26）
-- **文档体系**：13 核心 + L5 协作契约 2 + MANIFEST v1.19——product-spec **v0.23** / design-spec **v0.21** / features **v1.21** / test-spec **v0.7** / prd **v0.13** / spec v0.7 / constitution v1.1 / tech-stack v1.3（2026-09-02 G4 真机走查：features v1.20 32 行升 verified、test-spec v0.6 §4.3 走查记录 + 三缺陷；2026-09-01 人审批次 ①–⑥：features v1.19 `verified` 判据修订 + 37 行升 verified，test-spec v0.5 / prd v0.13 ratified，product-spec v0.23 / design-spec v0.20 补 ADR-024 与 reshape 旧账回流后 ratified；同日对账日：features v1.18 合计 88→91 + §7 重写，prd/ops-spec/user-flows/spec 四份 `pre-code` 转出；2026-08-20 两轮回流：ADR-027 → v0.20/v1.15/v0.4/v0.13，ADR-025 → v0.19/v0.18/v1.14/v0.3；此前 2026-08-19 两轮：ADR-026 回流 → v0.17/v0.16/v1.12，走查缺陷裁决 → v0.18/v0.17/v1.13）；L5 派生 [[CLAUDE-DESIGN]] v0.2（⚠️ 待 omar 重传）+ [[claude-design-prompts]] v0.1；全文件清单见 [[MANIFEST]] v1.19，版本叙事见 CHANGELOG
+- **文档体系**：13 核心 + L5 协作契约 2 + MANIFEST v1.20——product-spec **v0.24 ratified** / design-spec **v0.21 ratified** / features **v1.21** / test-spec **v0.7 ratified** / prd **v0.13** / spec v0.7 / constitution v1.1 / tech-stack v1.3（2026-09-03 人审批次 ⑦：omar 只签一条契约「编辑器已打开时再按一次锚点 = 无事发生」，product-spec v0.24 / design-spec v0.21 随之 ratified；同日首次按 §5.1.2 反查归档 test-spec v0.7，ts-recheck 62 核 / 8 修正 / 21 无法核；2026-09-02 G4 真机走查：features v1.20 32 行升 verified、test-spec v0.6 §4.3 走查记录 + 三缺陷；2026-09-01 人审批次 ①–⑥：features v1.19 `verified` 判据修订 + 37 行升 verified，test-spec v0.5 / prd v0.13 ratified，product-spec v0.23 / design-spec v0.20 补 ADR-024 与 reshape 旧账回流后 ratified；同日对账日：features v1.18 合计 88→91 + §7 重写，prd/ops-spec/user-flows/spec 四份 `pre-code` 转出；2026-08-20 两轮回流：ADR-027 → v0.20/v1.15/v0.4/v0.13，ADR-025 → v0.19/v0.18/v1.14/v0.3；此前 2026-08-19 两轮：ADR-026 回流 → v0.17/v0.16/v1.12，走查缺陷裁决 → v0.18/v0.17/v1.13）；L5 派生 [[CLAUDE-DESIGN]] v0.2（⚠️ 待 omar 重传）+ [[claude-design-prompts]] v0.1；全文件清单见 [[MANIFEST]] v1.20，版本叙事见 CHANGELOG
 - **ADR 进度**：001–027 共 **24 Accepted** + 1 Superseded + 1 Proposed + 1 Reserved——最新 **027（configurable-global-hotkey，2026-08-20 Accepted 并当日落地 + 回流八步完成）**：兑现 product-spec §13.4 自 v0.5 起写下却硬编码了三个月的「可配置」。三条子决策——绑定存 SQLite `settings` 表（`user_version` 11→12；理由唯一且硬：Rust 在 `setup()` 注册快捷键时 webview 尚不存在，localStorage 方案必然每次启动先错误注册一次）/ 冲突只有 `register()` 失败一种形态、改绑「校验→注销旧→注册新→落库」任一步失败回滚、强制至少一个修饰键 / 新增 macOS `RunEvent::Reopen` 逃生口（**顺带修掉「点 Dock 图标无反应」**）。IPC 51→53，前端 395 / Rust 168 全绿，`bench:hotkey-wake` p95 13.708ms 无回归；**G3 真机门四项全通过**（项 3 顺带证实「点 Dock 图标无反应」已修）。项 2 一度判为不可达——被占用的组合键被持有方在 OS 层消费，录键器根本收不到；**omar 当日拍板补冲突提示**（判据：修饰键按下又抬起而无主键，不用计时器），补后该场景才可观测并通过，涟漪 product-spec v0.21 / features v1.16 / test-spec v0.5。次新 **026（fixed-spatial-layout，2026-08-18 Accepted 并当日落地，2026-08-19 真机走查通过 + 已合入 `main` + 契约回流八步完成）**：`interactionMode` 停止驱动区域重排，两态共用一套空间，纵向分配改用户可拖拽；起因是实现层 dual-layout 越过 product-spec §4.0.7 作用范围 / §13.3 区域 6 位置 / §13.4 Tab 顺序三处已批准契约且从未开 ADR。走查另发现三项缺陷**已当日裁决**——Scene 下限 `196px`→`288px`（非取舍，是未满足子决策 2 自写的验收条件）/ Separator 约 9px 视觉死区记为已知可接受 / `--brand-dim` 对比度 `1.145:1` 不调色改为把 `.phase.active::after` 标注承重件防减法快车道误删；025（unified-anchored-editing，2026-08-17 Accepted，**六条子决策全数通过**：编辑器改原生 `popover` top layer 锚定 + organize 升级为选择驱动的键盘处理模式 + 子决策 6 局部修订 ADR-024 的 PhaseBar 主角化；**P0 + P1-a + P1-b 已落地并合入 `main`（2026-08-20，merge `97858f7`），真机验收门 G1 六项 + P1-b 门两项全通过，契约回流八步完成 → product-spec v0.19 / design-spec v0.18 / features v1.14 / test-spec v0.3；P2 键盘动作层 + P3 合流待排，验收门 G2 五项未跑**）；021 子决策 scene.color 用户内容色 2026-09-01 omar 复核通过；012 Superseded by 019；005（prompt-combiner 复用）仍 Proposed 等 omar；011 Reserved（search UsageSource，与 025 的 Modifier `macro_area` 借用同族）；各决策与补遗明细见 `docs/adr/`
 - **tech-stack**：**v1.3 ratified**——Tauri 2.x + React 19.2 + Zustand 5 + rusqlite 0.32 + pnpm 10.x + Vite 7.x + Vitest 4 + CSS Modules + macos-private-api + updater/process 插件，全栈拍板见 [[09-tech-stack#§3]]
 - **自动更新（ADR-017）**：Phase 1-6 全部销账——客户端 + CI 出包 landed（CHANGELOG 2026-06-19），Phase 6 真机验收随 0.2.0 发布实测通过（0.1.1 → 0.2.0 更新链路 + 更新后签名链复验，CHANGELOG 2026-08-20）

@@ -4,7 +4,7 @@ project: prompt-hub
 version: v0.24
 created: 2026-05-18
 last_modified: 2026-09-03
-status: draft  # v0.24（2026-09-03 G4 观察 O7 涟漪：§13.3 保存语义规则表加第六行「锚点再次按下 = 无操作」）待人审；v0.23 于 2026-09-01 人审批次 ⑤：补齐话术卡解剖 / 密度档 / 默认深色三处回流后，omar 审阅 v0.10–v0.23 全部增量通过，draft → ratified（前序 v0.8 ratified）
+status: ratified  # v0.24（2026-09-03 G4 观察 O7 涟漪：§13.3 保存语义规则表加第六行「锚点再次按下 = 无操作」）经 2026-09-03 人审批次 ⑦ omar 签字通过（唯一裁点：编辑器已打开时再按一次打开它的锚点 = 无事发生——不关、不保存、不触发锚点自身点击，焦点留在编辑器内），draft → ratified；前 v0.23 于 2026-09-01 人审批次 ⑤：补齐话术卡解剖 / 密度档 / 默认深色三处回流后，omar 审阅 v0.10–v0.23 全部增量通过，draft → ratified（前序 v0.8 ratified）
 author: co  # 🤝 人机共创（CLAUDE §5.2）
 related: [[01-spec]], [[05-design-spec]], [[06-prd]], [[012-lock-visual-quality-anchor]], [[024-dark-cockpit-identity]], [[019-supersede-flat-visual-anchor]], [[020-restore-protocol-dark-band]], [[021-scene-layered-editing]], [[022-cross-scene-phrase-move]], [[025-unified-anchored-editing]], [[027-configurable-global-hotkey]], [[013-alignment-phrases-tab-inclusion]], [[015-expose-mcp-write-pipeline]], [[017-enable-auto-update]], [[018-absorb-promptscape-design]], [[026-fixed-spatial-layout]]
 description: 手动 AI 编程仪表盘的 UI 契约——双形态架构/布局/点击路径/状态反馈/用户旅程/主形态 UI 草案；写 UI / 改交互时召回。版本叙事见 CHANGELOG

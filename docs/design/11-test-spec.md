@@ -4,7 +4,7 @@ project: prompt-hub
 version: v0.7
 created: 2026-05-19
 last_modified: 2026-09-03
-status: draft # v0.7（2026-09-02 D1 修复留证：§2 398→405、§4.3 D1 行；同日第三笔 W3 发布形态复跑通过，D1 闭合；第四笔 D3 改判修复留证；第五笔 D2 修复留证；第六笔 W18 Esc 段发布形态复跑通过，D2 闭合；2026-09-03 次日第七笔 观察 O7 裁决并修复留证：§2 409→414、§4.3 O7 行）与 v0.6（同日 G4 走查记录 §4.3）合并待人审；v0.5 于 2026-09-01 人审批次 ③ ratified
+status: ratified # v0.7 于 2026-09-03 按 [[CLAUDE#§5.1.2]]「日志不签字」反查归档（§2 计数与 §4.x 走查记录属记录类，不进人审队列；ts-recheck 62 条核 / 8 处修正 / 21 条真机观测无法从代码核，明细见 §2 引言）；v0.5 于 2026-09-01 人审批次 ③ ratified。v0.7 内容沿革（2026-09-02 D1 修复留证：§2 398→405、§4.3 D1 行；同日第三笔 W3 发布形态复跑通过，D1 闭合；第四笔 D3 改判修复留证；第五笔 D2 修复留证；第六笔 W18 Esc 段发布形态复跑通过，D2 闭合；2026-09-03 次日第七笔 观察 O7 裁决并修复留证：§2 409→414、§4.3 O7 行）与 v0.6（同日 G4 走查记录 §4.3）合并
 author: ai # 🤖 AI 主笔 + 人审（CLAUDE §5.2）
 audience: [ai, human]
 description: prompt-hub 测试规格——前端 Vitest 414 用例 + Rust workspace 169 + 6 源码级 gate + CI 双 job + C1 bench gate；LLM Eval N/A
@@ -22,7 +22,7 @@ related:
 > 覆盖率目标见 [[07-features#§5]]。
 >
 > **标注约定**（沿用文档体系三标）：📊 实测（有命令输出背书，标注口径日期）/ 🎯 目标（规格要求，未必已落地）/ ⚠️ 红线（违反即 block）。
-> 本版所有 📊 数字口径：**2026-08-20** 本机 `pnpm test`（JSON reporter 逐文件计数）+ `cargo test --workspace` 全绿输出。
+> 本版 📊 数字口径：前端 **2026-09-03** 本机 `pnpm test`（JSON reporter 逐文件计数，414 / 39）+ Rust **2026-09-02** `cargo test --workspace` 全绿输出（169）；未单独标注日期的条目沿用 2026-08-20 口径。
 >
 > **v0.3 全量刷新**：v0.2 的口径停在 2026-07-02，其间前端 154→**373**、Rust 135→**158**、源码级 gate 4→**6**、IPC 命令 48→**51**。数字标了日期不算说谎，但**差了一个半月和两倍用例量的规格文件已无参考价值**——v0.3 把全部 📊 推到当日实测。
 >
@@ -31,6 +31,8 @@ related:
 > **v0.5（同日第三笔 · 冲突提示）**：前端 395→**398**（`HotkeyRecorder` +3）。**G3 项 2 由「不可达」转为「通过」**——补上提示后该场景终于可观测，见 §4.2。
 >
 > **v0.7（2026-09-02 第二笔 · D1 修复）**：前端 398→**405**（AnchoredEditor 17→23 / ScenePanel 53→54）。jsdom shim 新增 **focus 拒绝隐藏元素** 规则——仅此一步 6 条既有用例变红，证明 D1 此前对整个套件不可见；修后 402 全绿。§4.3 D1 行记修复，W3 待发布形态复跑。**同日第三笔**：W3 按发布形态复跑通过（按 `main` 重建裸 release + 隔离 `HOME`，Swift 事件工具驱动 + 窗口定向截图 + SQL 反查；Macro / 场景属性 / 添加话术三入口），D1 闭合，新增观察 O7 / O8，见 §4.3。**同日第四笔**：W21 复跑改判 D3——对话框一直会弹（系统进程持有，窗口定向截图拍不到），真缺陷是点 OK 后退出 panic、码 101；失败分支改同步弹框 + `process::exit(1)`，复跑 `exit=1`，D3 闭合（P1→P2），§4.3 W21 / D3 行与教训 8。`/review` 后 repo-core 补两条 `open_and_migrate` 负路径测试（非 SQLite 文件 / 父路径不是目录 → Err 不 panic），Rust 168→**170**。**同日第五笔**：D2 修复——根因先修正：两监听并非「同在 window 冒泡阶段」，App 的隐藏监听挂 `document` 冒泡、弹窗 Esc 挂 `window` 冒泡，前者**先**到，原记的「补 `stopPropagation`」在原位置无效；改为弹窗在 `document` **捕获阶段**认领 Esc 并 stop（与 `primitives/Editor.tsx` 同约定，HotkeyRecorder 的 window 捕获仍先于它、录键中 Esc 语义不变），前端 405→**409**（App +2 / SettingsModal +2，其中两条来自 `/review`：录键态 + 弹窗集成、长按 Esc 自动重复不隐藏——后者顺带给 App 隐藏监听加 `e.repeat` 守卫）。顺带销 HANDOFF 第 31 项：`AppState.db_path` 收窄为 `PathBuf`，删只为 `None` 分支活着的单测，Rust 170→**169**。§4.3 D2 行记修复，W18 Esc 段发布形态复跑待做。**同日第六笔**：W18 Esc 段按 `main`（`e932955`，内嵌 chunk `I1hrJmog` 与 `dist` 一致）重建裸 release + 隔离 `HOME` 复跑，三步全过（单击 Esc 只关弹窗 / 录键态两次 Esc 先退录键再关弹窗 / 长按 Esc 约 1 s 弹窗关、仪表盘仍在屏），对照「弹窗关闭时长按 Esc 第一下即隐藏」证明事件确实到达隐藏监听；`settings.global_hotkey` 全程 `Alt+Space` 未动。**D2 闭合**，W18 转 ✅，G4 三缺陷至此全部闭合；教训 9 记合成键盘事件无 OS 自动重复。零代码改动。**次日第七笔（2026-09-03）**：观察 O7 裁决并修复——`AnchoredEditor` 接管锚点二次按下（`preventDefault` + 吞掉 click + 不调 `onDismiss`），前端 409→**414**（`AnchoredEditor` +3：吞掉锚点自身 click 不 dismiss / 焦点落 body 时回首字段 / 焦点已在面板内则不动，另改写 1 条旧用例标题；`MacroGrid` +1：再点「新增」单实例仍挂载、宿主 click 未触发；`AlignmentPhrases` +1：编辑中再点 chip，编辑器仍开且 `writeText` 与 `record_usage` 未调用）。变异验证撤回修法后 4 条变红，第 5 条「焦点已在面板内则不动」两态皆绿、是防过度修正的守卫。**jsdom 验不到的那半边**：mousedown 的默认聚焦动作 jsdom 不实现，「`preventDefault` 挡住焦点外移」只能真机证；已按 `main` + 本改动重建裸 release 复跑通过，见 §4.3 O7。
+>
+> **v0.7 归档说明（2026-09-03）**：本版按 [[CLAUDE#§5.1.2]]「日志不签字」直接归档——§2 计数与 §4.x 走查记录属**记录类**内容，不进人审队列，改由只读子代理逐句反查代码。首跑结果 **62 条核 / 8 处修正 / 21 条无法核**。8 处修正：§2 四行计数失真（`HotkeyRecorder` 10 条从未入册、`HotkeyBanner` 记 5 实为 7、`settingsStore` 8→11、`accelerator` 9 条漏登记、`token-gate` 39→40，合计与表头 414 对不上）+ §4.1 G4 门项口径（旧「21 / 3 / 1」合计 25 且已被后续复跑作废）+ §4.3 D3 净删行数（27→16）与 W24 导出表数（十表→8 张资产表）+ 教训 4 措辞降级。21 条无法核的全部是**真机观测**（截图 / 像素采样 / 退出码 / 剪贴板），代码里没有对应物，原样保留。v0.5 及以前经人审 ratified，本版起 §2 / §4.x 走此路。
 
 ---
 
@@ -64,11 +66,11 @@ v0.1 规划的四层金字塔已落地为下表实际形态（Playwright E2E 层
 
 | 分组 | 用例 📊 | 文件 | 覆盖对象 |
 |---|---|---|---|
-| stores（7 文件） | 73 | `src/stores/__tests__/{appStore 2, promptStore 36, searchStore 4, settingsStore 8, toastStore 10, updaterStore 12}.test.ts` + `src/stores/prompt/__tests__/helpers 1` | Zustand store actions / 复制失败可见 + toast intent 分级 / updater 状态机 / draft 计数联动 |
+| stores（7 文件） | 76 | `src/stores/__tests__/{appStore 2, promptStore 36, searchStore 4, settingsStore 11, toastStore 10, updaterStore 12}.test.ts` + `src/stores/prompt/__tests__/helpers 1` | Zustand store actions / 复制失败可见 + toast intent 分级 / updater 状态机 / draft 计数联动 |
 | hooks（4 文件） | 28 | `src/hooks/__tests__/{useAnchoredPosition 13, useRegionNav 8, useCopy 4, useSearchResults 3}` | **锚定定位与滚动祖先订阅**（ADR-025）/ 区域内漫游导航 / 复制 / 搜索结果派生 |
-| 组件（19 文件） | 217 | `src/App.test.tsx` 27 + `src/components/__tests__/*`：ScenePanel 54 / ScenePropertiesEditor 22 / **AnchoredEditor 26** / SearchOverlay 17 / DraftInbox 15 / SettingsModal 10 / AlignmentPhrases 8 / HotkeyBanner 5 / MacroGrid 6 / ScenePanelFocusRestore 5 / ModifierGrid 4 / UpdaterBanner 4 / ErrorBoundary 3 / ModeToggle 3 / PhaseBar 3 / SearchBar 3 / RecentList 1 / StatusBar 1 | 组件渲染 / 交互 / Tab cycle 6 区断言（[[03-product-spec#13.4]]）/ 编辑器关闭规则表分支 |
-| utils（1 文件） | 8 | `src/utils/__tests__/errorMessage.test.ts` | IPC 错误信息归一 |
-| 源码级 gate（6 文件） | 63 | token-gate 39 / theme-parity 8 / ipc-contract 6 / b2-separation 5 / density-gate 3 / doc-refs-gate 2 | 见 §3 |
+| 组件（20 文件） | 229 | `src/App.test.tsx` 27 + `src/components/__tests__/*`：ScenePanel 54 / ScenePropertiesEditor 22 / **AnchoredEditor 26** / SearchOverlay 17 / DraftInbox 15 / SettingsModal 10 / HotkeyRecorder 10 / AlignmentPhrases 8 / HotkeyBanner 7 / MacroGrid 6 / ScenePanelFocusRestore 5 / ModifierGrid 4 / UpdaterBanner 4 / ErrorBoundary 3 / ModeToggle 3 / PhaseBar 3 / SearchBar 3 / RecentList 1 / StatusBar 1 | 组件渲染 / 交互 / Tab cycle 6 区断言（[[03-product-spec#13.4]]）/ 编辑器关闭规则表分支 |
+| utils（2 文件） | 17 | `src/utils/__tests__/errorMessage.test.ts` 8 + `src/utils/__tests__/accelerator.test.ts` 9 | IPC 错误信息归一 / 快捷键 accelerator 解析与格式化 |
+| 源码级 gate（6 文件） | 64 | token-gate 40 / theme-parity 8 / ipc-contract 6 / b2-separation 5 / density-gate 3 / doc-refs-gate 2 | 见 §3 |
 
 🎯 单元测试范围要求（自 v0.1 保留，按现行架构改述）：核心业务逻辑（store actions / promote 语义 / schema 校验）覆盖 ≥90%；状态机转移（draft `pending→promoted/discarded`、SOP `active/paused/completed` 等，见 [[06-prd#7]]）穷举合法转移 + 拒绝非法转移；[[02-constitution]] 边界约束（资产数量上限 / 单条话术 ≤5000 字符 / 恶意 JSON 拒绝）必测。
 
@@ -138,7 +140,7 @@ E2E 层缺位期间，**布局 / 层叠 / 定位类改动一律由带编号的�
 | P1-b 门（两项）| ADR-025 P1-b 容器迁移 | **全通过**，且**首次取得 AI 侧逐像素证据**：hover-lift 卡上浮层 diff bbox `None` / 最大通道差 `0`（同帧卡片区 `231`）；纵向滚动位移锚点 `-168px` vs 浮层 `-166px`，差值恒为 1 逻辑点、不累积（已 A/B 排除高度上限成因，记为已知量）|
 | G2（五项）| ADR-025 P2 键盘动作层 | **未跑**（P2 未落地）|
 | **G3（四项）**| ADR-027 全局唤起键可配置 | **四项全通过**（2026-08-20，见 §4.2）。项 2 一度判为「不可达」，补上冲突提示后**转为可观测并通过**。**omar 当日另行真机走查，未发现问题**（人工目视，不可回归；覆盖到哪几项未逐条记录）|
-| **G4（二十四项）**| features §7 留证缺口清单（v1.19） | **21 通过 / 3 不可达 / 1 未通过**（2026-09-02，见 §4.3）。首次按**发布形态**走查（裸 release 二进制内嵌 dist，非 dev + vite）；发现三个此前所有门都没抓到的缺陷 D1–D3 |
+| **G4（二十四项）**| features §7 留证缺口清单（v1.19） | **21 通过（W1–W12 / W14–W19 / W21 / W23 / W24）/ 2 不可达（W13、W20）/ 1 部分（W22）**（2026-09-02 走查，W18 / W21 于同日复跑转通过，见 §4.3）。首次按**发布形态**走查（裸 release 二进制内嵌 dist，非 dev + vite）；发现三个此前所有门都没抓到的缺陷 D1–D3 |
 
 #### 4.2 G3 门项（v0.4 新增 · 涟漪 [[027-configurable-global-hotkey]]）
 
@@ -213,7 +215,7 @@ E2E 层缺位期间，**布局 / 层叠 / 定位类改动一律由带编号的�
 | W21 | 启动 DB 失败阻断对话框 | ✅ **通过（第四笔复跑）**；首轮 ❌ 为取证误判 | 4 KB 随机字节当库。首轮记「无任何对话框」，实为对话框由系统进程 `UserNotificationCenter` 持有（rfd 无 parent 时走 `CFUserNotificationDisplayAlert`），窗口定向截图拍不到；按 owner 查 CGWindowList + 全屏截图证实含路径对话框在屏。真缺陷在退出路径（D3 改判）。修后按 `main` 重建裸 release 复跑：对话框在屏 → 点 OK → 进程退出 `exit=1` 无 panic；健康库对照正常建库、⌘Q `exit=0`、WAL 折回 0 字节 |
 | W22 | 更新检查 manual 分级 | ⚠️ 部分 | 总开关关时点击零反应（零触网）；开后「已是最新版本」+ StatusBar 入口；失败路径需断网未构造 |
 | W23 | 空态 / 未分组列头 / light 明度 / primitives 观感 | ✅（omar 目视） | R07b / R16c / R24i；新建空场景只有「新增子阶段」入口（观察 O4） |
-| W24 | 导出 / 导入（原生对话框） | ✅ | `⌘⇧G` 驱动面板；导出十表无 `usage_records`；SQL 篡改后导入回滚、`settings` 保留、`refreshAll` |
+| W24 | 导出 / 导入（原生对话框） | ✅ | `⌘⇧G` 驱动面板；导出 **8 张资产表**（`modifiers` / `macros` / `scenes` / `sub_stages` / `phrases` / `phases` / `alignment_phrases` / `compositions`，见 `repo-core/src/export.rs:30`）+ `schema_version` / `exported_at` 两个顶层字段，无 `usage_records`；SQL 篡改后导入回滚、`settings` 保留、`refreshAll` |
 
 **缺陷（三条，全部首次发现）**：
 
@@ -221,13 +223,13 @@ E2E 层缺位期间，**布局 / 层叠 / 定位类改动一律由带编号的�
 |---|---|---|---|
 | D1 | 四个锚定编辑面（Macro / 对齐话术 / 话术 / 草稿）打开后名称框**没有焦点**，键入落空；必须再点一次 | `AnchoredEditor` 在 `useAnchoredPosition` 给出坐标前把面板设为 `visibility: hidden`，而 `PhraseFormEditor` 的挂载 effect在此之前调 `focus()`，对不可见元素静默失败。jsdom `popover` shim 不模拟可见性，故 373 条测试全绿。dev / release 均复现，与 StrictMode 无关。**已修（2026-09-02 第二笔）**：`AnchoredEditor` 新增 `initialFocus` prop，首焦点改在 `position` 首次非空的 layout effect 里触发；shim 补 focus 拒绝规则后 6 条既有用例先红后绿，+7 回归用例；**W3 复跑通过（同日第三笔，按 `main` 重建的裸 release）：Macro 新增 / 场景属性 / 添加话术三入口真机各验一次，对齐话术 / 草稿同走 `PhraseFormEditor` 推定；本缺陷闭合**。Codex 提出的「WebKit 同 commit 样式刷新时序」疑虑随之证伪，不加 rAF 重试。派生观察 O7 | P1 |
 | D2 | 设置弹窗开着按 Esc，弹窗与仪表盘**一起**隐藏 | 首轮记「同在 window 冒泡阶段、未 `stopPropagation`」，**修时纠正**：App 的隐藏监听挂 `document` 冒泡，弹窗 Esc 挂 `window` 冒泡——事件先到 document 再到 window，App 先隐藏，弹窗那边再 stop 也来不及。与 ADR-025 编辑器「Esc 不冒泡」契约不一致（product-spec 区域 9 写「关闭：Esc」指关弹窗）。**已修（第五笔）**：弹窗 Esc 改挂 `document` 捕获阶段并 `stopPropagation`，与 `primitives/Editor.tsx` 同约定；HotkeyRecorder 录键时的 window 捕获仍先于它，录键中 Esc 只取消录键。jsdom 回归 +4（App / SettingsModal 各二，keydown 派发到持焦点的 dialog；`/review` 后补录键态集成测试与长按 Esc `e.repeat` 回归，后者顺带给 App 隐藏监听加守卫——第一下关弹窗后 OS 自动重复的 keydown 此前会漏到隐藏监听）。**W18 Esc 段发布形态复跑通过（第六笔，三步 + 对照），本缺陷闭合** | P2 |
-| D3 | ~~数据库损坏时没有阻断式错误对话框~~ → **改判（第四笔）**：对话框一直会弹，点 OK 后进程 panic、退出码 **101** 而非契约的 1 | 首轮根因「非主线程 NSAlert 不呈现」不成立——tauri-plugin-dialog 本就 `run_on_main_thread`，无 parent 的消息框由 rfd 交给系统进程渲染。真根因是结构性的：失败在 `setup()` 里、事件循环已在跑时被发现，旧实现靠「返回 `Ok(())` 保活 + 内存库顶替 `AppState` + 工作线程 `blocking_show` + `handle.exit(1)`」与半建成的应用共存，而 `RunEvent::Exit` 处理器假定 setup 已完成，`global_shortcut().unregister_all()` 撞上未注册的插件 panic。**已修（第四笔）**：失败分支直接调 `rfd::MessageDialog` 同步弹框（macOS 出进程渲染，阻塞主线程不死锁）后 `std::process::exit(1)`，永不回事件循环；保活的 `return Ok(())` / 内存库 / `window.show()` / 工作线程四件机器全删（`lib.rs` 净删 27 行），`rfd` 升直接依赖（lock 已有同版本同 feature）。W21 复跑通过，**本缺陷闭合**。用户可感知影响为零，级别按事实降 P2 | ~~P1~~ P2 |
+| D3 | ~~数据库损坏时没有阻断式错误对话框~~ → **改判（第四笔）**：对话框一直会弹，点 OK 后进程 panic、退出码 **101** 而非契约的 1 | 首轮根因「非主线程 NSAlert 不呈现」不成立——tauri-plugin-dialog 本就 `run_on_main_thread`，无 parent 的消息框由 rfd 交给系统进程渲染。真根因是结构性的：失败在 `setup()` 里、事件循环已在跑时被发现，旧实现靠「返回 `Ok(())` 保活 + 内存库顶替 `AppState` + 工作线程 `blocking_show` + `handle.exit(1)`」与半建成的应用共存，而 `RunEvent::Exit` 处理器假定 setup 已完成，`global_shortcut().unregister_all()` 撞上未注册的插件 panic。**已修（第四笔）**：失败分支直接调 `rfd::MessageDialog` 同步弹框（macOS 出进程渲染，阻塞主线程不死锁）后 `std::process::exit(1)`，永不回事件循环；保活的 `return Ok(())` / 内存库 / `window.show()` / 工作线程四件机器全删（`lib.rs` 净删 **16** 行：+39 / −55，`788b372`），`rfd` 升直接依赖（lock 已有同版本同 feature）。W21 复跑通过，**本缺陷闭合**。用户可感知影响为零，级别按事实降 P2 | ~~P1~~ P2 |
 
 **观察（不构成缺陷，供裁决）**：O1 窗口隐藏期间 MCP 写入的草稿，唤起**不刷新** badge，只有导入后 `refreshAll` 才刷新（HANDOFF 第 21 项附带疑问的答案）；O2 焦点不在编辑器内时按 Esc 会隐藏整个仪表盘而编辑器状态保留在 React 里，下次唤起编辑器仍开着——D1 让这种情况更常见；O3 硬删话术后 `usage_records` 成孤儿，最近使用区仍显示墓碑条目（与 prd §6.1 soft-delete 悬案同源，归 HANDOFF 21.2）；O4 新建的空场景只有「新增子阶段」入口，没有「添加话术」；O5 UI 新建的 Macro `native=0`，种子 Macro `native=1`，`native` 语义待 prd 明确；O6 面板宽度随角色 chip 增加而变化、设置弹窗随页面高度重新居中——对人无害，对自动化点击是坑；**O7（第三笔新增，确定性）→ 已裁决并修复（2026-09-03）** 现象：Macro 编辑器开着时再点「新增」，编辑器不关、焦点却已在面板外——之后键入全部丢失，按 Esc 走 O2 藏掉整个仪表盘（截图 S3 / S3b / R1a）。这正是 D1 留下的肌肉记忆（以为没打开再点一次）会触发的路径；首轮 05:08 构建上同操作后焦点留在名称框（截图 05），两构建差异原因未查。**根因（修时纠正）**：`AnchoredEditor` 的 pointerdown 处理把锚点直接放行，旧注释称「锚点即 toggle」——**四个宿主没有一个实现 toggle**：Macro「新增」重复设同一个编辑目标（同 React key，面板不重挂）、草稿卡「编辑」重开，对齐话术 chip 与 Scene 话术卡的锚点点击是**复制**（调用态还会隐藏窗口）。放行后实际生效的只有 mousedown 的默认动作——把焦点带到 `tabIndex={-1}` 的按钮上。**修法（结构修法，omar 2026-09-03 确认；否决「二次按下 = 关闭」）**：容器接管锚点二次按下——`preventDefault()` 压掉兼容 mousedown（焦点不离开面板）+ 武装既有 `swallowClickRef`（宿主 click 不再跑，不重开也不复制）+ 仅在面板已失焦时回到 `initialFocus`；**不调 `onDismiss`**，Esc / teardown 焦点归还 / 点外三条分支未动。`src/components/primitives/Editor.tsx` 单文件改动，四个宿主零改动；契约回流 [[03-product-spec]] v0.24 §13.3 规则表第六行 + [[05-design-spec]] §10.2.2 接口契约第 6 条。**jsdom 回归 +5**（409→414，见 §2），撤回修法后 4 条变红。**覆盖边界**：jsdom 不实现 mousedown 的默认聚焦动作，「`preventDefault` 挡住焦点外移」这半边只能真机证。**发布形态复跑通过（2026-09-03，按 `main` + 本改动 `pnpm tauri build --no-bundle` 重建裸 release，内嵌 chunk `BTngK09y` 与 `dist/assets/` 一致，隔离 `HOME=/tmp/ph-o7-home`）**：点「新增」→ 名称框有焦点 → **再点「新增」→ 编辑器仍开、焦点仍在名称框** → 键入 `o7z` 落进名称框（同时弹 O8 的首字母大写气泡）→ 第一次 Esc 只关气泡（O8 既知）→ 第二次 Esc 关编辑器、窗口仍在屏（`onscreen=true`）；`macros` 仍 4 条、`usage_records` 0。chip / 话术卡 / 草稿三宿主同走该 primitive，推定通过、未单独真机开（与 W3 推定同口径）。截图 `/tmp/ph-walk/shots/O7r-*`；**O8（第三笔新增，OS 行为）** 名称框键入后 macOS 弹首字母大写建议气泡，此时第一次 Esc 只关气泡不关编辑器（截图 S1 → S2）；真人也会碰到，非缺陷但走查与用户认知都要算上。另（O7 修复未覆盖，`o7-probe` 2026-09-03 探查已答）：用「取消」关编辑器后焦点落到 body，随后的可打印键被路由进搜索框并切到搜索结果视图（截图 S5）。① 焦点落 body 是**既有缺陷**（HANDOFF 第 34 项）：macOS WebKit 点 `<button>` 不聚焦按钮而是沿祖先链找可鼠标聚焦节点，popover 不改祖先链，焦点落到宿主 `<section tabIndex={0}>` 或 body，`heldFocusRef` 被 `focusin` 记成 false，卸载时的归还门禁跳过；jsdom 无 mousedown 聚焦、现有归还测试只走 Esc 路径，故看不见。② **不存在 type-to-search**：`setQuery` 只有输入框 `onChange` 一个调用点，搜索框只在 ⌘K 与「唤起时 `activeElement` 是 body」两条路径拿焦点（product-spec §13.4「唤起即已默认聚焦」）——截图 S5 是「取消留下 body 焦点 → 隐藏再唤起 → 搜索框按契约接管」，非缺陷。
 
 **取证方法教训（续 §4.2 三条）**：
 
-4. **发布形态才是 `verified` 的对象**：`cargo build --release` 单独跑出来的二进制仍走 devUrl（空窗口），必须经 `pnpm tauri build --no-bundle`；`tauri://localhost` 源的 localStorage 与 dev 不同源，天然给出「首装」观感（本轮据此验到默认深色）
+4. **发布形态才是 `verified` 的对象**：裸 `cargo build --release` 不跑 `beforeBuildCommand`，内嵌的是陈旧或缺失的 `dist`（表现为空窗口）——必须经 `pnpm tauri build --no-bundle`（「走 devUrl」的说法未经证实，勿据此推理）；`tauri://localhost` 源的 localStorage 与 dev 不同源，天然给出「首装」观感（本轮据此验到默认深色）
 5. **调用态整卡点击 = 复制 + 隐藏**：唤起后悬停簇尚未出现就点卡片，会误复制并写 usage（本轮误写 3 条）。稳妥序列：唤起 → 空白处点一下取焦 → 悬停 → 截图确认簇位置 → 再点
 6. **像素工具先对已知区域自检方向**：自研 `px` 的 y 轴一度上下颠倒，靠「已知 toast 区域读出 canvas 色」发现；列扫描测高（56→44）比目视可靠
 7. **状态栏「今日复制」按本机时区计日**：本机为 UTC−7，昨夜 23:59 的复制在「今日」不计，不是 bug

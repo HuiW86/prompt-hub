@@ -4,7 +4,7 @@ project: prompt-hub
 version: v0.21
 created: 2026-05-18
 last_modified: 2026-09-03
-status: draft  # v0.21（2026-09-02 D1 修复涟漪：§10.2.2 接口契约加第 5 条 `initialFocus`；2026-09-03 同版补记 · G4 观察 O7 涟漪：同处加第 6 条「容器拥有锚点二次按下」）待人审；v0.20 于 2026-09-01 人审批次 ⑥：补齐 ADR-024 回流（§2.1/§2.4.6/§2.5/§8.1/§9）+ 两个死 token 退役后，omar 审阅 v0.11–v0.20 全部增量通过，draft → ratified（前序 v0.10 于 2026-06-21 审定）
+status: ratified  # v0.21（2026-09-02 D1 修复涟漪：§10.2.2 接口契约加第 5 条 `initialFocus`；2026-09-03 同版补记 · G4 观察 O7 涟漪：同处加第 6 条「容器拥有锚点二次按下」）经 2026-09-03 人审批次 ⑦ 通过：第 6 条随 product-spec §13.3「锚点再按一次 = 无事发生」签字，第 5 条 `initialFocus` 必填属施工规范、随批通过，draft → ratified；前 v0.20 于 2026-09-01 人审批次 ⑥：补齐 ADR-024 回流（§2.1/§2.4.6/§2.5/§8.1/§9）+ 两个死 token 退役后，omar 审阅 v0.11–v0.20 全部增量通过，draft → ratified（前序 v0.10 于 2026-06-21 审定）
 author: co  # 🤝 人机共创（CLAUDE §5.2）
 related: [[01-spec]], [[02-constitution]], [[03-product-spec]], [[012-lock-visual-quality-anchor]], [[023-ui-reshape-before-release]], [[024-dark-cockpit-identity]], [[019-supersede-flat-visual-anchor]], [[020-restore-protocol-dark-band]], [[021-scene-layered-editing]], [[025-unified-anchored-editing]], [[CLAUDE-DESIGN]], [[015-expose-mcp-write-pipeline]], [[016-choose-dnd-and-resizable-layout]], [[018-absorb-promptscape-design]], [[026-fixed-spatial-layout]], [[asset-editing-and-adaptive-layout]]
 description: 手动 AI 编程仪表盘的视觉规范——tokens.css 单一真源 + 主题/elevation/组件视觉契约；写 CSS / 视觉时召回。版本叙事见 CHANGELOG
