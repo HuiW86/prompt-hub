@@ -371,4 +371,31 @@ mod tests {
             "expected SchemaVersionMismatch, got {err:?}"
         );
     }
+
+    // The two ways a user machine gets `fail_startup` (lib.rs): a file that is
+    // not SQLite, and a parent path that cannot become a directory. Both must
+    // surface as Err, never panic — the dialog + exit(1) contract in features
+    // §3.12 sits on top of this. Verified once on device (G4 W21); this pins it.
+    #[test]
+    fn open_and_migrate_rejects_non_sqlite_file() {
+        let dir = tempfile::tempdir().expect("tempdir");
+        let path = dir.path().join("prompt-hub.db");
+        std::fs::write(&path, vec![0xABu8; 4096]).expect("write garbage");
+        let err = open_and_migrate(&path).expect_err("garbage file must not open");
+        assert!(
+            err.to_string().contains("not a database"),
+            "expected sqlite 'file is not a database', got {err}"
+        );
+    }
+
+    #[test]
+    fn open_and_migrate_fails_when_parent_is_not_a_directory() {
+        let dir = tempfile::tempdir().expect("tempdir");
+        let blocker = dir.path().join("blocker");
+        std::fs::write(&blocker, b"x").expect("write blocker file");
+        assert!(
+            open_and_migrate(&blocker.join("prompt-hub.db")).is_err(),
+            "a regular file in the parent position must fail create_dir_all"
+        );
+    }
 }

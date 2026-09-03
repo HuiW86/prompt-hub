@@ -48,9 +48,10 @@ pub struct AppState {
     pub conn: Mutex<Connection>,
     // Absolute path to the on-disk DB file (…/prompt-hub.db). Held so write
     // paths that must snapshot the live database (import wipe-and-restore, exit
-    // checkpoint) can locate the file and its sibling `backups/` dir. `None` in
-    // the fail-startup fallback, which manages a throwaway in-memory connection
-    // with no file to back up.
+    // checkpoint) can locate the file and its sibling `backups/` dir. Always
+    // `Some` in the running app (a DB that failed to open never reaches
+    // AppState — fail_startup exits first); `None` only for test fixtures
+    // whose in-memory connection has no file to back up.
     pub db_path: Option<PathBuf>,
     // Monotonic copy/show/hide token. Each record_usage / show_window /
     // hide_window bumps it; the 200ms delayed hide checks it on wake and
@@ -846,8 +847,8 @@ pub fn import_data(
 // runs before the wipe-and-restore (import_json truncates every asset table,
 // strategy D1=A), and any snapshot failure aborts the import — the caller keeps
 // its intact DB rather than losing data to a half-restore. When `db_path` is
-// None (fail-startup in-memory fallback) there's no file to back up, so the
-// import proceeds without a snapshot.
+// None (in-memory test connection, no file to back up) the import proceeds
+// without a snapshot.
 fn import_with_backup(
     conn: &Connection,
     db_path: Option<&std::path::Path>,
@@ -992,8 +993,8 @@ mod tests {
     fn import_without_db_path_skips_backup_and_still_imports() {
         let (_dir, conn) = migrated_conn();
         let json = repo_core::export_json(&conn).expect("export");
-        // db_path=None mirrors the fail-startup in-memory fallback: no snapshot,
-        // import still runs.
+        // db_path=None is the in-memory test connection: no snapshot, import
+        // still runs.
         import_with_backup(&conn, None, &json).expect("import proceeds without a backup target");
     }
 

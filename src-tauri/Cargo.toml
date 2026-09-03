@@ -38,6 +38,11 @@ tauri-plugin-process = "2"
 # Native save/open file dialogs for data export/import (PRD §7.5). The frontend
 # picks a path with this; Rust does the actual file read/write in commands.rs.
 tauri-plugin-dialog = "2"
+# Used directly by lib.rs fail_startup; see the comment there for why the
+# plugin is bypassed on that one path. Same version and feature set the plugin
+# already resolves to (default-features off: no xdg-portal/ashpd/async-std),
+# so this adds no new compiled code.
+rfd = { version = "0.16", default-features = false, features = ["common-controls-v6"] }
 serde = { version = "1", features = ["derive"] }
 # generate_context! embeds the updater pubkey via serde_json once
 # plugins.updater is configured (ADR-017), so it must be a direct dependency.

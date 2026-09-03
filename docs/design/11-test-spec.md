@@ -4,10 +4,10 @@ project: prompt-hub
 version: v0.7
 created: 2026-05-19
 last_modified: 2026-09-02
-status: draft # v0.7（2026-09-02 D1 修复留证：§2 398→405、§4.3 D1 行；同日第三笔 W3 发布形态复跑通过，D1 闭合）与 v0.6（同日 G4 走查记录 §4.3）合并待人审；v0.5 于 2026-09-01 人审批次 ③ ratified
+status: draft # v0.7（2026-09-02 D1 修复留证：§2 398→405、§4.3 D1 行；同日第三笔 W3 发布形态复跑通过，D1 闭合；第四笔 D3 改判修复留证）与 v0.6（同日 G4 走查记录 §4.3）合并待人审；v0.5 于 2026-09-01 人审批次 ③ ratified
 author: ai # 🤖 AI 主笔 + 人审（CLAUDE §5.2）
 audience: [ai, human]
-description: prompt-hub 测试规格——前端 Vitest 405 用例 + Rust workspace 168 + 6 源码级 gate + CI 双 job + C1 bench gate；LLM Eval N/A
+description: prompt-hub 测试规格——前端 Vitest 405 用例 + Rust workspace 170 + 6 源码级 gate + CI 双 job + C1 bench gate；LLM Eval N/A
 related:
   - 06-prd
   - 07-features
@@ -30,7 +30,7 @@ related:
 >
 > **v0.5（同日第三笔 · 冲突提示）**：前端 395→**398**（`HotkeyRecorder` +3）。**G3 项 2 由「不可达」转为「通过」**——补上提示后该场景终于可观测，见 §4.2。
 >
-> **v0.7（2026-09-02 第二笔 · D1 修复）**：前端 398→**405**（AnchoredEditor 17→23 / ScenePanel 53→54）。jsdom shim 新增 **focus 拒绝隐藏元素** 规则——仅此一步 6 条既有用例变红，证明 D1 此前对整个套件不可见；修后 402 全绿。§4.3 D1 行记修复，W3 待发布形态复跑。**同日第三笔**：W3 按发布形态复跑通过（按 `main` 重建裸 release + 隔离 `HOME`，Swift 事件工具驱动 + 窗口定向截图 + SQL 反查；Macro / 场景属性 / 添加话术三入口），D1 闭合，新增观察 O7 / O8，见 §4.3。
+> **v0.7（2026-09-02 第二笔 · D1 修复）**：前端 398→**405**（AnchoredEditor 17→23 / ScenePanel 53→54）。jsdom shim 新增 **focus 拒绝隐藏元素** 规则——仅此一步 6 条既有用例变红，证明 D1 此前对整个套件不可见；修后 402 全绿。§4.3 D1 行记修复，W3 待发布形态复跑。**同日第三笔**：W3 按发布形态复跑通过（按 `main` 重建裸 release + 隔离 `HOME`，Swift 事件工具驱动 + 窗口定向截图 + SQL 反查；Macro / 场景属性 / 添加话术三入口），D1 闭合，新增观察 O7 / O8，见 §4.3。**同日第四笔**：W21 复跑改判 D3——对话框一直会弹（系统进程持有，窗口定向截图拍不到），真缺陷是点 OK 后退出 panic、码 101；失败分支改同步弹框 + `process::exit(1)`，复跑 `exit=1`，D3 闭合（P1→P2），§4.3 W21 / D3 行与教训 8。`/review` 后 repo-core 补两条 `open_and_migrate` 负路径测试（非 SQLite 文件 / 父路径不是目录 → Err 不 panic），Rust 168→**170**。
 
 ---
 
@@ -176,7 +176,7 @@ E2E 层缺位期间，**布局 / 层叠 / 定位类改动一律由带编号的�
 2. **「拍不到」可能是取证方法的结论，不是被测对象的性质**——P1-a 三轮共 135 帧屏幕捕获从未拍到浮层，结论一度写成「不含 AI 观测证据」；改为按窗口 ID 定向 + 按需截图（不用定时 burst）后一次拍中
 3. **真机走查未必要动数据**——本轮全程只点铅笔不点卡片本体（卡片本体是复制热区，会触发 hide-on-copy 并计入 usage），事后核对状态栏「今日复制 0 次」，零写入零回滚。上一轮曾造 14 条临时话术 + 整库备份 + 逐字段 diff
 
-**走查工具链**（可复用）：`screencapture -x -o -l<窗口ID>` 定向截图（⚠️ **禁止全屏截图**）+ CGEvent 合成鼠标移动/点击/滚轮 + PIL 模板匹配测位移；坐标换算 @2x 下物理像素 ÷ 2 = 逻辑点。
+**走查工具链**（可复用）：`screencapture -x -o -l<窗口ID>` 定向截图（⚠️ **禁止全屏截图**；例外：其他进程持有的系统对话框，见 §4.3 教训 8）+ CGEvent 合成鼠标移动/点击/滚轮 + PIL 模板匹配测位移；坐标换算 @2x 下物理像素 ÷ 2 = 逻辑点。
 
 ---
 
@@ -208,7 +208,7 @@ E2E 层缺位期间，**布局 / 层叠 / 定位类改动一律由带编号的�
 | W18 | `⌘,` / × / Esc / 密度 | ⚠️ 部分 | `⌘,` 与 × 通过；密度紧凑 Macro 磁贴 111→87 px（56→44 逻辑）通过；**Esc 连仪表盘一起隐藏 → 缺陷 D2** |
 | W19 | slim Header / 暗 band / 2 列 | ✅（omar 目视） | R00 首启截图 |
 | W20 | 复制失败可见 | ⛔ 不可达 | 剪贴板写失败无法在本机构造 |
-| W21 | 启动 DB 失败阻断对话框 | ❌ **未通过 → 缺陷 D3** | 4 KB 随机字节当库：主窗口短暂现身「加载失败 · 重试」后隐藏，**无任何对话框**，进程持续存活；裸二进制与 `/Applications` 发布版均复现 |
+| W21 | 启动 DB 失败阻断对话框 | ✅ **通过（第四笔复跑）**；首轮 ❌ 为取证误判 | 4 KB 随机字节当库。首轮记「无任何对话框」，实为对话框由系统进程 `UserNotificationCenter` 持有（rfd 无 parent 时走 `CFUserNotificationDisplayAlert`），窗口定向截图拍不到；按 owner 查 CGWindowList + 全屏截图证实含路径对话框在屏。真缺陷在退出路径（D3 改判）。修后按 `main` 重建裸 release 复跑：对话框在屏 → 点 OK → 进程退出 `exit=1` 无 panic；健康库对照正常建库、⌘Q `exit=0`、WAL 折回 0 字节 |
 | W22 | 更新检查 manual 分级 | ⚠️ 部分 | 总开关关时点击零反应（零触网）；开后「已是最新版本」+ StatusBar 入口；失败路径需断网未构造 |
 | W23 | 空态 / 未分组列头 / light 明度 / primitives 观感 | ✅（omar 目视） | R07b / R16c / R24i；新建空场景只有「新增子阶段」入口（观察 O4） |
 | W24 | 导出 / 导入（原生对话框） | ✅ | `⌘⇧G` 驱动面板；导出十表无 `usage_records`；SQL 篡改后导入回滚、`settings` 保留、`refreshAll` |
@@ -219,7 +219,7 @@ E2E 层缺位期间，**布局 / 层叠 / 定位类改动一律由带编号的�
 |---|---|---|---|
 | D1 | 四个锚定编辑面（Macro / 对齐话术 / 话术 / 草稿）打开后名称框**没有焦点**，键入落空；必须再点一次 | `AnchoredEditor` 在 `useAnchoredPosition` 给出坐标前把面板设为 `visibility: hidden`，而 `PhraseFormEditor` 的挂载 effect在此之前调 `focus()`，对不可见元素静默失败。jsdom `popover` shim 不模拟可见性，故 373 条测试全绿。dev / release 均复现，与 StrictMode 无关。**已修（2026-09-02 第二笔）**：`AnchoredEditor` 新增 `initialFocus` prop，首焦点改在 `position` 首次非空的 layout effect 里触发；shim 补 focus 拒绝规则后 6 条既有用例先红后绿，+7 回归用例；**W3 复跑通过（同日第三笔，按 `main` 重建的裸 release）：Macro 新增 / 场景属性 / 添加话术三入口真机各验一次，对齐话术 / 草稿同走 `PhraseFormEditor` 推定；本缺陷闭合**。Codex 提出的「WebKit 同 commit 样式刷新时序」疑虑随之证伪，不加 rAF 重试。派生观察 O7 | P1 |
 | D2 | 设置弹窗开着按 Esc，弹窗与仪表盘**一起**隐藏 | 弹窗 Esc 监听与仪表盘隐藏监听同在 window 冒泡阶段，前者未 `stopPropagation`；与 ADR-025 编辑器「Esc 不冒泡」契约不一致（product-spec 区域 9 写「关闭：Esc」指关弹窗） | P2 |
-| D3 | 数据库损坏时**没有**阻断式错误对话框，进程静默存活、窗口隐藏 | `fail_startup` 在 `std::thread::spawn` 里调 `dialog().message().blocking_show()`；macOS 上非主线程的 NSAlert 不会呈现。prd §7.7 承诺的「含路径的阻断对话框 + exit(1)」实际一项都没兑现 | P1 |
+| D3 | ~~数据库损坏时没有阻断式错误对话框~~ → **改判（第四笔）**：对话框一直会弹，点 OK 后进程 panic、退出码 **101** 而非契约的 1 | 首轮根因「非主线程 NSAlert 不呈现」不成立——tauri-plugin-dialog 本就 `run_on_main_thread`，无 parent 的消息框由 rfd 交给系统进程渲染。真根因是结构性的：失败在 `setup()` 里、事件循环已在跑时被发现，旧实现靠「返回 `Ok(())` 保活 + 内存库顶替 `AppState` + 工作线程 `blocking_show` + `handle.exit(1)`」与半建成的应用共存，而 `RunEvent::Exit` 处理器假定 setup 已完成，`global_shortcut().unregister_all()` 撞上未注册的插件 panic。**已修（第四笔）**：失败分支直接调 `rfd::MessageDialog` 同步弹框（macOS 出进程渲染，阻塞主线程不死锁）后 `std::process::exit(1)`，永不回事件循环；保活的 `return Ok(())` / 内存库 / `window.show()` / 工作线程四件机器全删（`lib.rs` 净删 27 行），`rfd` 升直接依赖（lock 已有同版本同 feature）。W21 复跑通过，**本缺陷闭合**。用户可感知影响为零，级别按事实降 P2 | ~~P1~~ P2 |
 
 **观察（不构成缺陷，供裁决）**：O1 窗口隐藏期间 MCP 写入的草稿，唤起**不刷新** badge，只有导入后 `refreshAll` 才刷新（HANDOFF 第 21 项附带疑问的答案）；O2 焦点不在编辑器内时按 Esc 会隐藏整个仪表盘而编辑器状态保留在 React 里，下次唤起编辑器仍开着——D1 让这种情况更常见；O3 硬删话术后 `usage_records` 成孤儿，最近使用区仍显示墓碑条目（与 prd §6.1 soft-delete 悬案同源，归 HANDOFF 21.2）；O4 新建的空场景只有「新增子阶段」入口，没有「添加话术」；O5 UI 新建的 Macro `native=0`，种子 Macro `native=1`，`native` 语义待 prd 明确；O6 面板宽度随角色 chip 增加而变化、设置弹窗随页面高度重新居中——对人无害，对自动化点击是坑；**O7（第三笔新增，确定性）** Macro 编辑器开着时再点「新增」：`AnchoredEditor` 的外部点击处理跳过锚点（`Editor.tsx:195`），按钮 `data-nav-item tabIndex=-1` 拿走焦点，编辑器不关、焦点却已在面板外——之后键入全部丢失，按 Esc 走 O2 藏掉整个仪表盘（截图 S3 / S3b / R1a）。这正是 D1 留下的肌肉记忆（以为没打开再点一次）会触发的路径；首轮 05:08 构建上同操作后焦点留在名称框（截图 05），两构建差异原因未查；**O8（第三笔新增，OS 行为）** 名称框键入后 macOS 弹首字母大写建议气泡，此时第一次 Esc 只关气泡不关编辑器（截图 S1 → S2）；真人也会碰到，非缺陷但走查与用户认知都要算上。另：用「取消」关编辑器后焦点落到 body，随后的可打印键被路由进搜索框并切到搜索结果视图（截图 S5），是否为有意的 type-to-search 待确认。
 
@@ -229,6 +229,7 @@ E2E 层缺位期间，**布局 / 层叠 / 定位类改动一律由带编号的�
 5. **调用态整卡点击 = 复制 + 隐藏**：唤起后悬停簇尚未出现就点卡片，会误复制并写 usage（本轮误写 3 条）。稳妥序列：唤起 → 空白处点一下取焦 → 悬停 → 截图确认簇位置 → 再点
 6. **像素工具先对已知区域自检方向**：自研 `px` 的 y 轴一度上下颠倒，靠「已知 toast 区域读出 canvas 色」发现；列扫描测高（56→44）比目视可靠
 7. **状态栏「今日复制」按本机时区计日**：本机为 UTC−7，昨夜 23:59 的复制在「今日」不计，不是 bug
+8. **窗口定向截图看不见其他进程持有的窗口**：D3「无任何对话框」的误判源自 §4.2 铁律「禁止全屏截图、只按窗口 ID 定向」——系统级对话框（rfd 无 parent → `CFUserNotificationDisplayAlert`）属于 `UserNotificationCenter`，不在本应用的窗口列表里。走查系统对话框时改按 owner 查 CGWindowList（`kCGWindowOwnerName`），并允许破例全屏截图；「没出现」先问探针能不能看见这类对象（§4.1 教训 2 的第三次现身，应升格为走查前固定自检项）
 
 ## §5 性能基准（regression test）
 

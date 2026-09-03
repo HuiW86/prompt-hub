@@ -14,6 +14,34 @@ description: prompt-hub 设计文档体系变更日志——记录文档结构�
 
 ---
 
+## 2026-09-02（三）· 第四段 — G4 缺陷 D3 改判并修复：启动失败路径改同步弹框 + `process::exit(1)`
+
+> 触发：HANDOFF 第 24 项（G4 缺陷 D3 · P1「数据库损坏时阻断对话框从不出现」）。修之前先按 `main` 的裸 release（chunk `BXzTJiZI` 已核对）复现——结论推翻了缺陷本身。
+
+### 做了什么
+
+- **复现推翻了缺陷描述**：隔离 `HOME` + 4 KB 随机字节当库，启动后屏幕正中弹出「prompt-hub failed to start / Failed to open or migrate the database at …/prompt-hub.db / sqlite: file is not a database / OK」，路径完整。G4 没看见，是因为这个对话框由系统进程 `UserNotificationCenter` 持有：我们的消息框没设 parent，rfd 0.16 对无 parent 的消息框走 `CFUserNotificationDisplayAlert` 出进程渲染，而 test-spec §4.2 走查铁律「只按窗口 ID 定向截图、禁止全屏」只拍本应用的窗口。原记根因「非主线程 NSAlert 不呈现」也不成立——tauri-plugin-dialog 的 `show_message_dialog` 本就 `run_on_main_thread`
+- **真缺陷在退出路径**：点 OK 后 `handle.exit(1)` 进 `RunEvent::Exit`，处理器无条件 `global_shortcut().unregister_all()`，而失败分支从未注册该插件——主线程 panic `state() called before manage()`，退出码 **101** 而非契约的 1。用户可感知影响为零（对话框有，点完就退），级别按事实 P1→P2
+- **第一性原理修法（omar 追问「是不是最优解」后改的）**：先出的方案是给 Exit 处理器加 `try_state` 守卫，那是补丁。问题的类是「失败在 `setup()` 里、事件循环已在跑时被发现，恢复逻辑必须和半建成的应用共存」，旧实现为此堆了四件机器（返回 `Ok(())` 保活 / 内存库顶替 `AppState` 防 IPC panic / `window.show()` 为一个从未用到的 sheet / 工作线程 `blocking_show` 再 `handle.exit`）。改为失败分支直接调 `rfd::MessageDialog` **同步**弹框（走的正是今天绕一圈后实际到达的同一条 CF 路径，出进程渲染所以阻塞主线程不死锁）然后 `std::process::exit(1)`，永不回事件循环。四件机器全删，`lib.rs` 净删 27 行；退出码由语言级 `exit` 保证，库从未打开所以无物可 unwind。否决的另一路「在 `tauri::Builder` 之前就解析路径开库」：要自己复刻 `app_data_dir`，DB 路径变成两个裁决者，最坏形态是某台机器静默开一个空库——**DB 路径必须只有一个解析者**。Exit 处理器不加守卫：A 落地后失败分支不再经过它，不为不可达状态写代码
+- **`rfd` 升直接依赖**：`Cargo.lock` 里本就有 0.16.0（插件传递依赖），声明镜像插件的 feature 集（`default-features = false` + `common-controls-v6`，否则默认 feature 会把 xdg-portal / ashpd / async-std 拉进来），零新增编译产物，非 major bump 不开 ADR；tech-stack §3 不单列插件级依赖，不动
+- **验证**：`cargo test --workspace` 168（审查后补测 → 170）/ clippy `-D warnings` / fmt 全绿；`pnpm test` 405 基线；`pnpm tauri build --no-bundle` 重建后 chunk 与 `dist` 一致；W21 复跑——损坏库：按 owner 查 CGWindowList 见 `UserNotificationCenter` 在屏窗口 + 全屏截图证对话框含路径 → 点 OK → 进程退出 `exit=1`、日志无 panic（macOS 多一行「called from main application thread, will block」信息级提示，预期）；健康库对照：正常建库（`user_version` 12、种子 4 条 Macro）→ ⌘Q → `exit=0`、WAL 折回 0 字节。正式版走查前已退出，隔离库 `/tmp/ph-w21*-home`，真实资产库未触碰
+- **涟漪（不 bump）**：[[11-test-spec]] v0.7 §4.3 W21 行改判、D3 行改写根因与修法并闭合、取证教训补第 8 条、§4.2 工具链「禁止全屏截图」加例外、§2 与 status 补一句；[[07-features]] v1.21 §3.12 行 `done`→`verified`（矩阵 69/7 → 70/6）、留证索引登记、缺口清单 7→6、§4 节奏表与 §7 G4 段落补记。HANDOFF 第 24 项闭合
+
+### `/review` 审查结果（同日）
+
+- gstack 前置脚本被拒未写分析日志（与第三段同）；专项四位（测试 / 可维护性 / 安全 / 性能）+ Claude 对抗子代理跑完；Codex 因代理账户余额 $0.296 不足 403 未跑
+- **采纳（全部信息级，无关键项）**：① 安全——失败原因只进对话框，无 GUI 会话（SSH / CI）时退出码 1 零诊断 → 先写 stderr 再弹框；对抗子代理随即指出 `eprintln!` 在 stderr 断管（EPIPE）时会 panic、把失败路径变成无对话框的 abort → 改 `writeln!` 忽略写错误 ② 可维护性——`commands.rs` 三处注释仍说 `db_path: None` 来自「fail-startup 内存库」，改为「只有测试夹具」；Cargo.toml 与 `lib.rs` 对「为什么绕过插件」讲了两个故事，合并到 `lib.rs` 一处并把「插件阻塞 API 在主线程等一个被阻塞的事件循环永远跑不到的任务」写清；`lib.rs` 注释引用的 prd §7.7 并无此契约，改只引 features §3.12；三份文档「三件机器 / 净删 20 行」与 CHANGELOG「四件」不一致，统一为四件、`lib.rs` 净删 27 行 ③ 测试——进入 `fail_startup` 的两条前置路径（非 SQLite 文件 / 父路径不是目录）此前无 cargo 测试守着 `open_and_migrate` 返回 Err 而非 panic，补两条（repo-core `db.rs`，168→**170**）
+- **记录不改**：`rfd` 直接依赖未像插件那样限定桌面 target，iOS / Android 构建会失败——本项目无移动端目标（CI 只有 macOS）；Linux 上 rfd gtk3 后端在自己的线程泵默认 GMainContext、而 WebKitGTK 视图已挂在上面，可能 abort——未验证，`lib.rs` 注释已把「安全阻塞」收窄到 macOS / Windows；`AppState.db_path: Option<PathBuf>` 的 `None` 分支在生产已不可达、只为一条单测活着，收窄成 `PathBuf` 是独立小改动，记 HANDOFF 待裁
+- **对抗子代理核实的非问题**（免重查）：macOS `CFUserNotificationDisplayAlert` 等的是 mach reply port 不是 NSApp run loop，阻塞期间主线程什么都不跑；tauri 在 setup 之前就建了 config 窗口，但 macOS 上 asset protocol 与 IPC 都需要被阻塞的主 run loop，命令永不执行，且 tauri 2.11 `State<T>` 抽取失败返回 `InvokeError` 不 panic；快捷键插件只在 Ok 分支安装，弹框期间不可能触发；`process::exit` 无物可跳过——`open_and_migrate` 在 `?` 处已 drop 连接、清掉 `-wal`/`-shm`；`cargo check --features bench` 通过
+- 审查后 `lib.rs` 又动了运行时代码，按第三段「方法记一笔」重建裸 release（chunk `BXzTJiZI` 与 `dist` 一致）再跑一遍 W21：损坏库 → stderr 先落含路径的失败原因 → 对话框在屏 → OK → `exit=1`；健康库 → ⌘Q → `exit=0`。通过
+
+### 方法记两笔
+
+1. **「没出现」先问探针能不能看见这类对象**。按窗口 ID 定向截图是为了拍浮层才立的规矩（test-spec §4.2 教训 2），它天然看不见别的进程持有的窗口。系统级对话框按 owner 查 CGWindowList，并允许破例全屏。这是「拍不到可能是取证方法的结论」第三次现身，该升格为走查前的固定自检项
+2. **修缺陷前先问「这是一个坑还是一类坑」**。补丁方案（守卫）和结构方案（不共存）的 diff 大小差不多，差别在前者留下「setup 里任何新的提前返回都会再踩」的隐患。当修法的行数不足以区分优劣时，看它消掉的是实例还是类
+
+---
+
 ## 2026-09-02（三）· 第三段 — G4 W3 按 `main` 重建复跑通过，缺陷 D1 闭合；派生观察 O7 / O8
 
 > 触发：第二段「待办」第一条 / HANDOFF 第 23 项收窄后的最后一步。jsdom 只能证明「首焦点在定位之后」，WebKit 上 `visibility` 翻转与 `focus()` 是否同帧生效只有真机能答。
@@ -82,7 +110,7 @@ description: prompt-hub 设计文档体系变更日志——记录文档结构�
 |---|---|---|---|
 | D1 | 四个锚定编辑面打开后名称框无焦点，键入落空 | `AnchoredEditor` 定位前 `visibility: hidden`，子组件挂载 effect 的 `focus()` 对不可见元素静默失败；jsdom shim 不模拟可见性 | P1 |
 | D2 | 设置弹窗内按 Esc，弹窗与仪表盘一起隐藏 | 弹窗 Esc 未 `stopPropagation`，与 ADR-025 编辑器契约不一致 | P2 |
-| D3 | 数据库损坏时没有阻断对话框，进程静默存活 | `fail_startup` 在后台线程 `blocking_show()`，macOS 不呈现非主线程 NSAlert；裸二进制与 `/Applications` 发布版均复现 | P1 |
+| D3 | 数据库损坏时没有阻断对话框，进程静默存活 | `fail_startup` 在后台线程 `blocking_show()`，macOS 不呈现非主线程 NSAlert；裸二进制与 `/Applications` 发布版均复现（**第四段改判**：对话框其实会弹、是取证方法看不见；真缺陷为退出码 101，已修） | ~~P1~~ P2 |
 
 D1 尤其值得记一笔：ADR-025 G1 六项 + P1-b 两项全通过、P1-b 还取得逐像素证据，但**没有一项问过「打开后能直接打字吗」**——门项验的是容器的层叠与定位，没验容器里的第一件事。
 

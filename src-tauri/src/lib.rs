@@ -1,8 +1,8 @@
+use std::io::Write;
 use std::sync::atomic::{AtomicBool, AtomicU64, Ordering};
 use std::sync::Mutex;
 
 use tauri::{Manager, PhysicalPosition, PhysicalSize, RunEvent};
-use tauri_plugin_dialog::{DialogExt, MessageDialogKind};
 use tauri_plugin_global_shortcut::{GlobalShortcutExt, ShortcutState};
 
 #[cfg(feature = "bench")]
@@ -68,55 +68,43 @@ fn wake_main_window(app: &tauri::AppHandle) {
 }
 
 // Fatal-startup handler: surface `message` in a native error dialog, then
-// exit(1) once the user dismisses it. Called from setup() when the DB path
-// cannot be resolved or the DB cannot be opened/migrated — a bare panic there
-// happens before anything is visible, so a double-clicked .app just vanishes.
+// exit(1). Called from setup() when the DB path cannot be resolved or the DB
+// cannot be opened/migrated — a bare panic there happens before anything is
+// visible, so a double-clicked .app would just vanish.
 //
-// Constraints that shape this implementation (verified against tauri 2.11 /
-// tauri-plugin-dialog 2.7 / rfd 0.16 sources):
-// - Returning Err from the setup hook is no better than panicking: tauri runs
-//   setup at RunEvent::Ready and maps Err to `panic!("Failed to setup app")`,
-//   equally invisible to the user. So the failure arm returns Ok(()) to keep
-//   the event loop alive and lets this handler exit the app.
-// - setup runs on the main thread with NSApp already running, so rfd renders
-//   the dialog as a window sheet whose completion handler is delivered over
-//   the main run loop. Calling blocking_show() on the main thread would park
-//   that run loop and deadlock with a dialog that never appears — the dialog
-//   must block a worker thread instead.
-// - The sheet attaches to the main window, which is config-hidden
-//   (`visible: false`); show it first so the dialog is actually visible.
-// - The webview still boots and fires IPC while the dialog is up. Manage a
-//   throwaway unmigrated in-memory connection so `State<AppState>` extraction
-//   cannot panic; every command then fails with a recoverable SQL /
-//   SchemaVersionMismatch error instead of writing anywhere real.
-fn fail_startup(app: &tauri::App, message: String) {
-    if let Ok(conn) = rusqlite::Connection::open_in_memory() {
-        app.manage(AppState {
-            conn: Mutex::new(conn),
-            // Throwaway in-memory DB — no file, so no backups/checkpoint target.
-            db_path: None,
-            copy_seq: AtomicU64::new(0),
-            // Startup already failed; the DB error dialog owns this launch and
-            // shortcut setup is skipped, so both values are moot.
-            hotkey_registered: AtomicBool::new(true),
-            current_hotkey: Mutex::new(repo_core::settings::DEFAULT_GLOBAL_HOTKEY.to_string()),
-        });
-    }
-    if let Some(window) = app.get_webview_window("main") {
-        #[cfg(desktop)]
-        fit_to_active_monitor(&window);
-        let _ = window.show();
-    }
-    let handle = app.handle().clone();
-    std::thread::spawn(move || {
-        handle
-            .dialog()
-            .message(message)
-            .title("prompt-hub failed to start")
-            .kind(MessageDialogKind::Error)
-            .blocking_show();
-        handle.exit(1);
-    });
+// Deliberately bypasses tauri-plugin-dialog and never returns to the event
+// loop. The plugin cannot give us a synchronous dialog here: it dispatches
+// over the event-loop proxy, so its blocking API called on the main thread
+// waits for a task the blocked loop can never run. Returning Err from setup
+// is no better than panicking (tauri maps it to an invisible
+// `panic!("Failed to setup app")`), and returning Ok(()) to keep the loop
+// alive means a half-built app — webview booting, no real AppState, no
+// shortcut plugin — runs alongside the dialog. An earlier version did exactly
+// that (throwaway in-memory AppState, worker thread, handle.exit(1)) and
+// crashed in the RunEvent::Exit handler on dismissal because that handler
+// assumes setup completed (G4 D3, exit code 101).
+//
+// rfd's sync show() with no parent is safe to block the main thread on for
+// the targets we ship: macOS renders it out of process via
+// CFUserNotificationDisplayAlert (the window belongs to UserNotificationCenter,
+// so window-scoped screenshots of this app never capture it — probe by owner),
+// Windows uses MessageBox on the calling thread. Linux is unverified: rfd's
+// gtk3 backend pumps the default GMainContext from its own thread while we
+// block, with the already-created WebKitGTK webview attached to it.
+// Nothing has been opened yet, so there is nothing to unwind; process::exit
+// is the entire contract (features §3.12: path in the dialog + exit code 1).
+fn fail_startup(message: String) -> ! {
+    // stderr first: a headless launch (SSH, CI, a crashed window server) has no
+    // dialog to read, and exit code 1 alone says nothing about why. Not
+    // eprintln!: that panics on EPIPE, which would turn this path into an
+    // abort with no dialog when a wrapper's pipe reader has gone away.
+    let _ = writeln!(std::io::stderr(), "prompt-hub failed to start: {message}");
+    rfd::MessageDialog::new()
+        .set_title("prompt-hub failed to start")
+        .set_description(message)
+        .set_level(rfd::MessageLevel::Error)
+        .show();
+    std::process::exit(1)
 }
 
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
@@ -153,12 +141,8 @@ pub fn run() {
                 });
             let (conn, db_path) = match db_init {
                 Ok(pair) => pair,
-                Err(message) => {
-                    fail_startup(app, message);
-                    // Keep the event loop alive (skip shortcut/panel setup);
-                    // fail_startup exits the app once the dialog is dismissed.
-                    return Ok(());
-                }
+                // Diverges: dialog + exit(1), never back into the event loop.
+                Err(message) => fail_startup(message),
             };
             // Read the wake chord BEFORE managing state, because the shortcut
             // must be registered inside this same setup hook — long before any

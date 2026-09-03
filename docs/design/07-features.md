@@ -232,7 +232,7 @@ related:
 | Scene / SubStage 排序 UI（Scene 编辑态前移/后移按钮接 `reorder_scenes`；SubStage 结构编辑器内 dnd 拖拽；活动场景 id 追踪排序不中断编辑态）| P1 | `done` | v1.7 | ScenePanel 2 + promptStore 2 前端 | omar | [[03-product-spec#13.3]] |
 | 复制失败可见 + Toast intent 分级（useCopy 失败弹 error toast 并中止 record_usage；success 800ms / error 4000ms amber + `role=alert`）| P0 | `done` | v1.7 | useCopy 3 + toastStore 3 前端 | omar | [[05-design-spec#11]] |
 | 更新检查失败 auto/manual 分级（auto 静默降级不挂横幅 / manual error+toast）+ Dashboard 加载失败「重试」（role=alert + refreshAll）| P0 | `done` | v1.7 | updaterStore 3 前端 | omar | [[017-enable-auto-update]] |
-| 启动 DB 失败优雅兜底（app_data_dir/迁移失败 → 阻断式错误对话框含 DB 路径 + `exit(1)`；manage 未迁移 in-memory 连接防 IPC panic）| P0 | `done` | v1.7 | cargo test --workspace 全绿 + `cargo check --features bench` | omar | [[06-prd#7.7]] |
+| 启动 DB 失败优雅兜底（app_data_dir/迁移失败 → 阻断式错误对话框含 DB 路径 + `exit(1)`；失败分支在 setup 主线程同步弹框后 `process::exit(1)`，不回事件循环）| P0 | `verified` | v1.21 | cargo test --workspace 全绿 + G4 W21 发布形态复跑（2026-09-02 第四笔，退出码 1） | omar | [[06-prd#7.7]] |
 | 协议层暗色 band 恢复 + 层级编码修缮（`--band-*` token 族 + band 作用域重映射；ModifierGrid「协议层 · 参考」pill；RecentList 徽标中性化）| P1 | `verified` | v1.7 | 144 前端全绿（含 token-gate / b2 gate）| omar | [[020-restore-protocol-dark-band]] |
 | light 主题明度重绘 + resting elevation（muted canvas + 纯白抬升卡；4 容器 resting `--shadow-1`）| P1 | `verified` | v1.7 | 144 前端全绿（token-gate）| omar | [[05-design-spec#2.4.2]] |
 | Scene 全景 auto-fit 自适应列宽 + 「未分组」列头（窄面板降列不挤压 + 未归组话术 muted 列头）| P1 | `verified` | v1.7 | ScenePanel 2 例 | omar | [[05-design-spec#10.3]] |
@@ -360,6 +360,7 @@ related:
 | 2026-09-01 | v1.19 bump（**人审批次 ① 裁决落地**）：① §1 `verified` 判据修订——旧判据「E2E 通过 + 使用者 ≥1 周」不可满足（Playwright 未落地，test-spec §4 明写），新判据 = 真机门或持续自动化 gate 留证 + 进过 publish release + 自用 ≥1 周无回归；② 铁律引用 [[01-spec#10.5]]「验收节奏」判为**失效引用**（该节实为「多人使用的可能性」，spec 全文无「验收节奏」），改指 [[11-test-spec#4.1]]；③ 按新判据逐行核对：**37 行 `done`→`verified`**（3.1 四区 / 3.4 唤起键可配置 / 3.6 六行 / 3.7 十七行 / 3.8 三行 / 3.9 五行 / 3.10 裸值 gate），39 行缺留证保持 `done`；④ §7 新增留证索引 + 缺口清单（升 `verified` 必须登记）。矩阵计数 91 不变。v0.2.0 后零代码 commit，全部 `done` 行均在已 publish 的 release 内 | omar 拍板「改规则，然后逐个标」（2026-09-01 人审批次 ①）|
 | 2026-09-02 | v1.20 bump（**G4 真机走查落账**）：按 §1 新判据补留证——发布形态（`pnpm tauri build --no-bundle` 裸 release 二进制 + 隔离 `HOME` + MCP 造草稿）覆盖 §7 缺口清单，24 门项 21 通过 / 3 不可达（W13 窄 Header · W20 复制失败 · W22 更新失败路径）。**32 行 `done`→`verified`**（3.1 ×2 / 3.4 / 3.7 ×3 / 3.8 ×5 / 3.10 ×3 / 3.11 ×6 / 3.12 ×7 / 3.13 ×4 / 3.14），7 行保持 `done`。**三个真实缺陷**记入 [[HANDOFF]]：D1 锚定编辑器 autofocus 不生效（`AnchoredEditor` 在定位前 `visibility:hidden`，子组件 `focus()` 静默失败；jsdom shim 不模拟可见性所以 373 测试全绿）· D2 设置弹窗 Esc 连仪表盘一起隐藏 · D3 数据库损坏时阻断式对话框从不出现（`fail_startup` 在后台线程 `blocking_show`）。另答 HANDOFF 第 21 项附带疑问：窗口隐藏期间 MCP 写入的草稿，唤起**不刷新** badge，导入后 `refreshAll` 才刷新。走查记录与门项表见 [[11-test-spec#4.3]] | 2026-09-02 G4 真机走查 |
 | 2026-09-02 | v1.21 bump（**D1 修复留证**，矩阵状态不变）：`AnchoredEditor` 新增 `initialFocus` prop，首焦点改在定位后的 layout effect 触发，`PhraseFormEditor` 锚定形态与 `ScenePropertiesEditor` 改走该路径；jsdom shim 补「隐藏元素拒绝 focus」规则——此前 373→398 全绿而 D1 始终在，补规则后 6 条既有用例变红，修后 405 全绿（+7 回归：时序门「`anchor=null` 不聚焦、到位后才聚焦」/ 重定位·换锚点不重聚焦 / shim 三路径自检 / inline 挂载聚焦 + 属性面板首焦点）。**零后端 / IPC / schema 改动**。§7 留证索引 3.8 行与 G4 段落补记；**W3 发布形态复跑待做**，通过后 HANDOFF 第 23 项闭合。涟漪 [[11-test-spec]] v0.7 / [[05-design-spec]] v0.21（§10.2.2 接口契约第 5 条） | HANDOFF 第 23 项 |
+| 2026-09-02 | v1.21 同版补记（**D3 改判并修复**，矩阵 69/7 → 70/6）：修前按 `main` 裸 release 复现，对话框其实一直会弹——由系统进程 `UserNotificationCenter` 持有（rfd 无 parent 走 `CFUserNotificationDisplayAlert`），G4 的窗口定向截图拍不到；真缺陷是点 OK 后 `RunEvent::Exit` 处理器撞上未注册的快捷键插件 panic，退出码 101。修法走第一性原理：失败分支直接 `rfd::MessageDialog` 同步弹框后 `std::process::exit(1)`，不再与半建成的应用共存，删保活 `Ok(())` / 内存库 / `window.show()` / 工作线程四件机器（`lib.rs` 净删 27 行）；`rfd` 升直接依赖（lock 同版本同 feature，非 major bump 不开 ADR）。cargo 168→170（`/review` 后补两条 `open_and_migrate` 负路径测试）/ clippy / fmt 全绿，W21 复跑 `exit=1`、健康库 ⌘Q `exit=0`。§3.12 行 `done`→`verified`，留证索引登记，缺口 7→6。涟漪 [[11-test-spec]] v0.7 §4.3 W21 / D3 / 教训 8 | HANDOFF 第 24 项 |
 
 ---
 
@@ -367,8 +368,8 @@ related:
 
 - **当前基线**（2026-09-01 本机实测，`main` @ `9fc9fad`）：Vitest **398/398**（39 文件）/ `cargo test --workspace` **168** / lint · tsc · build · clippy · fmt 全绿 / doc-governance 0 error 6 warn / `bench:hotkey-wake` p95 13.708ms（2026-08-20）
 - **已发布**：v0.1.0（2026-08-05 draft，公证被静默跳过未 publish，见 [[2026-08-05-notarization-fail-open]]）/ v0.1.1（2026-08-10）/ **v0.2.0（2026-08-20，Developer ID 签名公证 + 自动更新链路真机跑通）**
-- **状态分布**（§3 逐行，§3.12 治理项 7 行不计）：`verified` **69** / `done` **7** / `in-progress` 1 / `planned` 14 / `withdrawn` 1（不计）→ 计数 91，与 §4 一致（2026-09-02 G4 走查后 37→69 / 39→7）
-- **G4 真机走查（2026-09-02，v1.20）**：按发布形态（`pnpm tauri build --no-bundle` 裸 release 二进制 + 隔离 `HOME`）覆盖下表缺口清单，24 门项 21 通过、3 不可达、**发现三个真实缺陷**（D1 锚定编辑器打开后 autofocus 不生效 · P1 / D2 设置弹窗 Esc 连仪表盘一起隐藏 · P2 / D3 数据库损坏时阻断式对话框从不出现 · P1），明细见 [[11-test-spec#4.3]]；32 行升 `verified`，7 行保持 `done`（其中 1 行因缺陷未通过）。**D1 已修（v1.21，同日第二笔）**：jsdom 回归 +7；**同日第三笔按 `main` 重建裸 release 复跑 W3 通过，D1 闭合**（Macro / 场景属性 / 添加话术三入口真机各验一次；派生观察 O7 记 HANDOFF；[[11-test-spec#4.3]] W3 / D1 行）
+- **状态分布**（§3 逐行，§3.12 治理项 7 行不计）：`verified` **70** / `done` **6** / `in-progress` 1 / `planned` 14 / `withdrawn` 1（不计）→ 计数 91，与 §4 一致（2026-09-02 G4 走查后 37→69 / 39→7；同日第四笔 D3 闭合 70 / 6）
+- **G4 真机走查（2026-09-02，v1.20）**：按发布形态（`pnpm tauri build --no-bundle` 裸 release 二进制 + 隔离 `HOME`）覆盖下表缺口清单，24 门项 21 通过、3 不可达、**发现三个真实缺陷**（D1 锚定编辑器打开后 autofocus 不生效 · P1 / D2 设置弹窗 Esc 连仪表盘一起隐藏 · P2 / D3 数据库损坏时阻断式对话框从不出现 · P1），明细见 [[11-test-spec#4.3]]；32 行升 `verified`，7 行保持 `done`（其中 1 行因缺陷未通过）。**D1 已修（v1.21，同日第二笔）**：jsdom 回归 +7；**同日第三笔按 `main` 重建裸 release 复跑 W3 通过，D1 闭合**（Macro / 场景属性 / 添加话术三入口真机各验一次；派生观察 O7 记 HANDOFF；[[11-test-spec#4.3]] W3 / D1 行）；**同日第四笔 D3 改判并修复**：W21 复跑发现对话框其实一直会弹（由系统进程 `UserNotificationCenter` 持有，窗口定向截图拍不到），真缺陷是点 OK 后 Exit 处理器 panic、退出码 101；失败分支改为同步弹框 + `process::exit(1)`，裸 release 复跑退出码 1，3.12 行升 `verified`，缺口 7→6
 - **§1 `verified` 判据已修订（v1.19，omar 2026-09-01 拍板）**：旧判据「E2E 通过 + 使用者 ≥1 周」不可满足（Playwright 未落地），且铁律引用的 [[01-spec#10.5]]「验收节奏」在 spec 里并不存在。新判据见 §1；按新判据逐行核对留证，37 行升 `verified`、39 行因缺留证保持 `done`。**留证索引与缺口清单见下**——它同时是下一次真机走查的待办面
 - **下一动作**：见 [[HANDOFF#Next-Actions]]
 
@@ -400,10 +401,11 @@ related:
 | 3.10 primitives / editor 簇 / surface-control | G4 截图 R03–R09：共享 `PhraseFormEditor` 五件套、`ConfirmInline`「永久删除? ✓ ✕」、DraftCard 中性 CardSurface + ghost Button 在发布形态渲染并可操作 |
 | 3.11 主题三态 / 强调色 / 设置弹窗 / slim Header / ProtocolBand / 2 列 | G4 W16–W19：首启默认深色（canvas `14,14,16`）、浅色 `#F2F2F0`、跟随系统随 OS 外观翻转、重启保留（localStorage `themeMode`）；强调色绿 / 蓝 / 中性像素采样 logo 与 Macro 芯片同步、Scene 图标不变；`⌘,` 唤起、× 关闭、密度 56→44 逻辑像素列扫描实测；Header / 暗 band / 2 列布局截图 R00。**附带缺陷 D2**：弹窗内 Esc 连仪表盘一起隐藏 |
 | 3.12 Draft 编辑 / Composition 暂缓 / 设为默认 / 暗 band / light 明度 / auto-fit / 像素对齐包 | G4：同上各项；暗 band + `ModifierGrid`「协议层 · 参考」pill + 最近区中性徽标（R00）；light 明度 muted canvas + 白卡（R16c）；调研场景两列 auto-fit + 「未分组」列头（R07b）；Macro 图标盒 accent 填充 + 最近区富空态（R24i） |
+| 3.12 启动 DB 失败优雅兜底 | G4 W21 第四笔复跑（2026-09-02，按 `main` 重建裸 release + 隔离 `HOME`）：损坏库 → 含路径对话框在屏（按 owner 查 CGWindowList + 全屏截图）→ OK → `exit=1` 无 panic；健康库对照 ⌘Q `exit=0` |
 | 3.13 整理模式 / promote 定位 / discard 撤销 / ⌘Enter | G4 W12–W15：整理态整卡点击展开预览、窗口驻留、usage 不计；连续点两张卡切换选中；长话术展开不溢出列；显式复制按钮 usage +1 且不隐藏；撤销 toast 存活 5.4–6.4 s（`action: 6000`）；归档后新 chip 落到当前相位；名称框 Enter 推进到正文、⌘Enter 提交 |
 | 3.14 跨 Scene 话术移动 | G4 W11：移到目标 Scene / 子阶段 → 落分区末尾（order 3）→ 撤销回原 Scene / 未分组 / order 2；不计 usage |
 
-**留证缺口（7 行保持 `done` 的原因；G4 走查后 39 → 7）**：
+**留证缺口（6 行保持 `done` 的原因；G4 走查后 39 → 7，第四笔 D3 闭合 → 6）**：
 
 | §3 行 | 缺什么 |
 |---|---|
@@ -411,11 +413,10 @@ related:
 | 3.12 Scene / SubStage 排序 UI | Scene 前移已验；SubStage ←→ 交换因只有一个子阶段未能触发 |
 | 3.12 复制失败可见 + Toast 分级 | 剪贴板失败无法构造（G4 W20 不可达） |
 | 3.12 更新检查失败分级 | manual 成功路径已验（「已是最新版本」）；失败路径需断网，未构造 |
-| 3.12 启动 DB 失败优雅兜底 | **G4 W21 未通过（缺陷 D3）**：损坏库启动后对话框从不出现、进程静默存活，裸二进制与发布 `.app` 均复现 |
 | 3.13 话术保存成功 toast | 800 ms 成功 toast 在截图节奏下未拍到，缺留证 |
 | 3.13 编辑器 footer flex-wrap | 需窄宽度，主形态窗口恒等于显示器宽（G4 W13 不可达） |
 
-> 前四行是「构造不出」，最后两行是「拍不到 / 达不到」，只有 D3 一行是真失败。补法：Modifier 与 SubStage 两行需要更丰富的种子数据；复制失败与更新失败需要故障注入；footer wrap 与保存 toast 靠 jsdom 断言即可闭合（不必真机）。
+> 前四行是「构造不出」，后两行是「拍不到 / 达不到」（原第五行 D3 于第四笔改判并闭合，已升 `verified`）。补法：Modifier 与 SubStage 两行需要更丰富的种子数据；复制失败与更新失败需要故障注入；footer wrap 与保存 toast 靠 jsdom 断言即可闭合（不必真机）。
 
 **同步约定**（v0.3+ 启用，v1.18 修订）：
 - 每次 commit 主分支后**手动**同步本清单状态（原设想的 `scripts/update-features.sh` 从未落地）

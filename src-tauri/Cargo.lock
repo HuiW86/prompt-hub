@@ -2631,6 +2631,7 @@ dependencies = [
  "objc2-app-kit",
  "repo-core",
  "repo-write",
+ "rfd",
  "rusqlite",
  "serde",
  "serde_json",
