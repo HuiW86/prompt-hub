@@ -1,12 +1,12 @@
 ---
 type: prd
 project: prompt-hub
-version: v0.13
+version: v0.14
 created: 2026-05-18
-last_modified: 2026-09-01
-status: ratified  # 2026-09-01 人审批次 ④：omar 审阅 v0.12/v0.13 增量通过，draft → ratified。§6.1 soft-delete 承诺与硬删除实现的矛盾已登记为既有 drift，解法归 soft-delete ADR（HANDOFF 第 21.2 项），落地后再 bump
+last_modified: 2026-09-03
+status: draft  # v0.14（2026-09-03 · ADR-028 P0 回流）待人审：§6 数据模型契约变更（新增 §6.0-bis 两套删除机制 + 七张资产表加 `deleted_at` + 四处「删除策略」重写 + 导出 data schema 1.1→1.2），属图纸类改动，按 [[CLAUDE#§5.1.2]] 需签字。**v0.12 起登记的 §6.1 drift 就此销账**——旧文承诺 `deprecated = true`、实装是 hard DELETE，现两边都已改正。前 v0.13 于 2026-09-01 人审批次 ④ ratified
 author: ai  # 🤖 AI 主笔 + 人审（CLAUDE §5.2）
-related: [[01-spec]], [[03-product-spec]], [[prompt-hub-mvp]], [[015-expose-mcp-write-pipeline]], [[027-configurable-global-hotkey]], [[mcp-write-pipeline]]
+related: [[01-spec]], [[03-product-spec]], [[prompt-hub-mvp]], [[015-expose-mcp-write-pipeline]], [[027-configurable-global-hotkey]], [[028-reversible-delete]], [[mcp-write-pipeline]]
 description: 手动 AI 编程仪表盘的工程契约——数据模型/状态机/NFR/Boundaries/IPC + MCP 接口契约；写后端 / 数据层时召回。版本叙事见 CHANGELOG
 ---
 
@@ -383,6 +383,31 @@ graph TD
 | 观察者-UsageRecord | 观察所有可复制资产；append-only | 不持有任何资产间的结构关系；不修改不删除（除归档外） |
 | 暂态-drafts（v0.7） | drafts.target_type ∈ {modifier / composition / macro / alignment_phrase}；promote 后写入对应正式表 | drafts 不引用任何正式资产、不被任何正式资产引用；正式资产不持有 draft_id 反向指针；详见 §10.1 |
 
+### 6.0-bis 删除与弃用：两套机制（v0.14 新增 · [[028-reversible-delete]]）
+
+> **本节优先于下文各资产的「删除策略」段**，那几段只补充本资产特有的守卫。
+
+「让一条资产从界面上消失」在本项目里有**两个开关**，共用一张表但**不共用一个语义**。分开是 [[028-reversible-delete]] §5 子决策 1 的核心内容——一旦复用同一列，「用户误删待恢复」与「用户主动弃用」将永远分不开：
+
+| | `deleted_at`（安全网） | `deprecated`（策展） |
+|---|---|---|
+| 回答的问题 | 「我根本没想删它」 | 「它过时了，但我想留住它的历史」 |
+| 类型 | `TEXT NULL`，RFC 3339 时间戳；NULL = 存活，非 NULL = 在废纸篓 | `boolean`（SQLite `INTEGER NOT NULL DEFAULT 0` + `CHECK (deprecated IN (0,1))`） |
+| 为什么是时间戳而非布尔 | 废纸篓按删除时间排序，且「何时删的」是用户判断要不要恢复的主要依据 | 只需二值 |
+| 谁写它 | 七个 `delete_*` 写命令（原地 UPDATE）；`restore_asset` 置回 NULL；`purge_trash` 真删 | **无人写入**——create 一律写 `false`，import 原样搬运，**没有任何路径把它置 true**，也没有 UI |
+| 覆盖的表 | 七张资产表（`modifiers` / `macros` / `alignment_phrases` / `compositions` / `phrases` / `scenes` / `sub_stages`） | 五张（`scenes` / `sub_stages` 没有这一列） |
+| 状态 | 📊 **已实装**（migration `0013_soft_delete`，`user_version` 12→13，2026-09-03） | 🎯 **未实装、未排期**——列在、读路径过滤在，缺的只是一个写入方 |
+
+**读路径谓词**：所有资产列表读一律带 `deprecated = 0 AND deleted_at IS NULL`。这不靠人记得——**第七道源码级 gate**（`src/ipc/soft-delete-gate.test.ts`，见 [[11-test-spec#3]]）解析 Rust 源码，凡读资产表而漏写谓词即让 `pnpm test` 变红。豁免必须写显式注释并在 gate 内登记，目前只有两类：**导出**（§6.9，全保真备份）与**废纸篓查询本身**。
+
+**恢复语义**：行从不搬走，因此 `id` / `created_at` / 分区 `order_index` / 指向它的全部 `usage_records` **原封不动**，使用历史自动重新连上。
+
+**恢复会连同父级一起复活（重要）**：`restore_asset` 不只是把那一行的 `deleted_at` 置回 NULL，它还复活**被恢复行挂靠的对象**——Phrase 复活它的 Scene 与 SubStage，SubStage 复活它的 Scene；另外五类挂在 `phases` 上或什么都不挂，而 `phases` 不是资产表、永远进不了废纸篓。**为什么必须这样**：删非空 Scene 被拒绝时只数**存活**的子内容，所以「先删一条话术、再删它那个已经空了的场景」是允许的；此后单独恢复那条话术，它就会**既不在废纸篓里（`deleted_at` 已是 NULL）、又不在仪表盘上（它的场景仍隐藏）**——一条谁也够不着的资产。选向上复活而非拒绝恢复，理由是用户要的就是再看见这条资产，而不看见它所在的场景就看不见它。`usage_records` 在软删与恢复过程中一行都不动（[[028-reversible-delete]] 子决策 5），孤儿只在用户清空废纸篓时才产生，由清空动作一并清理。
+
+**废纸篓不自动过期**：不设保留天数，不设定时清理，只由用户在设置 · 数据页手动清空（[[03-product-spec#13.3]] 区域 9）。代价是主表单调增长，与备份的分工见 [[10-ops-spec#3]]。
+
+**`deprecated` 为什么留着不做**：它是「历史痕迹是资产」这条哲学的落点，语义与安全网正交。要不要给它补写入方与 UI 属**另案**，[[028-reversible-delete]] §5「显式不裁」明确不裁，本节只保证两者不互相顶替。
+
 ### 6.1 Modifier
 
 #### Fields
@@ -397,7 +422,8 @@ graph TD
 | last_used_at | timestamp | Y | null | ISO 8601 | 最近使用时间戳 |
 | created_at | timestamp | N | now() | ISO 8601 | 创建时间 |
 | notes | string | Y | null | - | 迭代说明（为什么是这句话、为什么改过） |
-| deprecated | boolean | N | false | - | 是否已过时（不删除，仅标记） |
+| deprecated | boolean | N | false | - | 是否已过时（策展标记，无人写入——见 §6.0-bis）|
+| deleted_at | timestamp | Y | null | RFC 3339；NULL = 存活，非 NULL = 在废纸篓 | 软删除时间戳（v0.14 · [[028-reversible-delete]]，语义见 §6.0-bis）|
 
 #### Relations
 
@@ -413,7 +439,13 @@ graph TD
 
 #### 删除策略
 
-> Modifier 不允许 hard delete（哲学：历史痕迹是资产），所有"删除"操作等价于 `deprecated = true`。被 Composition / Macro / UsageRecord 引用时，应用层应阻止 hard delete；如确需清理（数据迁移 / 异常），引用方需先解除（SET NULL）。**IndexedDB 无外键引擎，删除策略由应用层校验承担**。
+> 📊 **v0.14 重写（[[028-reversible-delete]] P0 落地）**。两套机制的分工见 §6.0-bis，本段只列 Modifier 特有的部分。
+>
+> `delete_modifier` 是**原地软删除**：`UPDATE modifiers SET deleted_at = ?`，行不搬走。删一条已在废纸篓里的 Modifier 是**成功的空操作**，不是错误——撤销/重做竞态与双击都会走到这条路径。恢复走 `restore_asset("modifier", id)`，`usage_count` / `last_used_at` / `order_index` / 引用它的 `usage_records` 全部原样在位。
+>
+> **无前置引用校验**：Composition 与 Macro 通过 `expand_from` / `modifier_ids` **JSON 列**持有 Modifier id，不是外键，所以软删一条被引用的 Modifier 不会被任何守卫拦下，也不会破坏引用方——那些 id 只是记录了「当初由谁组成」，历史照旧可读。真正的清理发生在清空废纸篓时，`purge_trash` 才 `DELETE`。
+>
+> **v0.14 前的旧文**曾写「所有『删除』等价于 `deprecated = true`」并要求应用层阻止 hard delete。那是把**策展**误当成了删除机制；`deprecated` 至今无人写入，而删除现在由 `deleted_at` 承担。
 
 #### 字段设计理由
 
@@ -426,13 +458,15 @@ graph TD
 
 > `modifiers.group_kind` 由 omar 在 promote 时四象限手选（§10.2 决策 iii），此前选错后**不可改**。v0.12 扩展 IPC **`update_modifier(id, name, content, group_kind?)`**：可选 `group_kind` 入参（CHECK 拒非法值），单事务把该 Modifier 移到目标象限尾部；缺省 = 旧有仅改 name/content 语义（命令名不变，IPC 契约测试通过）。UI 入口 = aside Modifier 参考面 chip 的 hover 管理簇（[[03-product-spec#13.3]]）。
 >
-> **登记既有 drift**：上文「删除策略」的 soft-delete（`deprecated=true`）表述与现实装不符——`delete_modifier` IPC 自 AE 批次起即为 hard DELETE（P3-6 仅为其补了二次确认 UI）。差异属既有欠账，是否回改 soft-delete 待 omar 裁定，本版仅如实登记。
+> **该 drift 已于 v0.14 销账**：v0.12 曾在此登记「上文删除策略的 soft-delete 表述与实装不符——`delete_modifier` 自 AE 批次起是 hard DELETE」，并把裁决挂给 omar。[[028-reversible-delete]] 已裁并落地，删除现为原地软删除，上文与实装一致；P3-6 补的那个二次确认 UI 也随之拆除，改为一键 + 撤销 toast。
 
 ### 6.2 Composition（通常不持久化，临时态）
 
 > **临时态说明**：Composition 默认存在于内存或 session storage，不持久化到 IndexedDB。值得沉淀的 Composition 升级为 Macro（[[#6.3-macro]]）后才创建持久化记录。因此本节 Fields 描述运行时结构，**无 id / 无 Indexes / Relations 仅描述引用**。
 >
 > **promoted Composition 例外（v0.8）**：MCP write pipeline（§10）引入了**持久化的 Composition**——Claude 提议、omar 在草稿 tab promote 后写入 `compositions` 表（migration 0004，字段见 [[#10.2-promote-路径契约]] 与 repo-core `models::Composition`）。这条例外不推翻本节"工作台 Composition 临时态"的定位：工作台 Composition 仍用完即弃，只有经 AI 提议 + omar promote 这条路径产生的才落库。两者同名不同生命周期。
+>
+> **v0.14 补**：落库的那张 `compositions` 表是七张资产表之一，同样带 `deprecated` 与 `deleted_at` 两列（§6.0-bis）；本节 Fields 表描述的是**运行时临时结构**，故不列这两列。
 
 #### Fields
 
@@ -480,7 +514,8 @@ graph TD
 | created_at | timestamp | N | now() | ISO 8601 | 创建时间 |
 | notes | string | Y | null | - | 迭代说明 |
 | scene_id | string | Y | null | FK → Scene.id（软关联） | 关联的 Scene（可空，Macro 可独立） |
-| deprecated | boolean | N | false | - | 是否已过时 |
+| deprecated | boolean | N | false | - | 是否已过时（策展标记，无人写入——见 §6.0-bis）|
+| deleted_at | timestamp | Y | null | RFC 3339；NULL = 存活，非 NULL = 在废纸篓 | 软删除时间戳（v0.14 · [[028-reversible-delete]]，语义见 §6.0-bis）|
 
 #### Relations
 
@@ -498,7 +533,9 @@ graph TD
 
 #### 删除策略
 
-> Macro 不允许 hard delete（哲学：历史痕迹是资产），所有"删除"操作等价于 `deprecated = true`。被 SOPStep 或 UsageRecord 引用时仍可标记 deprecated（不影响历史 SOP 执行 / 历史记录可读性），但 SOP 编辑器应在被 deprecated 时给出警告。
+> 📊 **v0.14 重写（[[028-reversible-delete]] P0 落地）**。机制见 §6.0-bis：`delete_macro` 是原地软删除，恢复走 `restore_asset("macro", id)`，`expand_from` 的 Modifier 追溯链与 `usage_records` 均不受影响。
+>
+> `scene_id` 是软关联：软删一个 Scene **不动**其下 Macro 的 `scene_id`（行都还在，恢复 Scene 即恢复归属）。SOP 落地后，SOPStep 引用一条已进废纸篓的 Macro 属于待处理情形——SOP 尚未编码，届时随 SOP 写路径一并裁（本 PRD 不预先规定）。
 
 #### 字段设计理由
 
@@ -522,6 +559,7 @@ Scene 节包含 3 个相关模型：**Scene**（场景容器）、**Phrase**（S
 | visible | boolean | N | true | - | 是否在首屏显示 |
 | role_presets | array&lt;string&gt; | N | [] | - | 该 Scene 常用角色设定预设 |
 | color | string | Y | null | 颜色 token 或 hex | 主题色 |
+| deleted_at | timestamp | Y | null | RFC 3339；NULL = 存活，非 NULL = 在废纸篓 | 软删除时间戳（v0.14 · [[028-reversible-delete]]，语义见 §6.0-bis）|
 
 > 注：原伪代码中的 `phrases[]` 和 `sub_stages[]` 不再以嵌套数组持久化，而是通过 Phrase.scene_id / SubStage.scene_id（新增）反向关联。
 
@@ -537,7 +575,8 @@ Scene 节包含 3 个相关模型：**Scene**（场景容器）、**Phrase**（S
 | last_used_at | timestamp | Y | null | ISO 8601 | 最近使用时间 |
 | created_at | timestamp | N | now() | ISO 8601 | 创建时间 |
 | notes | string | Y | null | - | 迭代说明 |
-| deprecated | boolean | N | false | - | 是否已过时 |
+| deprecated | boolean | N | false | - | 是否已过时（策展标记，无人写入——见 §6.0-bis）|
+| deleted_at | timestamp | Y | null | RFC 3339；NULL = 存活，非 NULL = 在废纸篓 | 软删除时间戳（v0.14 · [[028-reversible-delete]]，语义见 §6.0-bis）|
 | sub_stage_id | string | Y | null | FK → SubStage.id（同 scene 内） | 所属子阶段 |
 
 #### SubStage Fields
@@ -548,6 +587,7 @@ Scene 节包含 3 个相关模型：**Scene**（场景容器）、**Phrase**（S
 | scene_id | string | N | - | FK → Scene.id | 所属 Scene |
 | name | string | N | - | - | 子阶段名（如"生成""评审""修订""定版"） |
 | order | integer | N | - | ≥ 0 | 顺序序号 |
+| deleted_at | timestamp | Y | null | RFC 3339；NULL = 存活，非 NULL = 在废纸篓 | 软删除时间戳（v0.14 · [[028-reversible-delete]]，语义见 §6.0-bis）|
 
 #### Relations
 
@@ -566,7 +606,11 @@ Scene 节包含 3 个相关模型：**Scene**（场景容器）、**Phrase**（S
 
 #### 删除策略
 
-> Scene 删除 → 应先迁移或归档其下所有 Phrase 与 SubStage，否则应阻止（应用层校验）。Phrase 不允许 hard delete，沿用 `deprecated = true` 策略。SubStage 删除时，其下 Phrase.sub_stage_id 置为 null（解除归属，Phrase 本体保留在 Scene 内）。
+> 📊 **v0.14 重写（[[028-reversible-delete]] P0 落地）**。机制见 §6.0-bis，本段是三个模型各自的守卫。
+>
+> - **Scene**：`delete_scene` 仍**拒绝删非空 Scene**（`RepoError::SceneNotEmpty`，UI 给琥珀 toast）。软删让「连同子内容一起进废纸篓」在技术上可行，但那是产品行为变更，[[028-reversible-delete]] §5「显式不裁」明确不裁。**子内容计数现在只数存活行**：其下 Phrase / SubStage 都已在废纸篓里时，该 Scene 可删。
+> - **Phrase**：原地软删除，恢复回原 Scene / 原子阶段 / 原 `order_index`。
+> - **SubStage**：`delete_sub_stage` **不再解绑其下 Phrase**（v0.14 改，[[028-reversible-delete]] 子决策 7）。子阶段行标记删除，Phrase 的 `sub_stage_id` 保持指向它，读路径把「所属子阶段已删除」的 Phrase 当作**未分组**显示。这样恢复子阶段是纯单行 UPDATE、话术自动归位，不需要任何记账。解绑动作**下移到清空废纸篓**执行（那时 FK 会真的挡路）。
 
 #### 写入口归属（创建入口指派）
 
@@ -635,7 +679,8 @@ Scene 节包含 3 个相关模型：**Scene**（场景容器）、**Phrase**（S
 | last_used_at | timestamp | Y | null | ISO 8601 | 最近使用时间 |
 | created_at | timestamp | N | now() | ISO 8601 | 创建时间 |
 | notes | string | Y | null | - | 迭代说明 |
-| deprecated | boolean | N | false | - | 是否已过时 |
+| deprecated | boolean | N | false | - | 是否已过时（策展标记，无人写入——见 §6.0-bis）|
+| deleted_at | timestamp | Y | null | RFC 3339；NULL = 存活，非 NULL = 在废纸篓 | 软删除时间戳（v0.14 · [[028-reversible-delete]]，语义见 §6.0-bis）|
 
 #### Relations
 
@@ -662,7 +707,11 @@ Scene 节包含 3 个相关模型：**Scene**（场景容器）、**Phrase**（S
 
 #### 删除策略
 
-> AlignmentPhrase 不允许 hard delete，沿用 `deprecated = true` 策略。若被 Phase.default_alignment_phrase_id 引用，删除前需先解除引用（应用层校验，提示用户重新选择 default）。
+> 📊 **v0.14 重写（[[028-reversible-delete]] P0 落地）**。机制见 §6.0-bis：`delete_alignment_phrase` 是原地软删除。
+>
+> **默认话术仍被拒删**：`is_default = 1` 的行返回 `DefaultAlignmentPhraseProtected`，要先经 `set_default_alignment_phrase` 改指别处（本节「默认话术切换」）。
+>
+> **唯一索引已随 `0013` 重建**：`idx_alignment_phrase_one_default_per_phase` 的谓词由 `WHERE is_default = 1` 改为 `WHERE is_default = 1 AND deleted_at IS NULL`。不改的话，一条进了废纸篓的默认话术会**永远占着该相位的默认位**，用户再也设不了新默认。配套地，`restore_asset` 在恢复一条 `is_default = 1` 的话术时，若该相位已有存活的默认，则把被恢复行的 `is_default` 清零——这条分支是防御性的，因为上面那道拒删守卫让应用内写路径产生不出这种行，只有 `import_json`（原样搬运两列）能。
 
 #### 字段设计理由
 
@@ -815,7 +864,7 @@ SOP 节包含 2 个相关模型：**SOP**（标准作业流程）、**SOPStep**�
 
 ```json
 {
-  "schema_version": "1.1",
+  "schema_version": "1.2",
   "exported_at": "2026-05-18T10:00:00Z",
   "modifiers": [/* Modifier[] */],
   "macros": [/* Macro[] */],
@@ -830,14 +879,16 @@ SOP 节包含 2 个相关模型：**SOP**（标准作业流程）、**SOPStep**�
 ```
 
 **字段设计理由**：
-- `schema_version` 从 v1.0 升级到 v1.1，对应 Phase 和 AlignmentPhrase 的新增
+- `schema_version` 沿革：v1.0 → **1.1** 对应 Phase 和 AlignmentPhrase 的新增；**1.1 → 1.2**（v0.14 · [[028-reversible-delete]] 子决策 6）对应每条资产行新增可选 `deletedAt`
+- **兼容口径按 MAJOR 判定**：`check_schema_version` 只比对主版本号，所以 1.1 的旧备份照常导入（无 `deletedAt` 的行反序列化为存活），1.2 文件被只认 1.1 的旧构建读到时该字段被忽略——双向兼容，MINOR 递增不挡门
 - `usage_records` 可选——大数据量场景下可只导出当前资产、不导出历史使用记录
 - 所有 ID 在导出 JSON 内部保持一致（不重新生成），导入时按 ID 还原关联
 
-**v1.7 实现现状（2026-06-28）**：导出/导入已落地（repo-core `export.rs` + repo-write `import.rs`，data schema_version `1.1`），但与上方建议结构有两处刻意差异：
+**实现现状（2026-06-28 落地，2026-09-03 更新至 data schema_version `1.2`）**：导出/导入已落地（repo-core `export.rs` + repo-write `import.rs`），实际导出 **8 张资产表** + `schema_version` / `exported_at` 两个顶层字段，与上方建议结构有三处刻意差异：
 - **不含 `usage_records`**（决策 D2）：导出仅含资产，使用记录不随备份带走；因此整库替换导入时 `usage_records` 一并清空（其 `phase_id` FK 在还原后会悬空，故不保留）——语义为"还原到备份时的资产状态"。
 - **不含 `sops`**：SOP 功能仍 `planned`（S3 / v1.2 未编码，无 SOP 写入路径），故本期导出不含 `sops` 键。待 SOP 落地（S3）再补 `sops` + `sop_steps` 导出/导入，届时 data schema_version 视字段变更决定是否 bump。
 - 全保真：导出走独立无过滤 SELECT，**包含** `deprecated=1` / `visible=0` 行（读路径会过滤这些行，但备份必须完整），保证整库替换不丢数据。
+- **包含废纸篓内容（v0.14 · [[028-reversible-delete]] 子决策 6）**：`deleted_at` 非空的行照常导出，该字段一并写入。理由是导出在本项目里的定位是**本地全量备份**——一份丢掉废纸篓的备份，会让「导出再导入」变成一次静默的永久删除。这是导出**唯二**的软删除过滤豁免之一（另一处是废纸篓查询本身，§6.0-bis）。**对用户可见的后果**：导出文件包含他以为已经删掉的内容，必须在 [[03-product-spec#13.3]] 区域 9 对用户写明。导入侧的整库替换照旧清掉当前废纸篓（九表 WIPE_ORDER），有 `pre-import` 快照兜底。
 
 ### 6.10 状态机
 
@@ -1404,6 +1455,24 @@ PRD 不复刻风险表，避免双源真理漂移；实施侧风险/缓解以 pl
 ---
 
 ## 修订记录
+
+### v0.14（2026-09-03）— ADR-028 涟漪：删除改为原地软删除
+
+**触发**：[[028-reversible-delete]] Accepted 并当日落地 P0（commit `77637cd`）后按方法论 §7 回流。**本版销掉本文件自 v0.12 起在 §6.1 里登记的自相矛盾**——一份 ratified 的 PRD 在正文里承认自己说的不是真的，挂了三个版本。
+
+| 章节 | 改动 |
+|------|------|
+| **新增 §6.0-bis** | 「删除与弃用：两套机制」——`deleted_at`（安全网，已实装）与 `deprecated`（策展，列在读路径过滤在但**无人写入**、无 UI、未排期）逐格对照，并声明**本节优先于下文各资产的「删除策略」段**。此前四个资产各写一段删除策略、四段都在重复同一个错误承诺 |
+| §6.1 / §6.3 / §6.4 / §6.6 删除策略 | 四段全部重写：从「等价于 `deprecated = true`」改为「原地软删除 `deleted_at`」，各留本资产特有的守卫——Modifier 无前置引用校验（Composition/Macro 经 JSON 列持有 id，不是 FK）/ Macro 的 `scene_id` 软关联不随 Scene 软删变动 / Scene 仍拒删非空但**计数只数存活行** / SubStage **不再解绑其下 Phrase**（子决策 7）/ AlignmentPhrase 默认话术仍拒删 + 唯一索引已随 `0013` 重建 |
+| §6.1 drift 登记段 | **删除并改写为销账说明**。原文把裁决挂给 omar，现已由 ADR-028 裁完并落地 |
+| §6.1 / §6.3 / §6.4（Scene/Phrase/SubStage）/ §6.6 Fields | 七张资产表**各加一行 `deleted_at`**（`compositions` 的持久化形态在 §6.2 例外段补记——该节 Fields 表描述的是运行时临时结构）；六处 `deprecated` 行的描述补「策展标记，无人写入」 |
+| §6.9 数据导出 | data `schema_version` **1.1 → 1.2**（每条资产行新增可选 `deletedAt`），并写明**兼容按 MAJOR 判定**故 1.1 旧备份照常导入；新增一条「包含废纸篓内容」的刻意差异（子决策 6），含「对用户可见、必须在 product-spec 区域 9 写明」的指派 |
+
+**IPC 面**：53 → **56**（`restore_asset` / `list_trash` / `purge_trash`；后两个是 P1 废纸篓视图的后端底座，随 P0 同批落地）。同 v0.13，不落 §10.3——该节是 MCP 写管线专章的命令面，不是全量清单；全量口径归 [[11-test-spec#3]]。
+
+**schema**：`user_version` 12 → **13**（migration `0013_soft_delete`）。同 v0.13，MCP 进程共享同库，发版须同批。**号段冲突提醒**：[[HANDOFF]] 第 21.1 项（usage 唤起时间戳）也曾预留 13，现顺延。
+
+**未随本版改的**：`deprecated` 仍无写入方与 UI（ADR-028 §5「显式不裁」）；`usage_records` 的季度归档（本文件 §6.8 写过、从未实装）不在范围内；composition 的使用记录不带 `target_id`、最近使用区永远显示不出它的名字，这条既有缺口 ADR-028 记为「同批可修」而**本次未修**。
 
 ### v0.13（2026-08-20）— ADR-027 涟漪：全局唤起键可配置
 

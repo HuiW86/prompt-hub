@@ -1,12 +1,12 @@
 ---
 type: design-spec
 project: prompt-hub
-version: v0.21
+version: v0.22
 created: 2026-05-18
 last_modified: 2026-09-03
-status: ratified  # v0.21（2026-09-02 D1 修复涟漪：§10.2.2 接口契约加第 5 条 `initialFocus`；2026-09-03 同版补记 · G4 观察 O7 涟漪：同处加第 6 条「容器拥有锚点二次按下」）经 2026-09-03 人审批次 ⑦ 通过：第 6 条随 product-spec §13.3「锚点再按一次 = 无事发生」签字，第 5 条 `initialFocus` 必填属施工规范、随批通过，draft → ratified；前 v0.20 于 2026-09-01 人审批次 ⑥：补齐 ADR-024 回流（§2.1/§2.4.6/§2.5/§8.1/§9）+ 两个死 token 退役后，omar 审阅 v0.11–v0.20 全部增量通过，draft → ratified（前序 v0.10 于 2026-06-21 审定）
+status: draft  # v0.22（2026-09-03 · ADR-028 P0+P1 回流）待人审：§10.2.2 `ConfirmInline` 用量由六处收缩至一处（清空废纸篓）+ §11 新增「Toast 让位规则」（撤销 toast 不被普通 toast 顶掉，error 例外），两项都是**行为契约**不是施工细节，按 [[CLAUDE#§5.1.2]] 需签字。前 v0.21 于 2026-09-03 人审批次 ⑦ ratified（§10.2.2 接口契约第 6 条随 product-spec「锚点再按一次 = 无事发生」签字，第 5 条 `initialFocus` 必填属施工规范随批通过）；更前 v0.20 于 2026-09-01 人审批次 ⑥ ratified
 author: co  # 🤝 人机共创（CLAUDE §5.2）
-related: [[01-spec]], [[02-constitution]], [[03-product-spec]], [[012-lock-visual-quality-anchor]], [[023-ui-reshape-before-release]], [[024-dark-cockpit-identity]], [[019-supersede-flat-visual-anchor]], [[020-restore-protocol-dark-band]], [[021-scene-layered-editing]], [[025-unified-anchored-editing]], [[CLAUDE-DESIGN]], [[015-expose-mcp-write-pipeline]], [[016-choose-dnd-and-resizable-layout]], [[018-absorb-promptscape-design]], [[026-fixed-spatial-layout]], [[asset-editing-and-adaptive-layout]]
+related: [[01-spec]], [[02-constitution]], [[03-product-spec]], [[012-lock-visual-quality-anchor]], [[023-ui-reshape-before-release]], [[024-dark-cockpit-identity]], [[019-supersede-flat-visual-anchor]], [[020-restore-protocol-dark-band]], [[021-scene-layered-editing]], [[025-unified-anchored-editing]], [[CLAUDE-DESIGN]], [[015-expose-mcp-write-pipeline]], [[016-choose-dnd-and-resizable-layout]], [[018-absorb-promptscape-design]], [[026-fixed-spatial-layout]], [[028-reversible-delete]], [[asset-editing-and-adaptive-layout]]
 description: 手动 AI 编程仪表盘的视觉规范——tokens.css 单一真源 + 主题/elevation/组件视觉契约；写 CSS / 视觉时召回。版本叙事见 CHANGELOG
 ---
 
@@ -659,7 +659,13 @@ bundle 派生的 3 个跨组件 chrome primitive：
 | `EditorActions` | 编辑壳底部动作行（cancel + save）| 右对齐 / gap `--s-2` 8px / save = `Button`(primary, 当层) / cancel = `Button`(subtle, neutral) | 继承父 `EditorPanel` 层 |
 | `Chip` | 单标签（AlignmentPhrase chip / Modifier 原子 chip）| 高 `--h-chip` 24px / `--r-2` 3px / padding-x `--s-2_25` 9px / typography `.ph-card-body`（v0.13：`--t-13`/`--w-400` 归位）/ **默认底 transparent**（border-only baseline，v0.13 撤默认填充）+ clicked flash（§11）/ **宽度封顶 `--w-chip-max` 200px**：超长名 ellipsis 截断 + 自动 `title` 全名（Chip 内部 `chipLabel` span 承载）| 层 protocol（AlignmentPhrases + ModifierGrid 两使用者）|
 | `ActionCluster` | 卡片悬浮动作组（多个 `IconButton` 横排）| gap `--s-1_5` 6px / 默认 hover/focus 时显（主形态不依赖 hover，键盘 focus 必显，§5）| — |
-| `ConfirmInline` | 行内删除二次确认（`role="alertdialog"`）| 复用 `IconButton` 对（确认 `Check` / 取消 `X`）/ 不弹模态 / 就地替换 ActionCluster | — |
+| `ConfirmInline` | **行内确认，用量收缩至一处（v0.22 · [[028-reversible-delete]]）**：原六个删除按钮的二次确认全部拆除，本 primitive 专供「清空废纸篓」——应用里剩下的唯一不可逆动作 | 复用 `IconButton` 对（确认 `Check` / 取消 `X`）/ 不弹模态 / 就地替换 ActionCluster | — |
+
+> **`ConfirmInline` 消费者由六收缩为一（v0.22 · [[028-reversible-delete]]）**
+>
+> 📊 唯一消费者是**清空废纸篓**（`TrashSection.tsx`，设置 · 数据页），文案「彻底删除废纸篓中的 N 项，删除后无法恢复」/ 确认清空 / 取消——**确认文案必须带数量与代价**，否则它退化成一个「你确定吗」式的空仪式。P0 拆掉六个删除确认后本 primitive 一度零消费者，P1 补上这一个。
+>
+> 这条同时是「确认框该出现在哪里」的判据：**确认留给不可逆的动作，可逆的动作用撤销**（[[025-unified-anchored-editing]] `:125`）。删除变可逆之后，六处确认从「谨慎」降格成「每次都要多点一下的仪式」；而清空废纸篓真的没有后悔药，**它是应用里剩下的唯一不可逆动作**，那一个确认必须留。
 
 **hard rule**：
 1. 不允许组件自行实现 header / empty / kbd / card / list-row / button / icon-button / input / editor / chip 视觉，必须用 primitive（含变体）。实现见 `src/components/primitives/primitives.module.css`。
@@ -693,7 +699,7 @@ bundle 派生的 3 个跨组件 chrome primitive：
 | `MacroGrid` | task | task 列上部：auto-fill grid（最小列 `--col-min-macro` 200px）；**高度由用户可拖的纵向分配决定**（默认 46% / 下限 `132px`），超出滚动。**v0.16：`--h-macro-strip` 硬封顶退役**（[[026-fixed-spatial-layout]] 子决策 2——高度不再由父容器按态注入；该 token 随之改名 `--h-modifier-card-max`，见 §2.2.1；v0.11 涟漪 [[018-absorb-promptscape-design]]，原 3-col）| 卡 resting `--shadow-1` + hover darken + `--lift-1` 抬起（§8.2.1）+ active `--surface-2`；**v0.13（P3-5）图标盒全量填 `--accent`/`--accent-fg`**（每卡皆有，玻璃感 `.iconChipHot` 已删），卡图标 Zap→`Flame`，**hot top-4 = Flame 实心填充（fill=currentColor）**、非 hot 描边 |
 | `ScenePanel` | task | 视图态：子阶段多列全景 **auto-fit** grid `repeat(auto-fit, minmax(min(var(--col-min-substage), 100%), 1fr))`（v0.13 P3-1：窄面板自动降列不挤压、少列拉伸填满、窄于 184px 单列兜底；原 auto-fill/固定 4 列作废），每子阶段一列、phrase 堆为 border 卡；**未归组话术列头无条件渲染为「未分组」**（复用 subStage 头结构含序号，文案 muted `--fg-3`）；编辑态保留纵向行 | sceneCard resting `--shadow-1`；phrase 卡 border-only + hover `--lift-1` 抬起 + active `--surface-2` |
 | `RecentList` | aux | surface-1 卡片容器（v0.13 P3-3 升级：margin/border/`--r-4` 对齐同列 ModifierGrid 卡）+ 行列表 | 卡 resting `--shadow-1`；行 hover `--surface-2` + `--lift-1`、active `--surface-3`；meta time 右侧；**徽标中性化（v0.13 / ADR-020）**：「对齐话术」徽标撤 `--accent` 实底，与任务徽标同形中性描边、靠文字区分（§13.1）|
-| `ModifierGrid`（v0.13 回归，aside 参考面）| protocol（参考）| aside 列顶部紧凑卡（非 Tab cycle region）：四象限 groupKind 分组、每 modifier 一枚 `Chip`（click-to-copy，直写剪贴板不记 usage）| 卡 resting `--shadow-1`；chip hover `--lift-1`；RegionHeader right slot 挂「`Route` 协议层 · 参考」小型层标记 pill（ADR-020 层级编码）；**P3-6 最小管理簇**：chip hover/`:focus-within` 显隐 移象限菜单（`ArrowRightLeft`，列其余三象限）+ `ConfirmInline` 二次确认删除，键盘可达——是「参考 + 最小管理入口」，非 v1.3 移除的完整编辑面板 |
+| `ModifierGrid`（v0.13 回归，aside 参考面）| protocol（参考）| aside 列顶部紧凑卡（非 Tab cycle region）：四象限 groupKind 分组、每 modifier 一枚 `Chip`（click-to-copy，直写剪贴板不记 usage）| 卡 resting `--shadow-1`；chip hover `--lift-1`；RegionHeader right slot 挂「`Route` 协议层 · 参考」小型层标记 pill（ADR-020 层级编码）；**P3-6 最小管理簇**：chip hover/`:focus-within` 显隐 移象限菜单（`ArrowRightLeft`，列其余三象限）+ 删除（**v0.22：`ConfirmInline` 二次确认已拆，改一键 + 撤销 toast**，[[03-product-spec#13.3]]「删除语义统一契约」），键盘可达——是「参考 + 最小管理入口」，非 v1.3 移除的完整编辑面板 |
 | `Toast`（v0.13 契约收录）| chrome（中性）| 角落浮条 | intent 分级见 §11「Toast intent 契约」：success 中性 800ms / error 借 `--accent-swatch-amber` 4000ms + `--w-600` |
 | `SopProgress` | task | 进度条 | `--skeleton` 底 + `--accent` 填充（v0.12 中性，原 `--task`）|
 | `StatusBar` | aux | `--h-statusbar` 28px | dot + meta text + 右侧 Kbd 群 |
@@ -939,6 +945,20 @@ bundle 派生的 3 个跨组件 chrome primitive：
 - intent 在 show / clear / 超时三处均重置为 `success`，防 error 样式泄漏到下一条默认 toast
 - 失败路径**不传 flashTargetId**——卡片 flash（上表态 7）仅表成功语义
 
+**Toast 让位规则（v0.22 新增 · [[028-reversible-delete]]）**：toast 面只有一个位置，因此「谁能顶掉谁」是这个面的行为契约，不是调用方各自的事。
+
+| 已在屏 | 新来的 | 结果 |
+|---|---|---|
+| 带动作的 toast（撤销，存活 **6000ms**） | 不带动作的普通 toast | **新的被丢弃**，撤销留在屏上 |
+| 带动作的 toast | `error` | **error 上位**，撤销被顶掉 |
+| 带动作的 toast | 另一条带动作的 toast | 新的替换旧的（同一时刻只有一个待撤销动作） |
+| 普通 / error | 任意 | 新的替换旧的（既有行为） |
+
+- **为什么普通 toast 要让位**：删除变成一键之后，撤销按钮是那条资产**唯一的返回路径**；此前任何后续 toast 都会在撤销窗口未过期时把它静默销毁
+- **被让位的 toast 是丢弃，不排队**：它的 payload 带 `flashTargetId`，最多 6 s 后补放会把用户的注意力指向一个他早就做完的动作——**迟到的反馈比没有更糟**。丢掉的代价只是一句「本来就看得见的事」的确认
+- **error 为什么例外**：藏掉一次失败等于告诉用户「成功了」，那是正确性缺陷；丢一个撤销按钮则是可承受的，因为那一行稳稳躺在废纸篓里（[[03-product-spec#13.3]]「删除语义统一契约」c）
+- **显式关闭不受此规则约束**：`clear()` 照常清屏
+
 ---
 
 ## 12. Icon 系统
@@ -1073,6 +1093,17 @@ bundle 派生的 3 个跨组件 chrome primitive：
 ---
 
 ## 修订记录
+
+### v0.22（2026-09-03）— ADR-028 涟漪：`ConfirmInline` 用量收缩 + Toast 让位规则
+
+**触发**：[[028-reversible-delete]] Accepted 并当日落地 P0（commit `77637cd`）后按方法论 §7 回流。
+
+- **§10.2.2 `ConfirmInline` 行改写**：用途由「行内删除二次确认」改为「行内确认，专供清空废纸篓」——六个删除按钮的确认全部拆除，改一键 + 撤销 toast（[[03-product-spec#13.3]]「删除语义统一契约」）。视觉契约与变体**一个字没改**，变的只是它该出现在哪里
+- **§10.2.2 新增一条说明**：消费者六收缩为**一**——P1 的「清空废纸篓」，文案带数量与代价。顺带把判据写成通则：**确认留给不可逆的动作，可逆的动作用撤销**（[[025-unified-anchored-editing]] `:125`）
+- **§10.3 `ModifierGrid` 行**：最小管理簇的「`ConfirmInline` 二次确认删除」改「一键 + 撤销 toast」
+- **§11 新增「Toast 让位规则」四行表**：撤销 toast（6000ms）在存活期内**不被不带动作的普通 toast 顶掉**，`error` 是唯一例外，新的撤销 toast 可替换旧的。附三条理由——让位是因为撤销按钮是那条资产唯一的返回路径；被让位的 toast **丢弃不排队**（迟到 6 s 的 flash 指向用户早就做完的动作，比没有更糟）；error 例外是因为藏掉失败会让用户以为成功了，那是正确性缺陷
+
+**为什么这两条进 design-spec 而不只是实现细节**：toast 面只有一个位置，「谁能顶掉谁」是这个面的行为契约；写在 `toastStore.ts` 注释里，下一个加 toast 的人不会读到。
 
 ### v0.21（2026-09-02）— G4 缺陷 D1 涟漪：锚定浮层接口契约加「首焦点归容器」
 

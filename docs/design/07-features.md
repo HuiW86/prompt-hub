@@ -1,10 +1,10 @@
 ---
 type: features
 project: prompt-hub
-version: v1.21
+version: v1.22
 created: 2026-05-19
 last_modified: 2026-09-03
-status: in-progress  # S1 进行中；v0.2.0 已发布（2026-08-20）；进度叙事见 §4 节奏表与 CHANGELOG，当前基线见 §7；v1.19 矩阵（37 verified / 39 done / 1 in-progress / 14 planned）omar 2026-09-01 人审批次 ⑦ 认可
+status: in-progress  # S1 进行中；v0.2.0 已发布（2026-08-20）；进度叙事见 §4 节奏表与 CHANGELOG，当前基线见 §7；v1.22 矩阵（70 verified / 7 done / 1 in-progress / 14 planned = 92）按 [[CLAUDE#§5.1.2]]「日志不签字」由 AI 反查代码后直接归档，未进人审队列
 author: ai  # 🤖 AI 主笔 + 人审（CLAUDE §5.2）
 audience: [human, ai]
 description: prompt-hub 功能清单运营视图——功能 × 状态 × 测试覆盖 × 版本的单一事实源；查/改功能状态时召回。版本叙事见 CHANGELOG
@@ -173,6 +173,8 @@ related:
 | 固定空间布局（`interactionMode` 停止驱动区域重排；两态共用一套区域图 + 同一组持久化键；task 列新增用户可拖纵向分配 `task-2row`，Macro 46%/min `132px` · Scene 54%/min `288px`——**下限取像素不取百分比**；两区下限语义一致 = 一个完整单元 + 下一个露半截）| P1 | `verified` | v1.12 | 335 前端全绿（`App.test.tsx` 两条模式分歧断言合并为不分模式 `it.each`）+ **真机走查三项通过**（纵向下限 / Separator 命中与光标 / PhaseBar 等宽后活动相位）| omar | [[026-fixed-spatial-layout]] |
 | 统一锚定编辑容器（编辑器脱离宿主文档流 → 原生 `popover` top layer 锚定；四个编辑面共用 `AnchoredEditor` + `PhraseFormEditor`；Macro / 草稿两份手搓表单删除收编，净删约 180 行；保存语义规则表五行；Scene 属性面板点外拒绝关闭 + Esc 逐层退栈为唯一例外；提交键统一 A1-08）| P1 | `verified` | v1.14 | 373 前端全绿（新增 `AnchoredEditor` 17 / `useAnchoredPosition` 13，11 条 P1-b 新测逐条反向验证）+ **真机验收门 G1 六项 + P1-b 门两项全通过**，其中项 5 与项 2-B 取得逐像素证据 | omar | [[025-unified-anchored-editing]] |
 | └ v1.14 本行覆盖 ADR-025 的 **P0 + P1-a + P1-b**；**P2 键盘动作层（子决策 3.1–3.4 + 4）与 P3 合流未落地**，验收门 G2 五项未跑。清单纠偏：ADR 原写「其余五个编辑面」，逐文件核实后**只有 4 个**——`RecentList.tsx` 是只读复制列表、根本没有编辑器，被 §1 影响范围（P2 键盘层口径）误收进迁移清单。契约见 [[03-product-spec#13.3]] 编辑容器统一契约 v0.19 / [[05-design-spec#2.6]] + §10.2.2 v0.18 | — | — | — | — | — | — |
+| 删除可撤销（七张资产表加 `deleted_at` 原地软删，删除不搬走行——id / `created_at` / 分区 `order_index` / usage 历史全保留，恢复是单行 UPDATE；六处「永久删除？」行内确认拆除改一键 + 撤销 toast；第七道源码级 gate 强制读路径带谓词；废纸篓不自动过期、只手动清空，设置 · 数据页列出条目数与每条的类型 / 名称 / 删除时间，单条恢复会连带复活它挂靠的场景与子阶段）| P1 | `done` | v1.16 | Rust 169→**183** / 前端 414→**457** 全绿（含新 gate 12 + `soft_delete_e2e.rs` 7 + `TrashSection` 12）；**真机走查未跑**——一键删除 / 撤销 toast / 最近区不再出墓碑 / 废纸篓列表与恢复与清空，目前只有 jsdom 与 Rust 覆盖 | omar | [[028-reversible-delete]] |
+| └ v1.22 本行覆盖 ADR-028 的 **P0（`77637cd`）+ P1（`6aca7eb`）**，P2 为契约回流。**P1 另修一个它自己暴露出来的洞**：`SceneNotEmpty` 只数存活子内容，所以「先删话术、再删它那个已空的场景」是允许的，此后单独恢复话术会得到一条**既不在废纸篓、又不在仪表盘上**的资产——`restore_asset` 改为连带复活被恢复行挂靠的对象。**本行归入 §3.8 而非 §3.6**：与上方 ADR-025 / 026 同属「跨区域的资产操作契约」，而 §3.6 是宪法级跨模块能力。契约见 [[06-prd#6.0-bis]] / [[03-product-spec#13.3]] 删除语义统一契约 / [[05-design-spec#10.2.2]] | — | — | — | — | — | — |
 | └ v1.12 本行**移除**上方 v1.1「Dashboard 可拖列布局」行的按态分列键（`panorama-2col` / `cockpit-2col` → `dashboard-2col`），并退役 `--h-macro-strip` 硬封顶（token 改名 `--h-modifier-card-max`）；能力零回退，列宽可拖与持久化不变。**走查 3 项缺陷 v1.13 已裁**：Scene 下限 `196px`→`288px`（非取舍，是未满足 ADR-026 子决策 2 的验收条件，实测 0 条话术）；Separator 9px 死区记为已知可接受（扩 hover 会吞点击）；`--brand-dim` 对比度 `1.145:1` 不调色，改为把 `.phase.active::after` 标注承重件防减法快车道误删 | — | — | — | — | — | — |
 
 ### 3.9 自动更新（ADR-017 / auto-update）
@@ -300,10 +302,11 @@ related:
 | UX 任务流批次 B（跨 Scene 移动，ADR-022）| v1.11 | 1 | `done`（verifier 对抗审查 PASS；真机移动/撤销链路待验）|
 | 固定空间布局（ADR-026）| v1.12 | 1 | `done`（**v1.18 补行**：v1.12/v1.13 落地时只进 §3.8 未进本表；真机走查三项通过，三项缺陷 v1.13 已裁）|
 | 统一锚定编辑容器（ADR-025）| v1.14 | 1 | `done`（P0+P1-a+P1-b 落地并合入 `main`；**P2 键盘动作层 + P3 合流 `planned`**，omar 2026-08-20 明示暂不做；G2 未跑）|
+| 删除可撤销（ADR-028）| v1.16 | 1 | `done`（**P0 `77637cd` + P1 `6aca7eb` 均已落地**：migration `0013` + 七处写路径改 UPDATE + 第七道 gate + 六处确认框拆除 + 设置页废纸篓视图 + 恢复连带复活父级；P2 契约回流即本批。**真机走查未跑，故 `done` 不 `verified`**）|
 | S3 SOP 导航 | v1.2 | 3 | `planned` |
 | S4 配置个性化 | v1.3 | 5 | `in-progress`（2/5：数据导入导出 JSON `done`，真机待验；全局唤起键可配置 `done`，G3 四项全通过；配置入口 / Phase 编辑 / 布局可配置 `planned`）|
 | S5 辅形态副屏 | v2.0 | 3 | `planned` |
-| **合计** | — | **91** | — |
+| **合计** | — | **92** | — |
 
 **注**：版本号语义为 prompt-hub 自身版本，与 prd / spec / methodology 各自独立。v1.0 = 第一阶段 MVP 可发布；v2.0 = 辅形态加入（双形态完整）。
 
@@ -364,16 +367,19 @@ related:
 | 2026-09-02 | v1.21 同版补记（**D2 修复留证**，矩阵状态不变）：设置弹窗内 Esc 连仪表盘一起隐藏。修时纠正根因——不是「同在 window 冒泡阶段」，是 App 隐藏监听挂 `document` 冒泡、弹窗 Esc 挂 `window` 冒泡，事件先到 document，原记的「补 `stopPropagation`」在原位置无效；改为弹窗在 `document` 捕获阶段认领 Esc 并 stop（`SettingsModal.tsx`，与 `primitives/Editor.tsx` 同约定，App.tsx 顺序注释补第 0 条）。前端 405→**409**（App / SettingsModal 各 +2，keydown 派发到持焦点的 dialog；两条来自 `/review`：录键态集成、长按 Esc `e.repeat` 守卫）。**同笔销 HANDOFF 第 31 项**：`AppState.db_path: Option<PathBuf>` 收窄为 `PathBuf`（第 24 项后 `None` 在生产不可达），`import_with_backup` 参数同步收窄、删只为该分支活着的单测，Rust 170→**169**。**零 IPC / schema 改动**。3.11 行保持 `verified`（§7 留证注明 Esc 段复跑待做）。涟漪 [[11-test-spec]] v0.7 §4.3 W18 / D2 行 / [[03-product-spec]] v0.23 同版措辞（§13.4 区域 9 与 §13.3 ESC 交叉面机理「window 冒泡」→「document 捕获」，契约结论不变） | HANDOFF 第 25 / 31 项 |
 | 2026-09-02 | v1.21 同版补记（**D2 闭合留证**，矩阵状态不变）：W18 Esc 段按 `main`（`e932955`，内嵌 chunk `I1hrJmog` 与 `dist` 一致）重建裸 release + 隔离 `HOME` 复跑三步全过——单击 Esc 只关弹窗 / 录键态两次 Esc 先退录键再关弹窗 / 长按 Esc 1 s 弹窗关、仪表盘仍在屏；对照弹窗关闭时长按第一下即隐藏，证明事件到达隐藏监听。**零代码改动**。3.11 留证行改「已修并闭合」；**G4 三缺陷 D1 / D2 / D3 全部闭合**。涟漪 [[11-test-spec]] v0.7 §4.3 W18 ✅ / D2 闭合 / 教训 9（合成键盘事件无 OS 自动重复，长按要按 OS 口径补 autorepeat 事件） | HANDOFF 第 25 项 |
 | 2026-09-03 | v1.21 同版补记（**O7 裁决并修复**，矩阵状态不变）：G4 观察 O7「Macro 编辑器开着时再点『新增』，编辑器不关而焦点被按钮拿走」。**根因先纠正**：`AnchoredEditor` 的 pointerdown 处理把锚点放行，旧注释称「锚点即 toggle」，而四个宿主没有一个实现 toggle——Macro「新增」重复设同一个编辑目标（同 React key，面板不重挂）、草稿卡「编辑」重开，对齐话术 chip 与 Scene 话术卡的锚点点击是**复制**（调用态还会隐藏窗口）；放行后实际生效的只有 mousedown 默认动作把焦点带到 `tabIndex={-1}` 的按钮上，之后键入丢失、Esc 走 O2 藏窗。**结构修法**（omar 2026-09-03 确认，否决「二次按下 = 关闭」）：容器接管锚点二次按下——`preventDefault()` + 吞掉宿主 click + 仅在已失焦时回 `initialFocus`，不调 `onDismiss`；`src/components/primitives/Editor.tsx` 单文件改动，四个宿主零改动，**零后端 / IPC / schema 改动**。前端 409→**414**（`AnchoredEditor` +3 / `MacroGrid` +1 / `AlignmentPhrases` +1，撤回修法后 4 条变红）；jsdom 验不到 mousedown 的默认聚焦动作，故按 `main` + 本改动重建裸 release 真机复跑通过（再点「新增」编辑器仍开、焦点仍在名称框、键入落字，`macros` 4 条 / `usage_records` 0）。§7 留证索引 3.10 行与 G4 段落补记。涟漪 [[03-product-spec]] **v0.24**（§13.3 保存语义规则表五行→六行）/ [[05-design-spec]] v0.21 同版补记（§10.2.2 接口契约第 6 条）/ [[11-test-spec]] v0.7 §2 与 §4.3 O7 | HANDOFF 第 30 项 |
+| 2026-09-03 | **v1.22 bump（ADR-028 P0 + P1 落地，矩阵 91 → 92，`done` 6 → 7）**：删除从硬删改为**原地软删除**（commit `77637cd`）。数据面 migration `0013`（`user_version` 12→13）七张资产表加 `deleted_at` + 重建默认对齐话术唯一索引（旧谓词不认识隐藏行，软删一条默认话术会永远占着该相位的默认位）；写面七处 `DELETE FROM` 经共享 `soft_delete.rs` 改 UPDATE，**行不搬走**故 id / `created_at` / 分区 `order_index` / usage 历史全保留；读面三个 crate 补 `deleted_at IS NULL`，并由**第七道源码级 gate**（源码级 gate 6→**7**）强制、豁免须写注释并登记。IPC 53→**56**（`restore_asset` / `list_trash` / `purge_trash`）；导出 data schema **1.1→1.2**（按 MAJOR 判兼容，1.1 旧备份照常导入）。交互面六处「永久删除？」`ConfirmInline` 全部拆除改一键 + 撤销 toast（依据 ADR-025 `:125`「撤销优于确认，仅限真正可逆」），`ConfirmInline` 保留待 P1 的「清空废纸篓」。**销 G4 观察 O3**：最近使用区滤掉解析不出目标的行，过滤在 SQL `LIMIT` 之上。Rust 169→**182** / 前端 414→**444** 全绿。**§3.8 新增一行 `done` 而非 `verified`**——真机走查未跑，留证缺口 6→**7**；**同时标注两行既有留证过期**（G4 拍到的删除两步确认形态已被本批拆除，能力仍经 SQL 反查证实故不撤 `verified`）。**P1（`6aca7eb`）同日落地**：设置 · 数据页废纸篓区块（条目数 / 每条类型 · 名称 · 删除时间 / 单条恢复 / 清空走 `ConfirmInline`，文案「彻底删除废纸篓中的 N 项，删除后无法恢复」），`ConfirmInline` 消费者由 0 恢复为 **1**；列表为组件本地状态、每次打开重读，另有 `useRef` 同步闩防连点把 `purge_trash` 打两次。**P1 另修一个它自己暴露出来的洞**：`SceneNotEmpty` 只数存活子内容，「先删话术、再删它那个已空的场景」是允许的，此后单独恢复话术会得到一条**既不在废纸篓、又不在仪表盘上**的资产——`restore_asset` 改为连带复活被恢复行挂靠的场景与子阶段，`purge_trash` 那条 FK 跳过分支随之由可达降为防御性。前端 444→**457** / Rust 182→**183**。**P1 知情留置两项**（不视为缺陷，记 [[HANDOFF]]）：StatusBar 今日计数在清空后到下次加载前会陈旧；恢复的成功 toast 可能被存活中的撤销 toast 顶掉，此时「那一行从列表消失」本身承担反馈。涟漪 [[06-prd]] **v0.14**（新增 §6.0-bis + 四处删除策略重写 + 七表加列 + 导出 schema）/ [[03-product-spec]] **v0.25**（§13.3 新增删除语义统一契约 + 区域 9 废纸篓）/ [[05-design-spec]] **v0.22**（`ConfirmInline` 用量收缩 + Toast 让位规则）/ [[10-ops-spec]] v0.4（§3.0 废纸篓与备份分工）/ [[11-test-spec]] **v0.8**（前端 457 / Rust 183） | [[028-reversible-delete]] P0/P1/P2 |
 
 ---
 
 ## §7 当前阶段说明（in-progress · v0.2.0 已发布 · 2026-09-01 对账）
 
-- **当前基线**（2026-09-01 本机实测，`main` @ `9fc9fad`）：Vitest **398/398**（39 文件）/ `cargo test --workspace` **168** / lint · tsc · build · clippy · fmt 全绿 / doc-governance 0 error 6 warn / `bench:hotkey-wake` p95 13.708ms（2026-08-20）
+- **当前基线**（2026-09-03 本机实测，`main` @ **`6aca7eb`** ADR-028 P0+P1）：Vitest **457/457**（41 文件）/ `cargo test --workspace` **183** / doc-governance 0 error 6 warn / `bench:hotkey-wake` p95 13.708ms（2026-08-20，本轮未触碰唤起路径故未复跑）
 - **已发布**：v0.1.0（2026-08-05 draft，公证被静默跳过未 publish，见 [[2026-08-05-notarization-fail-open]]）/ v0.1.1（2026-08-10）/ **v0.2.0（2026-08-20，Developer ID 签名公证 + 自动更新链路真机跑通）**
-- **状态分布**（§3 逐行，§3.12 治理项 7 行不计）：`verified` **70** / `done` **6** / `in-progress` 1 / `planned` 14 / `withdrawn` 1（不计）→ 计数 91，与 §4 一致（2026-09-02 G4 走查后 37→69 / 39→7；同日第四笔 D3 闭合 70 / 6）
+- **状态分布**（§3 逐行，§3.12 治理项 7 行不计）：`verified` **70** / `done` **7** / `in-progress` 1 / `planned` 14 / `withdrawn` 1（不计）→ 计数 **92**，与 §4 一致（2026-09-03 新增 §3.8「删除可撤销」一行 `done`；2026-09-02 G4 走查后 37→69 / 39→7，同日第四笔 D3 闭合 70 / 6）
 - **G4 真机走查（2026-09-02，v1.20）**：按发布形态（`pnpm tauri build --no-bundle` 裸 release 二进制 + 隔离 `HOME`）覆盖下表缺口清单，24 门项 21 通过、2 不可达（W13 窄 Header · W20 复制失败）、1 部分（W22 更新失败路径）、**发现三个真实缺陷**（D1 锚定编辑器打开后 autofocus 不生效 · P1 / D2 设置弹窗 Esc 连仪表盘一起隐藏 · P2 / D3 数据库损坏时阻断式对话框从不出现 · P1），明细见 [[11-test-spec#4.3]]；32 行升 `verified`，7 行保持 `done`（其中 1 行因缺陷未通过）。**D1 已修（v1.21，同日第二笔）**：jsdom 回归 +7；**同日第三笔按 `main` 重建裸 release 复跑 W3 通过，D1 闭合**（Macro / 场景属性 / 添加话术三入口真机各验一次；派生观察 O7 记 HANDOFF；[[11-test-spec#4.3]] W3 / D1 行）；**同日第四笔 D3 改判并修复**：W21 复跑发现对话框其实一直会弹（由系统进程 `UserNotificationCenter` 持有，窗口定向截图拍不到），真缺陷是点 OK 后 Exit 处理器 panic、退出码 101；失败分支改为同步弹框 + `process::exit(1)`，裸 release 复跑退出码 1，3.12 行升 `verified`，缺口 7→6；**同日第五笔 D2 修复**：弹窗 Esc 改在 `document` 捕获阶段认领（根因纠正见 [[11-test-spec#4.3]] D2 行），jsdom 回归 +4；**同日第六笔 W18 Esc 段复跑通过，D2 闭合**（按 `main` 重建裸 release：单击 / 录键态两次 / 长按 Esc 三步，仪表盘均在屏；[[11-test-spec#4.3]] W18 / D2 行）。**G4 三缺陷 D1 / D2 / D3 至此全部闭合**；**次日第七笔（2026-09-03）销观察 O7**：`AnchoredEditor` 接管锚点二次按下（`preventDefault` + 吞掉宿主 click + 不调 `onDismiss`），前端 409→414，发布形态复跑通过（[[11-test-spec#4.3]] O7 行），契约回流 [[03-product-spec]] v0.24 / [[05-design-spec]] §10.2.2 第 6 条。O7 派生的另两小问已由 `o7-probe` 答复：「取消」后焦点落 body 是既有缺陷（WebKit 祖先聚焦绕过归还门禁，[[HANDOFF]] 第 34 项待裁）；可打印键进搜索框非缺陷（无 type-to-search，是唤起时搜索框按契约接管 body 焦点）
-- **§1 `verified` 判据已修订（v1.19，omar 2026-09-01 拍板）**：旧判据「E2E 通过 + 使用者 ≥1 周」不可满足（Playwright 未落地），且铁律引用的 [[01-spec#10.5]]「验收节奏」在 spec 里并不存在。新判据见 §1；按新判据逐行核对留证，37 行升 `verified`、39 行因缺留证保持 `done`。**留证索引与缺口清单见下**——它同时是下一次真机走查的待办面
+- **ADR-028 P0 + P1 落地（2026-09-03，v1.22）**：删除从硬删改为**原地软删除**，commit `77637cd`。数据面 migration `0013`（`user_version` 12→13）七表加 `deleted_at` + 重建默认对齐话术唯一索引；写面七处 `DELETE FROM` 改 UPDATE；读面三个 crate 补 `deleted_at IS NULL` 并由**第七道源码级 gate** 强制（源码级 gate 6→7，见 [[11-test-spec#3]]）；IPC 53→**56**；导出 data schema 1.1→**1.2**（按 MAJOR 判兼容，1.1 旧备份照常导入）。交互面六处「永久删除？」`ConfirmInline` 全部拆除，改一键 + 撤销 toast。**销掉 G4 观察 O3**（最近使用区不再出「（未知话术）」墓碑，过滤在 SQL `LIMIT` 之上）。**P1（`6aca7eb`）**补设置 · 数据页废纸篓区块（条目数 / 每条类型 · 名称 · 删除时间 / 单条恢复 / 清空走 `ConfirmInline`——`ConfirmInline` 消费者由 0 恢复为 **1**），并修掉一个 P1 自己暴露出来的洞：单条恢复曾能造出**既不在废纸篓、又不在仪表盘上**的资产，`restore_asset` 改为连带复活被恢复行挂靠的场景与子阶段。测试 Rust 169→**183** / 前端 414→**457**。
+  - ⚠️ **本批不升任何行为 `verified`，且已有留证有一处过期**：下方留证索引「3.8 Macro / AlignmentPhrase / Phrase 编辑…」与「3.10 primitives / editor 簇」两行的 G4 证据取自 2026-09-02，其中**删除动作的交互形态**（`ConfirmInline`「永久删除? ✓ ✕」两步确认）**已被本批拆除**。两行的**能力**仍经 SQL 反查证实（删除确实落库、场景删非空确实被拒），故不撤 `verified`；但「删除长什么样」这半边的证据已作废，重跑归下方留证缺口新行。**不撤但标注**，因为撤掉会让「能力已验证」与「外观已改版」两件事一起丢失
+：旧判据「E2E 通过 + 使用者 ≥1 周」不可满足（Playwright 未落地），且铁律引用的 [[01-spec#10.5]]「验收节奏」在 spec 里并不存在。新判据见 §1；按新判据逐行核对留证，37 行升 `verified`、39 行因缺留证保持 `done`。**留证索引与缺口清单见下**——它同时是下一次真机走查的待办面
 - **下一动作**：见 [[HANDOFF#Next-Actions]]
 
 **`verified` 留证索引（v1.19 起维护；升 `verified` 必须在此登记）**：
@@ -400,15 +406,15 @@ related:
 | 3.1 搜索区 / 最近使用区 | G4 W1–W2（2026-09-02）：⌘K 聚焦 → 分组结果 → Enter 复制并隐藏，`usage_records` +1、剪贴板核对；同资产复制两次最近区去重为 1 条、空态文案 |
 | 3.4 数据导入导出 | G4 W24：导出文件 11.8 KB 十表无 `usage_records`；SQL 篡改后导入整库替换回滚、`settings` 表保留、`refreshAll` 清空最近区并刷新 badge |
 | 3.7 草稿 tab / 待审 badge / promote IPC | G4 W8–W10：MCP 造 3 条草稿 → badge「3 条待审」+ 草稿 tab 最左；编辑水合 → `update_draft` 落库；归档 → `alignment_phrases` +1 且草稿 `discarded`；丢弃 → 撤销回 `pending`；composition 草稿归档 / 编辑禁用、丢弃可用 |
-| 3.8 Macro / AlignmentPhrase / Phrase 编辑 · Scene/SubStage 结构编辑 · 分层化 | G4 W3–W7：每步 SQL 反查——Macro 新建 / 改名 / 删除；对齐话术新建 / 设为默认（`phases` 指针同步）/ 改内容；话术新建 / 上移 / 改名 / 删除；子阶段新建 / 改名 / 删除解绑；Scene 改名 / 颜色 `#2f9e6e` / 角色预设 / 前移 / 删非空被阻止（琥珀 toast）/ 新建空场景自动开面板 / 删空场景。**附带缺陷 D1**：四个锚定编辑面打开后名称框未获焦点——**已修并经发布形态 W3 复跑闭合**（`AnchoredEditor.initialFocus`，jsdom 回归 +7；2026-09-02 第三笔按 `main` 重建裸 release：Macro 新增 / 场景属性 / 添加话术三入口打开即聚焦、首字符落字，Macro 走完 ⌘Enter 落库 1 行；对齐话术 / 草稿同组件推定） |
-| 3.10 primitives / editor 簇 / surface-control | G4 截图 R03–R09：共享 `PhraseFormEditor` 五件套、`ConfirmInline`「永久删除? ✓ ✕」、DraftCard 中性 CardSurface + ghost Button 在发布形态渲染并可操作。**附带观察 O7**：编辑器开着时再点锚点会被按钮夺走焦点——**已修并经发布形态复跑**（`AnchoredEditor` 接管锚点二次按下，jsdom 回归 +5；2026-09-03 按 `main` + 本改动重建裸 release：点「新增」→ 再点「新增」→ 编辑器仍开、焦点仍在名称框 → 键入 `o7z` 落字 → Esc 关编辑器而窗口仍在屏，`macros` 4 条 / `usage_records` 0） |
+| 3.8 Macro / AlignmentPhrase / Phrase 编辑 · Scene/SubStage 结构编辑 · 分层化 | G4 W3–W7：每步 SQL 反查——Macro 新建 / 改名 / 删除；对齐话术新建 / 设为默认（`phases` 指针同步）/ 改内容；话术新建 / 上移 / 改名 / 删除；子阶段新建 / 改名 / 删除解绑；Scene 改名 / 颜色 `#2f9e6e` / 角色预设 / 前移 / 删非空被阻止（琥珀 toast）/ 新建空场景自动开面板 / 删空场景。⚠️ **删除那几步的交互形态已于 2026-09-03 作废**（ADR-028 P0 拆掉了两步确认，改一键 + 撤销 toast）——**能力仍经 SQL 反查证实、`verified` 不撤**，但「删除长什么样」需重跑，见下方留证缺口。删非空 Scene 的拒绝行为未变，只是其下子内容已全在废纸篓时该 Scene 现在可删。**附带缺陷 D1**：四个锚定编辑面打开后名称框未获焦点——**已修并经发布形态 W3 复跑闭合**（`AnchoredEditor.initialFocus`，jsdom 回归 +7；2026-09-02 第三笔按 `main` 重建裸 release：Macro 新增 / 场景属性 / 添加话术三入口打开即聚焦、首字符落字，Macro 走完 ⌘Enter 落库 1 行；对齐话术 / 草稿同组件推定） |
+| 3.10 primitives / editor 簇 / surface-control | G4 截图 R03–R09：共享 `PhraseFormEditor` 五件套、~~`ConfirmInline`「永久删除? ✓ ✕」~~（⚠️ **该 primitive 的六个消费者已于 2026-09-03 全部拆除**，ADR-028 P0；它现在**零消费者**，专等 P1 的「清空废纸篓」——这条留证随之作废，见下方留证缺口）、DraftCard 中性 CardSurface + ghost Button 在发布形态渲染并可操作。**附带观察 O7**：编辑器开着时再点锚点会被按钮夺走焦点——**已修并经发布形态复跑**（`AnchoredEditor` 接管锚点二次按下，jsdom 回归 +5；2026-09-03 按 `main` + 本改动重建裸 release：点「新增」→ 再点「新增」→ 编辑器仍开、焦点仍在名称框 → 键入 `o7z` 落字 → Esc 关编辑器而窗口仍在屏，`macros` 4 条 / `usage_records` 0） |
 | 3.11 主题三态 / 强调色 / 设置弹窗 / slim Header / ProtocolBand / 2 列 | G4 W16–W19：首启默认深色（canvas `14,14,16`）、浅色 `#F2F2F0`、跟随系统随 OS 外观翻转、重启保留（localStorage `themeMode`）；强调色绿 / 蓝 / 中性像素采样 logo 与 Macro 芯片同步、Scene 图标不变；`⌘,` 唤起、× 关闭、密度 56→44 逻辑像素列扫描实测；Header / 暗 band / 2 列布局截图 R00。**附带缺陷 D2**：弹窗内 Esc 连仪表盘一起隐藏——**已修并经发布形态 W18 Esc 段复跑闭合**（`SettingsModal` 在 document 捕获阶段认领 Esc + App 隐藏监听 `e.repeat` 守卫，jsdom 回归 +4；2026-09-02 第六笔按 `main` `e932955` 重建裸 release：单击 Esc 只关弹窗、录键态两次 Esc 先退录键再关弹窗、长按 Esc 1 s 弹窗关仪表盘仍在屏） |
 | 3.12 Draft 编辑 / Composition 暂缓 / 设为默认 / 暗 band / light 明度 / auto-fit / 像素对齐包 | G4：同上各项；暗 band + `ModifierGrid`「协议层 · 参考」pill + 最近区中性徽标（R00）；light 明度 muted canvas + 白卡（R16c）；调研场景两列 auto-fit + 「未分组」列头（R07b）；Macro 图标盒 accent 填充 + 最近区富空态（R24i） |
 | 3.12 启动 DB 失败优雅兜底 | G4 W21 第四笔复跑（2026-09-02，按 `main` 重建裸 release + 隔离 `HOME`）：损坏库 → 含路径对话框在屏（按 owner 查 CGWindowList + 全屏截图）→ OK → `exit=1` 无 panic；健康库对照 ⌘Q `exit=0` |
 | 3.13 整理模式 / promote 定位 / discard 撤销 / ⌘Enter | G4 W12–W15：整理态整卡点击展开预览、窗口驻留、usage 不计；连续点两张卡切换选中；长话术展开不溢出列；显式复制按钮 usage +1 且不隐藏；撤销 toast 存活 5.4–6.4 s（`action: 6000`）；归档后新 chip 落到当前相位；名称框 Enter 推进到正文、⌘Enter 提交 |
 | 3.14 跨 Scene 话术移动 | G4 W11：移到目标 Scene / 子阶段 → 落分区末尾（order 3）→ 撤销回原 Scene / 未分组 / order 2；不计 usage |
 
-**留证缺口（6 行保持 `done` 的原因；G4 走查后 39 → 7，第四笔 D3 闭合 → 6）**：
+**留证缺口（7 行保持 `done` 的原因；G4 走查后 39 → 7，第四笔 D3 闭合 → 6，2026-09-03 ADR-028 P0 新增一行 → 7）**：
 
 | §3 行 | 缺什么 |
 |---|---|
@@ -418,8 +424,9 @@ related:
 | 3.12 更新检查失败分级 | manual 成功路径已验（「已是最新版本」）；失败路径需断网，未构造 |
 | 3.13 话术保存成功 toast | 800 ms 成功 toast 在截图节奏下未拍到，缺留证 |
 | 3.13 编辑器 footer flex-wrap | 需窄宽度，主形态窗口恒等于显示器宽（G4 W13 不可达） |
+| **3.8 删除可撤销（新，2026-09-03）** | **全部缺**——一键删除 / 撤销 toast 点击后资产真的回到原位 / 最近使用区不再出墓碑 / 六处删除入口逐个走一遍 / 废纸篓列表与单条恢复与清空 / 恢复连带复活父级，均只有 jsdom 与 Rust 覆盖，**未跑发布形态**。另需重跑上方两行作废的删除交互留证。**P0 与 P1 现均已落地，走查条件已具备**，见 [[HANDOFF#Next-Actions]] 第 37 项 |
 
-> 前四行是「构造不出」，后两行是「拍不到 / 达不到」（原第五行 D3 于第四笔改判并闭合，已升 `verified`）。补法：Modifier 与 SubStage 两行需要更丰富的种子数据；复制失败与更新失败需要故障注入；footer wrap 与保存 toast 靠 jsdom 断言即可闭合（不必真机）。
+> 前四行是「构造不出」，后两行是「拍不到 / 达不到」（原第五行 D3 于第四笔改判并闭合，已升 `verified`）。补法：Modifier 与 SubStage 两行需要更丰富的种子数据；复制失败与更新失败需要故障注入；footer wrap 与保存 toast 靠 jsdom 断言即可闭合（不必真机）。**末行（删除可撤销）性质不同**：它既不是构造不出也不是拍不到，只是**还没跑**。P0 与 P1 已于同日先后落地，全链路（删 → 撤销 → 废纸篓恢复 → 清空）现在一次就能走完。**缺口计数 6 → 7。**
 
 **同步约定**（v0.3+ 启用，v1.18 修订）：
 - 每次 commit 主分支后**手动**同步本清单状态（原设想的 `scripts/update-features.sh` 从未落地）

@@ -1,19 +1,20 @@
 ---
 type: test-spec
 project: prompt-hub
-version: v0.7
+version: v0.8
 created: 2026-05-19
 last_modified: 2026-09-03
-status: ratified # v0.7 于 2026-09-03 按 [[CLAUDE#§5.1.2]]「日志不签字」反查归档（§2 计数与 §4.x 走查记录属记录类，不进人审队列；ts-recheck 62 条核 / 8 处修正 / 21 条真机观测无法从代码核，明细见 §2 引言）；v0.5 于 2026-09-01 人审批次 ③ ratified。v0.7 内容沿革（2026-09-02 D1 修复留证：§2 398→405、§4.3 D1 行；同日第三笔 W3 发布形态复跑通过，D1 闭合；第四笔 D3 改判修复留证；第五笔 D2 修复留证；第六笔 W18 Esc 段发布形态复跑通过，D2 闭合；2026-09-03 次日第七笔 观察 O7 裁决并修复留证：§2 409→414、§4.3 O7 行）与 v0.6（同日 G4 走查记录 §4.3）合并
+status: ratified # v0.8 于 2026-09-03 按 [[CLAUDE#§5.1.2]]「日志不签字」反查归档（§2 计数 / §3 gate 盘面 / §4 Rust 盘面 / §4.3 走查记录属记录类，不进人审队列；数字两轮全部由本机重跑 `pnpm test` 与 `cargo test --workspace` 重新导出，非沿用）；v0.7 同日同法归档（ts-recheck 62 条核 / 8 处修正 / 21 条真机观测无法从代码核）；v0.5 于 2026-09-01 人审批次 ③ ratified。v0.8 内容：ADR-028 **P0（`77637cd`）+ P1（`6aca7eb`）**涟漪——前端 414→457 / Rust 169→183 / 源码级 gate 6→7 / IPC 53→56 / 观察 O3 闭合
 author: ai # 🤖 AI 主笔 + 人审（CLAUDE §5.2）
 audience: [ai, human]
-description: prompt-hub 测试规格——前端 Vitest 414 用例 + Rust workspace 169 + 6 源码级 gate + CI 双 job + C1 bench gate；LLM Eval N/A
+description: prompt-hub 测试规格——前端 Vitest 457 用例 + Rust workspace 183 + 7 源码级 gate + CI 双 job + C1 bench gate；LLM Eval N/A
 related:
   - 06-prd
   - 07-features
   - 10-ops-spec
   - 025-unified-anchored-editing
   - 027-configurable-global-hotkey
+  - 028-reversible-delete
 ---
 
 # Test Spec: prompt-hub
@@ -22,7 +23,7 @@ related:
 > 覆盖率目标见 [[07-features#§5]]。
 >
 > **标注约定**（沿用文档体系三标）：📊 实测（有命令输出背书，标注口径日期）/ 🎯 目标（规格要求，未必已落地）/ ⚠️ 红线（违反即 block）。
-> 本版 📊 数字口径：前端 **2026-09-03** 本机 `pnpm test`（JSON reporter 逐文件计数，414 / 39）+ Rust **2026-09-02** `cargo test --workspace` 全绿输出（169）；未单独标注日期的条目沿用 2026-08-20 口径。
+> 本版 📊 数字口径：前端与 Rust 均为 **2026-09-03 本机实测，基线 `main` @ `6aca7eb`（ADR-028 P0+P1）**——`pnpm test`（JSON reporter 逐文件计数，**457 / 41**）+ `cargo test --workspace`（**183**，逐 suite 从 `test result:` 行相加）。未单独标注日期的条目沿用 2026-08-20 口径。
 >
 > **v0.3 全量刷新**：v0.2 的口径停在 2026-07-02，其间前端 154→**373**、Rust 135→**158**、源码级 gate 4→**6**、IPC 命令 48→**51**。数字标了日期不算说谎，但**差了一个半月和两倍用例量的规格文件已无参考价值**——v0.3 把全部 📊 推到当日实测。
 >
@@ -33,6 +34,16 @@ related:
 > **v0.7（2026-09-02 第二笔 · D1 修复）**：前端 398→**405**（AnchoredEditor 17→23 / ScenePanel 53→54）。jsdom shim 新增 **focus 拒绝隐藏元素** 规则——仅此一步 6 条既有用例变红，证明 D1 此前对整个套件不可见；修后 402 全绿。§4.3 D1 行记修复，W3 待发布形态复跑。**同日第三笔**：W3 按发布形态复跑通过（按 `main` 重建裸 release + 隔离 `HOME`，Swift 事件工具驱动 + 窗口定向截图 + SQL 反查；Macro / 场景属性 / 添加话术三入口），D1 闭合，新增观察 O7 / O8，见 §4.3。**同日第四笔**：W21 复跑改判 D3——对话框一直会弹（系统进程持有，窗口定向截图拍不到），真缺陷是点 OK 后退出 panic、码 101；失败分支改同步弹框 + `process::exit(1)`，复跑 `exit=1`，D3 闭合（P1→P2），§4.3 W21 / D3 行与教训 8。`/review` 后 repo-core 补两条 `open_and_migrate` 负路径测试（非 SQLite 文件 / 父路径不是目录 → Err 不 panic），Rust 168→**170**。**同日第五笔**：D2 修复——根因先修正：两监听并非「同在 window 冒泡阶段」，App 的隐藏监听挂 `document` 冒泡、弹窗 Esc 挂 `window` 冒泡，前者**先**到，原记的「补 `stopPropagation`」在原位置无效；改为弹窗在 `document` **捕获阶段**认领 Esc 并 stop（与 `primitives/Editor.tsx` 同约定，HotkeyRecorder 的 window 捕获仍先于它、录键中 Esc 语义不变），前端 405→**409**（App +2 / SettingsModal +2，其中两条来自 `/review`：录键态 + 弹窗集成、长按 Esc 自动重复不隐藏——后者顺带给 App 隐藏监听加 `e.repeat` 守卫）。顺带销 HANDOFF 第 31 项：`AppState.db_path` 收窄为 `PathBuf`，删只为 `None` 分支活着的单测，Rust 170→**169**。§4.3 D2 行记修复，W18 Esc 段发布形态复跑待做。**同日第六笔**：W18 Esc 段按 `main`（`e932955`，内嵌 chunk `I1hrJmog` 与 `dist` 一致）重建裸 release + 隔离 `HOME` 复跑，三步全过（单击 Esc 只关弹窗 / 录键态两次 Esc 先退录键再关弹窗 / 长按 Esc 约 1 s 弹窗关、仪表盘仍在屏），对照「弹窗关闭时长按 Esc 第一下即隐藏」证明事件确实到达隐藏监听；`settings.global_hotkey` 全程 `Alt+Space` 未动。**D2 闭合**，W18 转 ✅，G4 三缺陷至此全部闭合；教训 9 记合成键盘事件无 OS 自动重复。零代码改动。**次日第七笔（2026-09-03）**：观察 O7 裁决并修复——`AnchoredEditor` 接管锚点二次按下（`preventDefault` + 吞掉 click + 不调 `onDismiss`），前端 409→**414**（`AnchoredEditor` +3：吞掉锚点自身 click 不 dismiss / 焦点落 body 时回首字段 / 焦点已在面板内则不动，另改写 1 条旧用例标题；`MacroGrid` +1：再点「新增」单实例仍挂载、宿主 click 未触发；`AlignmentPhrases` +1：编辑中再点 chip，编辑器仍开且 `writeText` 与 `record_usage` 未调用）。变异验证撤回修法后 4 条变红，第 5 条「焦点已在面板内则不动」两态皆绿、是防过度修正的守卫。**jsdom 验不到的那半边**：mousedown 的默认聚焦动作 jsdom 不实现，「`preventDefault` 挡住焦点外移」只能真机证；已按 `main` + 本改动重建裸 release 复跑通过，见 §4.3 O7。
 >
 > **v0.7 归档说明（2026-09-03）**：本版按 [[CLAUDE#§5.1.2]]「日志不签字」直接归档——§2 计数与 §4.x 走查记录属**记录类**内容，不进人审队列，改由只读子代理逐句反查代码。首跑结果 **62 条核 / 8 处修正 / 21 条无法核**。8 处修正：§2 四行计数失真（`HotkeyRecorder` 10 条从未入册、`HotkeyBanner` 记 5 实为 7、`settingsStore` 8→11、`accelerator` 9 条漏登记、`token-gate` 39→40，合计与表头 414 对不上）+ §4.1 G4 门项口径（旧「21 / 3 / 1」合计 25 且已被后续复跑作废）+ §4.3 D3 净删行数（27→16）与 W24 导出表数（十表→8 张资产表）+ 教训 4 措辞降级。21 条无法核的全部是**真机观测**（截图 / 像素采样 / 退出码 / 剪贴板），代码里没有对应物，原样保留。v0.5 及以前经人审 ratified，本版起 §2 / §4.x 走此路。
+>
+> **v0.8 归档说明（2026-09-03 · ADR-028 P0+P1 涟漪）**：同法直接归档。本版所有 📊 数字**重新跑出来，不抄任何人给的数**，且因 P0 与 P1 相隔一次提交而**跑了两轮**（首轮对 `77637cd` 得 444 / 40 与 182，二轮对 `6aca7eb` 得 **457 / 41** 与 **183**，本文件记二轮）：`pnpm exec vitest run --reporter=json` 逐文件导出后按分组相加得 91 + 28 + 244 + 17 + 77 = **457**，与表头自洽；`cargo test --workspace` 的 12 行 `test result:` 相加得 **183**；IPC 数由 `commands.rs` 的 `#[tauri::command]` 与 `src/ipc/index.ts` 的 `invoke<` 各数一次，均为 **56**（P1 未加命令）。新增 §3.7 记第七道 gate（含它自己列明的四条盲区），§4.3 观察 O3 转闭合并记明**实装范围窄于 ADR 措辞**（composition 使用记录不带 `target_id`，未纳入过滤）。**首轮反查（对 P0 增量）：107 条核对一致 / 8 处不一致 / 13 条无法核**，8 处全部改正后才归档——① §3.7 原写「豁免只有两类」，实为**四类共 12 处 marker**（其中 10 处进得了清单），且原文点名的「动态拼表名那两处」恰恰**不在**清单里——它们对扫描器不可见，正是盲区 3 的实证② §4.3 原写「jsdom 侧由 `promptStore` 的 `syncRecentUsage` 用例守」——**该用例不存在**，`syncRecentUsage` 与 `useUndoableDelete` 都没有专属测试 ③ §2 promptStore +9 的构成描述错（9 条全在一个 `restoreAsset` describe 里，无一条测 `syncRecentUsage`）④ §4 soft_delete_e2e 行原写恢复「含 usage 历史」——该断言不在这个文件，在 repo-core ⑤ §4 repo-core 行原写读路径「**全部**带谓词」，与本文件 §3.7 自相矛盾（本 crate 就有 8 处登记豁免）⑥ 同行原把 `list_trash` 记作 repo-core 单测覆盖，实则该模块无 `#[cfg(test)]` ⑦ §2 MacroGrid「+2」把**同一条**用例的两个断言拆成两条，真正的第二条（删除被拒时回滚且不给撤销）反而漏了 ⑧ §2 AlignmentPhrases 记为纯 +1，实为 **+2 / −1**（删掉了「两步行内确认」那条）。13 条无法核分三类：真机走查 4 条、过程履历（谁在何时跑的）7 条、跨文档 2 条。
+>
+> **二轮反查（对 P1 增量，`6aca7eb`）**：数字全部重跑——`pnpm test` **457 / 41**，逐文件 JSON reporter 分组相加 91 + 28 + 244 + 17 + 77 = **457** 与表头自洽；`cargo test --workspace` 12 行 `test result:` 相加 **183**（唯一增量是 `soft_delete_e2e.rs` 6→7）；IPC 仍 **56**（P1 没加命令）。前端 +13 的构成经 `git show 6aca7eb --stat` 与逐文件对拍双向确认：`TrashSection.test.tsx` 12 + `token-gate` 40→41，而 `SettingsModal.test.tsx` 改了内容、条数不变。
+>
+> ⚠️ **本版仍无真机证据**：ADR-028 P0+P1 的用户可见改动（一键删除、撤销 toast、最近区不再出墓碑、废纸篓列表与恢复与清空）全部只有 jsdom 与 Rust 覆盖，尚未跑发布形态走查，[[07-features]] 相关行**不因本版升 `verified`**。
+>
+> **方法记一笔**：第 ⑦ ⑧ 两处不一致是同一个坏习惯——**照着「应该测了什么」写，而不是照着「测了什么」写**。⑦ 把一条用例的两个断言写成两条用例，凑够了「+2」这个数；⑧ 把净 +1 写成纯新增，掩盖了一条被删掉的旧用例。两处都不影响总数，所以**逐文件对拍抓不出来**——那把尺子只量条数，量不出哪条被换掉，后者只有读 diff 才行。这是 v0.7 归档时「逐文件对拍」经验的边界。
+>
+> **P1 补一条**：`token-gate` 又一次「自己长出来一条」（40→41，因为新增了 `TrashSection.module.css`）。这已是同一机制第二次现身（首次是 v0.3 的 `HotkeyRecorder.module.css`）——**凡本轮新增了 CSS module，gate 计数就会 +1，别把它算进「我写了几条测试」**。
 
 ---
 
@@ -43,7 +54,7 @@ v0.1 规划的四层金字塔已落地为下表实际形态（Playwright E2E 层
 | 层 | 工具（📊 实际在用） | 覆盖范围 | 触发时机 |
 |---|---|---|---|
 | 前端单元 + 集成 | Vitest 4（jsdom + `src/test/setup.ts`，含 `popover` shim） | stores / hooks / 组件渲染与交互 / App Tab cycle | 本地 `pnpm test` + CI frontend job |
-| 源码级 gate | Vitest（文本级解析源码，共 **6** 个，见 §3） | token 纪律 / B2 物理分离 / IPC 三方契约 / 文档引用契约 / **密度层单调性** / **双光主题对等** | 同上（6 个全部随 `pnpm test` 跑）|
+| 源码级 gate | Vitest（文本级解析源码，共 **7** 个，见 §3） | token 纪律 / B2 物理分离 / IPC 三方契约 / 文档引用契约 / 密度层单调性 / 双光主题对等 / **软删除读路径过滤** | 同上（7 个全部随 `pnpm test` 跑）|
 | Rust 单元 + 集成 | cargo test `--workspace`（tempfile SQLite fixture + trybuild） | repo-core / repo-write / MCP server / 迁移 / 备份 | 本地 + CI rust job |
 | 性能基准 | 自研 bench 脚本（`bench/*.bench.mjs`） | 唤起延迟（C1）/ 冷启动 | 主形态路径改动后手动跑；hotkey-wake 兼作自动化 gate（§5） |
 | E2E（Playwright） | 🎯 未落地 | 完整用户 flow（快捷键 / 窗口切换） | —— 现由 ADR-012 Phase 5 式真机验收（screencapture + 手点）临时顶位 |
@@ -54,7 +65,7 @@ v0.1 规划的四层金字塔已落地为下表实际形态（Playwright E2E 层
 
 ## §2 前端 Vitest 盘面
 
-📊 **414 用例 / 39 测试文件，全绿**（2026-09-03 实测；v0.5 口径 398 于 2026-08-20 逐文件计数，+16 见下）。
+📊 **457 用例 / 41 测试文件，全绿**（2026-09-03 第九笔实测，`main` @ `6aca7eb`；v0.5 口径 398 于 2026-08-20 逐文件计数）。
 
 > v0.3 记 373 / 37。**+22 的逐文件构成经 worktree 对拍取得，不是估算**：新增 `utils/__tests__/accelerator.test.ts` **9** + `components/__tests__/HotkeyRecorder.test.tsx` **7**；既有文件 `settingsStore` 8→11、`HotkeyBanner` 5→7；**`token-gate` 39→40 是它自己长出来的**——该 gate 按 CSS module 文件枚举用例，新增的 `HotkeyRecorder.module.css` 自动入册并通过。这一条顺带证明 [[CLAUDE#§4]] 4.1 的 token 纪律确实盖住了新组件，而不靠人记得去查。
 >
@@ -62,23 +73,35 @@ v0.1 规划的四层金字塔已落地为下表实际形态（Playwright E2E 层
 >
 > v0.7 +7（D1 修复回归）：`AnchoredEditor` +6（shim 自检 ×2：visibility 与 display:none 自身/祖先 / 打开即聚焦 / `anchor=null` 时不聚焦、到位后才聚焦 / 滚动·resize·换锚点不重聚焦 / inline 形态挂载聚焦）+ `ScenePanel` 属性面板 +1。后三条来自 `/review` 测试专项与可维护性专项的缺口指认。另 `src/test/setup.ts` 新增 focus 拒绝规则（`visibility: hidden` 或祖先 `display: none` 时 `focus()` 不生效），不计用例但改变了全套件的判定口径——它让 6 条既有用例在修复前变红。
 >
+> v0.8 **净 +30（ADR-028 P0）**：逐文件用 vitest JSON reporter 复算——
+>
+> - `promptStore` 36→**45**（+9）：全部落在一个 `describe("promptStore — restoreAsset (ADR-028)")` 里，构成是 1 条转发断言 + 一个 7 项 `it.each`（六类资产各一 + 一条未知 kind）+ 1 条失败 rethrow
+> - `toastStore` 10→**16**（+6）：让位规则——普通 toast 让位撤销 / `error` 仍上位 / 新撤销可替换旧撤销 / `clear()` 不受约束
+> - `MacroGrid` 6→**8**（+2）：一条「首次点击即删、toast 的撤销把它恢复回来」+ 一条「删除被拒时卡片回滚、给 error 且**不给撤销**」
+> - `AlignmentPhrases` 8→**9**：**净 +1 掩盖了 +2 / −1**——删掉旧的「删除是两步行内确认」，新增一键删 + 撤销、以及被拒时给 error 不给撤销两条
+> - 新增第七道 gate `src/ipc/soft-delete-gate.test.ts` **12**（3 条扫真实源码 + 9 条用夹具自检这把尺子本身，见 §3.7）
+>
+> **`ScenePanel` / `ScenePropertiesEditor` / `ScenePanelFocusRestore` / `ModifierGrid` 四个文件本轮改了内容但用例数不变**（确认框断言换成撤销 toast 断言），故不出现在增量里。这一条与上面 `AlignmentPhrases` 的 +2/−1 是同一件事的两面：**净增量看不出改写**，逐文件对拍也只看得出条数、看不出哪条被换掉——后者要读 diff。
+>
+> v0.8 **+13（ADR-028 P1）**：新增 `components/__tests__/TrashSection.test.tsx` **12**（列表渲染与条目数 / 空态 / 读失败不退化成空列表 / 单条恢复后重读 / 清空走确认框 / 连点不重复打 `purge_trash`）+ **`token-gate` 40→41 又是它自己长出来的**——新增的 `TrashSection.module.css` 按 CSS 文件枚举自动入册并通过，与 v0.3 记的 `HotkeyRecorder.module.css` 同一机制第二次现身。**`SettingsModal.test.tsx` 本轮改了内容但用例数不变**（10→10）。
+>
 > v0.7 +4（D2 修复回归）：`App.test` +2（设置弹窗开着按 Esc → 弹窗关、`hide_window` 调用数不变；`repeat: true` 的 Esc 不隐藏窗口）+ `SettingsModal` +2（Esc 在 document 捕获阶段被认领，同 target 的冒泡监听收不到；录键态下第一次 Esc 只取消录键、第二次才关弹窗——事件同时带 `key` 与 `code`，因为录键器按 `code` 判、弹窗按 `key` 判，只带一个字段会静默跳过一方；变异验证：录键器监听挪到 document 即红）。前两条把 keydown 派发到持焦点的 dialog 而不是 document，走真实按键的传播路径——派发到 document 时 at-target 阶段捕获 / 冒泡两组监听的先后依赖 jsdom 对规范的实现细节，不作为判据。
 
 | 分组 | 用例 📊 | 文件 | 覆盖对象 |
 |---|---|---|---|
-| stores（7 文件） | 76 | `src/stores/__tests__/{appStore 2, promptStore 36, searchStore 4, settingsStore 11, toastStore 10, updaterStore 12}.test.ts` + `src/stores/prompt/__tests__/helpers 1` | Zustand store actions / 复制失败可见 + toast intent 分级 / updater 状态机 / draft 计数联动 |
+| stores（7 文件） | 91 | `src/stores/__tests__/{appStore 2, promptStore 45, searchStore 4, settingsStore 11, toastStore 16, updaterStore 12}.test.ts` + `src/stores/prompt/__tests__/helpers 1` | Zustand store actions / 复制失败可见 + toast intent 分级与**让位规则** / updater 状态机 / draft 计数联动 / **软删除恢复与废纸篓 slice** |
 | hooks（4 文件） | 28 | `src/hooks/__tests__/{useAnchoredPosition 13, useRegionNav 8, useCopy 4, useSearchResults 3}` | **锚定定位与滚动祖先订阅**（ADR-025）/ 区域内漫游导航 / 复制 / 搜索结果派生 |
-| 组件（20 文件） | 229 | `src/App.test.tsx` 27 + `src/components/__tests__/*`：ScenePanel 54 / ScenePropertiesEditor 22 / **AnchoredEditor 26** / SearchOverlay 17 / DraftInbox 15 / SettingsModal 10 / HotkeyRecorder 10 / AlignmentPhrases 8 / HotkeyBanner 7 / MacroGrid 6 / ScenePanelFocusRestore 5 / ModifierGrid 4 / UpdaterBanner 4 / ErrorBoundary 3 / ModeToggle 3 / PhaseBar 3 / SearchBar 3 / RecentList 1 / StatusBar 1 | 组件渲染 / 交互 / Tab cycle 6 区断言（[[03-product-spec#13.4]]）/ 编辑器关闭规则表分支 |
+| 组件（21 文件） | 244 | `src/App.test.tsx` 27 + `src/components/__tests__/*`：ScenePanel 54 / ScenePropertiesEditor 22 / AnchoredEditor 26 / SearchOverlay 17 / DraftInbox 15 / **TrashSection 12** / SettingsModal 10 / HotkeyRecorder 10 / AlignmentPhrases 9 / MacroGrid 8 / HotkeyBanner 7 / ScenePanelFocusRestore 5 / ModifierGrid 4 / UpdaterBanner 4 / ErrorBoundary 3 / ModeToggle 3 / PhaseBar 3 / SearchBar 3 / RecentList 1 / StatusBar 1 | 组件渲染 / 交互 / Tab cycle 6 区断言（[[03-product-spec#13.4]]）/ 编辑器关闭规则表分支 / **一键删除 + 撤销 toast** / **废纸篓列表 · 恢复 · 清空** |
 | utils（2 文件） | 17 | `src/utils/__tests__/errorMessage.test.ts` 8 + `src/utils/__tests__/accelerator.test.ts` 9 | IPC 错误信息归一 / 快捷键 accelerator 解析与格式化 |
-| 源码级 gate（6 文件） | 64 | token-gate 40 / theme-parity 8 / ipc-contract 6 / b2-separation 5 / density-gate 3 / doc-refs-gate 2 | 见 §3 |
+| 源码级 gate（7 文件） | 77 | token-gate 41 / **soft-delete-gate 12** / theme-parity 8 / ipc-contract 6 / b2-separation 5 / density-gate 3 / doc-refs-gate 2 | 见 §3 |
 
 🎯 单元测试范围要求（自 v0.1 保留，按现行架构改述）：核心业务逻辑（store actions / promote 语义 / schema 校验）覆盖 ≥90%；状态机转移（draft `pending→promoted/discarded`、SOP `active/paused/completed` 等，见 [[06-prd#7]]）穷举合法转移 + 拒绝非法转移；[[02-constitution]] 边界约束（资产数量上限 / 单条话术 ≤5000 字符 / 恶意 JSON 拒绝）必测。
 
 ---
 
-## §3 源码级 gate（6 个）
+## §3 源码级 gate（7 个）
 
-> 模式：不 mock、不跑运行时，直接以文本级解析源码断言纪律成立——把「靠人肉 review 守的规矩」下沉为测试。6 个全部为 Vitest 用例（随 `pnpm test` 跑）。
+> 模式：不 mock、不跑运行时，直接以文本级解析源码断言纪律成立——把「靠人肉 review 守的规矩」下沉为测试。7 个全部为 Vitest 用例（随 `pnpm test` 跑）。
 >
 > ⚠️ **v0.3 补记两个漏登记的 gate**：`density-gate` 与 `theme-parity` 早已落地并在 CI 跑，但 v0.2 的「4 个」口径从未更新——**规格文件本身也会漏账**，见 §3.5 / §3.6。
 
@@ -92,7 +115,7 @@ v0.1 规划的四层金字塔已落地为下表实际形态（Playwright E2E 层
 
 ### 3.3 ipc-contract（`src/ipc/ipc-contract.test.ts`）
 
-守护 Tauri IPC 三方契约：`commands.rs` 的 `#[tauri::command]` 集合 ↔ `lib.rs` 的 `generate_handler![…]` 注册表 ↔ `src/ipc/index.ts` 的 `invoke("…")` 字面量，三向名字集合等价。动因：前端测试 mock `invoke`、Rust 测试打 command 层以下的 repo fn，命令「定义了没注册 / 名字漂移」只会在运行时炸（ADR-015 补遗-2 踩过同类坑）。📊 当前覆盖 **53 个命令**（2026-08-20 实测：`commands.rs` 53 个 `#[tauri::command]` ↔ `src/ipc/index.ts` 53 个 `invoke<>` 字面量；v0.4 增 `get_global_hotkey` / `set_global_hotkey`。v0.2 记 48，其后 `move_phrase` 等入册使集合增长——gate 动态解析源码，无需随命令数改测试）。
+守护 Tauri IPC 三方契约：`commands.rs` 的 `#[tauri::command]` 集合 ↔ `lib.rs` 的 `generate_handler![…]` 注册表 ↔ `src/ipc/index.ts` 的 `invoke("…")` 字面量，三向名字集合等价。动因：前端测试 mock `invoke`、Rust 测试打 command 层以下的 repo fn，命令「定义了没注册 / 名字漂移」只会在运行时炸（ADR-015 补遗-2 踩过同类坑）。📊 当前覆盖 **56 个命令**（2026-09-03 实测：`commands.rs` 56 个 `#[tauri::command]` ↔ `src/ipc/index.ts` 56 个 `invoke<>` 字面量；v0.8 增 `restore_asset` / `list_trash` / `purge_trash`，v0.4 增 `get_global_hotkey` / `set_global_hotkey`。v0.2 记 48——gate 动态解析源码，无需随命令数改测试）。
 
 ### 3.4 doc-governance 引用契约（`scripts/doc-governance/doc-refs-gate.test.ts`，本轮新增）
 
@@ -108,20 +131,37 @@ v0.1 规划的四层金字塔已落地为下表实际形态（Playwright E2E 层
 
 守护浅色调色板的**双份手工镜像**不分叉：`tokens.css` 按设计承载浅色两次——`:root.light`（显式选浅色）与 `@media (prefers-color-scheme: light)` guard 内的跟随系统分支。两份手写镜像，**往其一加 token 而忘了另一份，会让「浅色」与「跟随系统」两种外观静默分叉**。gate 解析两组规则并按 selector 后缀（base / `.accent-*`）逐声明断言相等。
 
+### 3.7 soft-delete-gate（`src/ipc/soft-delete-gate.test.ts`，v0.8 新增）
+
+守护 [[028-reversible-delete]] 子决策 2：**凡读七张资产表的 SQL，必须带 `deleted_at IS NULL`**。软删除只有在**每一处读**都过滤时才成立，而那是散在四个 crate、几十条语句上的承诺，漏一处的失败形态是**静默的**——某一个界面上，已删的资产悄悄复活。ADR-028 选原地软删除的**明示前提**就是把这类错误从「不推荐」变成「做不到」，否则 A 方案退化成外部调研反复警告的那个坑。
+
+扫描 `src-tauri/src` 与 `src-tauri/crates` 的 Rust 源码，按资产表逐个计谓词；无法遵守的语句必须在紧邻上方写 `// soft-delete-gate: exempt — <理由>` 并在测试内的 `EXPECTED_EXEMPTIONS` 清单登记——清单与实扫结果必须**完全相等**（多一条少一条都红），**加豁免因此是一个需要过审的显式动作**。
+
+📊 源码里带 marker 的共 **12 处，归四类**：**导出** 7 处（全保真备份，[[06-prd#6.9]] / 子决策 6）/ **废纸篓视图本身** 1 处（它要选的正是别人都藏起来的行）/ **恢复读取** 2 处 / **删除路径的存在性探针** 2 处（要看得见废纸篓行，才能把「已经删过了」这个空操作与「根本没这个 id」这个错误分开）。
+
+> ⚠️ **别把「豁免有十几处」读成闸门被稀释了**：这四类**全是软删除自己的机件，没有一条是面向用户的列表读**——因此**没有任何一条豁免能把一条废纸篓里的行漏进用户看得见的列表**，而那正是这道闸门要防的唯一一件事。
+>
+> ⚠️ **12 处 marker 只有 10 条进得了清单，差的两条不是漏登记**：软删与恢复各有一条**按表名动态拼**的 SQL（`repo-write/src/soft_delete.rs` 与 `repo-write/src/trash.rs`），它们对扫描器**根本不可见**（下方盲区 3），写 marker 只是给读代码的人看的，扫不到自然也就登记不上。**这正是盲区 3 的实证**：真要有人新写一条动态表名的读语句，这道闸门不会拦他。
+
+📊 **12 条用例**：3 条扫真实源码（找得到源码与资产读 / 每条非豁免读都带谓词 / 豁免集合与清单完全相等），9 条**用夹具自检这把尺子本身**（漏谓词要报 / 补上要过 / 多表 JOIN 要逐表计 / 豁免注释要认 / 远处的豁免注释不得覆盖到下一条语句 / 写语句要跳过 / 无该列的表要跳过 / 注释里的 SQL 不算 / 扫到 `#[cfg(test)]` 即停）。
+
+> ⚠️ **这把尺子的已知盲区（gate 自己的注释里列明，不是遗漏）**：它是文本扫描不是 SQL 解析器——只看首关键字为 SELECT / WITH 的语句（写语句整体跳过，因为 `MAX(order_index) + 1` 这类追加子查询**必须**跨越废纸篓行，否则恢复会撞上后来发出的排序位）；只计谓词个数不做绑定；动态表名不可见（现存两处已豁免）；Rust 测试模块不扫。**能挡住的是真正会发生的那一类**：有人加一条列表读、或给既有读加一列，忘了带谓词。
+
 ---
 
 ## §4 Rust workspace 测试盘面
 
-📊 **169 用例，全绿**（2026-09-02 第五笔实测 `cargo test --workspace --manifest-path src-tauri/Cargo.toml`；2026-08-20 口径 168，第四笔 +2 第五笔 −1）：
+📊 **183 用例，全绿**（2026-09-03 第九笔实测 `cargo test --workspace --manifest-path src-tauri/Cargo.toml`；2026-09-02 口径 169，**ADR-028 P0 +13 / P1 +1**）：
 
 | crate / suite | 用例数 📊 | 覆盖对象 |
 |---|---|---|
-| repo-write（unit） | 95 | 全部写路径 CRUD / promote 4 arm / reorder / `move_phrase` + MoveReceipt / 软删（tempfile SQLite fixture） |
-| repo-core（unit） | 46 | 读路径 / 迁移（含 `open_and_migrate` 两条负路径）/ `count_pending_drafts` 等 free fn |
+| repo-write（unit） | 99 | 全部写路径 CRUD / promote 4 arm / reorder / `move_phrase` + MoveReceipt / **七处原地软删 + `restore_asset` + `purge_trash`**（tempfile SQLite fixture） |
+| repo-core（unit） | 49 | 读路径（除 §3.7 登记豁免的 8 处外均带 `deleted_at IS NULL`——7 处导出 + 1 处废纸篓视图就在本 crate）/ 迁移（含 `open_and_migrate` 两条负路径）/ `count_pending_drafts` 等 free fn。**本轮 +3**：`db.rs` 两条 `0013` 迁移测试（在有数据的库上加列后原行仍存活 / 重建后的默认索引让废纸篓里的默认话术腾出名额）+ `repo.rs` 一条最近使用区（软删后该行消失、恢复后带着历史回来）|
 | prompt-hub-mcp（unit） | 8 | MCP server 工具层 |
 | prompt-hub-mcp `tests/e2e.rs` | 6 | MCP 14 tool 端到端 |
 | prompt-hub-mcp `tests/trybuild_negative.rs` | 1 | 编译期负例（禁 import repo-write 写面，B 类边界的类型层强制） |
 | repo-write `tests/backup_e2e.rs` | 3 | 备份端到端 |
+| repo-write `tests/soft_delete_e2e.rs`（v0.8 新增） | 7 | 软删除端到端，**逐条**：① 六类资产恢复后 `id` / `created_at` / `order_index` 三者不变 ② 软删的行离开列表读但仍在表里 ③ 恢复一条已被顶替的默认对齐话术**降级而非报错** ④ `list_trash` 按删除时间倒序列出各类、默认为空 ⑤ 清空只销毁废纸篓里的行、留下一致的 schema 并清掉孤儿 usage ⑥ 可见列表重排**跳过废纸篓里的邻居**，回填隐藏 id 被拒。⑦（P1 新增）**恢复一条话术会连同它挂靠的场景 / 子阶段一起复活**，不留下够不着的资产。**「恢复后 usage 历史重连」不在本文件**，由 `repo-core` 的 `list_recent_usage` 用例守（见上一行）|
 | prompt_hub_lib（bin crate unit） | 10 | app 壳层（第五笔删 `import_without_db_path_skips_backup_and_still_imports`：`db_path` 收窄后该分支不存在） |
 
 ⚠️ **`--workspace` 必须**：裸 `cargo test` 只测 bin pkg（≈0 用例），真实用例在 repo-core / repo-write / prompt-hub-mcp 三个子 crate（[[CLAUDE#§2]]）。
@@ -225,7 +265,7 @@ E2E 层缺位期间，**布局 / 层叠 / 定位类改动一律由带编号的�
 | D2 | 设置弹窗开着按 Esc，弹窗与仪表盘**一起**隐藏 | 首轮记「同在 window 冒泡阶段、未 `stopPropagation`」，**修时纠正**：App 的隐藏监听挂 `document` 冒泡，弹窗 Esc 挂 `window` 冒泡——事件先到 document 再到 window，App 先隐藏，弹窗那边再 stop 也来不及。与 ADR-025 编辑器「Esc 不冒泡」契约不一致（product-spec 区域 9 写「关闭：Esc」指关弹窗）。**已修（第五笔）**：弹窗 Esc 改挂 `document` 捕获阶段并 `stopPropagation`，与 `primitives/Editor.tsx` 同约定；HotkeyRecorder 录键时的 window 捕获仍先于它，录键中 Esc 只取消录键。jsdom 回归 +4（App / SettingsModal 各二，keydown 派发到持焦点的 dialog；`/review` 后补录键态集成测试与长按 Esc `e.repeat` 回归，后者顺带给 App 隐藏监听加守卫——第一下关弹窗后 OS 自动重复的 keydown 此前会漏到隐藏监听）。**W18 Esc 段发布形态复跑通过（第六笔，三步 + 对照），本缺陷闭合** | P2 |
 | D3 | ~~数据库损坏时没有阻断式错误对话框~~ → **改判（第四笔）**：对话框一直会弹，点 OK 后进程 panic、退出码 **101** 而非契约的 1 | 首轮根因「非主线程 NSAlert 不呈现」不成立——tauri-plugin-dialog 本就 `run_on_main_thread`，无 parent 的消息框由 rfd 交给系统进程渲染。真根因是结构性的：失败在 `setup()` 里、事件循环已在跑时被发现，旧实现靠「返回 `Ok(())` 保活 + 内存库顶替 `AppState` + 工作线程 `blocking_show` + `handle.exit(1)`」与半建成的应用共存，而 `RunEvent::Exit` 处理器假定 setup 已完成，`global_shortcut().unregister_all()` 撞上未注册的插件 panic。**已修（第四笔）**：失败分支直接调 `rfd::MessageDialog` 同步弹框（macOS 出进程渲染，阻塞主线程不死锁）后 `std::process::exit(1)`，永不回事件循环；保活的 `return Ok(())` / 内存库 / `window.show()` / 工作线程四件机器全删（`lib.rs` 净删 **16** 行：+39 / −55，`788b372`），`rfd` 升直接依赖（lock 已有同版本同 feature）。W21 复跑通过，**本缺陷闭合**。用户可感知影响为零，级别按事实降 P2 | ~~P1~~ P2 |
 
-**观察（不构成缺陷，供裁决）**：O1 窗口隐藏期间 MCP 写入的草稿，唤起**不刷新** badge，只有导入后 `refreshAll` 才刷新（HANDOFF 第 21 项附带疑问的答案）；O2 焦点不在编辑器内时按 Esc 会隐藏整个仪表盘而编辑器状态保留在 React 里，下次唤起编辑器仍开着——D1 让这种情况更常见；O3 硬删话术后 `usage_records` 成孤儿，最近使用区仍显示墓碑条目（与 prd §6.1 soft-delete 悬案同源，归 HANDOFF 21.2）；O4 新建的空场景只有「新增子阶段」入口，没有「添加话术」；O5 UI 新建的 Macro `native=0`，种子 Macro `native=1`，`native` 语义待 prd 明确；O6 面板宽度随角色 chip 增加而变化、设置弹窗随页面高度重新居中——对人无害，对自动化点击是坑；**O7（第三笔新增，确定性）→ 已裁决并修复（2026-09-03）** 现象：Macro 编辑器开着时再点「新增」，编辑器不关、焦点却已在面板外——之后键入全部丢失，按 Esc 走 O2 藏掉整个仪表盘（截图 S3 / S3b / R1a）。这正是 D1 留下的肌肉记忆（以为没打开再点一次）会触发的路径；首轮 05:08 构建上同操作后焦点留在名称框（截图 05），两构建差异原因未查。**根因（修时纠正）**：`AnchoredEditor` 的 pointerdown 处理把锚点直接放行，旧注释称「锚点即 toggle」——**四个宿主没有一个实现 toggle**：Macro「新增」重复设同一个编辑目标（同 React key，面板不重挂）、草稿卡「编辑」重开，对齐话术 chip 与 Scene 话术卡的锚点点击是**复制**（调用态还会隐藏窗口）。放行后实际生效的只有 mousedown 的默认动作——把焦点带到 `tabIndex={-1}` 的按钮上。**修法（结构修法，omar 2026-09-03 确认；否决「二次按下 = 关闭」）**：容器接管锚点二次按下——`preventDefault()` 压掉兼容 mousedown（焦点不离开面板）+ 武装既有 `swallowClickRef`（宿主 click 不再跑，不重开也不复制）+ 仅在面板已失焦时回到 `initialFocus`；**不调 `onDismiss`**，Esc / teardown 焦点归还 / 点外三条分支未动。`src/components/primitives/Editor.tsx` 单文件改动，四个宿主零改动；契约回流 [[03-product-spec]] v0.24 §13.3 规则表第六行 + [[05-design-spec]] §10.2.2 接口契约第 6 条。**jsdom 回归 +5**（409→414，见 §2），撤回修法后 4 条变红。**覆盖边界**：jsdom 不实现 mousedown 的默认聚焦动作，「`preventDefault` 挡住焦点外移」这半边只能真机证。**发布形态复跑通过（2026-09-03，按 `main` + 本改动 `pnpm tauri build --no-bundle` 重建裸 release，内嵌 chunk `BTngK09y` 与 `dist/assets/` 一致，隔离 `HOME=/tmp/ph-o7-home`）**：点「新增」→ 名称框有焦点 → **再点「新增」→ 编辑器仍开、焦点仍在名称框** → 键入 `o7z` 落进名称框（同时弹 O8 的首字母大写气泡）→ 第一次 Esc 只关气泡（O8 既知）→ 第二次 Esc 关编辑器、窗口仍在屏（`onscreen=true`）；`macros` 仍 4 条、`usage_records` 0。chip / 话术卡 / 草稿三宿主同走该 primitive，推定通过、未单独真机开（与 W3 推定同口径）。截图 `/tmp/ph-walk/shots/O7r-*`；**O8（第三笔新增，OS 行为）** 名称框键入后 macOS 弹首字母大写建议气泡，此时第一次 Esc 只关气泡不关编辑器（截图 S1 → S2）；真人也会碰到，非缺陷但走查与用户认知都要算上。另（O7 修复未覆盖，`o7-probe` 2026-09-03 探查已答）：用「取消」关编辑器后焦点落到 body，随后的可打印键被路由进搜索框并切到搜索结果视图（截图 S5）。① 焦点落 body 是**既有缺陷**（HANDOFF 第 34 项）：macOS WebKit 点 `<button>` 不聚焦按钮而是沿祖先链找可鼠标聚焦节点，popover 不改祖先链，焦点落到宿主 `<section tabIndex={0}>` 或 body，`heldFocusRef` 被 `focusin` 记成 false，卸载时的归还门禁跳过；jsdom 无 mousedown 聚焦、现有归还测试只走 Esc 路径，故看不见。② **不存在 type-to-search**：`setQuery` 只有输入框 `onChange` 一个调用点，搜索框只在 ⌘K 与「唤起时 `activeElement` 是 body」两条路径拿焦点（product-spec §13.4「唤起即已默认聚焦」）——截图 S5 是「取消留下 body 焦点 → 隐藏再唤起 → 搜索框按契约接管」，非缺陷。
+**观察（不构成缺陷，供裁决）**：O1 窗口隐藏期间 MCP 写入的草稿，唤起**不刷新** badge，只有导入后 `refreshAll` 才刷新（HANDOFF 第 21 项附带疑问的答案）；O2 焦点不在编辑器内时按 Esc 会隐藏整个仪表盘而编辑器状态保留在 React 里，下次唤起编辑器仍开着——D1 让这种情况更常见；**O3 → 已闭合（2026-09-03，[[028-reversible-delete]] P0）** 原现象：硬删话术后 `usage_records` 成孤儿，最近使用区仍显示「（未知话术）」墓碑条目（与 prd §6.1 soft-delete 悬案同源，归 HANDOFF 21.2）。**修法**：`list_recent_usage` 的四个 LEFT JOIN 各补 `deleted_at IS NULL`，并在 `WHERE` 里滤掉**带 `target_id` 却解析不到**的行；`usage_records` 本身一行不动，资产恢复后历史自动重连（id 从未变过）。**过滤位置在 SQL 的 `LIMIT` 之上**——放到渲染层会让墓碑先占满名额、再被前端抹掉，用户拿到一份莫名其妙变短的列表。**范围窄于子决策 5 的措辞**：composition 的使用记录**根本不带 `target_id`**，永远解析不出名字，但不在过滤范围内——滤掉它们是产品行为变更而非 O3 修复，这条既有缺口 ADR-028 记为「同批可修」而**本次未修**。**守它的是哪条**：Rust 侧是 `repo-core` 的 `list_recent_usage_drops_a_trashed_asset_and_brings_it_back_on_restore`（软删后该行消失、恢复后带着历史回来）；jsdom 侧只有 `MacroGrid` 的删除用例断言删除后确实重拉了一次最近使用区（`syncRecentUsage` 本身与 `useUndoableDelete` 都**没有专属测试**，这是已知的覆盖薄处）；**未经真机复跑**（W5 当时留下的 3 条孤儿行在隔离库里，重跑需重建走查环境）；O4 新建的空场景只有「新增子阶段」入口，没有「添加话术」；O5 UI 新建的 Macro `native=0`，种子 Macro `native=1`，`native` 语义待 prd 明确；O6 面板宽度随角色 chip 增加而变化、设置弹窗随页面高度重新居中——对人无害，对自动化点击是坑；**O7（第三笔新增，确定性）→ 已裁决并修复（2026-09-03）** 现象：Macro 编辑器开着时再点「新增」，编辑器不关、焦点却已在面板外——之后键入全部丢失，按 Esc 走 O2 藏掉整个仪表盘（截图 S3 / S3b / R1a）。这正是 D1 留下的肌肉记忆（以为没打开再点一次）会触发的路径；首轮 05:08 构建上同操作后焦点留在名称框（截图 05），两构建差异原因未查。**根因（修时纠正）**：`AnchoredEditor` 的 pointerdown 处理把锚点直接放行，旧注释称「锚点即 toggle」——**四个宿主没有一个实现 toggle**：Macro「新增」重复设同一个编辑目标（同 React key，面板不重挂）、草稿卡「编辑」重开，对齐话术 chip 与 Scene 话术卡的锚点点击是**复制**（调用态还会隐藏窗口）。放行后实际生效的只有 mousedown 的默认动作——把焦点带到 `tabIndex={-1}` 的按钮上。**修法（结构修法，omar 2026-09-03 确认；否决「二次按下 = 关闭」）**：容器接管锚点二次按下——`preventDefault()` 压掉兼容 mousedown（焦点不离开面板）+ 武装既有 `swallowClickRef`（宿主 click 不再跑，不重开也不复制）+ 仅在面板已失焦时回到 `initialFocus`；**不调 `onDismiss`**，Esc / teardown 焦点归还 / 点外三条分支未动。`src/components/primitives/Editor.tsx` 单文件改动，四个宿主零改动；契约回流 [[03-product-spec]] v0.24 §13.3 规则表第六行 + [[05-design-spec]] §10.2.2 接口契约第 6 条。**jsdom 回归 +5**（409→414，见 §2），撤回修法后 4 条变红。**覆盖边界**：jsdom 不实现 mousedown 的默认聚焦动作，「`preventDefault` 挡住焦点外移」这半边只能真机证。**发布形态复跑通过（2026-09-03，按 `main` + 本改动 `pnpm tauri build --no-bundle` 重建裸 release，内嵌 chunk `BTngK09y` 与 `dist/assets/` 一致，隔离 `HOME=/tmp/ph-o7-home`）**：点「新增」→ 名称框有焦点 → **再点「新增」→ 编辑器仍开、焦点仍在名称框** → 键入 `o7z` 落进名称框（同时弹 O8 的首字母大写气泡）→ 第一次 Esc 只关气泡（O8 既知）→ 第二次 Esc 关编辑器、窗口仍在屏（`onscreen=true`）；`macros` 仍 4 条、`usage_records` 0。chip / 话术卡 / 草稿三宿主同走该 primitive，推定通过、未单独真机开（与 W3 推定同口径）。截图 `/tmp/ph-walk/shots/O7r-*`；**O8（第三笔新增，OS 行为）** 名称框键入后 macOS 弹首字母大写建议气泡，此时第一次 Esc 只关气泡不关编辑器（截图 S1 → S2）；真人也会碰到，非缺陷但走查与用户认知都要算上。另（O7 修复未覆盖，`o7-probe` 2026-09-03 探查已答）：用「取消」关编辑器后焦点落到 body，随后的可打印键被路由进搜索框并切到搜索结果视图（截图 S5）。① 焦点落 body 是**既有缺陷**（HANDOFF 第 34 项）：macOS WebKit 点 `<button>` 不聚焦按钮而是沿祖先链找可鼠标聚焦节点，popover 不改祖先链，焦点落到宿主 `<section tabIndex={0}>` 或 body，`heldFocusRef` 被 `focusin` 记成 false，卸载时的归还门禁跳过；jsdom 无 mousedown 聚焦、现有归还测试只走 Esc 路径，故看不见。② **不存在 type-to-search**：`setQuery` 只有输入框 `onChange` 一个调用点，搜索框只在 ⌘K 与「唤起时 `activeElement` 是 body」两条路径拿焦点（product-spec §13.4「唤起即已默认聚焦」）——截图 S5 是「取消留下 body 焦点 → 隐藏再唤起 → 搜索框按契约接管」，非缺陷。
 
 **取证方法教训（续 §4.2 三条）**：
 
