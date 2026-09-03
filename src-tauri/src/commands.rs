@@ -48,11 +48,11 @@ pub struct AppState {
     pub conn: Mutex<Connection>,
     // Absolute path to the on-disk DB file (…/prompt-hub.db). Held so write
     // paths that must snapshot the live database (import wipe-and-restore, exit
-    // checkpoint) can locate the file and its sibling `backups/` dir. Always
-    // `Some` in the running app (a DB that failed to open never reaches
-    // AppState — fail_startup exits first); `None` only for test fixtures
-    // whose in-memory connection has no file to back up.
-    pub db_path: Option<PathBuf>,
+    // checkpoint) can locate the file and its sibling `backups/` dir. Never
+    // absent: a DB that failed to open never reaches AppState — fail_startup
+    // exits first — so there is no state in which a command runs without a
+    // file to back up.
+    pub db_path: PathBuf,
     // Monotonic copy/show/hide token. Each record_usage / show_window /
     // hide_window bumps it; the 200ms delayed hide checks it on wake and
     // bails if a newer event has happened (rapid second copy, user
@@ -839,27 +839,23 @@ pub fn import_data(
 ) -> AppResult<repo_write::ImportSummary> {
     let json = std::fs::read_to_string(&path).map_err(repo_core::RepoError::from)?;
     let guard = state.conn.lock().map_err(|_| AppError::LockPoisoned)?;
-    import_with_backup(&guard, state.db_path.as_deref(), &json)
+    import_with_backup(&guard, &state.db_path, &json)
 }
 
 // Snapshot-then-restore under a caller-held lock. Split out from the command so
 // it's unit-testable without a live `State`. Fail-safe: the pre-import snapshot
 // runs before the wipe-and-restore (import_json truncates every asset table,
 // strategy D1=A), and any snapshot failure aborts the import — the caller keeps
-// its intact DB rather than losing data to a half-restore. When `db_path` is
-// None (in-memory test connection, no file to back up) the import proceeds
-// without a snapshot.
+// its intact DB rather than losing data to a half-restore.
 fn import_with_backup(
     conn: &Connection,
-    db_path: Option<&std::path::Path>,
+    db_path: &std::path::Path,
     json: &str,
 ) -> AppResult<repo_write::ImportSummary> {
-    if let Some(db_path) = db_path {
-        let backups_dir = repo_core::backups_dir_for(db_path);
-        // RepoError -> AppError via `?`; surfaces to the renderer as "backup
-        // failed" so the user knows the import did NOT run.
-        repo_core::snapshot(conn, &backups_dir, "pre-import")?;
-    }
+    let backups_dir = repo_core::backups_dir_for(db_path);
+    // RepoError -> AppError via `?`; surfaces to the renderer as "backup
+    // failed" so the user knows the import did NOT run.
+    repo_core::snapshot(conn, &backups_dir, "pre-import")?;
     Ok(guard_schema_then(conn, |c| {
         repo_write::import_json(c, json)
     })?)
@@ -956,8 +952,8 @@ mod tests {
         let json = repo_core::export_json(&conn).expect("export current db");
 
         assert_eq!(pre_import_backup_count(&db_path), 0, "clean start");
-        let summary = import_with_backup(&conn, Some(db_path.as_path()), &json)
-            .expect("import with backup succeeds");
+        let summary =
+            import_with_backup(&conn, &db_path, &json).expect("import with backup succeeds");
         // The import ran (summary is produced) AND a snapshot was written first.
         let _ = summary;
         assert_eq!(
@@ -980,22 +976,13 @@ mod tests {
         let backups = repo_core::backups_dir_for(&db_path);
         std::fs::write(&backups, b"blocker").expect("occupy backups path with a file");
 
-        let err = import_with_backup(&conn, Some(db_path.as_path()), &json)
+        let err = import_with_backup(&conn, &db_path, &json)
             .expect_err("backup failure must abort import");
         // Surfaces as a repo/io error, not a silent success.
         assert!(
             matches!(err, AppError::Repo(_)),
             "expected a Repo error from the failed snapshot, got {err:?}"
         );
-    }
-
-    #[test]
-    fn import_without_db_path_skips_backup_and_still_imports() {
-        let (_dir, conn) = migrated_conn();
-        let json = repo_core::export_json(&conn).expect("export");
-        // db_path=None is the in-memory test connection: no snapshot, import
-        // still runs.
-        import_with_backup(&conn, None, &json).expect("import proceeds without a backup target");
     }
 
     #[test]

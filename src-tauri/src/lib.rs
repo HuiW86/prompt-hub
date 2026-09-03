@@ -168,7 +168,7 @@ pub fn run() {
 
             app.manage(AppState {
                 conn: Mutex::new(conn),
-                db_path: Some(db_path),
+                db_path,
                 copy_seq: AtomicU64::new(0),
                 // Optimistic default; the desktop shortcut setup below flips it
                 // false if register() fails.

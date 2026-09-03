@@ -60,6 +60,13 @@ function App() {
   useEffect(() => {
     function onKey(e: KeyboardEvent) {
       if (e.key !== "Escape") return;
+      // A held key auto-repeats. The first keydown may have been consumed by
+      // whoever owned the screen (settings modal / anchored editor close and
+      // drop their capture listener on that very press); the repeats that
+      // follow are not a fresh "hide the dashboard" intent, so never act on
+      // them — otherwise holding Escape a beat too long closes the modal AND
+      // hides the window.
+      if (e.repeat) return;
       // ESC routing: when the search overlay is up (isSearching = query has
       // content), SearchOverlay's document keydown listener will clear the
       // query and "exit search". App's job is only to hide the window when
@@ -76,6 +83,10 @@ function App() {
   useEffect(() => {
     function onKey(e: KeyboardEvent) {
       // Document-level keydown ordering across the app (mount order):
+      //   0. Capture-phase claims run before any of the bubble listeners
+      //      below: primitives/Editor.tsx and SettingsModal both stop Escape
+      //      at document capture while they own the screen, so App's ESC
+      //      never sees it (G4 D2).
       //   1. App ESC (this file, earlier effect) — falls through if focus is
       //      in SearchBar with a non-empty value; SearchOverlay now also
       //      intercepts Escape to clear the query when it owns the screen.

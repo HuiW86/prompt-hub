@@ -175,6 +175,43 @@ describe("SettingsModal — focus domain", () => {
     expect(document.activeElement).toBe(last);
   });
 
+  it("Escape closes the modal and never reaches bubble-phase listeners (G4 D2)", () => {
+    useSettingsStore.setState({ settingsOpen: true });
+    render(<SettingsModal />);
+    const dialog = screen.getByRole("dialog");
+
+    // Stand-in for App's document-level hide listener: bubble phase, which
+    // fires after the modal's capture-phase claim on the key.
+    const leaked = vi.fn();
+    document.addEventListener("keydown", leaked);
+    fireEvent.keyDown(dialog, { key: "Escape" });
+    document.removeEventListener("keydown", leaked);
+
+    expect(useSettingsStore.getState().settingsOpen).toBe(false);
+    expect(leaked).not.toHaveBeenCalled();
+  });
+
+  it("Escape while a hotkey is being recorded cancels the capture, not the modal (G4 D2)", () => {
+    useSettingsStore.setState({ settingsOpen: true });
+    render(<SettingsModal />);
+    fireEvent.click(screen.getByRole("button", { name: "快捷键" }));
+    fireEvent.click(screen.getByRole("button", { name: "更改" }));
+    const dialog = screen.getByRole("dialog");
+
+    // Both listeners sit in the capture phase — the recorder on window, the
+    // modal on document — and the recorder wins only by propagation order.
+    // A real keydown carries both fields; the recorder keys on `code`, the
+    // modal on `key`, so a synthetic event with one field would silently
+    // skip one of them and prove nothing.
+    fireEvent.keyDown(dialog, { key: "Escape", code: "Escape" });
+    expect(screen.getByRole("button", { name: "更改" })).toBeInTheDocument();
+    expect(useSettingsStore.getState().settingsOpen).toBe(true);
+
+    // Recording is off, so the second Escape reaches the modal and closes it.
+    fireEvent.keyDown(dialog, { key: "Escape", code: "Escape" });
+    expect(useSettingsStore.getState().settingsOpen).toBe(false);
+  });
+
   it("returns focus to the opening trigger when closed", () => {
     // A stand-in trigger button that lives outside the modal.
     const trigger = document.createElement("button");

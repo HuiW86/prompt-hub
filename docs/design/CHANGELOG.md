@@ -14,6 +14,33 @@ description: prompt-hub 设计文档体系变更日志——记录文档结构�
 
 ---
 
+## 2026-09-02（三）· 第五段 — G4 缺陷 D2 修复（弹窗 Esc 改捕获阶段认领）+ HANDOFF 第 31 项收窄 `db_path`
+
+> 触发：HANDOFF 第 25 项（G4 缺陷 D2 · P2「设置弹窗内 Esc 连仪表盘一起隐藏」）与第 31 项（`AppState.db_path` 收窄）。两项都是独立小改动，同段闭合。
+
+### 做了什么
+
+- **根因先纠正**：走查记录写的是「两监听同在 window 冒泡阶段、弹窗未 `stopPropagation`」，读代码后不成立——App 的隐藏监听挂在 `document` 冒泡阶段，弹窗的 Esc 挂在 `window` 冒泡阶段。冒泡顺序是先 document 后 window，所以 App 先调 `hide_window`，弹窗那边再 stop 已经来不及。按原记法「补 `stopPropagation`」改完会一模一样地失败
+- **修法沿用既有约定**：`SettingsModal.tsx` 把 Esc 拆成单独监听，挂 `document` **捕获阶段**并 `stopPropagation`，与 `primitives/Editor.tsx` 对 Esc 的处理同一模式（谁拥有屏幕谁在捕获阶段认领）。Tab 陷阱保持在 window 上不动。HotkeyRecorder 录键时挂的是 `window` 捕获，仍先于 document 捕获触发并吞掉事件，所以录键中的 Esc 只取消录键、不关弹窗，语义不变。否决「App 隐藏监听加 `settingsOpen` 守卫」：App 已经为搜索层放了一个守卫，再放一个就是让 App 认识每一种浮层，这是一类坑不是一个坑
+- **测试**：`App.test` +1（设置弹窗开着按 Esc → 弹窗关、`hide_window` 调用数不变）+ `SettingsModal.test` +1（Esc 在捕获阶段被认领，同 target 的 document 冒泡监听收不到）。两条都把 keydown 派发到持焦点的 dialog 而不是 document——派发到 document 时 at-target 阶段捕获 / 冒泡两组监听的先后依赖 jsdom 对规范的实现细节，不能拿来当判据。前端 405→**407**
+- **第 31 项**：`AppState.db_path: Option<PathBuf>` 收窄为 `PathBuf`。第四段后 `None` 在生产不可达（`lib.rs` 唯一构造点恒传路径，失败分支 `process::exit` 先于 `manage`），只为 `commands.rs` 一条单测活着；`import_with_backup` 参数同步收窄为 `&Path`、`if let Some` 分支拍平，删 `import_without_db_path_skips_backup_and_still_imports`。Rust 170→**169**
+- **验证**：`pnpm test` 407 / `pnpm lint` / prettier 全绿；`cargo test --workspace` 169 / clippy `-D warnings` / fmt 干净。**W18 Esc 段发布形态复跑待做**（隔离 `HOME` + 裸 release，`⌘,` 开弹窗 → Esc → 期望弹窗关、窗口仍在屏），通过后 D2 闭合
+- **涟漪（不 bump）**：[[11-test-spec]] v0.7 §4.3 W18 / D2 行记根因纠正与修法、§2 计数 407 与 +2 构成、§4 表 169（repo-core 46 / lib 10）；[[07-features]] v1.21 同版补记行 + §7 G4 段落 + 3.11 留证行；HANDOFF 第 25 项余复跑、第 31 项闭合
+
+### `/review` 审查结果（同日）
+
+- gstack 前置脚本被拒未写分析日志（与三、四段同）；专项五位（测试 / 可维护性 / 安全 / 性能 / 设计）+ Claude 对抗子代理跑完；Codex 代理账户余额仍 $0.296，本轮未跑
+- **采纳（全部信息级，无关键项）**：① 测试——注释里的顺序契约「录键中 Esc 只取消录键、第二次才关弹窗」无测试守着，两组件还分别按 `code` / `key` 判断、既有测试各带一个字段互相触碰不到 → 补集成测试（事件同时带两字段），变异验证录键器挪到 document 即红 ② 对抗——**长按 Esc**：第一下关弹窗并卸掉捕获监听，OS 自动重复的后续 keydown 漏到 App 隐藏监听，仪表盘仍会消失；App 隐藏监听加 `e.repeat` 守卫（重复按键从来不是新的隐藏意图），锚定编辑器同受益，+1 回归 ③ 设计 + 可维护性同指——`HotkeyRecorder.tsx` 头注释仍说弹窗 Esc「在 window 冒泡阶段」，改为「document 捕获，录键器靠传播顺序先手，勿挪到 document」 ④ 可维护性——[[03-product-spec]] v0.23 §13.4 区域 9 与 §13.3 两处机理描述失真，omar 拍板**同版就地改措辞不 bump**（契约结论「一次 Esc 取消、第二次关窗」不变）；HANDOFF 起手建议仍写「补 `stopPropagation`」→ 改指向 W18 复跑
+- **记账不改（omar 拍板）**：设计专项指出既有问题——导入 / 导出 / 改快捷键进行中 Esc 或点遮罩仍会关窗，操作继续跑、失败信息只留在已关闭的弹窗里；触及区域 9「关闭：Esc」契约与 ADR-025，记 HANDOFF 第 33 项走八步
+- **对抗子代理核实的非问题**（免重查）：录键器 window 捕获先于弹窗 document 捕获**不依赖注册顺序**（不同节点，传播路径固定 window→document）；Editor 与弹窗同在 document 捕获，但 Editor 只在焦点位于面板内时 stop，开弹窗时焦点已移入 dialog；effect cleanup 在 StrictMode 下成对；两条新测试在修前确实会红；`cargo check --workspace --all-targets` 与 `--features bench` 均过，`AppState` 只有 `lib.rs` 一个构造点
+- 审查后前端 407→**409**，Rust 169 不变
+
+### 方法记一笔
+
+- **走查记录里的根因，修之前再读一遍代码**。本段和第四段同一种错：D3 把根因写成「非主线程 NSAlert 不呈现」，D2 把根因写成「同在 window 冒泡阶段」，两条都是走查当天凭印象写的，修法按它做都会白做。这是 HANDOFF 第 4 项（「AI 主笔对外文档必须逐句反查代码」）的第三个实例
+
+---
+
 ## 2026-09-02（三）· 第四段 — G4 缺陷 D3 改判并修复：启动失败路径改同步弹框 + `process::exit(1)`
 
 > 触发：HANDOFF 第 24 项（G4 缺陷 D3 · P1「数据库损坏时阻断对话框从不出现」）。修之前先按 `main` 的裸 release（chunk `BXzTJiZI` 已核对）复现——结论推翻了缺陷本身。

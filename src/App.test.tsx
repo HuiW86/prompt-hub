@@ -439,6 +439,42 @@ describe("Dashboard click → IPC flow", () => {
     );
   });
 
+  it("auto-repeated ESC never hides the window (held key after a modal close)", async () => {
+    render(<App />);
+    await screen.findByRole("button", { name: "借力最优解" });
+    const hidesBefore = invokeMock.mock.calls.filter(
+      (c) => c[0] === "hide_window",
+    ).length;
+
+    fireEvent.keyDown(document, { key: "Escape", repeat: true });
+
+    await new Promise((r) => setTimeout(r, 0));
+    expect(
+      invokeMock.mock.calls.filter((c) => c[0] === "hide_window").length,
+    ).toBe(hidesBefore);
+  });
+
+  it("ESC with the settings modal open closes the modal, not the window (G4 D2)", async () => {
+    render(<App />);
+    await screen.findByRole("button", { name: "借力最优解" });
+    useSettingsStore.getState().openSettings();
+    const dialog = await screen.findByRole("dialog");
+    const hidesBefore = invokeMock.mock.calls.filter(
+      (c) => c[0] === "hide_window",
+    ).length;
+
+    // Keydown targets the focused dialog and bubbles up through document, the
+    // same path a real keypress takes.
+    fireEvent.keyDown(dialog, { key: "Escape" });
+
+    await waitFor(() =>
+      expect(useSettingsStore.getState().settingsOpen).toBe(false),
+    );
+    expect(
+      invokeMock.mock.calls.filter((c) => c[0] === "hide_window").length,
+    ).toBe(hidesBefore);
+  });
+
   it("⌘1 selects the first visible phase and records phase_bar usage", async () => {
     render(<App />);
     await screen.findByRole("button", { name: "借力最优解" });

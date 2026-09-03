@@ -215,11 +215,21 @@ export function SettingsModal() {
       );
     };
 
+    // Escape claims the key before anyone else can act on it. The modal owns
+    // the screen while open, so Escape means "close the modal", never "hide
+    // the dashboard" — but App's hide listener sits on `document` in the bubble
+    // phase, which fires *before* a `window` bubble listener, so a late
+    // stopPropagation there would be moot (G4 D2). Same convention as
+    // primitives/Editor.tsx: document capture + stop. HotkeyRecorder's own
+    // window-capture swallow still runs ahead of this while a chord is being
+    // recorded, so Escape mid-recording only cancels the recording.
+    const onEscape = (e: KeyboardEvent) => {
+      if (e.key !== "Escape") return;
+      e.stopPropagation();
+      close();
+    };
+
     const onKey = (e: KeyboardEvent) => {
-      if (e.key === "Escape") {
-        close();
-        return;
-      }
       if (e.key !== "Tab") return;
 
       const items = focusables();
@@ -249,8 +259,10 @@ export function SettingsModal() {
       }
     };
 
+    document.addEventListener("keydown", onEscape, true);
     window.addEventListener("keydown", onKey);
     return () => {
+      document.removeEventListener("keydown", onEscape, true);
       window.removeEventListener("keydown", onKey);
       // Restore focus to the opener on close/unmount (guard against a stale node
       // detached from the DOM in the interim).

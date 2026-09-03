@@ -36,10 +36,13 @@ const SWALLOWED_HINT =
 // physical key combination, so the only honest way to enter it is to press it.
 // While armed we take keydown on window in the CAPTURE phase and stop
 // propagation, which is what makes the capture total — including over the
-// settings modal's own ESC-to-close handler, which listens on window during
-// bubble. That is intentional: in recording mode ESC means "cancel recording",
-// and closing the dialog out from under the user mid-capture would leave them
-// unsure whether the chord was saved. One ESC cancels, a second closes.
+// settings modal's own ESC-to-close claim, which sits on document in the
+// capture phase (G4 D2). We win purely by propagation order: window capture
+// runs before document capture, so keep this listener on `window` — moving it
+// to `document` would put the modal's claim first. That is intentional: in
+// recording mode ESC means "cancel recording", and closing the dialog out from
+// under the user mid-capture would leave them unsure whether the chord was
+// saved. One ESC cancels, a second closes.
 export function HotkeyRecorder() {
   const globalHotkey = useSettingsStore((s) => s.globalHotkey);
   const setGlobalHotkey = useSettingsStore((s) => s.setGlobalHotkey);
