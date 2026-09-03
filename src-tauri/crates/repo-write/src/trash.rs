@@ -69,7 +69,58 @@ pub fn restore_asset(conn: &Connection, kind: AssetKind, id: &str) -> RepoResult
         &format!("UPDATE {table} SET deleted_at = NULL WHERE id = ?1"),
         params![id],
     )?;
+    revive_trashed_ancestors(&tx, kind, id)?;
     tx.commit()?;
+    Ok(())
+}
+
+/// Bring back whatever the restored row hangs from, if that is in the trash too.
+///
+/// Without this a restore can produce an asset that is alive and yet reachable
+/// from nowhere. Delete a phrase, then delete its now-empty scene (allowed —
+/// `SceneNotEmpty` only counts LIVE children), then restore just the phrase: the
+/// phrase's `deleted_at` is NULL so the trash no longer lists it, while its scene
+/// is still hidden so `list_scenes_with_children` never renders it either. The row
+/// exists and the user cannot see it or get it back, which is the exact failure
+/// this ADR was written to abolish.
+///
+/// Reviving upwards is the right direction rather than refusing the restore: the
+/// user asked to see this asset again, and it cannot be seen without the scene it
+/// lives in. It also keeps `purge_trash`'s FK-driven skip of a trashed scene that
+/// still has live children as a defensive branch instead of a reachable one.
+///
+/// A sub-stage needs no equivalent for visibility — 子决策 7 already shows phrases
+/// under a trashed sub-stage as ungrouped — but it is revived anyway so the phrase
+/// lands back in the group it was in rather than silently changing partition.
+fn revive_trashed_ancestors(tx: &Connection, kind: AssetKind, id: &str) -> RepoResult<()> {
+    match kind {
+        AssetKind::Phrase => {
+            tx.execute(
+                "UPDATE scenes SET deleted_at = NULL
+                 WHERE id = (SELECT scene_id FROM phrases WHERE id = ?1)",
+                params![id],
+            )?;
+            tx.execute(
+                "UPDATE sub_stages SET deleted_at = NULL
+                 WHERE id = (SELECT sub_stage_id FROM phrases WHERE id = ?1)",
+                params![id],
+            )?;
+        }
+        AssetKind::SubStage => {
+            tx.execute(
+                "UPDATE scenes SET deleted_at = NULL
+                 WHERE id = (SELECT scene_id FROM sub_stages WHERE id = ?1)",
+                params![id],
+            )?;
+        }
+        // The other five hang off a phase or off nothing, and phases are not an
+        // asset table — they can never be in the trash.
+        AssetKind::Modifier
+        | AssetKind::Macro
+        | AssetKind::AlignmentPhrase
+        | AssetKind::Composition
+        | AssetKind::Scene => {}
+    }
     Ok(())
 }
 

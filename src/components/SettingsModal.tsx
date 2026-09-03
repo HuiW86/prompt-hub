@@ -36,6 +36,7 @@ import { useUpdaterStore } from "../stores/updaterStore";
 import { toUserMessage } from "../utils/errorMessage";
 
 import { HotkeyRecorder } from "./HotkeyRecorder";
+import { TrashSection } from "./TrashSection";
 import { cx } from "./primitives/cx";
 import styles from "./SettingsModal.module.css";
 
@@ -561,6 +562,13 @@ export function SettingsModal() {
                   </div>
                 ) : null}
               </div>
+
+              {/* ADR-028 P1. Mounted only under this tab, which is also what
+                  loads it: the section re-reads the trash whenever the 数据 page
+                  is opened, so it can never show a stale list — including the
+                  item the user deleted seconds ago while the 撤销 toast is
+                  still up. */}
+              <TrashSection />
             </div>
           )}
         </div>

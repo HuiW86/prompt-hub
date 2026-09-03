@@ -1,0 +1,139 @@
+/* TrashSection — the ADR-028 P1 trash view, rendered inside the settings 数据
+ * page. Chrome deliberately re-states the settings page's own vocabulary
+ * (field label / note / action button / mono status line) rather than importing
+ * dashboard looks: this pane is chrome, not a region. Same arrangement as
+ * HotkeyRecorder, which sits in the 快捷键 page under its own module. */
+
+.section {
+  display: flex;
+  flex-direction: column;
+  gap: var(--s-2_5);
+}
+
+/* Label and count share one baseline. 子决策 4 bought "no auto-expiry" with a
+   promise that the size stays visible, so the count belongs in the header, not
+   buried under the list. */
+.head {
+  display: flex;
+  align-items: baseline;
+  gap: var(--s-2);
+}
+
+.label {
+  composes: ph-label from "../styles/typography.module.css";
+}
+
+.count {
+  composes: ph-num from "../styles/typography.module.css";
+}
+
+.hint {
+  composes: ph-note from "../styles/typography.module.css";
+}
+
+/* ── Entry list ─────────────────────────────────────────────────────────────
+   No max-height: the modal already caps at 80vh and .content scrolls, so a
+   long trash rides that scroller instead of nesting a second one. */
+.list {
+  display: flex;
+  flex-direction: column;
+  border: var(--hairline) solid var(--border-1);
+  border-radius: var(--r-3);
+  overflow: hidden;
+}
+
+/* ListRowSurface brings the separator and hover; the domain sets the vertical
+   rhythm, since the primitive carries no height of its own. */
+.row {
+  padding-top: var(--s-2);
+  padding-bottom: var(--s-2);
+}
+
+/* Two classes deep so it outranks the primitive's own .row rule regardless of
+   which module the bundler emits first. */
+.list > *:last-child {
+  border-bottom-color: transparent;
+}
+
+.kind {
+  composes: ph-meta from "../styles/typography.module.css";
+  flex: 0 0 auto;
+}
+
+.name {
+  composes: ph-action from "../styles/typography.module.css";
+  flex: 1 1 auto;
+  min-width: 0;
+  color: var(--fg-1);
+  overflow: hidden;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+}
+
+.time {
+  composes: ph-num from "../styles/typography.module.css";
+  flex: 0 0 auto;
+}
+
+/* ── Actions ────────────────────────────────────────────────────────────────
+   Matches the data page's 导出备份… / 导入备份… buttons so 清空 reads as one of
+   the pane's own controls. */
+.button {
+  composes: ph-action from "../styles/typography.module.css";
+  display: inline-flex;
+  align-items: center;
+  gap: var(--s-1_5);
+  height: var(--h-chip);
+  padding: 0 var(--s-3);
+  border: var(--hairline) solid var(--border-1);
+  border-radius: var(--r-3);
+  background: var(--surface-1);
+  color: var(--fg-1);
+  cursor: pointer;
+  appearance: none;
+  transition:
+    background-color var(--d-fast) var(--ease),
+    border-color var(--d-fast) var(--ease);
+}
+
+.button:hover:not(:disabled) {
+  border-color: var(--border-2);
+  background: var(--surface-2);
+}
+
+.button:disabled {
+  opacity: var(--op-dim);
+  cursor: not-allowed;
+}
+
+.button:focus-visible {
+  outline: var(--border-thick) solid var(--accent);
+  outline-offset: 0;
+}
+
+/* Row-scale variant: same control, quieter and tighter inside a list row. */
+.rowBtn {
+  composes: button;
+  flex: 0 0 auto;
+  padding: 0 var(--s-2);
+  color: var(--fg-2);
+}
+
+.actions {
+  display: flex;
+  gap: var(--s-2);
+}
+
+/* Mono receipt line, twinned with SettingsModal's .statusRow — the purge is the
+   one action here whose result is a number worth reading twice.
+   preset-equivalent: none (mono 12/400 meta) */
+.status {
+  display: flex;
+  align-items: center;
+  gap: var(--s-2);
+  font-family: var(--font-mono);
+  font-size: var(--t-12);
+  font-weight: var(--w-400);
+  line-height: var(--lh-tight);
+  color: var(--fg-2);
+}

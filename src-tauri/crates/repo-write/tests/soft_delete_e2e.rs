@@ -565,3 +565,62 @@ fn reorder_over_the_visible_list_skips_a_trashed_neighbour() {
         "got {err:?}"
     );
 }
+
+/// A restore must never leave an asset alive but unreachable. Deleting a phrase
+/// and then its now-empty scene is allowed, because `SceneNotEmpty` counts only
+/// LIVE children; restoring just the phrase used to put the row back under a
+/// scene that is still hidden, so it appeared neither on the dashboard nor in the
+/// trash. That is the exact loss ADR-028 exists to abolish, so the restore
+/// revives what the row hangs from.
+#[test]
+fn restoring_a_phrase_revives_the_scene_and_sub_stage_it_hangs_from() {
+    let (_dir, conn) = migrated_conn();
+    let scene = create_scene(&conn, "受害场景", None, &[], None).expect("scene");
+    let stage = create_sub_stage(&conn, &scene.id, "受害子阶段").expect("sub stage");
+    let phrase =
+        create_phrase(&conn, &scene.id, "受害话术", "body", Some(&stage.id)).expect("phrase");
+
+    delete_phrase(&conn, &phrase.id).expect("delete phrase");
+    delete_sub_stage(&conn, &stage.id).expect("delete sub stage");
+    delete_scene(&conn, &scene.id).expect("delete scene");
+
+    restore_asset(&conn, AssetKind::Phrase, &phrase.id).expect("restore phrase");
+
+    let alive = |table: &str, id: &str| -> i64 {
+        conn.query_row(
+            &format!("SELECT COUNT(*) FROM {table} WHERE id = ?1 AND deleted_at IS NULL"),
+            params![id],
+            |row| row.get(0),
+        )
+        .expect("count")
+    };
+    assert_eq!(alive("phrases", &phrase.id), 1, "the phrase itself is back");
+    assert_eq!(
+        alive("scenes", &scene.id),
+        1,
+        "its scene came with it, or the phrase would be invisible and untrashed"
+    );
+    assert_eq!(
+        alive("sub_stages", &stage.id),
+        1,
+        "its sub-stage came too, so it lands back in the group it left"
+    );
+
+    // And the dashboard read agrees: the phrase is reachable again.
+    let scenes = repo::list_scenes_with_children(&conn).expect("scenes");
+    let found = scenes
+        .iter()
+        .find(|s| s.scene.id == scene.id)
+        .expect("scene is listed again");
+    assert!(
+        found.sub_stages.iter().any(|s| s.id == stage.id),
+        "its sub-stage is listed again"
+    );
+    assert!(
+        found
+            .phrases
+            .iter()
+            .any(|p| p.id == phrase.id && p.sub_stage_id.as_deref() == Some(stage.id.as_str())),
+        "the phrase is reachable and still grouped where it was"
+    );
+}

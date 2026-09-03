@@ -40,6 +40,17 @@ const SUMMARY: ImportSummary = {
 describe("SettingsModal — data page export/import", () => {
   let refreshAllMock: ReturnType<typeof vi.fn<() => Promise<void>>>;
 
+  // The 数据 page also mounts the ADR-028 trash section, which reads list_trash
+  // on mount — so these cases can no longer answer every command with a single
+  // mockResolvedValue. Script the one command under test and let list_trash
+  // default to an empty trash.
+  function scriptInvoke(script: Record<string, unknown> = {}) {
+    const full: Record<string, unknown> = { list_trash: [], ...script };
+    invokeMock.mockImplementation((cmd: string) =>
+      Promise.resolve(cmd in full ? full[cmd] : undefined),
+    );
+  }
+
   beforeEach(() => {
     usePromptStore.setState(promptInitial, true);
     useSettingsStore.setState(settingsInitial, true);
@@ -47,6 +58,7 @@ describe("SettingsModal — data page export/import", () => {
     usePromptStore.setState({ refreshAll: refreshAllMock });
     useSettingsStore.setState({ settingsOpen: true });
     invokeMock.mockReset();
+    scriptInvoke();
     saveMock.mockReset();
     openMock.mockReset();
     confirmMock.mockReset();
@@ -59,7 +71,6 @@ describe("SettingsModal — data page export/import", () => {
 
   it("export writes to the chosen path and reports success", async () => {
     saveMock.mockResolvedValue("/tmp/backup.json");
-    invokeMock.mockResolvedValue(undefined);
     openDataTab();
 
     fireEvent.click(screen.getByRole("button", { name: /导出备份/ }));
@@ -79,13 +90,16 @@ describe("SettingsModal — data page export/import", () => {
     fireEvent.click(screen.getByRole("button", { name: /导出备份/ }));
 
     await waitFor(() => expect(saveMock).toHaveBeenCalled());
-    expect(invokeMock).not.toHaveBeenCalled();
+    expect(invokeMock).not.toHaveBeenCalledWith(
+      "export_data",
+      expect.anything(),
+    );
   });
 
   it("import runs only after the confirm gate, then reloads stores", async () => {
     openMock.mockResolvedValue("/tmp/backup.json");
     confirmMock.mockResolvedValue(true);
-    invokeMock.mockResolvedValue(SUMMARY);
+    scriptInvoke({ import_data: SUMMARY });
     openDataTab();
 
     fireEvent.click(screen.getByRole("button", { name: /导入备份/ }));
@@ -108,7 +122,10 @@ describe("SettingsModal — data page export/import", () => {
     fireEvent.click(screen.getByRole("button", { name: /导入备份/ }));
 
     await waitFor(() => expect(confirmMock).toHaveBeenCalled());
-    expect(invokeMock).not.toHaveBeenCalled();
+    expect(invokeMock).not.toHaveBeenCalledWith(
+      "import_data",
+      expect.anything(),
+    );
     expect(refreshAllMock).not.toHaveBeenCalled();
   });
 });
