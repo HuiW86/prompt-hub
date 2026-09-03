@@ -14,6 +14,24 @@ description: prompt-hub 设计文档体系变更日志——记录文档结构�
 
 ---
 
+## 2026-09-02（三）· 第六段 — G4 W18 Esc 段按 `main` 重建复跑通过，缺陷 D2 闭合；G4 三缺陷全部销账
+
+> 触发：第五段「验证」末条 / HANDOFF 第 25 项余下的最后一步。jsdom 证明了捕获阶段认领与 `e.repeat` 守卫，WebKit 上事件是否按同样顺序到达、OS 长按重复是否真被挡住，只有发布形态能答。
+
+### 做了什么
+
+- **先对构建**：`src-tauri/target/release/prompt-hub` 仍是第三段的 `BXzTJiZI`，而 `dist` 是 `DjPzDgyV`——按第三段「方法记一笔」先 `strings` 比对，不一致即重建。`pnpm tauri build --no-bundle` 于 `e932955`（工作区干净）重建，二进制内嵌 `I1hrJmog` 与 `dist/assets/` 一致
+- **三步全过**（隔离 `HOME=/tmp/ph-w18-home`，正式版走查前退出、结束后拉回，真实资产库未触碰）：① `⌘,` 开弹窗 → Esc → 弹窗关、窗口 `onscreen=true` ② 快捷键页「更改」进录键态（显示「按下新的组合键…」）→ Esc 只退出录键（弹窗仍开，显示「⌥ Space / 更改」）→ 再 Esc 关弹窗、窗口仍在 ③ 长按 Esc 1 s → 弹窗关、仪表盘仍在屏。**对照**：弹窗关闭状态下同样长按，第一下即隐藏窗口——证明工具发出的 Esc 确实走到 App 的隐藏监听，③ 不是因为事件没到。`settings.global_hotkey` 全程 `Alt+Space`。**D2 闭合，G4 三缺陷 D1 / D2 / D3 全部销账**
+- **走查工具两条记档**：合成 `CGEvent` keyDown 按住 1 s 只落一个字符——OS 自动重复由物理键盘 HID 层生成，合成事件拿不到；长按改按 OS 口径每 33 ms 发一次 `kCGKeyboardEventAutorepeat=1` 的 keyDown（WebKit 侧即 `e.repeat=true`），先在搜索框长按 `x` 自检落一串才算有效。另：`nohup` 起的裸 release 被 `⌥Space` 唤起后仍不是前台应用，前两次 `⌘,` 打到了 iTerm2；发键前用 System Events 把进程置前
+- **零代码改动**。隔离库与截图在 `/tmp/ph-w18-home` 与 `/tmp/ph-walk/shots/W18r-*`；裸 release 现为 22:36 按 `main` `e932955` 的构建
+- **涟漪（不 bump）**：[[11-test-spec]] v0.7 §4.3 W18 行转 ✅ 并记三步证据、D2 行标闭合、§2 补第六笔、教训 9；[[07-features]] v1.21 §4 节奏表同版补记行、§7 G4 段落与 3.11 留证行改「已修并闭合」；HANDOFF 第 25 项闭合
+
+### 方法记一笔
+
+「长按」这类依赖 OS 生成事件的路径，合成输入默认验不到——工具发的是「按下」和「抬起」，中间的重复是硬件层的事。验之前先用一个可见的探针（长按可打印键看落几个字符）确认工具真能产生目标事件，否则「通过」只是没测到。
+
+---
+
 ## 2026-09-02（三）· 第五段 — G4 缺陷 D2 修复（弹窗 Esc 改捕获阶段认领）+ HANDOFF 第 31 项收窄 `db_path`
 
 > 触发：HANDOFF 第 25 项（G4 缺陷 D2 · P2「设置弹窗内 Esc 连仪表盘一起隐藏」）与第 31 项（`AppState.db_path` 收窄）。两项都是独立小改动，同段闭合。
