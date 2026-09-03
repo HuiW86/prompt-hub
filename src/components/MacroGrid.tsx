@@ -6,6 +6,7 @@ import { Flame, GripVertical, Pencil, Plus, Trash2, Zap } from "lucide-react";
 
 import { useAnchorRegistry } from "../hooks/useAnchorRegistry";
 import { useCopy } from "../hooks/useCopy";
+import { useUndoableDelete } from "../hooks/useUndoableDelete";
 import { useRegionNav } from "../hooks/useRegionNav";
 import { usePromptStore } from "../stores/promptStore";
 import { useSettingsStore } from "../stores/settingsStore";
@@ -17,7 +18,6 @@ import {
   ActionCluster,
   Button,
   CardSurface,
-  ConfirmInline,
   EmptyState,
   IconButton,
   PhraseFormEditor,
@@ -51,6 +51,7 @@ export function MacroGrid() {
   const showToast = useToastStore((s) => s.show);
   const showError = useToastStore((s) => s.showError);
   const showWithAction = useToastStore((s) => s.showWithAction);
+  const armUndo = useUndoableDelete();
   const onRegionKeyDown = useRegionNav();
   // Trigger elements the anchored editor pins to: each card by macro id, plus
   // the two create buttons (ADR-025 子决策 1).
@@ -63,7 +64,6 @@ export function MacroGrid() {
   useEffect(() => setItems(macros), [macros]);
 
   const [editing, setEditing] = useState<EditTarget>(null);
-  const [confirmingId, setConfirmingId] = useState<string | null>(null);
   // A discarded creation draft, restored by the undo toast (ADR-025 子决策 2).
   // Edits need no equivalent — the original row is still in the DB.
   const [restoredDraft, setRestoredDraft] = useState<PhraseFormValues | null>(
@@ -95,11 +95,12 @@ export function MacroGrid() {
     );
   }, [macros]);
 
-  const handleDelete = async (id: string) => {
-    setConfirmingId(null);
+  // ADR-028 子决策 3: one click deletes and the toast carries 撤销, replacing the
+  // per-card「永久删除？」confirm and the confirmingId that tracked it.
+  const handleDelete = async (m: Macro) => {
     try {
-      await deleteMacro(id);
-      showToast("已永久删除");
+      await deleteMacro(m.id);
+      armUndo({ kind: "macro", id: m.id, name: m.name });
     } catch (err) {
       showError(toUserMessage(err, "删除失败"));
     }
@@ -251,11 +252,8 @@ export function MacroGrid() {
                 anchorRef={anchors.ref(m.id)}
                 index={idx}
                 isHot={hotIds.has(m.id)}
-                isConfirming={confirmingId === m.id}
                 onEdit={() => setEditing({ mode: "edit", macro: m })}
-                onRequestDelete={() => setConfirmingId(m.id)}
-                onCancelDelete={() => setConfirmingId(null)}
-                onConfirmDelete={() => void handleDelete(m.id)}
+                onDelete={() => void handleDelete(m)}
               />
             ))}
           </div>
@@ -271,11 +269,8 @@ interface CardProps {
   anchorRef: (el: HTMLElement | null) => void;
   index: number;
   isHot: boolean;
-  isConfirming: boolean;
   onEdit: () => void;
-  onRequestDelete: () => void;
-  onCancelDelete: () => void;
-  onConfirmDelete: () => void;
+  onDelete: () => void;
 }
 
 function SortableMacroCard({
@@ -283,11 +278,8 @@ function SortableMacroCard({
   anchorRef,
   index,
   isHot,
-  isConfirming,
   onEdit,
-  onRequestDelete,
-  onCancelDelete,
-  onConfirmDelete,
+  onDelete,
 }: CardProps) {
   const { ref, handleRef, isDragging } = useSortable({ id: macro.id, index });
   const copy = useCopy();
@@ -351,44 +343,33 @@ function SortableMacroCard({
         <span className={styles.uses}>{macro.usageCount} 次</span>
       </button>
 
-      {isConfirming ? (
-        <ConfirmInline
-          className={styles.cardActions}
-          text="永久删除？"
-          confirmLabel="确认永久删除"
-          cancelLabel="取消删除"
-          onConfirm={onConfirmDelete}
-          onCancel={onCancelDelete}
-        />
-      ) : (
-        <ActionCluster className={styles.cardActions} reveal>
-          <IconButton
-            ref={handleRef}
-            dragHandle
-            data-nav-item
-            tabIndex={-1}
-            aria-label={`拖动排序 ${macro.name}`}
-          >
-            <GripVertical size={14} aria-hidden strokeWidth={2} />
-          </IconButton>
-          <IconButton
-            data-nav-item
-            tabIndex={-1}
-            aria-label={`编辑 ${macro.name}`}
-            onClick={onEdit}
-          >
-            <Pencil size={13} aria-hidden strokeWidth={2} />
-          </IconButton>
-          <IconButton
-            data-nav-item
-            tabIndex={-1}
-            aria-label={`删除 ${macro.name}`}
-            onClick={onRequestDelete}
-          >
-            <Trash2 size={13} aria-hidden strokeWidth={2} />
-          </IconButton>
-        </ActionCluster>
-      )}
+      <ActionCluster className={styles.cardActions} reveal>
+        <IconButton
+          ref={handleRef}
+          dragHandle
+          data-nav-item
+          tabIndex={-1}
+          aria-label={`拖动排序 ${macro.name}`}
+        >
+          <GripVertical size={14} aria-hidden strokeWidth={2} />
+        </IconButton>
+        <IconButton
+          data-nav-item
+          tabIndex={-1}
+          aria-label={`编辑 ${macro.name}`}
+          onClick={onEdit}
+        >
+          <Pencil size={13} aria-hidden strokeWidth={2} />
+        </IconButton>
+        <IconButton
+          data-nav-item
+          tabIndex={-1}
+          aria-label={`删除 ${macro.name}`}
+          onClick={onDelete}
+        >
+          <Trash2 size={13} aria-hidden strokeWidth={2} />
+        </IconButton>
+      </ActionCluster>
     </CardSurface>
   );
 }

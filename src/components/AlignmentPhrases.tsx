@@ -11,18 +11,14 @@ import {
 import { useAnchorRegistry } from "../hooks/useAnchorRegistry";
 import { useCopy } from "../hooks/useCopy";
 import { useRegionNav } from "../hooks/useRegionNav";
+import { useUndoableDelete } from "../hooks/useUndoableDelete";
 import { useAppStore } from "../stores/appStore";
 import { usePromptStore } from "../stores/promptStore";
 import { useToastStore } from "../stores/toastStore";
 import { toUserMessage } from "../utils/errorMessage";
 import type { AlignmentPhrase } from "../ipc/types";
 
-import {
-  ActionCluster,
-  ConfirmInline,
-  IconButton,
-  PhraseFormEditor,
-} from "./primitives";
+import { ActionCluster, IconButton, PhraseFormEditor } from "./primitives";
 import primitiveStyles from "./primitives/primitives.module.css";
 import styles from "./AlignmentPhrases.module.css";
 
@@ -47,6 +43,7 @@ export function AlignmentPhrases() {
   const showToast = useToastStore((s) => s.show);
   const showError = useToastStore((s) => s.showError);
   const showWithAction = useToastStore((s) => s.showWithAction);
+  const armUndo = useUndoableDelete();
   const onRegionKeyDown = useRegionNav();
 
   const phrases =
@@ -58,7 +55,6 @@ export function AlignmentPhrases() {
   // phase switch resets these via the id/flag going stale, not a reset effect.
   const [editingId, setEditingId] = useState<string | null>(null);
   const [adding, setAdding] = useState(false);
-  const [confirmingId, setConfirmingId] = useState<string | null>(null);
   // A discarded creation draft, restored by the undo toast (ADR-025 子决策 2).
   // Edits need no equivalent — the original row is still in the DB.
   const [restoredDraft, setRestoredDraft] = useState<{
@@ -72,23 +68,23 @@ export function AlignmentPhrases() {
   const anchors = useAnchorRegistry();
 
   // A phase switch strands any open editor over a list the user can no longer
-  // see; a stale editingId simply matches nothing, but adding/confirming must be
-  // cleared explicitly. Derive the reset from activePhaseId via a render guard
-  // rather than an effect: if the editing target vanished, drop the state.
+  // see; a stale editingId simply matches nothing, but adding must be cleared
+  // explicitly. Derive the reset from activePhaseId via a render guard rather
+  // than an effect: if the editing target vanished, drop the state.
   const editingExists =
     editingId != null && phrases.some((p) => p.id === editingId);
   if (editingId != null && !editingExists) setEditingId(null);
-  const confirmingExists =
-    confirmingId != null && phrases.some((p) => p.id === confirmingId);
-  if (confirmingId != null && !confirmingExists) setConfirmingId(null);
 
-  const handleDelete = async (id: string) => {
-    setConfirmingId(null);
+  // ADR-028 子决策 3: one click deletes, the toast carries the way back. The
+  // 「永久删除？」confirm is gone along with the confirmingId it needed.
+  const handleDelete = async (p: AlignmentPhrase) => {
     try {
-      await deleteAlignmentPhrase(id);
-      showToast("已永久删除");
+      await deleteAlignmentPhrase(p.id);
+      armUndo({ kind: "alignment_phrase", id: p.id, name: p.name });
     } catch (err) {
       // Backend rejects deleting a phase's default phrase — surface the reason.
+      // That rejection is NOT undoable (nothing was deleted), so it stays an
+      // error toast with no 撤销.
       showError(toUserMessage(err, "删除失败"));
     }
   };
@@ -205,7 +201,6 @@ export function AlignmentPhrases() {
               phrase={p}
               anchorRef={anchors.ref(p.id)}
               flash={flashId === p.id}
-              confirming={confirmingId === p.id}
               canMoveLeft={idx > 0}
               canMoveRight={idx < phrases.length - 1}
               onCopy={() =>
@@ -226,9 +221,7 @@ export function AlignmentPhrases() {
               onSetDefault={() => void handleSetDefault(p.id)}
               onEdit={() => setEditingId(p.id)}
               onMove={(dir) => void handleMove(p.id, dir)}
-              onRequestDelete={() => setConfirmingId(p.id)}
-              onCancelDelete={() => setConfirmingId(null)}
-              onConfirmDelete={() => void handleDelete(p.id)}
+              onDelete={() => void handleDelete(p)}
             />
           </Fragment>
         ))
@@ -279,57 +272,37 @@ interface PhraseChipProps {
   /** Hands the chip element up so the anchored editor can pin to it. */
   anchorRef: (el: HTMLElement | null) => void;
   flash: boolean;
-  confirming: boolean;
   canMoveLeft: boolean;
   canMoveRight: boolean;
   onCopy: () => void;
   onSetDefault: () => void;
   onEdit: () => void;
   onMove: (dir: -1 | 1) => void;
-  onRequestDelete: () => void;
-  onCancelDelete: () => void;
-  onConfirmDelete: () => void;
+  onDelete: () => void;
 }
 
 // A view-mode alignment-phrase chip: the whole chip copies (primary action), so
 // every action-cluster button stops propagation to never trigger a copy. The
 // cluster (set-default / edit / move / delete) reveals on hover/focus-within,
-// mirroring ScenePanel's ViewPhraseCard (ADR-021). Delete is a two-step inline
-// confirm held by the parent so one chip's confirm never bleeds into another's.
+// mirroring ScenePanel's ViewPhraseCard (ADR-021). Delete fires on the first
+// click and is undone from the toast (ADR-028 子决策 3), so the chip no longer
+// swaps itself for a confirm row.
 function PhraseChip({
   phrase,
   anchorRef,
   flash,
-  confirming,
   canMoveLeft,
   canMoveRight,
   onCopy,
   onSetDefault,
   onEdit,
   onMove,
-  onRequestDelete,
-  onCancelDelete,
-  onConfirmDelete,
+  onDelete,
 }: PhraseChipProps) {
   const stop = (fn: () => void) => (e: ReactMouseEvent) => {
     e.stopPropagation();
     fn();
   };
-
-  if (confirming) {
-    return (
-      <span ref={anchorRef} className={styles.confirmSlot}>
-        <span className={styles.rowName}>{phrase.name}</span>
-        <ConfirmInline
-          text="永久删除？"
-          confirmLabel="确认永久删除"
-          cancelLabel="取消删除"
-          onConfirm={onConfirmDelete}
-          onCancel={onCancelDelete}
-        />
-      </span>
-    );
-  }
 
   // A chip-styled div (role="button") rather than the Chip <button> primitive:
   // the revealed action cluster nests IconButtons, and buttons can't nest in a
@@ -408,7 +381,7 @@ function PhraseChip({
           aria-label={`删除 ${phrase.name}`}
           data-nav-item
           tabIndex={-1}
-          onClick={stop(onRequestDelete)}
+          onClick={stop(onDelete)}
         >
           <Trash2 size={12} aria-hidden strokeWidth={2} />
         </IconButton>

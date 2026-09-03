@@ -52,6 +52,30 @@ export const useToastStore = create<ToastState>()((set, get) => {
     intent: ToastIntent,
     action: ToastAction | null,
   ) {
+    // ADR-028: since deletes became one-click, this toast's 撤销 button is the
+    // ONLY route back from a delete — so a live action toast outranks any toast
+    // that carries no action of its own. Without this guard the `set` below
+    // silently destroyed a pending undo mid-window.
+    //
+    // The superseded toast is DROPPED, not queued. Queuing was rejected because
+    // the payload includes flashTargetId, which flashes a specific card:
+    // replaying it up to 6s late points the user at an action they already
+    // finished, and stale feedback is worse than none. What a drop costs is a
+    // confirmation of something already visible on screen; what it buys is that
+    // an undo can never be lost.
+    //
+    // ERRORS ARE THE EXCEPTION and still take the surface. An unseen error tells
+    // the user an operation succeeded when it failed, which is a correctness bug,
+    // not a missing convenience. Losing the undo to one is survivable in a way
+    // the reverse is not: the delete is durable in the trash either way, and
+    // ADR-028 P1 surfaces it, so this button is a shortcut to a recoverable state
+    // rather than the last line of defence.
+    //
+    // Explicit dismissal still works: clear() does not route through arm().
+    //
+    // A NEW action toast may replace a live one — one pending undo at a time is
+    // the intended model (same as the ADR-022 MoveReceipt undo).
+    if (action === null && intent !== "error" && get().action !== null) return;
     const my = get().seq + 1;
     set({ message, intent, flashTargetId, action, seq: my });
     const dwell = action ? VISIBLE_MS.action : VISIBLE_MS[intent];

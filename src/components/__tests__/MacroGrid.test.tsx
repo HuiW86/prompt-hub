@@ -200,3 +200,68 @@ describe("MacroGrid — re-pressing 新增 while its editor is open (G4 缺陷 O
     expect(screen.getByPlaceholderText("名称")).toHaveFocus();
   });
 });
+
+// ADR-028 子决策 3: the per-card「永久删除？」confirm is gone — delete fires on the
+// first click, and the toast is the only thing standing between the user and a
+// mistake, so it has to actually put the macro back.
+describe("MacroGrid — one-click delete with undo (ADR-028)", () => {
+  beforeEach(() => {
+    usePromptStore.setState(promptInitial, true);
+    usePromptStore.setState({ macros });
+    useToastStore.getState().clear();
+    invokeMock.mockReset();
+    invokeMock.mockImplementation((cmd: string) =>
+      cmd === "list_macros"
+        ? Promise.resolve(macros)
+        : Promise.resolve({ ok: true }),
+    );
+  });
+
+  it("deletes on the first click and the toast restores the macro", async () => {
+    render(<MacroGrid />);
+    expect(screen.queryByLabelText("确认永久删除")).toBeNull();
+
+    await act(async () => {
+      fireEvent.click(screen.getByLabelText("删除 生成测试"));
+    });
+    expect(call("delete_macro")?.[1]).toMatchObject({ id: "macro-1" });
+    // The optimistic removal took the card off the grid straight away.
+    expect(screen.queryByLabelText("生成测试")).toBeNull();
+    // ADR-028 子决策 5: the Recent list resolves usage rows against live assets,
+    // so a delete silently changes what belongs in it. Without this re-pull the
+    // deleted macro keeps a line there until the next full reload, which is the
+    // 「（未知话术）」 tombstone the sub-decision exists to remove.
+    expect(call("list_recent_usage")).toBeDefined();
+
+    const toast = useToastStore.getState();
+    expect(toast.message).toBe("已删除「生成测试」");
+    expect(toast.action?.label).toBe("撤销");
+
+    await act(async () => {
+      toast.action?.onClick();
+    });
+    expect(call("restore_asset")?.[1]).toMatchObject({
+      kind: "macro",
+      id: "macro-1",
+    });
+    await waitFor(() => {
+      expect(screen.getByLabelText("生成测试")).toBeInTheDocument();
+    });
+  });
+
+  it("a rejected delete rolls the card back and offers no 撤销", async () => {
+    invokeMock.mockImplementation((cmd: string) =>
+      cmd === "delete_macro"
+        ? Promise.reject(new Error("boom"))
+        : Promise.resolve({ ok: true }),
+    );
+    render(<MacroGrid />);
+    await act(async () => {
+      fireEvent.click(screen.getByLabelText("删除 生成测试"));
+    });
+    const toast = useToastStore.getState();
+    expect(toast.intent).toBe("error");
+    expect(toast.action).toBeNull();
+    expect(screen.getByLabelText("生成测试")).toBeInTheDocument();
+  });
+});

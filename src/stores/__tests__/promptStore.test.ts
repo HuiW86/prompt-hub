@@ -1379,3 +1379,81 @@ describe("promptStore", () => {
     });
   });
 });
+
+// ADR-028: restoring is a single backend UPDATE — the row never left its table
+// and kept its id, created_at and order_index — so the store's only job is to
+// re-pull the ONE collection it rejoined. Getting that routing wrong shows up as
+// an asset the user restored that stays invisible until the next full reload.
+describe("promptStore — restoreAsset (ADR-028)", () => {
+  beforeEach(() => {
+    usePromptStore.setState(initial, true);
+    invokeMock.mockReset();
+    invokeMock.mockImplementation((cmd: string) => {
+      switch (cmd) {
+        case "restore_asset":
+          return Promise.resolve({ ok: true });
+        case "list_macros":
+          return Promise.resolve(fakeMacros);
+        case "list_modifiers":
+          return Promise.resolve(fakeModifiers);
+        case "list_alignment_phrases":
+          return Promise.resolve(fakeAlignments);
+        case "list_compositions":
+          return Promise.resolve(fakeCompositions);
+        case "list_scenes_with_children":
+          return Promise.resolve(fakeScenes);
+        case "list_recent_usage":
+          return Promise.resolve([]);
+        default:
+          return Promise.reject(new Error(`unexpected command ${cmd}`));
+      }
+    });
+  });
+
+  const listCommands = () =>
+    invokeMock.mock.calls
+      .map((c) => c[0] as string)
+      .filter((c) => c.startsWith("list_"));
+
+  it("forwards kind + id to restore_asset", async () => {
+    await usePromptStore.getState().restoreAsset("macro", "macro-1");
+    const call = invokeMock.mock.calls.find((c) => c[0] === "restore_asset");
+    expect(call?.[1]).toEqual({ kind: "macro", id: "macro-1" });
+  });
+
+  it.each([
+    ["macro", "macros", "list_macros"],
+    ["modifier", "modifiers", "list_modifiers"],
+    ["alignment_phrase", "alignmentPhrasesByPhase", "list_alignment_phrases"],
+    ["composition", "compositionsByPhase", "list_compositions"],
+    ["phrase", "scenes", "list_scenes_with_children"],
+    ["scene", "scenes", "list_scenes_with_children"],
+    ["sub_stage", "scenes", "list_scenes_with_children"],
+  ] as const)(
+    "restoring a %s re-pulls exactly %s via %s",
+    async (kind, field, listCmd) => {
+      await usePromptStore.getState().restoreAsset(kind, "some-id");
+      // Two list calls and no more: the ONE collection the row rejoined, plus
+      // the Recent list, whose lines resolve again now that the asset is alive
+      // (ADR-028 子决策 5). Still no shotgun refreshAll, which would flip
+      // loadState to "loading" and flash the skeleton over the undo.
+      expect(listCommands()).toEqual([listCmd, "list_recent_usage"]);
+      const state = usePromptStore.getState();
+      expect(state[field]).not.toEqual(initial[field]);
+      expect(state.loadState).toBe("idle");
+    },
+  );
+
+  it("rethrows a rejected restore so the caller can toast it", async () => {
+    invokeMock.mockImplementation((cmd: string) =>
+      cmd === "restore_asset"
+        ? Promise.reject(new Error("gone"))
+        : Promise.resolve([]),
+    );
+    await expect(
+      usePromptStore.getState().restoreAsset("macro", "macro-1"),
+    ).rejects.toThrow("gone");
+    // A failed restore must not have touched the store.
+    expect(listCommands()).toEqual([]);
+  });
+});

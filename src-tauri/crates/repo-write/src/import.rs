@@ -43,7 +43,9 @@ const WIPE_ORDER: &[&str] = &[
     "modifiers",
 ];
 
-/// Restore a full backup (PRD §7.5 "从 JSON 导入"). Strategy D1=A: a single
+/// Restore a full backup (PRD §7.5 "从 JSON 导入"). `deleted_at` round-trips
+/// verbatim, so a restore reproduces the trash as it was rather than silently
+/// resurrecting it (ADR-028 sub-decision 6). Strategy D1=A: a single
 /// all-or-nothing transaction wipes every asset table and re-inserts the bundle's
 /// rows by their original IDs, so cross-references survive verbatim. `foreign_keys`
 /// stay enforced but are deferred to COMMIT, which lets the phases ↔
@@ -108,8 +110,8 @@ fn insert_modifiers(conn: &Connection, rows: &[Modifier]) -> RepoResult<()> {
         conn.execute(
             "INSERT INTO modifiers
                 (id, name, content, group_kind, usage_count, last_used_at,
-                 created_at, notes, deprecated, order_index)
-             VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7, ?8, ?9, ?10)",
+                 created_at, notes, deprecated, order_index, deleted_at)
+             VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7, ?8, ?9, ?10, ?11)",
             params![
                 m.id,
                 m.name,
@@ -121,6 +123,7 @@ fn insert_modifiers(conn: &Connection, rows: &[Modifier]) -> RepoResult<()> {
                 m.notes,
                 m.deprecated as i64,
                 m.order_index,
+                m.deleted_at.map(|t| t.to_rfc3339()),
             ],
         )?;
     }
@@ -130,8 +133,9 @@ fn insert_modifiers(conn: &Connection, rows: &[Modifier]) -> RepoResult<()> {
 fn insert_scenes(conn: &Connection, rows: &[Scene]) -> RepoResult<()> {
     for s in rows {
         conn.execute(
-            "INSERT INTO scenes (id, name, icon, order_index, visible, role_presets, color)
-             VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7)",
+            "INSERT INTO scenes
+                (id, name, icon, order_index, visible, role_presets, color, deleted_at)
+             VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7, ?8)",
             params![
                 s.id,
                 s.name,
@@ -140,6 +144,7 @@ fn insert_scenes(conn: &Connection, rows: &[Scene]) -> RepoResult<()> {
                 s.visible as i64,
                 serde_json::to_string(&s.role_presets)?,
                 s.color,
+                s.deleted_at.map(|t| t.to_rfc3339()),
             ],
         )?;
     }
@@ -171,8 +176,8 @@ fn insert_alignment_phrases(conn: &Connection, rows: &[AlignmentPhrase]) -> Repo
         conn.execute(
             "INSERT INTO alignment_phrases
                 (id, phase_id, name, content, is_default, usage_count, last_used_at,
-                 created_at, notes, deprecated, order_index)
-             VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7, ?8, ?9, ?10, ?11)",
+                 created_at, notes, deprecated, order_index, deleted_at)
+             VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7, ?8, ?9, ?10, ?11, ?12)",
             params![
                 a.id,
                 a.phase_id,
@@ -185,6 +190,7 @@ fn insert_alignment_phrases(conn: &Connection, rows: &[AlignmentPhrase]) -> Repo
                 a.notes,
                 a.deprecated as i64,
                 a.order_index,
+                a.deleted_at.map(|t| t.to_rfc3339()),
             ],
         )?;
     }
@@ -194,9 +200,15 @@ fn insert_alignment_phrases(conn: &Connection, rows: &[AlignmentPhrase]) -> Repo
 fn insert_sub_stages(conn: &Connection, rows: &[SubStage]) -> RepoResult<()> {
     for ss in rows {
         conn.execute(
-            "INSERT INTO sub_stages (id, scene_id, name, order_index)
-             VALUES (?1, ?2, ?3, ?4)",
-            params![ss.id, ss.scene_id, ss.name, ss.order_index],
+            "INSERT INTO sub_stages (id, scene_id, name, order_index, deleted_at)
+             VALUES (?1, ?2, ?3, ?4, ?5)",
+            params![
+                ss.id,
+                ss.scene_id,
+                ss.name,
+                ss.order_index,
+                ss.deleted_at.map(|t| t.to_rfc3339()),
+            ],
         )?;
     }
     Ok(())
@@ -207,8 +219,8 @@ fn insert_phrases(conn: &Connection, rows: &[Phrase]) -> RepoResult<()> {
         conn.execute(
             "INSERT INTO phrases
                 (id, scene_id, name, content, usage_count, last_used_at, created_at,
-                 notes, deprecated, sub_stage_id, order_index)
-             VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7, ?8, ?9, ?10, ?11)",
+                 notes, deprecated, sub_stage_id, order_index, deleted_at)
+             VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7, ?8, ?9, ?10, ?11, ?12)",
             params![
                 p.id,
                 p.scene_id,
@@ -221,6 +233,7 @@ fn insert_phrases(conn: &Connection, rows: &[Phrase]) -> RepoResult<()> {
                 p.deprecated as i64,
                 p.sub_stage_id,
                 p.order_index,
+                p.deleted_at.map(|t| t.to_rfc3339()),
             ],
         )?;
     }
@@ -237,8 +250,9 @@ fn insert_macros(conn: &Connection, rows: &[Macro]) -> RepoResult<()> {
         conn.execute(
             "INSERT INTO macros
                 (id, name, content, expand_from, native, role, task, usage_count,
-                 last_used_at, created_at, notes, scene_id, deprecated, order_index)
-             VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7, ?8, ?9, ?10, ?11, ?12, ?13, ?14)",
+                 last_used_at, created_at, notes, scene_id, deprecated, order_index,
+                 deleted_at)
+             VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7, ?8, ?9, ?10, ?11, ?12, ?13, ?14, ?15)",
             params![
                 m.id,
                 m.name,
@@ -254,6 +268,7 @@ fn insert_macros(conn: &Connection, rows: &[Macro]) -> RepoResult<()> {
                 m.scene_id,
                 m.deprecated as i64,
                 m.order_index,
+                m.deleted_at.map(|t| t.to_rfc3339()),
             ],
         )?;
     }
@@ -265,8 +280,8 @@ fn insert_compositions(conn: &Connection, rows: &[Composition]) -> RepoResult<()
         conn.execute(
             "INSERT INTO compositions
                 (id, name, modifier_ids, phase_id, scene_id, usage_count,
-                 last_used_at, created_at, notes, deprecated, order_index)
-             VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7, ?8, ?9, ?10, ?11)",
+                 last_used_at, created_at, notes, deprecated, order_index, deleted_at)
+             VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7, ?8, ?9, ?10, ?11, ?12)",
             params![
                 c.id,
                 c.name,
@@ -279,6 +294,7 @@ fn insert_compositions(conn: &Connection, rows: &[Composition]) -> RepoResult<()
                 c.notes,
                 c.deprecated as i64,
                 c.order_index,
+                c.deleted_at.map(|t| t.to_rfc3339()),
             ],
         )?;
     }

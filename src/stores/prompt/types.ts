@@ -1,3 +1,4 @@
+import type { AssetKind } from "../../ipc";
 import type {
   AlignmentPhrase,
   Composition,
@@ -204,6 +205,14 @@ export interface PromptState {
   updateSubStage: (args: { id: string; name: string }) => Promise<void>;
   deleteSubStage: (id: string) => Promise<void>;
   reorderSubStages: (sceneId: string, orderedIds: string[]) => Promise<void>;
+
+  // Undo a delete (ADR-028). `kind` picks the table the row went back into and
+  // therefore which collection is re-pulled; the row keeps its id and slot, so
+  // there is nothing to rebuild. Rethrows so a failed 撤销 reaches an honest
+  // error toast instead of leaving the user believing the asset came back.
+  restoreAsset: (kind: AssetKind, id: string) => Promise<void>;
+  /** Re-pull the Recent list after an asset changed between alive and trashed. */
+  syncRecentUsage: () => Promise<void>;
 }
 
 // Zustand slice signature. Each slice is a factory returning its portion of the

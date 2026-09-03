@@ -10,7 +10,7 @@ import { type MouseEvent as ReactMouseEvent, useState } from "react";
 
 import type { Phrase } from "../../ipc/types";
 import type { InteractionMode } from "../../stores/settingsStore";
-import { ActionCluster, ConfirmInline, IconButton } from "../primitives";
+import { ActionCluster, IconButton } from "../primitives";
 import primitiveStyles from "../primitives/primitives.module.css";
 
 import styles from "../ScenePanel.module.css";
@@ -40,8 +40,8 @@ export interface ViewPhraseCardProps {
 //  • 整理态 — the card toggles the full-content preview (the only moment the
 //    body renders), so the user can read a phrase while organizing without
 //    grabbing the clipboard; copy demotes to an explicit cluster button.
-// Delete is a two-step inline confirm held in local state so one card's confirm
-// never bleeds into another's.
+// Delete fires on the first click and is undone from the toast (ADR-028
+// 子决策 3), so the card no longer swaps its cluster for a confirm row.
 export function ViewPhraseCard({
   phrase,
   anchorRef,
@@ -55,7 +55,6 @@ export function ViewPhraseCard({
   onMoveTo,
   onDelete,
 }: ViewPhraseCardProps) {
-  const [confirming, setConfirming] = useState(false);
   const [expanded, setExpanded] = useState(false);
   const organizing = interactionMode === "organize";
   const stop = (fn: () => void) => (e: ReactMouseEvent) => {
@@ -97,79 +96,64 @@ export function ViewPhraseCard({
         <h4 className={styles.phraseTitle}>{phrase.name}</h4>
         <p className={contentCls}>{phrase.content}</p>
       </span>
-      {confirming ? (
-        <div
-          className={styles.phraseActions}
-          onClick={(e) => e.stopPropagation()}
+      <ActionCluster className={styles.phraseActions} reveal>
+        {/* 整理态 demotes copy from the whole-card gesture to an explicit
+            button so the card click can preview instead. */}
+        {organizing && (
+          <IconButton
+            aria-label={`复制 ${phrase.name}`}
+            data-nav-item
+            tabIndex={-1}
+            onClick={stop(onCopy)}
+          >
+            <Copy size={13} aria-hidden strokeWidth={2} />
+          </IconButton>
+        )}
+        <IconButton
+          aria-label={`上移 ${phrase.name}`}
+          data-nav-item
+          tabIndex={-1}
+          disabled={!canMoveUp}
+          onClick={stop(() => onMove(-1))}
         >
-          <ConfirmInline
-            text="永久删除？"
-            confirmLabel="确认永久删除"
-            cancelLabel="取消删除"
-            onConfirm={onDelete}
-            onCancel={() => setConfirming(false)}
-          />
-        </div>
-      ) : (
-        <ActionCluster className={styles.phraseActions} reveal>
-          {/* 整理态 demotes copy from the whole-card gesture to an explicit
-              button so the card click can preview instead. */}
-          {organizing && (
-            <IconButton
-              aria-label={`复制 ${phrase.name}`}
-              data-nav-item
-              tabIndex={-1}
-              onClick={stop(onCopy)}
-            >
-              <Copy size={13} aria-hidden strokeWidth={2} />
-            </IconButton>
-          )}
-          <IconButton
-            aria-label={`上移 ${phrase.name}`}
-            data-nav-item
-            tabIndex={-1}
-            disabled={!canMoveUp}
-            onClick={stop(() => onMove(-1))}
-          >
-            <ArrowUp size={13} aria-hidden strokeWidth={2} />
-          </IconButton>
-          <IconButton
-            aria-label={`下移 ${phrase.name}`}
-            data-nav-item
-            tabIndex={-1}
-            disabled={!canMoveDown}
-            onClick={stop(() => onMove(1))}
-          >
-            <ArrowDown size={13} aria-hidden strokeWidth={2} />
-          </IconButton>
-          <IconButton
-            aria-label={`编辑 ${phrase.name}`}
-            data-nav-item
-            tabIndex={-1}
-            onClick={stop(onEdit)}
-          >
-            <Pencil size={13} aria-hidden strokeWidth={2} />
-          </IconButton>
-          {/* ADR-022: cross-scene / cross-sub-stage move — swaps the card for a
-              layered Scene → SubStage selector. */}
-          <IconButton
-            aria-label={`移动 ${phrase.name} 到其他场景`}
-            data-nav-item
-            tabIndex={-1}
-            onClick={stop(onMoveTo)}
-          >
-            <FolderInput size={13} aria-hidden strokeWidth={2} />
-          </IconButton>
-          <IconButton
-            aria-label={`删除 ${phrase.name}`}
-            data-nav-item
-            tabIndex={-1}
-            onClick={stop(() => setConfirming(true))}
-          >
-            <Trash2 size={13} aria-hidden strokeWidth={2} />
-          </IconButton>
-        </ActionCluster>
-      )}
+          <ArrowUp size={13} aria-hidden strokeWidth={2} />
+        </IconButton>
+        <IconButton
+          aria-label={`下移 ${phrase.name}`}
+          data-nav-item
+          tabIndex={-1}
+          disabled={!canMoveDown}
+          onClick={stop(() => onMove(1))}
+        >
+          <ArrowDown size={13} aria-hidden strokeWidth={2} />
+        </IconButton>
+        <IconButton
+          aria-label={`编辑 ${phrase.name}`}
+          data-nav-item
+          tabIndex={-1}
+          onClick={stop(onEdit)}
+        >
+          <Pencil size={13} aria-hidden strokeWidth={2} />
+        </IconButton>
+        {/* ADR-022: cross-scene / cross-sub-stage move — swaps the card for a
+            layered Scene → SubStage selector. */}
+        <IconButton
+          aria-label={`移动 ${phrase.name} 到其他场景`}
+          data-nav-item
+          tabIndex={-1}
+          onClick={stop(onMoveTo)}
+        >
+          <FolderInput size={13} aria-hidden strokeWidth={2} />
+        </IconButton>
+        <IconButton
+          aria-label={`删除 ${phrase.name}`}
+          data-nav-item
+          tabIndex={-1}
+          onClick={stop(onDelete)}
+        >
+          <Trash2 size={13} aria-hidden strokeWidth={2} />
+        </IconButton>
+      </ActionCluster>
     </div>
   );
 }

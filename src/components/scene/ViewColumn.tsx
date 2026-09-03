@@ -6,7 +6,6 @@ import type { Phrase, SceneWithChildren, SubStage } from "../../ipc/types";
 import type { InteractionMode } from "../../stores/settingsStore";
 import {
   ActionCluster,
-  ConfirmInline,
   IconButton,
   type PhraseFormValues,
 } from "../primitives";
@@ -28,7 +27,6 @@ interface ViewColumnProps {
   canMoveLeft: boolean;
   canMoveRight: boolean;
   renaming: boolean;
-  confirmingDelete: boolean;
   editingPhraseId: string | null;
   movingPhraseId: string | null;
   addingPhrase: boolean;
@@ -45,9 +43,7 @@ interface ViewColumnProps {
   onRenameCancel: () => void;
   onRenameSave: (name: string) => void;
   onMove: (dir: -1 | 1) => void;
-  onDeleteRequest: () => void;
-  onDeleteCancel: () => void;
-  onDeleteConfirm: () => void;
+  onDelete: () => void;
   onPhraseEdit: (id: string) => void;
   onPhraseEditClose: () => void;
   onPhraseMove: (id: string, dir: -1 | 1) => void;
@@ -78,7 +74,6 @@ export function ViewColumn({
   canMoveLeft,
   canMoveRight,
   renaming,
-  confirmingDelete,
   editingPhraseId,
   movingPhraseId,
   addingPhrase,
@@ -93,9 +88,7 @@ export function ViewColumn({
   onRenameCancel,
   onRenameSave,
   onMove,
-  onDeleteRequest,
-  onDeleteCancel,
-  onDeleteConfirm,
+  onDelete,
   onPhraseEdit,
   onPhraseEditClose,
   onPhraseMove,
@@ -133,17 +126,6 @@ export function ViewColumn({
             onSave={onRenameSave}
             onCancel={onRenameCancel}
           />
-        ) : confirmingDelete && subStage ? (
-          <>
-            <span className={styles.subStageName}>{subStage.name}</span>
-            <ConfirmInline
-              text="永久删除？话术将解除归属"
-              confirmLabel="确认删除子阶段"
-              cancelLabel="取消删除"
-              onConfirm={onDeleteConfirm}
-              onCancel={onDeleteCancel}
-            />
-          </>
         ) : (
           <>
             <span
@@ -210,7 +192,7 @@ export function ViewColumn({
                   data-nav-item
                   data-nav-id={`substage-${subStage.id}-delete`}
                   tabIndex={-1}
-                  onClick={onDeleteRequest}
+                  onClick={onDelete}
                 >
                   <Trash2 size={13} aria-hidden strokeWidth={2} />
                 </IconButton>

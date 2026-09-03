@@ -26,6 +26,37 @@ import type {
   UsageRecord,
 } from "./types";
 
+// ── Trash types (ADR-028) ─────────────────────────────────────────────────────
+// Declared here rather than in ./types because the trash is an ipc-only surface:
+// no store or component models a trashed asset, they only render what
+// `listTrash` returns. Mirrors `repo_core::trash` — keep the two in step.
+
+/// The seven asset tables an entry can come from. Wire form is the snake_case
+/// discriminant of the Rust `AssetKind` enum.
+export type AssetKind =
+  | "modifier"
+  | "macro"
+  | "alignment_phrase"
+  | "composition"
+  | "phrase"
+  | "scene"
+  | "sub_stage";
+
+/// One row in the trash. `label` is the asset's name — enough to recognise it;
+/// the body is deliberately not carried.
+export interface TrashEntry {
+  kind: AssetKind;
+  id: string;
+  label: string;
+  deletedAt: string;
+}
+
+/// What emptying the trash destroyed.
+export interface PurgeSummary {
+  assets: number;
+  usageRecords: number;
+}
+
 export const ipc = {
   listPhases: () => invoke<Phase[]>("list_phases"),
   listAlignmentPhrases: () =>
@@ -298,6 +329,17 @@ export const ipc = {
   deleteSubStage: (id: string) => invoke<OkAck>("delete_sub_stage", { id }),
   reorderSubStages: (sceneId: string, orderedIds: string[]) =>
     invoke<OkAck>("reorder_sub_stages", { sceneId, orderedIds }),
+
+  // ── Trash (ADR-028 P0) — Tauri-only. Every delete above is now an in-place
+  // `deletedAt` stamp rather than a row removal, so these three are the other
+  // half: put one asset back, list what is in the trash, empty it for good. The
+  // delete commands keep their signatures, which is why the callers above did
+  // not have to change. `purgeTrash` is the one irreversible action in the set
+  // and must stay behind a confirmation.
+  restoreAsset: (kind: AssetKind, id: string) =>
+    invoke<OkAck>("restore_asset", { kind, id }),
+  listTrash: () => invoke<TrashEntry[]>("list_trash"),
+  purgeTrash: () => invoke<PurgeSummary>("purge_trash"),
 
   // ── Data export/import (PRD §6.9/§7.5) — Tauri-only. The frontend picks a
   // path via the native dialog; Rust does the actual file read/write. Import is

@@ -73,6 +73,11 @@ const MIGRATIONS: &[Migration] = &[
         name: "0012_settings",
         sql: include_str!("../migrations/0012_settings.sql"),
     },
+    Migration {
+        target_version: 13,
+        name: "0013_soft_delete",
+        sql: include_str!("../migrations/0013_soft_delete.sql"),
+    },
 ];
 
 struct Migration {
@@ -397,5 +402,157 @@ mod tests {
             open_and_migrate(&blocker.join("prompt-hub.db")).is_err(),
             "a regular file in the parent position must fail create_dir_all"
         );
+    }
+
+    // --- ADR-028 P0: migration 0013 ------------------------------------------
+
+    /// Stand up a database pinned at `user_version = 12`, i.e. everything ADR-028
+    /// shipped on top of, with the 0002 / 0011 seeds already in place. This is the
+    /// shape a real user's file has the moment they install the release that
+    /// carries `0013`.
+    fn db_at_version_12() -> Connection {
+        let conn = Connection::open_in_memory().expect("in-memory db");
+        configure(&conn).expect("configure");
+        for m in MIGRATIONS.iter().filter(|m| m.target_version <= 12) {
+            conn.execute_batch(m.sql)
+                .unwrap_or_else(|e| panic!("migration {} failed: {e}", m.name));
+        }
+        conn.pragma_update(None, "user_version", 12u32)
+            .expect("pin v12");
+        conn
+    }
+
+    fn apply_0013(conn: &Connection) {
+        let m = MIGRATIONS
+            .iter()
+            .find(|m| m.name == "0013_soft_delete")
+            .expect("0013 must be registered");
+        conn.execute_batch(m.sql).expect("apply 0013");
+        conn.pragma_update(None, "user_version", m.target_version)
+            .expect("bump user_version");
+    }
+
+    fn has_column(conn: &Connection, table: &str, column: &str) -> bool {
+        let mut stmt = conn
+            .prepare(&format!("PRAGMA table_info({table})"))
+            .expect("table_info");
+        let names: Vec<String> = stmt
+            .query_map([], |row| row.get::<_, String>(1))
+            .expect("query")
+            .filter_map(Result::ok)
+            .collect();
+        names.iter().any(|name| name == column)
+    }
+
+    /// 0013 has to land on a database that is already full of the user's data,
+    /// not on an empty one. Every one of the seven asset tables must come out
+    /// with a `deleted_at` column, and every pre-existing row must come out
+    /// alive — `ALTER TABLE ... ADD COLUMN` with no default backfills NULL,
+    /// which is exactly the "not deleted" value.
+    #[test]
+    fn migration_0013_adds_deleted_at_to_a_populated_database_leaving_rows_alive() {
+        let conn = db_at_version_12();
+        // The two asset tables the seeds leave empty get rows too, so "already
+        // has rows" is true for all seven.
+        conn.execute(
+            "INSERT INTO modifiers
+                (id, name, content, group_kind, usage_count, created_at, deprecated, order_index)
+             VALUES ('mod-pre', '迁移前的改造器', 'body', 'cognition', 0, '2026-09-01T00:00:00Z', 0, 0)",
+            [],
+        )
+        .expect("insert modifier");
+        conn.execute(
+            "INSERT INTO compositions
+                (id, name, modifier_ids, phase_id, usage_count, created_at, deprecated, order_index)
+             VALUES ('comp-pre', '迁移前的组合', '[]', 'phase-diverge', 0, '2026-09-01T00:00:00Z', 0, 0)",
+            [],
+        )
+        .expect("insert composition");
+
+        let tables = [
+            "modifiers",
+            "macros",
+            "alignment_phrases",
+            "compositions",
+            "phrases",
+            "scenes",
+            "sub_stages",
+        ];
+        for t in tables {
+            assert!(
+                !has_column(&conn, t, "deleted_at"),
+                "{t} must not have deleted_at before 0013"
+            );
+        }
+
+        apply_0013(&conn);
+
+        let v: u32 = conn
+            .pragma_query_value(None, "user_version", |row| row.get(0))
+            .expect("read user_version");
+        assert_eq!(v, 13, "0013 owns user_version 13");
+
+        for t in tables {
+            assert!(has_column(&conn, t, "deleted_at"), "{t} must gain the column");
+            let total: i64 = conn
+                .query_row(&format!("SELECT COUNT(*) FROM {t}"), [], |r| r.get(0))
+                .expect("count rows");
+            assert!(total > 0, "{t} must already hold rows for this to prove anything");
+            let stamped: i64 = conn
+                .query_row(
+                    &format!("SELECT COUNT(*) FROM {t} WHERE deleted_at IS NOT NULL"),
+                    [],
+                    |r| r.get(0),
+                )
+                .expect("count stamped rows");
+            assert_eq!(
+                stamped, 0,
+                "{t}: migrating must not send a single existing row to the trash"
+            );
+        }
+    }
+
+    /// The trap ADR-028 §5 "动手前必须先修的两个坑" #1 names: the 0001 form of
+    /// `idx_alignment_phrase_one_default_per_phase` cannot see `deleted_at`, so a
+    /// trashed default would occupy its phase's only default slot forever. After
+    /// 0013 rebuilds the index with `AND deleted_at IS NULL`, appointing a new
+    /// default while the old one sits in the trash has to succeed.
+    #[test]
+    fn migration_0013_rebuilds_the_default_index_so_a_trashed_default_frees_its_slot() {
+        let conn = db_at_version_12();
+        conn.execute(
+            "INSERT INTO alignment_phrases
+                (id, phase_id, name, content, is_default, usage_count, created_at,
+                 deprecated, order_index)
+             VALUES ('ap-diverge-second', 'phase-diverge', '备选', 'body', 0, 0,
+                     '2026-09-01T00:00:00Z', 0, 1)",
+            [],
+        )
+        .expect("insert successor");
+
+        apply_0013(&conn);
+
+        conn.execute(
+            "UPDATE alignment_phrases SET deleted_at = '2026-09-03T00:00:00+00:00'
+             WHERE id = 'ap-diverge-default'",
+            [],
+        )
+        .expect("trash the seeded default");
+        conn.execute(
+            "UPDATE alignment_phrases SET is_default = 1 WHERE id = 'ap-diverge-second'",
+            [],
+        )
+        .expect("the trashed default must no longer occupy the phase's default slot");
+
+        // And the constraint still holds among live rows.
+        conn.execute(
+            "INSERT INTO alignment_phrases
+                (id, phase_id, name, content, is_default, usage_count, created_at,
+                 deprecated, order_index)
+             VALUES ('ap-diverge-third', 'phase-diverge', '第三个', 'body', 1, 0,
+                     '2026-09-01T00:00:00Z', 0, 2)",
+            [],
+        )
+        .expect_err("two LIVE defaults in one phase must still be rejected");
     }
 }

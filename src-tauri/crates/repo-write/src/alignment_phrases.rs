@@ -38,7 +38,7 @@ pub fn create_alignment_phrase(
         params![id, phase_id, name, content, now],
     )?;
     let order_index: i64 = conn.query_row(
-        "SELECT order_index FROM alignment_phrases WHERE id = ?1",
+        "SELECT order_index FROM alignment_phrases WHERE id = ?1 AND deleted_at IS NULL",
         params![id],
         |row| row.get(0),
     )?;
@@ -54,6 +54,7 @@ pub fn create_alignment_phrase(
         notes: None,
         deprecated: false,
         order_index,
+        deleted_at: None,
     })
 }
 
@@ -67,7 +68,8 @@ pub fn update_alignment_phrase(
     content: &str,
 ) -> RepoResult<()> {
     let changed = conn.execute(
-        "UPDATE alignment_phrases SET name = ?2, content = ?3 WHERE id = ?1",
+        "UPDATE alignment_phrases SET name = ?2, content = ?3
+         WHERE id = ?1 AND deleted_at IS NULL",
         params![id, name, content],
     )?;
     if changed == 0 {
@@ -76,22 +78,31 @@ pub fn update_alignment_phrase(
     Ok(())
 }
 
-/// Permanently remove an alignment phrase. Rejects the phase default
-/// (is_default=1): every phase must keep exactly one protocol default (D-c). The
-/// UI guards the non-default delete behind a confirm dialog.
+/// Move an alignment phrase to the trash (ADR-028): an in-place `deleted_at`
+/// stamp, not a row removal. Still rejects the phase default (is_default=1) —
+/// every phase must keep exactly one protocol default (D-c), and ADR-028 does not
+/// reopen that. A phrase already in the trash is a no-op.
 pub fn delete_alignment_phrase(conn: &Connection, id: &str) -> RepoResult<()> {
-    let is_default: Option<i64> = conn
+    // soft-delete-gate: exempt — the delete path must see trashed rows to tell
+    // "already in the trash" (a no-op) apart from "no such id" (an error), and to
+    // avoid re-reporting the default guard for a row nobody can act on.
+    let row: Option<(i64, Option<String>)> = conn
         .query_row(
-            "SELECT is_default FROM alignment_phrases WHERE id = ?1",
+            "SELECT is_default, deleted_at FROM alignment_phrases WHERE id = ?1",
             params![id],
-            |row| row.get(0),
+            |row| Ok((row.get(0)?, row.get(1)?)),
         )
         .optional()?;
-    match is_default {
+    match row {
         None => Err(missing_alignment_phrase(id)),
-        Some(flag) if flag != 0 => Err(RepoError::DefaultAlignmentPhraseProtected(id.to_string())),
+        // Already in the trash: nothing to do, and the default guard below would
+        // be answering about a row that is not on screen anyway.
+        Some((_, Some(_))) => Ok(()),
+        Some((flag, None)) if flag != 0 => {
+            Err(RepoError::DefaultAlignmentPhraseProtected(id.to_string()))
+        }
         Some(_) => {
-            conn.execute("DELETE FROM alignment_phrases WHERE id = ?1", params![id])?;
+            crate::soft_delete::soft_delete_row(conn, "alignment_phrases", id)?;
             Ok(())
         }
     }
@@ -112,7 +123,8 @@ pub fn reorder_alignment_phrases(
     let tx = conn.unchecked_transaction()?;
     for (idx, id) in ordered_ids.iter().enumerate() {
         let changed = tx.execute(
-            "UPDATE alignment_phrases SET order_index = ?2 WHERE id = ?1 AND phase_id = ?3",
+            "UPDATE alignment_phrases SET order_index = ?2
+             WHERE id = ?1 AND phase_id = ?3 AND deleted_at IS NULL",
             params![id, idx as i64, phase_id],
         )?;
         if changed == 0 {
@@ -136,7 +148,8 @@ pub fn set_default_alignment_phrase(conn: &Connection, phase_id: &str, id: &str)
     let tx = conn.unchecked_transaction()?;
     let in_phase: Option<i64> = tx
         .query_row(
-            "SELECT 1 FROM alignment_phrases WHERE id = ?1 AND phase_id = ?2",
+            "SELECT 1 FROM alignment_phrases
+             WHERE id = ?1 AND phase_id = ?2 AND deleted_at IS NULL",
             params![id, phase_id],
             |row| row.get(0),
         )
@@ -145,11 +158,13 @@ pub fn set_default_alignment_phrase(conn: &Connection, phase_id: &str, id: &str)
         return Err(missing_alignment_phrase(id));
     }
     tx.execute(
-        "UPDATE alignment_phrases SET is_default = 0 WHERE phase_id = ?1 AND is_default = 1",
+        "UPDATE alignment_phrases SET is_default = 0
+         WHERE phase_id = ?1 AND is_default = 1 AND deleted_at IS NULL",
         params![phase_id],
     )?;
     tx.execute(
-        "UPDATE alignment_phrases SET is_default = 1 WHERE id = ?1",
+        "UPDATE alignment_phrases SET is_default = 1
+         WHERE id = ?1 AND deleted_at IS NULL",
         params![id],
     )?;
     tx.execute(
@@ -275,11 +290,19 @@ mod tests {
                 .all(|a| a.id != created.id),
             "deleted phrase must not be listed"
         );
-        let err = delete_alignment_phrase(&conn, &created.id).expect_err("second delete");
-        assert!(
-            matches!(err, RepoError::TargetNotFound { .. }),
-            "got {err:?}"
-        );
+        // ADR-028: the row is soft-deleted, so it is still there with
+        // `deleted_at` set, and deleting again is a no-op rather than an error —
+        // the shape the drafts soft delete has had since `0003` (`mark_discarded`
+        // guards on the opposite status).
+        delete_alignment_phrase(&conn, &created.id).expect("second delete is a no-op");
+        let stamped: i64 = conn
+            .query_row(
+                "SELECT COUNT(*) FROM alignment_phrases WHERE id = ?1 AND deleted_at IS NOT NULL",
+                [&created.id],
+                |r| r.get(0),
+            )
+            .expect("count");
+        assert_eq!(stamped, 1, "row must survive with deleted_at set");
     }
 
     #[test]

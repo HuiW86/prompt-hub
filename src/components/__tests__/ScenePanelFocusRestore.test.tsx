@@ -131,11 +131,10 @@ describe("ScenePanel focus restore across store re-pull (A1-05)", () => {
     });
 
     render(<ScenePanel />);
-    // Open the inline confirm, then confirm the delete of p1.
+    // One click deletes p1 — no confirm step since ADR-028 子决策 3.
     const deleteBtn = screen.getByLabelText("删除 设计导出模块");
     deleteBtn.focus();
     fireEvent.click(deleteBtn);
-    fireEvent.click(screen.getByLabelText("确认永久删除"));
 
     // p1's card is gone; focus fell to the nearest surviving sibling (p2's
     // card) rather than being stranded on <body>.
@@ -167,8 +166,9 @@ describe("ScenePanel focus restore across store re-pull (A1-05)", () => {
       {
         ...scenes[0],
         subStages: [scenes[0].subStages[1]],
-        // Its phrases unbind (backend behaviour) — model them as ungrouped.
-        phrases: scenes[0].phrases.map((p) => ({ ...p, subStageId: null })),
+        // ADR-028 子决策 7: delete_sub_stage no longer unbinds its phrases —
+        // they keep pointing at the trashed sub-stage and simply fall into the
+        // 未分组 column until it is restored. Model that, not the old unbind.
       },
     ];
     invokeMock.mockImplementation((cmd: string) => {
@@ -181,7 +181,6 @@ describe("ScenePanel focus restore across store re-pull (A1-05)", () => {
     const deleteBtn = screen.getByLabelText("删除 生成");
     deleteBtn.focus();
     fireEvent.click(deleteBtn);
-    fireEvent.click(screen.getByLabelText("确认删除子阶段"));
 
     // ss-generate's header controls are gone; focus lands on the surviving
     // ss-review column's rename control (data-nav-id="substage-ss-review-rename").
@@ -212,7 +211,6 @@ describe("ScenePanel focus restore across store re-pull (A1-05)", () => {
     const deleteBtn = screen.getByLabelText("删除 设计导出模块");
     deleteBtn.focus();
     fireEvent.click(deleteBtn);
-    fireEvent.click(screen.getByLabelText("确认永久删除"));
 
     await waitFor(() => {
       const survivor = screen.getByRole("button", { name: "写测试" });

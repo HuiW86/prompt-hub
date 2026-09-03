@@ -10,6 +10,7 @@ import {
   createRecordingSlice,
   createRefreshHelpers,
   createSceneSlice,
+  createTrashSlice,
   initialPromptState,
 } from "./prompt";
 import type { PromptState } from "./prompt";
@@ -37,5 +38,6 @@ export const usePromptStore = create<PromptState>()((set, get) => {
     ...createAlignmentSlice(set, get, refresh),
     ...createCompositionSlice(set, get, refresh),
     ...createSceneSlice(set, get, refresh),
+    ...createTrashSlice(set, get, refresh),
   };
 });

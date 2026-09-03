@@ -35,7 +35,7 @@ pub fn create_modifier(
         params![id, name, content, group_kind, now],
     )?;
     let order_index: i64 = conn.query_row(
-        "SELECT order_index FROM modifiers WHERE id = ?1",
+        "SELECT order_index FROM modifiers WHERE id = ?1 AND deleted_at IS NULL",
         params![id],
         |row| row.get(0),
     )?;
@@ -50,6 +50,7 @@ pub fn create_modifier(
         notes: None,
         deprecated: false,
         order_index,
+        deleted_at: None,
     })
 }
 
@@ -72,7 +73,8 @@ pub fn update_modifier(
     let tx = conn.unchecked_transaction()?;
     let changed = match group_kind {
         None => tx.execute(
-            "UPDATE modifiers SET name = ?2, content = ?3 WHERE id = ?1",
+            "UPDATE modifiers SET name = ?2, content = ?3
+             WHERE id = ?1 AND deleted_at IS NULL",
             params![id, name, content],
         )?,
         Some(kind) => tx.execute(
@@ -83,7 +85,7 @@ pub fn update_modifier(
                     ELSE (SELECT COALESCE(MAX(order_index) + 1, 0)
                           FROM modifiers WHERE group_kind = ?4) END,
                 group_kind = ?4
-             WHERE id = ?1",
+             WHERE id = ?1 AND deleted_at IS NULL",
             params![id, name, content, kind],
         )?,
     };
@@ -94,14 +96,14 @@ pub fn update_modifier(
     Ok(())
 }
 
-/// Permanently remove a modifier. This is an irreversible hard delete (plan §1.3
-/// delete grading); the UI guards it behind a confirm dialog.
+/// Move a modifier to the trash (ADR-028): an in-place `deleted_at` stamp, not a
+/// row removal. Deleting one that is already in the trash is a no-op; an unknown
+/// id is still an error.
 pub fn delete_modifier(conn: &Connection, id: &str) -> RepoResult<()> {
-    let changed = conn.execute("DELETE FROM modifiers WHERE id = ?1", params![id])?;
-    if changed == 0 {
-        return Err(missing_modifier(id));
+    match crate::soft_delete::soft_delete_row(conn, "modifiers", id)? {
+        crate::soft_delete::SoftDeleteOutcome::Missing => Err(missing_modifier(id)),
+        _ => Ok(()),
     }
-    Ok(())
 }
 
 /// Persist a new sort order WITHIN a single group_kind quadrant by rewriting
@@ -119,7 +121,8 @@ pub fn reorder_modifiers(
     let tx = conn.unchecked_transaction()?;
     for (idx, id) in ordered_ids.iter().enumerate() {
         let changed = tx.execute(
-            "UPDATE modifiers SET order_index = ?2 WHERE id = ?1 AND group_kind = ?3",
+            "UPDATE modifiers SET order_index = ?2
+             WHERE id = ?1 AND group_kind = ?3 AND deleted_at IS NULL",
             params![id, idx as i64, group_kind],
         )?;
         if changed == 0 {
@@ -301,11 +304,19 @@ mod tests {
                 .all(|m| m.id != created.id),
             "deleted modifier must not be listed"
         );
-        let err = delete_modifier(&conn, &created.id).expect_err("second delete");
-        assert!(
-            matches!(err, RepoError::TargetNotFound { .. }),
-            "got {err:?}"
-        );
+        // ADR-028: the row is soft-deleted, so it is still there with
+        // `deleted_at` set, and deleting again is a no-op rather than an error —
+        // the shape the drafts soft delete has had since `0003` (`mark_discarded`
+        // guards on the opposite status).
+        delete_modifier(&conn, &created.id).expect("second delete is a no-op");
+        let stamped: i64 = conn
+            .query_row(
+                "SELECT COUNT(*) FROM modifiers WHERE id = ?1 AND deleted_at IS NOT NULL",
+                [&created.id],
+                |r| r.get(0),
+            )
+            .expect("count");
+        assert_eq!(stamped, 1, "row must survive with deleted_at set");
     }
 
     #[test]

@@ -38,7 +38,7 @@ pub fn create_composition(
         params![id, name, modifier_ids_json, phase_id, scene_id, now],
     )?;
     let order_index: i64 = conn.query_row(
-        "SELECT order_index FROM compositions WHERE id = ?1",
+        "SELECT order_index FROM compositions WHERE id = ?1 AND deleted_at IS NULL",
         params![id],
         |row| row.get(0),
     )?;
@@ -54,6 +54,7 @@ pub fn create_composition(
         notes: None,
         deprecated: false,
         order_index,
+        deleted_at: None,
     })
 }
 
@@ -68,7 +69,8 @@ pub fn update_composition(
 ) -> RepoResult<()> {
     let modifier_ids_json = serde_json::to_string(modifier_ids)?;
     let changed = conn.execute(
-        "UPDATE compositions SET name = ?2, modifier_ids = ?3 WHERE id = ?1",
+        "UPDATE compositions SET name = ?2, modifier_ids = ?3
+         WHERE id = ?1 AND deleted_at IS NULL",
         params![id, name, modifier_ids_json],
     )?;
     if changed == 0 {
@@ -77,14 +79,14 @@ pub fn update_composition(
     Ok(())
 }
 
-/// Permanently remove a composition. This is an irreversible hard delete (plan
-/// §1.3 delete grading); the UI guards it behind a confirm dialog.
+/// Move a composition to the trash (ADR-028): an in-place `deleted_at` stamp,
+/// not a row removal. Deleting one that is already in the trash is a no-op; an
+/// unknown id is still an error.
 pub fn delete_composition(conn: &Connection, id: &str) -> RepoResult<()> {
-    let changed = conn.execute("DELETE FROM compositions WHERE id = ?1", params![id])?;
-    if changed == 0 {
-        return Err(missing_composition(id));
+    match crate::soft_delete::soft_delete_row(conn, "compositions", id)? {
+        crate::soft_delete::SoftDeleteOutcome::Missing => Err(missing_composition(id)),
+        _ => Ok(()),
     }
-    Ok(())
 }
 
 /// Persist a new sort order WITHIN a single phase by rewriting order_index for
@@ -102,7 +104,8 @@ pub fn reorder_compositions(
     let tx = conn.unchecked_transaction()?;
     for (idx, id) in ordered_ids.iter().enumerate() {
         let changed = tx.execute(
-            "UPDATE compositions SET order_index = ?2 WHERE id = ?1 AND phase_id = ?3",
+            "UPDATE compositions SET order_index = ?2
+             WHERE id = ?1 AND phase_id = ?3 AND deleted_at IS NULL",
             params![id, idx as i64, phase_id],
         )?;
         if changed == 0 {
@@ -235,11 +238,19 @@ mod tests {
                 .all(|c| c.id != created.id),
             "deleted composition must not be listed"
         );
-        let err = delete_composition(&conn, &created.id).expect_err("second delete");
-        assert!(
-            matches!(err, RepoError::TargetNotFound { .. }),
-            "got {err:?}"
-        );
+        // ADR-028: the row is soft-deleted, so it is still there with
+        // `deleted_at` set, and deleting again is a no-op rather than an error —
+        // the shape the drafts soft delete has had since `0003` (`mark_discarded`
+        // guards on the opposite status).
+        delete_composition(&conn, &created.id).expect("second delete is a no-op");
+        let stamped: i64 = conn
+            .query_row(
+                "SELECT COUNT(*) FROM compositions WHERE id = ?1 AND deleted_at IS NOT NULL",
+                [&created.id],
+                |r| r.get(0),
+            )
+            .expect("count");
+        assert_eq!(stamped, 1, "row must survive with deleted_at set");
     }
 
     #[test]

@@ -1,4 +1,4 @@
-import { fireEvent, render, screen } from "@testing-library/react";
+import { act, fireEvent, render, screen } from "@testing-library/react";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
 import type { Modifier } from "../../ipc/types";
@@ -36,7 +36,7 @@ describe("ModifierGrid — P3-6 minimal management entry", () => {
   beforeEach(() => {
     usePromptStore.setState(promptInitial, true);
     usePromptStore.setState({ modifiers });
-    useToastStore.setState({ flashTargetId: null });
+    useToastStore.getState().clear();
     invokeMock.mockReset();
     invokeMock.mockResolvedValue({ ok: true });
   });
@@ -87,14 +87,37 @@ describe("ModifierGrid — P3-6 minimal management entry", () => {
     expect(chip.className).toContain("flash");
   });
 
-  it("delete asks for confirmation before invoking delete_modifier", () => {
+  // ADR-028 子决策 3: the「永久删除？」confirm is gone — delete is reversible now,
+  // so it fires on the first click and the toast carries the way back.
+  it("delete fires on the first click and the toast undoes it (ADR-028)", async () => {
+    invokeMock.mockImplementation((cmd: string) =>
+      cmd === "list_modifiers"
+        ? Promise.resolve(modifiers)
+        : Promise.resolve({ ok: true }),
+    );
     render(<ModifierGrid />);
-    fireEvent.click(screen.getByLabelText("删除 结构化输出"));
-    expect(
-      invokeMock.mock.calls.find((c) => c[0] === "delete_modifier"),
-    ).toBeUndefined();
-    fireEvent.click(screen.getByLabelText("确认永久删除 结构化输出"));
+    expect(screen.queryByLabelText("确认永久删除 结构化输出")).toBeNull();
+
+    await act(async () => {
+      fireEvent.click(screen.getByLabelText("删除 结构化输出"));
+    });
     const call = invokeMock.mock.calls.find((c) => c[0] === "delete_modifier");
     expect(call?.[1]).toMatchObject({ id: "mod-structured" });
+
+    const toast = useToastStore.getState();
+    expect(toast.message).toBe("已删除「结构化输出」");
+    expect(toast.action?.label).toBe("撤销");
+
+    await act(async () => {
+      toast.action?.onClick();
+    });
+    const restore = invokeMock.mock.calls.find((c) => c[0] === "restore_asset");
+    expect(restore?.[1]).toMatchObject({
+      kind: "modifier",
+      id: "mod-structured",
+    });
+    // The restored chip is back in the grid, and the store re-pulled it rather
+    // than trusting the optimistic removal.
+    expect(usePromptStore.getState().modifiers).toHaveLength(1);
   });
 });

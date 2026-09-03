@@ -211,12 +211,13 @@ describe("ScenePropertiesEditor — container actions", () => {
     expect(onMoveScene).toHaveBeenCalledWith(1);
   });
 
-  it("delete requires a second confirmation before firing onDelete", () => {
+  // ADR-028 子决策 3: delete is reversible, so the confirm step is gone and the
+  // first click fires it. The way back is the host's 撤销 toast.
+  it("delete fires onDelete on the first click, with no confirm step", () => {
     const onDelete = vi.fn();
     setup({ onDelete });
+    expect(screen.queryByLabelText("确认删除场景")).toBeNull();
     fireEvent.click(screen.getByLabelText("删除场景"));
-    expect(onDelete).not.toHaveBeenCalled();
-    fireEvent.click(screen.getByLabelText("确认删除场景"));
     expect(onDelete).toHaveBeenCalledTimes(1);
   });
 
@@ -269,20 +270,20 @@ describe("ScenePropertiesEditor — dismissal (ADR-025 P1-b)", () => {
     expect(onClose).toHaveBeenCalledTimes(1);
   });
 
-  it("Escape backs out of the delete confirmation before it closes the panel", () => {
+  // The delete-confirmation rung of the Escape ladder went away with the
+  // confirmation itself (ADR-028 子决策 3). What must NOT change: a half-typed
+  // role preset is still unwound before the panel closes, and one Escape never
+  // does both. That is asserted by the role-draft test above; this one pins the
+  // remaining shape — the delete button no longer opens anything for Escape to
+  // back out of, so a single Escape closes the panel.
+  it("Escape closes the panel directly after a delete, with no rung to unwind", () => {
     const onClose = vi.fn();
     const onDelete = vi.fn();
     setup({ onClose, onDelete });
-    fireEvent.click(screen.getByLabelText("删除场景"));
-    screen.getByLabelText("确认删除场景").focus();
+    screen.getByLabelText("删除场景").focus();
 
     pressEscape();
-
-    expect(screen.queryByLabelText("确认删除场景")).toBeNull();
     expect(onDelete).not.toHaveBeenCalled();
-    expect(onClose).not.toHaveBeenCalled();
-
-    pressEscape();
     expect(onClose).toHaveBeenCalledTimes(1);
   });
 });

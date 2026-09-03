@@ -122,6 +122,100 @@ describe("toastStore", () => {
     expect(s.action).toBeNull();
   });
 
+  // ── ADR-028: a pending undo outranks plain toasts ────────────────────────
+  // Before this guard, any later toast overwrote message/action/seq in one set,
+  // so a success flash fired inside the 6000ms window silently destroyed the
+  // only route back from a delete.
+
+  it("a success toast fired during a pending undo does not clear the undo", () => {
+    const onClick = vi.fn();
+    useToastStore.getState().showWithAction("已删除「X」", {
+      label: "撤销",
+      onClick,
+    });
+    vi.advanceTimersByTime(1000);
+    useToastStore.getState().show("已复制", "card-1");
+    const s = useToastStore.getState();
+    expect(s.message).toBe("已删除「X」");
+    expect(s.action?.label).toBe("撤销");
+    // The dropped toast leaves no trace at all — including its flash target.
+    expect(s.flashTargetId).toBeNull();
+  });
+
+  it("an error toast DOES displace a pending undo, because a hidden failure is worse", () => {
+    // The shield protects the undo from confirmatory noise, not from bad news.
+    // Swallowing an error would tell the user an operation succeeded when it
+    // failed; losing the undo button costs a shortcut to a state that is still
+    // sitting in the trash (ADR-028 P1 surfaces it).
+    useToastStore
+      .getState()
+      .showWithAction("已删除「X」", { label: "撤销", onClick: vi.fn() });
+    useToastStore.getState().showError("复制失败");
+    const s = useToastStore.getState();
+    expect(s.message).toBe("复制失败");
+    expect(s.intent).toBe("error");
+    expect(s.action).toBeNull();
+  });
+
+  it("the undo still expires on its own schedule after being shielded", () => {
+    useToastStore
+      .getState()
+      .showWithAction("已删除「X」", { label: "撤销", onClick: vi.fn() });
+    vi.advanceTimersByTime(1000);
+    // A dropped toast must neither extend nor shorten the original window.
+    useToastStore.getState().show("已复制");
+    vi.advanceTimersByTime(4999);
+    expect(useToastStore.getState().message).toBe("已删除「X」");
+    vi.advanceTimersByTime(1);
+    const cleared = useToastStore.getState();
+    expect(cleared.message).toBeNull();
+    expect(cleared.action).toBeNull();
+  });
+
+  it("a plain toast is shown again once the undo window has closed", () => {
+    useToastStore
+      .getState()
+      .showWithAction("已删除「X」", { label: "撤销", onClick: vi.fn() });
+    vi.advanceTimersByTime(6000);
+    useToastStore.getState().show("已复制", "card-1");
+    const s = useToastStore.getState();
+    expect(s.message).toBe("已复制");
+    expect(s.flashTargetId).toBe("card-1");
+  });
+
+  it("a second undo replaces the first (one pending undo at a time)", () => {
+    const first = vi.fn();
+    const second = vi.fn();
+    useToastStore
+      .getState()
+      .showWithAction("已删除「X」", { label: "撤销", onClick: first });
+    vi.advanceTimersByTime(1000);
+    useToastStore
+      .getState()
+      .showWithAction("已删除「Y」", { label: "撤销", onClick: second });
+    expect(useToastStore.getState().message).toBe("已删除「Y」");
+    useToastStore.getState().action?.onClick();
+    expect(second).toHaveBeenCalledOnce();
+    expect(first).not.toHaveBeenCalled();
+    // The replacement runs a FULL window from its own arm time, and the first
+    // toast's timer must not cut it short at t=6000.
+    vi.advanceTimersByTime(5999);
+    expect(useToastStore.getState().message).toBe("已删除「Y」");
+    vi.advanceTimersByTime(1);
+    expect(useToastStore.getState().message).toBeNull();
+  });
+
+  it("clear() reopens the channel so an undo's own follow-up toast lands", () => {
+    // The Toast component runs action.onClick() then clear(); the undo handler
+    // then toasts its own result. That confirmation must not be swallowed.
+    useToastStore
+      .getState()
+      .showWithAction("已删除「X」", { label: "撤销", onClick: vi.fn() });
+    useToastStore.getState().clear();
+    useToastStore.getState().show("已恢复「X」");
+    expect(useToastStore.getState().message).toBe("已恢复「X」");
+  });
+
   it("clear() invalidates pending timers", () => {
     useToastStore.getState().show("已复制");
     useToastStore.getState().clear();

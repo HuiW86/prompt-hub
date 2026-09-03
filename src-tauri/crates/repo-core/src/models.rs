@@ -32,6 +32,11 @@ pub struct AlignmentPhrase {
     pub deprecated: bool,
     // Sort position WITHIN the phase (migration 0007, decision D-c).
     pub order_index: i64,
+    // ADR-028 soft delete: NULL = alive, Some(ts) = in the trash. Every list
+    // read filters it out, so a model built by a read path always carries None;
+    // only the export (full fidelity) and the trash surfaces ever see Some.
+    #[serde(default)]
+    pub deleted_at: Option<DateTime<Utc>>,
 }
 
 #[derive(Debug, Serialize, Deserialize, Clone)]
@@ -51,6 +56,11 @@ pub struct Macro {
     pub scene_id: Option<String>,
     pub deprecated: bool,
     pub order_index: i64,
+    // ADR-028 soft delete: NULL = alive, Some(ts) = in the trash. Every list
+    // read filters it out, so a model built by a read path always carries None;
+    // only the export (full fidelity) and the trash surfaces ever see Some.
+    #[serde(default)]
+    pub deleted_at: Option<DateTime<Utc>>,
 }
 
 #[derive(Debug, Serialize, Deserialize, Clone)]
@@ -70,6 +80,11 @@ pub struct Modifier {
     pub deprecated: bool,
     // Sort position WITHIN the group_kind quadrant (migration 0006, decision D-a).
     pub order_index: i64,
+    // ADR-028 soft delete: NULL = alive, Some(ts) = in the trash. Every list
+    // read filters it out, so a model built by a read path always carries None;
+    // only the export (full fidelity) and the trash surfaces ever see Some.
+    #[serde(default)]
+    pub deleted_at: Option<DateTime<Utc>>,
 }
 
 // A persisted Composition (migration 0004). Distinct from the transient
@@ -90,6 +105,11 @@ pub struct Composition {
     pub deprecated: bool,
     // Sort position WITHIN the phase (migration 0008, decision A + per-phase).
     pub order_index: i64,
+    // ADR-028 soft delete: NULL = alive, Some(ts) = in the trash. Every list
+    // read filters it out, so a model built by a read path always carries None;
+    // only the export (full fidelity) and the trash surfaces ever see Some.
+    #[serde(default)]
+    pub deleted_at: Option<DateTime<Utc>>,
 }
 
 #[derive(Debug, Serialize, Deserialize, Clone)]
@@ -102,6 +122,11 @@ pub struct Scene {
     pub visible: bool,
     pub role_presets: Vec<String>,
     pub color: Option<String>,
+    // ADR-028 soft delete: NULL = alive, Some(ts) = in the trash. Every list
+    // read filters it out, so a model built by a read path always carries None;
+    // only the export (full fidelity) and the trash surfaces ever see Some.
+    #[serde(default)]
+    pub deleted_at: Option<DateTime<Utc>>,
 }
 
 #[derive(Debug, Serialize, Deserialize, Clone)]
@@ -111,6 +136,11 @@ pub struct SubStage {
     pub scene_id: String,
     pub name: String,
     pub order_index: i64,
+    // ADR-028 soft delete: NULL = alive, Some(ts) = in the trash. Every list
+    // read filters it out, so a model built by a read path always carries None;
+    // only the export (full fidelity) and the trash surfaces ever see Some.
+    #[serde(default)]
+    pub deleted_at: Option<DateTime<Utc>>,
 }
 
 #[derive(Debug, Serialize, Deserialize, Clone)]
@@ -127,6 +157,11 @@ pub struct Phrase {
     pub deprecated: bool,
     pub sub_stage_id: Option<String>,
     pub order_index: i64,
+    // ADR-028 soft delete: NULL = alive, Some(ts) = in the trash. Every list
+    // read filters it out, so a model built by a read path always carries None;
+    // only the export (full fidelity) and the trash surfaces ever see Some.
+    #[serde(default)]
+    pub deleted_at: Option<DateTime<Utc>>,
 }
 
 #[derive(Debug, Serialize, Deserialize, Clone)]

@@ -6,5 +6,6 @@ export { createModifierSlice } from "./modifierSlice";
 export { createAlignmentSlice } from "./alignmentSlice";
 export { createCompositionSlice } from "./compositionSlice";
 export { createSceneSlice } from "./sceneSlice";
+export { createTrashSlice } from "./trashSlice";
 export { createRefreshHelpers } from "./guards";
 export type { LoadState, PromptState } from "./types";

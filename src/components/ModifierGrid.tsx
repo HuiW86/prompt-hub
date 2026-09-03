@@ -2,6 +2,7 @@ import { useMemo, useState } from "react";
 import { ArrowRightLeft, Route, Trash2 } from "lucide-react";
 
 import { useCopy } from "../hooks/useCopy";
+import { useUndoableDelete } from "../hooks/useUndoableDelete";
 import { GROUP_KINDS, type GroupKind, type Modifier } from "../ipc/types";
 import { usePromptStore } from "../stores/promptStore";
 import { useToastStore } from "../stores/toastStore";
@@ -10,7 +11,6 @@ import { toUserMessage } from "../utils/errorMessage";
 import {
   ActionCluster,
   Chip,
-  ConfirmInline,
   EmptyState,
   IconButton,
   RegionHeader,
@@ -34,7 +34,8 @@ const GROUP_LABELS: Record<GroupKind, string> = {
 //
 // P3-6 minimal management entry (NOT the v1.3-removed full editor): each chip
 // carries a hover/focus-revealed cluster with a quadrant-move menu (remedy for
-// a wrong promote-time pick, ADR-015 decision iii) and a confirmed hard delete.
+// a wrong promote-time pick, ADR-015 decision iii) and a one-click reversible
+// delete (ADR-028 子决策 3 — the two-step confirm is gone).
 // Buttons are real focusables, so keyboard users reach them via Tab and the
 // reveal follows :focus-within.
 // The `dense` bottom-tray variant is gone with the tray itself (ADR-026): this
@@ -48,10 +49,10 @@ export function ModifierGrid() {
   const showError = useToastStore((s) => s.showError);
   const flashId = useToastStore((s) => s.flashTargetId);
   const copy = useCopy();
-  // At most one open management affordance at a time: a quadrant menu OR a
-  // delete confirm, keyed by modifier id.
+  const armUndo = useUndoableDelete();
+  // The quadrant menu is the only management affordance that opens in place now
+  // that delete fires straight through, so one open-menu id is all that is left.
   const [menuId, setMenuId] = useState<string | null>(null);
-  const [confirmingId, setConfirmingId] = useState<string | null>(null);
 
   const groups = useMemo(
     () =>
@@ -80,11 +81,11 @@ export function ModifierGrid() {
     }
   };
 
-  const remove = async (id: string) => {
-    setConfirmingId(null);
+  const remove = async (m: Modifier) => {
+    setMenuId(null);
     try {
-      await deleteModifier(id);
-      showToast("已永久删除");
+      await deleteModifier(m.id);
+      armUndo({ kind: "modifier", id: m.id, name: m.name });
     } catch (err) {
       showError(toUserMessage(err, "删除失败"));
     }
@@ -161,41 +162,23 @@ export function ModifierGrid() {
                     >
                       {m.name}
                     </Chip>
-                    {confirmingId === m.id ? (
-                      <ConfirmInline
-                        text="永久删除？"
-                        confirmLabel={`确认永久删除 ${m.name}`}
-                        cancelLabel="取消删除"
-                        onConfirm={() => void remove(m.id)}
-                        onCancel={() => setConfirmingId(null)}
-                      />
-                    ) : (
-                      <ActionCluster className={styles.manage}>
-                        <IconButton
-                          aria-label={`移动 ${m.name} 到其他象限`}
-                          aria-expanded={menuId === m.id}
-                          onClick={() => {
-                            setConfirmingId(null);
-                            setMenuId((prev) => (prev === m.id ? null : m.id));
-                          }}
-                        >
-                          <ArrowRightLeft
-                            size={12}
-                            aria-hidden
-                            strokeWidth={2}
-                          />
-                        </IconButton>
-                        <IconButton
-                          aria-label={`删除 ${m.name}`}
-                          onClick={() => {
-                            setMenuId(null);
-                            setConfirmingId(m.id);
-                          }}
-                        >
-                          <Trash2 size={12} aria-hidden strokeWidth={2} />
-                        </IconButton>
-                      </ActionCluster>
-                    )}
+                    <ActionCluster className={styles.manage}>
+                      <IconButton
+                        aria-label={`移动 ${m.name} 到其他象限`}
+                        aria-expanded={menuId === m.id}
+                        onClick={() =>
+                          setMenuId((prev) => (prev === m.id ? null : m.id))
+                        }
+                      >
+                        <ArrowRightLeft size={12} aria-hidden strokeWidth={2} />
+                      </IconButton>
+                      <IconButton
+                        aria-label={`删除 ${m.name}`}
+                        onClick={() => void remove(m)}
+                      >
+                        <Trash2 size={12} aria-hidden strokeWidth={2} />
+                      </IconButton>
+                    </ActionCluster>
                     {menuId === m.id && (
                       <span
                         className={styles.moveMenu}

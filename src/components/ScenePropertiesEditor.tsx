@@ -15,7 +15,6 @@ import {
   AnchoredEditor,
   Button,
   Chip,
-  ConfirmInline,
   type DismissReason,
   EditorActions,
   IconButton,
@@ -100,7 +99,6 @@ export function ScenePropertiesEditor({
   const [color, setColor] = useState<string | null>(scene.color);
   const [rolePresets, setRolePresets] = useState<string[]>(scene.rolePresets);
   const [roleDraft, setRoleDraft] = useState("");
-  const [confirmingDelete, setConfirmingDelete] = useState(false);
   // First focus is the container's job (AnchoredEditorProps.initialFocus).
   const nameRef = useRef<HTMLInputElement>(null);
 
@@ -146,19 +144,16 @@ export function ScenePropertiesEditor({
   };
 
   // Escape unwinds ONE level at a time rather than tearing the panel down from
-  // any depth: a half-typed role preset first, then an expanded delete
-  // confirmation, and only then the panel itself. The field-level Escape
-  // handlers cannot do this on their own — AnchoredEditor listens on document
-  // in the capture phase, so it decides before any React handler runs, and
-  // refusing through this channel is how a field keeps its own Escape.
+  // any depth: a half-typed role preset first, and only then the panel itself.
+  // The delete-confirmation level is gone with the confirm itself (ADR-028
+  // 子决策 3). The field-level Escape handlers cannot do this on their own —
+  // AnchoredEditor listens on document in the capture phase, so it decides
+  // before any React handler runs, and refusing through this channel is how a
+  // field keeps its own Escape.
   const handleDismiss = (reason: DismissReason): boolean => {
     if (reason === "outside") return false;
     if (roleDraft) {
       setRoleDraft("");
-      return false;
-    }
-    if (confirmingDelete) {
-      setConfirmingDelete(false);
       return false;
     }
     onClose();
@@ -299,41 +294,28 @@ export function ScenePropertiesEditor({
 
       {/* footer — container-level actions + save/cancel */}
       <div className={styles.footer}>
-        {confirmingDelete ? (
-          <ConfirmInline
-            text="永久删除？"
-            confirmLabel="确认删除场景"
-            cancelLabel="取消删除"
-            onConfirm={() => {
-              setConfirmingDelete(false);
-              onDelete();
-            }}
-            onCancel={() => setConfirmingDelete(false)}
-          />
-        ) : (
-          <ActionCluster className={styles.footerActions}>
-            <IconButton
-              aria-label="场景前移"
-              disabled={!canMoveLeft}
-              onClick={() => onMoveScene(-1)}
-            >
-              <ChevronLeft size={13} aria-hidden strokeWidth={2} />
-            </IconButton>
-            <IconButton
-              aria-label="场景后移"
-              disabled={!canMoveRight}
-              onClick={() => onMoveScene(1)}
-            >
-              <ChevronRight size={13} aria-hidden strokeWidth={2} />
-            </IconButton>
-            <IconButton
-              aria-label="删除场景"
-              onClick={() => setConfirmingDelete(true)}
-            >
-              <Trash2 size={13} aria-hidden strokeWidth={2} />
-            </IconButton>
-          </ActionCluster>
-        )}
+        {/* ADR-028 子决策 3: delete fires on the first click; the way back is
+            the toast's 撤销. A scene with live children is still refused by the
+            backend (SceneNotEmpty), and that refusal carries no undo. */}
+        <ActionCluster className={styles.footerActions}>
+          <IconButton
+            aria-label="场景前移"
+            disabled={!canMoveLeft}
+            onClick={() => onMoveScene(-1)}
+          >
+            <ChevronLeft size={13} aria-hidden strokeWidth={2} />
+          </IconButton>
+          <IconButton
+            aria-label="场景后移"
+            disabled={!canMoveRight}
+            onClick={() => onMoveScene(1)}
+          >
+            <ChevronRight size={13} aria-hidden strokeWidth={2} />
+          </IconButton>
+          <IconButton aria-label="删除场景" onClick={onDelete}>
+            <Trash2 size={13} aria-hidden strokeWidth={2} />
+          </IconButton>
+        </ActionCluster>
         <EditorActions className={styles.saveActions}>
           <Button intent="subtle" onClick={onClose}>
             取消

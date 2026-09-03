@@ -303,6 +303,9 @@ pub fn run() {
             commands::update_sub_stage,
             commands::delete_sub_stage,
             commands::reorder_sub_stages,
+            commands::restore_asset,
+            commands::list_trash,
+            commands::purge_trash,
             commands::export_data,
             commands::import_data,
         ])

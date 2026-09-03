@@ -140,6 +140,9 @@ describe("ScenePanel view mode — in-place structure + content editing", () => 
     usePromptStore.setState(promptInitial, true);
     useAppStore.setState(appInitial, true);
     usePromptStore.setState({ scenes: twoPhrase, pendingDraftCount: 0 });
+    // A pending 撤销 toast outranks plain toasts (ADR-028), so it must not leak
+    // across tests — reset it the way the other blocks in this file do.
+    useToastStore.getState().clear();
     invokeMock.mockReset();
     invokeMock.mockImplementation((cmd: string) => {
       if (cmd === "list_scenes_with_children")
@@ -184,16 +187,26 @@ describe("ScenePanel view mode — in-place structure + content editing", () => 
     });
   });
 
-  it("deleting a sub-stage confirms then invokes delete_sub_stage", () => {
+  // ADR-028 子决策 3: no confirm gate — one click deletes, the toast undoes.
+  it("deleting a sub-stage fires immediately and the toast restores it", async () => {
     render(<ScenePanel />);
-    fireEvent.click(screen.getByLabelText("删除 评审"));
-    // Confirm gate: nothing fires until the user confirms.
-    expect(
-      invokeMock.mock.calls.find((c) => c[0] === "delete_sub_stage"),
-    ).toBeUndefined();
-    fireEvent.click(screen.getByLabelText("确认删除子阶段"));
+    expect(screen.queryByLabelText("确认删除子阶段")).toBeNull();
+
+    await act(async () => {
+      fireEvent.click(screen.getByLabelText("删除 评审"));
+    });
     const call = invokeMock.mock.calls.find((c) => c[0] === "delete_sub_stage");
     expect(call?.[1]).toMatchObject({ id: "ss-review" });
+
+    const toast = useToastStore.getState();
+    expect(toast.message).toBe("已删除子阶段「评审」");
+    expect(toast.action?.label).toBe("撤销");
+
+    await act(async () => {
+      toast.action?.onClick();
+    });
+    const restore = invokeMock.mock.calls.find((c) => c[0] === "restore_asset");
+    expect(restore?.[1]).toMatchObject({ kind: "sub_stage", id: "ss-review" });
   });
 
   it("the ghost column creates a sub-stage via create_sub_stage", () => {
@@ -264,15 +277,25 @@ describe("ScenePanel view mode — in-place structure + content editing", () => 
     });
   });
 
-  it("deleting a phrase confirms then invokes delete_phrase", () => {
+  it("deleting a phrase fires immediately and the toast restores it", async () => {
     render(<ScenePanel />);
-    fireEvent.click(screen.getByLabelText("删除 设计导出模块"));
-    expect(
-      invokeMock.mock.calls.find((c) => c[0] === "delete_phrase"),
-    ).toBeUndefined();
-    fireEvent.click(screen.getByLabelText("确认永久删除"));
+    expect(screen.queryByLabelText("确认永久删除")).toBeNull();
+
+    await act(async () => {
+      fireEvent.click(screen.getByLabelText("删除 设计导出模块"));
+    });
     const call = invokeMock.mock.calls.find((c) => c[0] === "delete_phrase");
     expect(call?.[1]).toMatchObject({ id: "phrase-1" });
+
+    const toast = useToastStore.getState();
+    expect(toast.message).toBe("已删除「设计导出模块」");
+    expect(toast.action?.label).toBe("撤销");
+
+    await act(async () => {
+      toast.action?.onClick();
+    });
+    const restore = invokeMock.mock.calls.find((c) => c[0] === "restore_asset");
+    expect(restore?.[1]).toMatchObject({ kind: "phrase", id: "phrase-1" });
   });
 
   it("the add-phrase ghost prefills the column's sub-stage on create", () => {
@@ -436,6 +459,7 @@ describe("ScenePanel properties panel — full-field save link", () => {
     usePromptStore.setState(promptInitial, true);
     useAppStore.setState(appInitial, true);
     usePromptStore.setState({ scenes, pendingDraftCount: 0 });
+    useToastStore.getState().clear();
     invokeMock.mockReset();
     invokeMock.mockImplementation((cmd: string) => {
       if (cmd === "list_scenes_with_children") return Promise.resolve(scenes);
@@ -539,21 +563,21 @@ describe("ScenePanel properties panel — full-field save link", () => {
   it("deleting from the panel confirms, calls delete_scene, and closes", async () => {
     render(<ScenePanel />);
     openProperties();
-    // The delete lives in the panel footer; the confirm gate fires first.
-    fireEvent.click(screen.getByLabelText("删除场景"));
-    expect(
-      invokeMock.mock.calls.find((c) => c[0] === "delete_scene"),
-    ).toBeUndefined();
+    // ADR-028 子决策 3: the footer delete has no confirm gate any more.
+    expect(screen.queryByLabelText("确认删除场景")).toBeNull();
     // After delete resolves the store re-pulls; answer empty so render survives.
     invokeMock.mockImplementation((cmd: string) => {
       if (cmd === "list_scenes_with_children") return Promise.resolve([]);
       return Promise.resolve({ ok: true });
     });
-    fireEvent.click(screen.getByLabelText("确认删除场景"));
+    fireEvent.click(screen.getByLabelText("删除场景"));
     const call = invokeMock.mock.calls.find((c) => c[0] === "delete_scene");
     expect(call?.[1]).toMatchObject({ id: "scene-plan" });
     // deleteScene awaits the store re-pull before the panel closes.
     await waitForElementToBeRemoved(() => screen.queryByLabelText("场景属性"));
+    const toast = useToastStore.getState();
+    expect(toast.message).toBe("已删除场景「方案设计」");
+    expect(toast.action?.label).toBe("撤销");
   });
 });
 
@@ -977,11 +1001,12 @@ describe("ScenePanel properties panel — async failure surfaces + panel survive
     render(<ScenePanel />);
     fireEvent.click(screen.getByLabelText("编辑场景属性"));
     fireEvent.click(screen.getByLabelText("删除场景"));
-    fireEvent.click(screen.getByLabelText("确认删除场景"));
 
     await vi.waitFor(() => {
       expect(useToastStore.getState().intent).toBe("error");
     });
+    // SceneNotEmpty deleted nothing, so the toast offers no 撤销 (ADR-028).
+    expect(useToastStore.getState().action).toBeNull();
     // handleDeleteScene only closes the panel on success; a reject must leave it
     // mounted so the SceneNotEmpty reason stays actionable.
     expect(screen.getByLabelText("场景属性")).toBeInTheDocument();

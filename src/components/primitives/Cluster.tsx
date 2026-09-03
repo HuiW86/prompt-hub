@@ -26,6 +26,11 @@ export function ActionCluster({
   );
 }
 
+// ADR-028 子决策 3 removed all six of this primitive's call sites: delete became
+// reversible, so「撤销优于确认」(ADR-025 `:125`) retired the confirm step. It is
+// deliberately kept, NOT dead code — 清空废纸篓 (ADR-028 P1) is the one genuinely
+// irreversible action left in the app and is specified to use it. Do not sweep
+// it up as an unused export before that lands.
 interface ConfirmInlineProps {
   text?: string;
   confirmLabel?: string;

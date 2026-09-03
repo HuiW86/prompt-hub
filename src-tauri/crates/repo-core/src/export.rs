@@ -10,13 +10,19 @@ use crate::repo::{parse_ts, parse_ts_opt};
 
 // The data-layer schema version of the export envelope (PRD §6.9 / §7.7). This is
 // the `major.minor` contract for the JSON file itself, NOT the SQLite migration
-// `user_version` (currently 12). Bump it when the export shape changes; minor for
+// `user_version` (currently 13). Bump it when the export shape changes; minor for
 // backward-compatible additions, major for breaking changes.
-pub const DATA_SCHEMA_VERSION: &str = "1.1";
+//
+// 1.1 → 1.2: every asset row gained the optional `deletedAt` field (ADR-028).
+// Backward-compatible in both directions — a 1.1 file simply has no `deletedAt`
+// and deserializes as alive; a 1.2 file read by a 1.1 build ignores the field.
+pub const DATA_SCHEMA_VERSION: &str = "1.2";
 
 // The full-fidelity backup envelope (PRD §6.9). Unlike the read paths in `repo`,
-// every list here is UNFILTERED — deprecated assets and invisible phases/scenes
-// are included, so a wipe-and-restore round-trip never silently drops rows.
+// every list here is UNFILTERED — deprecated assets, invisible phases/scenes AND
+// soft-deleted (trashed) rows are included, so a wipe-and-restore round-trip never
+// silently drops rows. Each query below carries the `soft-delete-gate: exempt`
+// marker the seventh gate looks for; ADR-028 sub-decision 6 is the basis.
 //
 // Excluded vs PRD §6.9: `sops` (no SOP model/table writes shipped yet) and
 // `usage_records` (D2 — usage history is non-portable churn; per-asset usage_count
@@ -64,9 +70,12 @@ pub fn export_json(conn: &Connection) -> RepoResult<String> {
 }
 
 fn export_modifiers(conn: &Connection) -> RepoResult<Vec<Modifier>> {
+    // soft-delete-gate: exempt — the export is a full-fidelity local backup
+    // (ADR-028 sub-decision 6): trashed rows travel with it, `deleted_at` and
+    // all, so that export-then-import is never a silent permanent delete.
     let mut stmt = conn.prepare(
         "SELECT id, name, content, group_kind, usage_count, last_used_at,
-                created_at, notes, deprecated, order_index
+                created_at, notes, deprecated, order_index, deleted_at
          FROM modifiers
          ORDER BY group_kind ASC, order_index ASC, created_at ASC",
     )?;
@@ -83,25 +92,32 @@ fn export_modifiers(conn: &Connection) -> RepoResult<Vec<Modifier>> {
                 notes: row.get("notes")?,
                 deprecated: row.get::<_, i64>("deprecated")? != 0,
                 order_index: row.get("order_index")?,
+                deleted_at: None,
             },
             row.get::<_, Option<String>>("last_used_at")?,
             row.get::<_, String>("created_at")?,
+            row.get::<_, Option<String>>("deleted_at")?,
         ))
     })?;
     let mut out = Vec::new();
     for r in raw {
-        let (mut m, last, created) = r?;
+        let (mut m, last, created, deleted) = r?;
         m.last_used_at = parse_ts_opt(last)?;
         m.created_at = parse_ts(created)?;
+        m.deleted_at = parse_ts_opt(deleted)?;
         out.push(m);
     }
     Ok(out)
 }
 
 fn export_macros(conn: &Connection) -> RepoResult<Vec<Macro>> {
+    // soft-delete-gate: exempt — the export is a full-fidelity local backup
+    // (ADR-028 sub-decision 6): trashed rows travel with it, `deleted_at` and
+    // all, so that export-then-import is never a silent permanent delete.
     let mut stmt = conn.prepare(
         "SELECT id, name, content, expand_from, native, role, task, usage_count,
-                last_used_at, created_at, notes, scene_id, deprecated, order_index
+                last_used_at, created_at, notes, scene_id, deprecated, order_index,
+                deleted_at
          FROM macros
          ORDER BY order_index ASC, created_at ASC",
     )?;
@@ -121,6 +137,7 @@ fn export_macros(conn: &Connection) -> RepoResult<Vec<Macro>> {
             row.get::<_, Option<String>>("scene_id")?,
             row.get::<_, i64>("deprecated")? != 0,
             row.get::<_, i64>("order_index")?,
+            row.get::<_, Option<String>>("deleted_at")?,
         ))
     })?;
     let mut out = Vec::new();
@@ -140,6 +157,7 @@ fn export_macros(conn: &Connection) -> RepoResult<Vec<Macro>> {
             scene_id,
             deprecated,
             order_index,
+            deleted,
         ) = r?;
         let expand_from = match expand_json {
             Some(j) => Some(serde_json::from_str::<Vec<String>>(&j)?),
@@ -160,6 +178,7 @@ fn export_macros(conn: &Connection) -> RepoResult<Vec<Macro>> {
             scene_id,
             deprecated,
             order_index,
+            deleted_at: parse_ts_opt(deleted)?,
         });
     }
     Ok(out)
@@ -186,9 +205,12 @@ fn export_phases(conn: &Connection) -> RepoResult<Vec<Phase>> {
 }
 
 fn export_alignment_phrases(conn: &Connection) -> RepoResult<Vec<AlignmentPhrase>> {
+    // soft-delete-gate: exempt — the export is a full-fidelity local backup
+    // (ADR-028 sub-decision 6): trashed rows travel with it, `deleted_at` and
+    // all, so that export-then-import is never a silent permanent delete.
     let mut stmt = conn.prepare(
         "SELECT id, phase_id, name, content, is_default, usage_count, last_used_at,
-                created_at, notes, deprecated, order_index
+                created_at, notes, deprecated, order_index, deleted_at
          FROM alignment_phrases
          ORDER BY phase_id ASC, order_index ASC, created_at ASC",
     )?;
@@ -206,25 +228,31 @@ fn export_alignment_phrases(conn: &Connection) -> RepoResult<Vec<AlignmentPhrase
                 notes: row.get("notes")?,
                 deprecated: row.get::<_, i64>("deprecated")? != 0,
                 order_index: row.get("order_index")?,
+                deleted_at: None,
             },
             row.get::<_, Option<String>>("last_used_at")?,
             row.get::<_, String>("created_at")?,
+            row.get::<_, Option<String>>("deleted_at")?,
         ))
     })?;
     let mut out = Vec::new();
     for r in raw {
-        let (mut ap, last, created) = r?;
+        let (mut ap, last, created, deleted) = r?;
         ap.last_used_at = parse_ts_opt(last)?;
         ap.created_at = parse_ts(created)?;
+        ap.deleted_at = parse_ts_opt(deleted)?;
         out.push(ap);
     }
     Ok(out)
 }
 
 fn export_compositions(conn: &Connection) -> RepoResult<Vec<Composition>> {
+    // soft-delete-gate: exempt — the export is a full-fidelity local backup
+    // (ADR-028 sub-decision 6): trashed rows travel with it, `deleted_at` and
+    // all, so that export-then-import is never a silent permanent delete.
     let mut stmt = conn.prepare(
         "SELECT id, name, modifier_ids, phase_id, scene_id, usage_count,
-                last_used_at, created_at, notes, deprecated, order_index
+                last_used_at, created_at, notes, deprecated, order_index, deleted_at
          FROM compositions
          ORDER BY phase_id ASC, order_index ASC, created_at ASC",
     )?;
@@ -241,12 +269,25 @@ fn export_compositions(conn: &Connection) -> RepoResult<Vec<Composition>> {
             row.get::<_, Option<String>>("notes")?,
             row.get::<_, i64>("deprecated")? != 0,
             row.get::<_, i64>("order_index")?,
+            row.get::<_, Option<String>>("deleted_at")?,
         ))
     })?;
     let mut out = Vec::new();
     for r in raw {
-        let (id, name, modifier_ids_json, phase_id, scene_id, usage, last, created, notes, dep, oi) =
-            r?;
+        let (
+            id,
+            name,
+            modifier_ids_json,
+            phase_id,
+            scene_id,
+            usage,
+            last,
+            created,
+            notes,
+            dep,
+            oi,
+            deleted,
+        ) = r?;
         out.push(Composition {
             id,
             name,
@@ -259,12 +300,13 @@ fn export_compositions(conn: &Connection) -> RepoResult<Vec<Composition>> {
             notes,
             deprecated: dep,
             order_index: oi,
+            deleted_at: parse_ts_opt(deleted)?,
         });
     }
     Ok(out)
 }
 
-fn scene_from_row(row: &Row<'_>) -> rusqlite::Result<(Scene, String)> {
+fn scene_from_row(row: &Row<'_>) -> rusqlite::Result<(Scene, String, Option<String>)> {
     let role_presets_json: String = row.get("role_presets")?;
     Ok((
         Scene {
@@ -275,14 +317,19 @@ fn scene_from_row(row: &Row<'_>) -> rusqlite::Result<(Scene, String)> {
             visible: row.get::<_, i64>("visible")? != 0,
             role_presets: Vec::new(),
             color: row.get("color")?,
+            deleted_at: None,
         },
         role_presets_json,
+        row.get::<_, Option<String>>("deleted_at")?,
     ))
 }
 
 fn export_scenes(conn: &Connection) -> RepoResult<Vec<Scene>> {
+    // soft-delete-gate: exempt — the export is a full-fidelity local backup
+    // (ADR-028 sub-decision 6): trashed rows travel with it, `deleted_at` and
+    // all, so that export-then-import is never a silent permanent delete.
     let mut stmt = conn.prepare(
-        "SELECT id, name, icon, order_index, visible, role_presets, color
+        "SELECT id, name, icon, order_index, visible, role_presets, color, deleted_at
          FROM scenes
          ORDER BY order_index ASC",
     )?;
@@ -290,34 +337,51 @@ fn export_scenes(conn: &Connection) -> RepoResult<Vec<Scene>> {
         .query_map([], scene_from_row)?
         .collect::<rusqlite::Result<Vec<_>>>()?;
     let mut out = Vec::with_capacity(raw.len());
-    for (mut scene, presets_json) in raw {
+    for (mut scene, presets_json, deleted) in raw {
         scene.role_presets = serde_json::from_str(&presets_json)?;
+        scene.deleted_at = parse_ts_opt(deleted)?;
         out.push(scene);
     }
     Ok(out)
 }
 
 fn export_sub_stages(conn: &Connection) -> RepoResult<Vec<SubStage>> {
+    // soft-delete-gate: exempt — the export is a full-fidelity local backup
+    // (ADR-028 sub-decision 6): trashed rows travel with it, `deleted_at` and
+    // all, so that export-then-import is never a silent permanent delete.
     let mut stmt = conn.prepare(
-        "SELECT id, scene_id, name, order_index
+        "SELECT id, scene_id, name, order_index, deleted_at
          FROM sub_stages
          ORDER BY scene_id ASC, order_index ASC",
     )?;
-    let rows = stmt.query_map([], |row| {
-        Ok(SubStage {
-            id: row.get("id")?,
-            scene_id: row.get("scene_id")?,
-            name: row.get("name")?,
-            order_index: row.get("order_index")?,
-        })
+    let raw = stmt.query_map([], |row| {
+        Ok((
+            SubStage {
+                id: row.get("id")?,
+                scene_id: row.get("scene_id")?,
+                name: row.get("name")?,
+                order_index: row.get("order_index")?,
+                deleted_at: None,
+            },
+            row.get::<_, Option<String>>("deleted_at")?,
+        ))
     })?;
-    Ok(rows.collect::<rusqlite::Result<Vec<_>>>()?)
+    let mut out = Vec::new();
+    for r in raw {
+        let (mut ss, deleted) = r?;
+        ss.deleted_at = parse_ts_opt(deleted)?;
+        out.push(ss);
+    }
+    Ok(out)
 }
 
 fn export_phrases(conn: &Connection) -> RepoResult<Vec<Phrase>> {
+    // soft-delete-gate: exempt — the export is a full-fidelity local backup
+    // (ADR-028 sub-decision 6): trashed rows travel with it, `deleted_at` and
+    // all, so that export-then-import is never a silent permanent delete.
     let mut stmt = conn.prepare(
         "SELECT id, scene_id, name, content, usage_count, last_used_at, created_at,
-                notes, deprecated, sub_stage_id, order_index
+                notes, deprecated, sub_stage_id, order_index, deleted_at
          FROM phrases
          ORDER BY scene_id ASC, order_index ASC, created_at ASC",
     )?;
@@ -334,11 +398,25 @@ fn export_phrases(conn: &Connection) -> RepoResult<Vec<Phrase>> {
             row.get::<_, i64>("deprecated")? != 0,
             row.get::<_, Option<String>>("sub_stage_id")?,
             row.get::<_, i64>("order_index")?,
+            row.get::<_, Option<String>>("deleted_at")?,
         ))
     })?;
     let mut out = Vec::new();
     for r in raw {
-        let (id, scene_id, name, content, usage, last, created, notes, dep, sub_stage_id, oi) = r?;
+        let (
+            id,
+            scene_id,
+            name,
+            content,
+            usage,
+            last,
+            created,
+            notes,
+            dep,
+            sub_stage_id,
+            oi,
+            deleted,
+        ) = r?;
         out.push(Phrase {
             id,
             scene_id,
@@ -351,6 +429,7 @@ fn export_phrases(conn: &Connection) -> RepoResult<Vec<Phrase>> {
             deprecated: dep,
             sub_stage_id,
             order_index: oi,
+            deleted_at: parse_ts_opt(deleted)?,
         });
     }
     Ok(out)

@@ -35,7 +35,12 @@ fn exported_json_shape_matches_data_contract() {
         serde_json::from_str(&export_json(&conn).expect("export")).expect("parse");
     let obj = json.as_object().expect("object");
 
-    assert_eq!(obj["schema_version"], "1.1");
+    // 1.1 → 1.2 with ADR-028: every asset row now carries `deleted_at`, because
+    // export stays full fidelity (sub-decision 6) and a backup that dropped the
+    // trash would turn export-then-import into a silent permanent delete. Minor
+    // bump on purpose — `check_schema_version` gates on MAJOR, so 1.1 files
+    // written before this still import.
+    assert_eq!(obj["schema_version"], "1.2");
 
     // D2 + SOP-not-shipped: these keys must be ABSENT from the envelope.
     assert!(!obj.contains_key("usage_records"), "usage_records must not export");

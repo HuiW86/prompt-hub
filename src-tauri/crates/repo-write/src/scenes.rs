@@ -36,7 +36,7 @@ pub fn create_scene(
         params![id, name, icon, role_presets_json, color],
     )?;
     let order_index: i64 = conn.query_row(
-        "SELECT order_index FROM scenes WHERE id = ?1",
+        "SELECT order_index FROM scenes WHERE id = ?1 AND deleted_at IS NULL",
         params![id],
         |row| row.get(0),
     )?;
@@ -48,6 +48,7 @@ pub fn create_scene(
         visible: true,
         role_presets: role_presets.to_vec(),
         color: color.map(str::to_string),
+        deleted_at: None,
     })
 }
 
@@ -64,7 +65,8 @@ pub fn update_scene(
 ) -> RepoResult<()> {
     let role_presets_json = serde_json::to_string(role_presets)?;
     let changed = conn.execute(
-        "UPDATE scenes SET name = ?2, icon = ?3, role_presets = ?4, color = ?5 WHERE id = ?1",
+        "UPDATE scenes SET name = ?2, icon = ?3, role_presets = ?4, color = ?5
+         WHERE id = ?1 AND deleted_at IS NULL",
         params![id, name, icon, role_presets_json, color],
     )?;
     if changed == 0 {
@@ -73,18 +75,21 @@ pub fn update_scene(
     Ok(())
 }
 
-/// Permanently remove a scene, but refuse (D4) when it still has phrases or
-/// sub-stages: deleting would orphan children, so the app-layer check returns
-/// `SceneNotEmpty` instead. An empty scene that hits 0 rows on DELETE means the
-/// id was unknown.
+/// Move a scene to the trash (ADR-028), but refuse (D4) when it still has LIVE
+/// phrases or sub-stages: the FKs are bare (no cascade), so a scene must not
+/// leave the screen while children still point at it. ADR-028 deliberately does
+/// not reopen "delete a non-empty scene" — what it does change is which children
+/// count: a child already in the trash no longer blocks its parent, otherwise a
+/// scene whose phrases were all deleted could never be deleted itself. Deleting a
+/// scene already in the trash is a no-op; an unknown id is an error.
 pub fn delete_scene(conn: &Connection, id: &str) -> RepoResult<()> {
     let phrase_count: i64 = conn.query_row(
-        "SELECT COUNT(*) FROM phrases WHERE scene_id = ?1",
+        "SELECT COUNT(*) FROM phrases WHERE scene_id = ?1 AND deleted_at IS NULL",
         params![id],
         |row| row.get(0),
     )?;
     let sub_stage_count: i64 = conn.query_row(
-        "SELECT COUNT(*) FROM sub_stages WHERE scene_id = ?1",
+        "SELECT COUNT(*) FROM sub_stages WHERE scene_id = ?1 AND deleted_at IS NULL",
         params![id],
         |row| row.get(0),
     )?;
@@ -93,11 +98,10 @@ pub fn delete_scene(conn: &Connection, id: &str) -> RepoResult<()> {
             scene_id: id.to_string(),
         });
     }
-    let changed = conn.execute("DELETE FROM scenes WHERE id = ?1", params![id])?;
-    if changed == 0 {
-        return Err(missing_scene(id));
+    match crate::soft_delete::soft_delete_row(conn, "scenes", id)? {
+        crate::soft_delete::SoftDeleteOutcome::Missing => Err(missing_scene(id)),
+        _ => Ok(()),
     }
-    Ok(())
 }
 
 /// Persist a new global sort order by rewriting order_index for the given ids in
@@ -110,7 +114,7 @@ pub fn reorder_scenes(conn: &Connection, ordered_ids: &[String]) -> RepoResult<(
     let tx = conn.unchecked_transaction()?;
     for (idx, id) in ordered_ids.iter().enumerate() {
         let changed = tx.execute(
-            "UPDATE scenes SET order_index = ?2 WHERE id = ?1",
+            "UPDATE scenes SET order_index = ?2 WHERE id = ?1 AND deleted_at IS NULL",
             params![id, idx as i64],
         )?;
         if changed == 0 {
@@ -145,7 +149,7 @@ mod tests {
         let mut stmt = conn
             .prepare(
                 "SELECT id, name, icon, order_index, visible, role_presets, color
-                 FROM scenes ORDER BY order_index ASC",
+                 FROM scenes WHERE deleted_at IS NULL ORDER BY order_index ASC",
             )
             .expect("prepare");
         stmt.query_map([], |row| {
@@ -158,6 +162,8 @@ mod tests {
                 visible: row.get::<_, i64>("visible")? != 0,
                 role_presets: serde_json::from_str(&presets_json).unwrap_or_default(),
                 color: row.get("color")?,
+                // Filtered out by the query above; a listed scene is alive.
+                deleted_at: None,
             })
         })
         .expect("query")
@@ -256,9 +262,72 @@ mod tests {
         let s = create_scene(&conn, "Empty", None, &[], None).expect("create");
         delete_scene(&conn, &s.id).expect("delete empty");
         assert!(all_scenes(&conn).iter().all(|x| x.id != s.id));
-        let err = delete_scene(&conn, &s.id).expect_err("second delete");
+        // ADR-028: the row is soft-deleted, so it is still there with
+        // `deleted_at` set, and deleting again is a no-op rather than an error —
+        // the shape the drafts soft delete has had since `0003` (`mark_discarded`
+        // guards on the opposite status).
+        delete_scene(&conn, &s.id).expect("second delete is a no-op");
+        let stamped: i64 = conn
+            .query_row(
+                "SELECT COUNT(*) FROM scenes WHERE id = ?1 AND deleted_at IS NOT NULL",
+                [&s.id],
+                |r| r.get(0),
+            )
+            .expect("count");
+        assert_eq!(stamped, 1, "row must survive with deleted_at set");
+    }
+
+    // ADR-028 changed which children count towards SceneNotEmpty: a child that
+    // is already in the trash no longer blocks its parent, otherwise a scene
+    // whose phrases had all been deleted could never be deleted itself. A LIVE
+    // child still blocks, for both child kinds — the FKs are bare, so the guard
+    // is the only thing keeping a scene from vanishing under its own rows.
+
+    #[test]
+    fn delete_succeeds_when_every_child_is_already_in_the_trash() {
+        let (_dir, conn) = migrated_conn();
+        let scene = create_scene(&conn, "清空过的场景", None, &[], None).expect("create");
+        let phrase =
+            crate::phrases::create_phrase(&conn, &scene.id, "话术", "body", None).expect("phrase");
+        let stage = crate::sub_stages::create_sub_stage(&conn, &scene.id, "子阶段").expect("stage");
+
+        crate::phrases::delete_phrase(&conn, &phrase.id).expect("trash the phrase");
+        crate::sub_stages::delete_sub_stage(&conn, &stage.id).expect("trash the sub-stage");
+
+        delete_scene(&conn, &scene.id).expect("a scene whose children are all trashed can go too");
+        assert!(all_scenes(&conn).iter().all(|s| s.id != scene.id));
+    }
+
+    #[test]
+    fn delete_rejects_when_a_live_phrase_remains_beside_a_trashed_one() {
+        let (_dir, conn) = migrated_conn();
+        let scene = create_scene(&conn, "还有话术", None, &[], None).expect("create");
+        let gone = crate::phrases::create_phrase(&conn, &scene.id, "删掉的", "body", None)
+            .expect("phrase a");
+        let _kept = crate::phrases::create_phrase(&conn, &scene.id, "留下的", "body", None)
+            .expect("phrase b");
+        crate::phrases::delete_phrase(&conn, &gone.id).expect("trash one");
+
+        let err = delete_scene(&conn, &scene.id).expect_err("one live phrase still blocks");
         assert!(
-            matches!(err, RepoError::TargetNotFound { .. }),
+            matches!(err, RepoError::SceneNotEmpty { ref scene_id } if *scene_id == scene.id),
+            "got {err:?}"
+        );
+    }
+
+    #[test]
+    fn delete_rejects_when_a_live_sub_stage_remains_beside_a_trashed_one() {
+        let (_dir, conn) = migrated_conn();
+        let scene = create_scene(&conn, "还有子阶段", None, &[], None).expect("create");
+        let gone =
+            crate::sub_stages::create_sub_stage(&conn, &scene.id, "删掉的").expect("stage a");
+        let _kept =
+            crate::sub_stages::create_sub_stage(&conn, &scene.id, "留下的").expect("stage b");
+        crate::sub_stages::delete_sub_stage(&conn, &gone.id).expect("trash one");
+
+        let err = delete_scene(&conn, &scene.id).expect_err("one live sub-stage still blocks");
+        assert!(
+            matches!(err, RepoError::SceneNotEmpty { ref scene_id } if *scene_id == scene.id),
             "got {err:?}"
         );
     }

@@ -42,7 +42,7 @@ pub fn create_phrase(
         params![id, scene_id, name, content, now, sub_stage_id],
     )?;
     let order_index: i64 = conn.query_row(
-        "SELECT order_index FROM phrases WHERE id = ?1",
+        "SELECT order_index FROM phrases WHERE id = ?1 AND deleted_at IS NULL",
         params![id],
         |row| row.get(0),
     )?;
@@ -58,6 +58,7 @@ pub fn create_phrase(
         deprecated: false,
         sub_stage_id: sub_stage_id.map(str::to_string),
         order_index,
+        deleted_at: None,
     })
 }
 
@@ -79,7 +80,7 @@ pub fn update_phrase(
 ) -> RepoResult<()> {
     let current: Option<Option<String>> = conn
         .query_row(
-            "SELECT sub_stage_id FROM phrases WHERE id = ?1",
+            "SELECT sub_stage_id FROM phrases WHERE id = ?1 AND deleted_at IS NULL",
             params![id],
             |row| row.get(0),
         )
@@ -91,7 +92,8 @@ pub fn update_phrase(
 
     if current.as_deref() == sub_stage_id {
         conn.execute(
-            "UPDATE phrases SET name = ?2, content = ?3 WHERE id = ?1",
+            "UPDATE phrases SET name = ?2, content = ?3
+             WHERE id = ?1 AND deleted_at IS NULL",
             params![id, name, content],
         )?;
     } else {
@@ -100,7 +102,7 @@ pub fn update_phrase(
                 order_index = (SELECT COALESCE(MAX(order_index) + 1, 0) FROM phrases
                     WHERE scene_id = (SELECT scene_id FROM phrases WHERE id = ?1)
                       AND (sub_stage_id = ?4 OR (?4 IS NULL AND sub_stage_id IS NULL)))
-             WHERE id = ?1",
+             WHERE id = ?1 AND deleted_at IS NULL",
             params![id, name, content, sub_stage_id],
         )?;
     }
@@ -149,7 +151,8 @@ pub fn move_phrase(
     // ① Snapshot the source position for the receipt; missing phrase → error.
     let receipt: Option<(String, Option<String>, i64)> = tx
         .query_row(
-            "SELECT scene_id, sub_stage_id, order_index FROM phrases WHERE id = ?1",
+            "SELECT scene_id, sub_stage_id, order_index FROM phrases
+             WHERE id = ?1 AND deleted_at IS NULL",
             params![id],
             |row| Ok((row.get(0)?, row.get(1)?, row.get(2)?)),
         )
@@ -167,7 +170,8 @@ pub fn move_phrase(
     if let Some(sub_stage_id) = target_sub_stage_id {
         let belongs: bool = tx
             .query_row(
-                "SELECT 1 FROM sub_stages WHERE id = ?1 AND scene_id = ?2",
+                "SELECT 1 FROM sub_stages
+                 WHERE id = ?1 AND scene_id = ?2 AND deleted_at IS NULL",
                 params![sub_stage_id, target_scene_id],
                 |_| Ok(true),
             )
@@ -188,7 +192,7 @@ pub fn move_phrase(
         Some(order_index) => {
             tx.execute(
                 "UPDATE phrases SET scene_id = ?2, sub_stage_id = ?3, order_index = ?4
-                 WHERE id = ?1",
+                 WHERE id = ?1 AND deleted_at IS NULL",
                 params![id, target_scene_id, target_sub_stage_id, order_index],
             )?;
         }
@@ -198,7 +202,7 @@ pub fn move_phrase(
                     order_index = (SELECT COALESCE(MAX(order_index) + 1, 0) FROM phrases
                         WHERE scene_id = ?2
                           AND (sub_stage_id = ?3 OR (?3 IS NULL AND sub_stage_id IS NULL)))
-                 WHERE id = ?1",
+                 WHERE id = ?1 AND deleted_at IS NULL",
                 params![id, target_scene_id, target_sub_stage_id],
             )?;
         }
@@ -213,14 +217,15 @@ pub fn move_phrase(
     })
 }
 
-/// Permanently remove a phrase (no is_default protection — phrases have none).
-/// The source partition keeps its gap; the read path is gap-tolerant.
+/// Move a phrase to the trash (ADR-028): an in-place `deleted_at` stamp, not a
+/// row removal, so its slot in the (scene, sub-stage) partition and every usage
+/// record pointing at it survive and a restore puts it back exactly where it was.
+/// Deleting a phrase already in the trash is a no-op; an unknown id is an error.
 pub fn delete_phrase(conn: &Connection, id: &str) -> RepoResult<()> {
-    let changed = conn.execute("DELETE FROM phrases WHERE id = ?1", params![id])?;
-    if changed == 0 {
-        return Err(missing_phrase(id));
+    match crate::soft_delete::soft_delete_row(conn, "phrases", id)? {
+        crate::soft_delete::SoftDeleteOutcome::Missing => Err(missing_phrase(id)),
+        _ => Ok(()),
     }
-    Ok(())
 }
 
 /// Persist a new sort order WITHIN a single (scene_id, sub_stage_id) partition by
@@ -240,9 +245,18 @@ pub fn reorder_phrases(
     let tx = conn.unchecked_transaction()?;
     for (idx, id) in ordered_ids.iter().enumerate() {
         let changed = tx.execute(
+            // The ungrouped partition (?4 IS NULL) must include phrases whose
+            // sub-stage is in the trash: the read path already shows them as
+            // ungrouped (ADR-028 sub-decision 7), so the list the renderer sends
+            // back contains them and a stricter predicate would reject the whole
+            // reorder as "unknown id".
             "UPDATE phrases SET order_index = ?2
-             WHERE id = ?1 AND scene_id = ?3
-               AND (sub_stage_id = ?4 OR (?4 IS NULL AND sub_stage_id IS NULL))",
+             WHERE id = ?1 AND scene_id = ?3 AND deleted_at IS NULL
+               AND (sub_stage_id = ?4
+                    OR (?4 IS NULL
+                        AND (sub_stage_id IS NULL
+                             OR sub_stage_id NOT IN
+                                (SELECT id FROM sub_stages WHERE deleted_at IS NULL))))",
             params![id, idx as i64, scene_id, sub_stage_id],
         )?;
         if changed == 0 {
@@ -288,6 +302,7 @@ mod tests {
                         notes, deprecated, sub_stage_id, order_index
                  FROM phrases
                  WHERE scene_id = ?1 AND (sub_stage_id = ?2 OR (?2 IS NULL AND sub_stage_id IS NULL))
+                   AND deleted_at IS NULL
                  ORDER BY order_index ASC, created_at ASC, rowid ASC",
             )
             .expect("prepare");
@@ -303,6 +318,8 @@ mod tests {
                     created_at: Utc::now(),
                     notes: row.get("notes")?,
                     deprecated: row.get::<_, i64>("deprecated")? != 0,
+                    // Filtered out by the query above; a listed asset is alive.
+                    deleted_at: None,
                     sub_stage_id: row.get("sub_stage_id")?,
                     order_index: row.get("order_index")?,
                 })
@@ -429,11 +446,19 @@ mod tests {
         assert!(partition(&conn, "scene-plan", None)
             .iter()
             .all(|p| p.id != created.id));
-        let err = delete_phrase(&conn, &created.id).expect_err("second delete");
-        assert!(
-            matches!(err, RepoError::TargetNotFound { .. }),
-            "got {err:?}"
-        );
+        // ADR-028: the row is soft-deleted, so it is still there with
+        // `deleted_at` set, and deleting again is a no-op rather than an error —
+        // the shape the drafts soft delete has had since `0003` (`mark_discarded`
+        // guards on the opposite status).
+        delete_phrase(&conn, &created.id).expect("second delete is a no-op");
+        let stamped: i64 = conn
+            .query_row(
+                "SELECT COUNT(*) FROM phrases WHERE id = ?1 AND deleted_at IS NOT NULL",
+                [&created.id],
+                |r| r.get(0),
+            )
+            .expect("count");
+        assert_eq!(stamped, 1, "row must survive with deleted_at set");
     }
 
     #[test]

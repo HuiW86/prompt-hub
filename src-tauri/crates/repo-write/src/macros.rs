@@ -31,7 +31,7 @@ pub fn create_macro(
         params![id, name, content, now, scene_id],
     )?;
     let order_index: i64 = conn.query_row(
-        "SELECT order_index FROM macros WHERE id = ?1",
+        "SELECT order_index FROM macros WHERE id = ?1 AND deleted_at IS NULL",
         params![id],
         |row| row.get(0),
     )?;
@@ -50,6 +50,7 @@ pub fn create_macro(
         scene_id: scene_id.map(str::to_string),
         deprecated: false,
         order_index,
+        deleted_at: None,
     })
 }
 
@@ -57,7 +58,7 @@ pub fn create_macro(
 /// order_index, native flags) are left untouched.
 pub fn update_macro(conn: &Connection, id: &str, name: &str, content: &str) -> RepoResult<()> {
     let changed = conn.execute(
-        "UPDATE macros SET name = ?2, content = ?3 WHERE id = ?1",
+        "UPDATE macros SET name = ?2, content = ?3 WHERE id = ?1 AND deleted_at IS NULL",
         params![id, name, content],
     )?;
     if changed == 0 {
@@ -66,14 +67,16 @@ pub fn update_macro(conn: &Connection, id: &str, name: &str, content: &str) -> R
     Ok(())
 }
 
-/// Permanently remove a macro. This is an irreversible hard delete (plan §1.3
-/// delete grading); the UI guards it behind a confirm dialog.
+/// Move a macro to the trash (ADR-028): an in-place `deleted_at` stamp, not a
+/// row removal, so the id / created_at / order_index / usage history survive and
+/// `restore_asset` is a single UPDATE back. Deleting a macro that is already in
+/// the trash is a no-op; an unknown id is still an error. The UI no longer
+/// confirms — it offers an undo instead (ADR-028 sub-decision 3).
 pub fn delete_macro(conn: &Connection, id: &str) -> RepoResult<()> {
-    let changed = conn.execute("DELETE FROM macros WHERE id = ?1", params![id])?;
-    if changed == 0 {
-        return Err(missing_macro(id));
+    match crate::soft_delete::soft_delete_row(conn, "macros", id)? {
+        crate::soft_delete::SoftDeleteOutcome::Missing => Err(missing_macro(id)),
+        _ => Ok(()),
     }
-    Ok(())
 }
 
 /// Persist a new sort order by rewriting order_index for the given ids in one
@@ -86,7 +89,7 @@ pub fn reorder_macros(conn: &Connection, ordered_ids: &[String]) -> RepoResult<(
     let tx = conn.unchecked_transaction()?;
     for (idx, id) in ordered_ids.iter().enumerate() {
         let changed = tx.execute(
-            "UPDATE macros SET order_index = ?2 WHERE id = ?1",
+            "UPDATE macros SET order_index = ?2 WHERE id = ?1 AND deleted_at IS NULL",
             params![id, idx as i64],
         )?;
         if changed == 0 {
@@ -169,11 +172,19 @@ mod tests {
                 .all(|m| m.id != created.id),
             "deleted macro must not be listed"
         );
-        let err = delete_macro(&conn, &created.id).expect_err("second delete");
-        assert!(
-            matches!(err, RepoError::TargetNotFound { .. }),
-            "got {err:?}"
-        );
+        // ADR-028: the row is soft-deleted, so it is still there with
+        // `deleted_at` set, and deleting again is a no-op rather than an error —
+        // the shape the drafts soft delete has had since `0003` (`mark_discarded`
+        // guards on the opposite status).
+        delete_macro(&conn, &created.id).expect("second delete is a no-op");
+        let stamped: i64 = conn
+            .query_row(
+                "SELECT COUNT(*) FROM macros WHERE id = ?1 AND deleted_at IS NOT NULL",
+                [&created.id],
+                |r| r.get(0),
+            )
+            .expect("count");
+        assert_eq!(stamped, 1, "row must survive with deleted_at set");
     }
 
     #[test]

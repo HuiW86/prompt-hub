@@ -4,7 +4,8 @@ import { useEffect, useRef, useState } from "react";
 import { useCopy } from "../../hooks/useCopy";
 import { useFocusRestore } from "../../hooks/useFocusRestore";
 import { useRegionNav } from "../../hooks/useRegionNav";
-import type { Phrase, SubStage } from "../../ipc/types";
+import { useUndoableDelete } from "../../hooks/useUndoableDelete";
+import type { Phrase, Scene, SubStage } from "../../ipc/types";
 import { useAppStore } from "../../stores/appStore";
 import { usePromptStore } from "../../stores/promptStore";
 import { useSettingsStore } from "../../stores/settingsStore";
@@ -81,6 +82,7 @@ export function ScenePanel() {
   const showWithAction = useToastStore((s) => s.showWithAction);
   const showError = useToastStore((s) => s.showError);
   const interactionMode = useSettingsStore((s) => s.interactionMode);
+  const armUndo = useUndoableDelete();
   const onRegionKeyDown = useRegionNav();
   // Region container ref backs focus restoration across store re-pulls (A1-05):
   // a write re-pulls the scenes tree, the list re-renders, DOM focus falls to
@@ -104,7 +106,6 @@ export function ScenePanel() {
   // create-mode PhraseEditor prefilled with that column's subStageId (null =
   // ungrouped).
   const [renamingSubId, setRenamingSubId] = useState<string | null>(null);
-  const [confirmingSubId, setConfirmingSubId] = useState<string | null>(null);
   const [creatingSubStage, setCreatingSubStage] = useState(false);
   const [phraseEditId, setPhraseEditId] = useState<string | null>(null);
   // `draft` carries a creation the user abandoned and then undid (ADR-025
@@ -147,29 +148,29 @@ export function ScenePanel() {
     setShowProperties(openPropsOnSceneChange.current);
     openPropsOnSceneChange.current = false;
     // Reset the view-mode in-place editing state too — a scene switch must
-    // not carry an open rename / confirm / phrase editor onto the new scene.
+    // not carry an open rename / phrase editor onto the new scene.
     setRenamingSubId(null);
-    setConfirmingSubId(null);
     setCreatingSubStage(false);
     setPhraseEditId(null);
     setAddPhraseFor(null);
     setMovingPhraseId(null);
   }, [currentSceneId, draftsActive]);
 
-  const handleDelete = async (id: string, siblingIds: string[]) => {
+  // ADR-028 子决策 3: one click deletes, the toast carries 撤销 back.
+  const handleDelete = async (phrase: Phrase, siblingIds: string[]) => {
     // Deletion drops the focused card; restore to the nearest surviving sibling
     // so keyboard flow continues (A1-05).
     await withFocusRestore(
       async () => {
         try {
-          await deletePhrase(id);
-          showToast("已永久删除");
+          await deletePhrase(phrase.id);
+          armUndo({ kind: "phrase", id: phrase.id, name: phrase.name });
         } catch (err) {
           showError(toUserMessage(err, "删除失败"));
         }
       },
       {
-        targetKey: `phrase-${id}`,
+        targetKey: `phrase-${phrase.id}`,
         siblingKeys: siblingIds.map((sid) => `phrase-${sid}`),
       },
     );
@@ -254,11 +255,13 @@ export function ScenePanel() {
   };
 
   // Backend refuses a non-empty Scene (RepoError::SceneNotEmpty) — surface that
-  // message rather than swallowing it. On success fall back to the first tab.
-  const handleDeleteScene = async (id: string) => {
+  // message rather than swallowing it. That refusal deleted NOTHING, so it stays
+  // a plain error toast with no 撤销 (ADR-028 子决策 3 only covers deletes that
+  // actually happened). On success fall back to the first tab.
+  const handleDeleteScene = async (scene: Scene) => {
     try {
-      await deleteScene(id);
-      showToast("已删除场景");
+      await deleteScene(scene.id);
+      armUndo({ kind: "scene", id: scene.id, name: scene.name, noun: "场景" });
       setShowProperties(false);
       setActiveSceneId(null);
     } catch (err) {
@@ -355,12 +358,20 @@ export function ScenePanel() {
     }
   };
 
-  const handleDeleteSub = async (id: string, siblingIds: string[]) => {
-    setConfirmingSubId(null);
+  // ADR-028 子决策 7: deleting a sub-stage no longer unbinds its phrases — they
+  // keep pointing at it and simply render under 未分组 until it comes back, so
+  // 撤销 is one UPDATE with nothing to re-home.
+  const handleDeleteSub = async (sub: SubStage, siblingIds: string[]) => {
     await withFocusRestore(
       async () => {
         try {
-          await deleteSubStage(id);
+          await deleteSubStage(sub.id);
+          armUndo({
+            kind: "sub_stage",
+            id: sub.id,
+            name: sub.name,
+            noun: "子阶段",
+          });
         } catch (err) {
           showError(toUserMessage(err, "删除子阶段失败"));
         }
@@ -368,7 +379,7 @@ export function ScenePanel() {
       // The deleted column's header controls vanish — fall to a surviving
       // column's rename control (next then previous).
       {
-        targetKey: `substage-${id}-rename`,
+        targetKey: `substage-${sub.id}-rename`,
         siblingKeys: siblingIds.map((sid) => `substage-${sid}-rename`),
       },
     );
@@ -568,7 +579,7 @@ export function ScenePanel() {
               }
               onSave={(payload) => void handleSaveProperties(payload)}
               onMoveScene={(dir) => void handleMoveScene(dir)}
-              onDelete={() => void handleDeleteScene(current.scene.id)}
+              onDelete={() => void handleDeleteScene(current.scene)}
               onClose={() => setShowProperties(false)}
             />
           )}
@@ -594,7 +605,6 @@ export function ScenePanel() {
                     g.subStage != null && groups[gi + 1]?.subStage != null
                   }
                   renaming={renamingSubId === (g.subStage?.id ?? UNGROUPED_KEY)}
-                  confirmingDelete={confirmingSubId === g.subStage?.id}
                   editingPhraseId={phraseEditId}
                   movingPhraseId={movingPhraseId}
                   addingPhrase={addPhraseFor?.subStageId === subId}
@@ -635,13 +645,8 @@ export function ScenePanel() {
                   onMove={(dir) =>
                     g.subStage && void handleMoveSub(g.subStage.id, dir)
                   }
-                  onDeleteRequest={() =>
-                    g.subStage && setConfirmingSubId(g.subStage.id)
-                  }
-                  onDeleteCancel={() => setConfirmingSubId(null)}
-                  onDeleteConfirm={() =>
-                    g.subStage &&
-                    void handleDeleteSub(g.subStage.id, realSubIds)
+                  onDelete={() =>
+                    g.subStage && void handleDeleteSub(g.subStage, realSubIds)
                   }
                   // Since ADR-025 the card no longer unmounts to make room for
                   // the editor, so focus return is the anchored panel's own
@@ -657,12 +662,14 @@ export function ScenePanel() {
                   onPhraseMoveToConfirm={(phrase, sceneId, subStageId) =>
                     void handleMovePhraseTo(phrase, sceneId, subStageId)
                   }
-                  onPhraseDelete={(id) =>
-                    void handleDelete(
-                      id,
-                      g.phrases.map((p) => p.id),
-                    )
-                  }
+                  onPhraseDelete={(id) => {
+                    const phrase = g.phrases.find((p) => p.id === id);
+                    if (phrase)
+                      void handleDelete(
+                        phrase,
+                        g.phrases.map((p) => p.id),
+                      );
+                  }}
                   onAddPhrase={() => setAddPhraseFor({ subStageId: subId })}
                   onAddPhraseClose={() => setAddPhraseFor(null)}
                   onAddPhraseDiscard={(draft) =>

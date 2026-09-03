@@ -126,27 +126,6 @@
   opacity: 1;
 }
 
-/* Inline delete-confirm slot replacing a chip in place. */
-.confirmSlot {
-  display: inline-flex;
-  align-items: center;
-  gap: var(--s-2);
-  flex-shrink: 0;
-  height: var(--h-chip);
-  padding: 0 var(--s-2_25);
-  border: var(--hairline) solid var(--accent);
-  border-radius: var(--r-2);
-}
-
-.rowName {
-  composes: ph-action from "../styles/typography.module.css";
-  min-width: 0;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
-  color: var(--fg-1);
-}
-
 /* Ghost add entry — trailing dashed pill mirroring ScenePanel's ghostAdd. */
 .ghostAdd {
   composes: ph-action from "../styles/typography.module.css";

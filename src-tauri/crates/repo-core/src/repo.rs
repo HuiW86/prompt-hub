@@ -47,7 +47,7 @@ pub fn list_alignment_phrases(conn: &Connection) -> RepoResult<Vec<AlignmentPhra
         "SELECT id, phase_id, name, content, is_default, usage_count, last_used_at,
                 created_at, notes, deprecated, order_index
          FROM alignment_phrases
-         WHERE deprecated = 0
+         WHERE deprecated = 0 AND deleted_at IS NULL
          ORDER BY phase_id ASC, order_index ASC, created_at ASC",
     )?;
     let raw = stmt.query_map([], |row| {
@@ -64,6 +64,8 @@ pub fn list_alignment_phrases(conn: &Connection) -> RepoResult<Vec<AlignmentPhra
                 notes: row.get("notes")?,
                 deprecated: row.get::<_, i64>("deprecated")? != 0,
                 order_index: row.get("order_index")?,
+                // Filtered out by the query above; a listed asset is alive.
+                deleted_at: None,
             },
             row.get::<_, Option<String>>("last_used_at")?,
             row.get::<_, String>("created_at")?,
@@ -84,7 +86,7 @@ pub fn list_macros(conn: &Connection) -> RepoResult<Vec<Macro>> {
         "SELECT id, name, content, expand_from, native, role, task, usage_count,
                 last_used_at, created_at, notes, scene_id, deprecated, order_index
          FROM macros
-         WHERE deprecated = 0
+         WHERE deprecated = 0 AND deleted_at IS NULL
          ORDER BY order_index ASC, created_at ASC",
     )?;
     let raw = stmt.query_map([], |row| {
@@ -143,6 +145,8 @@ pub fn list_macros(conn: &Connection) -> RepoResult<Vec<Macro>> {
             scene_id,
             deprecated,
             order_index,
+            // Filtered out by the query above; a listed asset is alive.
+            deleted_at: None,
         });
     }
     Ok(out)
@@ -153,7 +157,7 @@ pub fn list_modifiers(conn: &Connection) -> RepoResult<Vec<Modifier>> {
         "SELECT id, name, content, group_kind, usage_count, last_used_at,
                 created_at, notes, deprecated, order_index
          FROM modifiers
-         WHERE deprecated = 0
+         WHERE deprecated = 0 AND deleted_at IS NULL
          ORDER BY group_kind ASC, order_index ASC, created_at ASC",
     )?;
     let raw = stmt.query_map([], |row| {
@@ -169,6 +173,8 @@ pub fn list_modifiers(conn: &Connection) -> RepoResult<Vec<Modifier>> {
                 notes: row.get("notes")?,
                 deprecated: row.get::<_, i64>("deprecated")? != 0,
                 order_index: row.get("order_index")?,
+                // Filtered out by the query above; a listed asset is alive.
+                deleted_at: None,
             },
             row.get::<_, Option<String>>("last_used_at")?,
             row.get::<_, String>("created_at")?,
@@ -189,7 +195,7 @@ pub fn list_compositions(conn: &Connection) -> RepoResult<Vec<Composition>> {
         "SELECT id, name, modifier_ids, phase_id, scene_id, usage_count,
                 last_used_at, created_at, notes, deprecated, order_index
          FROM compositions
-         WHERE deprecated = 0
+         WHERE deprecated = 0 AND deleted_at IS NULL
          ORDER BY phase_id ASC, order_index ASC, created_at ASC",
     )?;
     let raw = stmt.query_map([], |row| {
@@ -234,6 +240,8 @@ pub fn list_compositions(conn: &Connection) -> RepoResult<Vec<Composition>> {
             notes,
             deprecated: dep,
             order_index,
+            // Filtered out by the query above; a listed asset is alive.
+            deleted_at: None,
         });
     }
     Ok(out)
@@ -243,7 +251,7 @@ pub fn list_scenes_with_children(conn: &Connection) -> RepoResult<Vec<SceneWithC
     let mut stmt = conn.prepare(
         "SELECT id, name, icon, order_index, visible, role_presets, color
          FROM scenes
-         WHERE visible = 1
+         WHERE visible = 1 AND deleted_at IS NULL
          ORDER BY order_index ASC",
     )?;
     let scenes_raw = stmt
@@ -258,6 +266,8 @@ pub fn list_scenes_with_children(conn: &Connection) -> RepoResult<Vec<SceneWithC
                     visible: row.get::<_, i64>("visible")? != 0,
                     role_presets: Vec::new(),
                     color: row.get("color")?,
+                    // Filtered out by the query above; a listed scene is alive.
+                    deleted_at: None,
                 },
                 role_presets_json,
             ))
@@ -282,7 +292,7 @@ fn list_sub_stages_by_scene(conn: &Connection, scene_id: &str) -> RepoResult<Vec
     let mut stmt = conn.prepare(
         "SELECT id, scene_id, name, order_index
          FROM sub_stages
-         WHERE scene_id = ?1
+         WHERE scene_id = ?1 AND deleted_at IS NULL
          ORDER BY order_index ASC",
     )?;
     let rows = stmt.query_map(params![scene_id], |row| {
@@ -291,6 +301,8 @@ fn list_sub_stages_by_scene(conn: &Connection, scene_id: &str) -> RepoResult<Vec
             scene_id: row.get("scene_id")?,
             name: row.get("name")?,
             order_index: row.get("order_index")?,
+            // Filtered out by the query above; a listed sub-stage is alive.
+            deleted_at: None,
         })
     })?;
     Ok(rows.collect::<rusqlite::Result<Vec<_>>>()?)
@@ -298,10 +310,18 @@ fn list_sub_stages_by_scene(conn: &Connection, scene_id: &str) -> RepoResult<Vec
 
 fn list_phrases_by_scene(conn: &Connection, scene_id: &str) -> RepoResult<Vec<Phrase>> {
     let mut stmt = conn.prepare(
+        // The CASE re-homes a phrase whose sub-stage is in the trash into the
+        // ungrouped partition, exactly as if the column were NULL. Deleting a
+        // sub-stage no longer nulls its children (ADR-028 sub-decision 7), so
+        // "ungrouped" has to be decided here, on read, which is also what makes
+        // restoring a sub-stage a pure single-row UPDATE.
         "SELECT id, scene_id, name, content, usage_count, last_used_at, created_at,
-                notes, deprecated, sub_stage_id, order_index
+                notes, deprecated, order_index,
+                CASE WHEN sub_stage_id IN
+                        (SELECT id FROM sub_stages WHERE deleted_at IS NULL)
+                     THEN sub_stage_id END AS sub_stage_id
          FROM phrases
-         WHERE scene_id = ?1 AND deprecated = 0
+         WHERE scene_id = ?1 AND deprecated = 0 AND deleted_at IS NULL
          ORDER BY order_index ASC, created_at ASC, rowid ASC",
     )?;
     let raw = stmt.query_map(params![scene_id], |row| {
@@ -346,6 +366,8 @@ fn list_phrases_by_scene(conn: &Connection, scene_id: &str) -> RepoResult<Vec<Ph
             deprecated,
             sub_stage_id,
             order_index,
+            // Filtered out by the query above; a listed phrase is alive.
+            deleted_at: None,
         });
     }
     Ok(out)
@@ -490,13 +512,38 @@ pub fn list_recent_usage(conn: &Connection, limit: i64) -> RepoResult<Vec<Recent
          FROM ranked u
          LEFT JOIN macros m
             ON u.target_type = 'macro' AND u.target_id = m.id
+                AND m.deleted_at IS NULL
          LEFT JOIN phrases p
             ON u.target_type = 'phrase' AND u.target_id = p.id
+                AND p.deleted_at IS NULL
          LEFT JOIN alignment_phrases a
             ON u.target_type = 'alignment' AND u.target_id = a.id
+                AND a.deleted_at IS NULL
          LEFT JOIN modifiers mo
             ON u.target_type = 'modifier' AND u.target_id = mo.id
+                AND mo.deleted_at IS NULL
          WHERE u.rn = 1
+           -- ADR-028 sub-decision 5 (closes G4 observation O3). A usage row whose
+           -- target no longer resolves is dropped instead of surfacing as a
+           -- 「（未知话术）」 tombstone. Two kinds of row hit this: an asset now in
+           -- the trash, and one hard-deleted before this ADR shipped. Both are
+           -- un-recopyable, which is the only thing this list is for.
+           --
+           -- The filter has to sit HERE, above LIMIT: filtering in the renderer
+           -- would let tombstones consume slots and hand the wake a short list.
+           -- Restoring an asset brings its history straight back, because
+           -- usage_records was never touched and the id never changed.
+           --
+           -- Scope is deliberately narrow: only rows that POINT AT something and
+           -- miss. Composition usages carry no target_id at all and so can never
+           -- resolve; they are left alone here because dropping them would be a
+           -- separate product change, not the O3 fix. That they render nameless
+           -- is the pre-existing gap ADR-028 sub-decision 5 records as 同批可修.
+           AND (u.target_id IS NULL
+                OR m.id IS NOT NULL
+                OR p.id IS NOT NULL
+                OR a.id IS NOT NULL
+                OR mo.id IS NOT NULL)
          ORDER BY u.timestamp DESC
          LIMIT ?1",
     )?;
@@ -905,11 +952,54 @@ mod tests {
         let conn = db::open_in_memory().expect("open db");
         let shared = list_macros(&conn).expect("list")[0].id.clone();
         // Ids are unique per table, not across tables: the same string under two
-        // target types is two different assets and must keep two slots.
+        // target types is two different assets and must keep two slots. Both
+        // assets really exist here — a phrase deliberately given the macro's id
+        // string — because ADR-028 made the query drop usage rows whose target
+        // does not resolve, so a fixture pointing at a non-existent phrase would
+        // now be filtered out and stop testing the partition key at all.
+        conn.execute(
+            "INSERT INTO phrases (id, scene_id, name, content, created_at, order_index)
+             VALUES (?1, 'scene-plan', 'Shared id', 'body', '2026-08-01T00:00:00Z', 99)",
+            params![shared],
+        )
+        .expect("phrase sharing the macro id");
         insert_usage(&conn, "t1", "2026-08-10T00:00:01Z", "macro", Some(&shared));
         insert_usage(&conn, "t2", "2026-08-10T00:00:02Z", "phrase", Some(&shared));
 
         let recent = list_recent_usage(&conn, 5).expect("recent");
         assert_eq!(recent.len(), 2);
+    }
+
+    #[test]
+    fn list_recent_usage_drops_a_trashed_asset_and_brings_it_back_on_restore() {
+        // ADR-028 sub-decision 5 / G4 observation O3: before this, deleting an
+        // asset left its usage row behind as an un-recopyable 「（未知话术）」 line.
+        let conn = db::open_in_memory().expect("open db");
+        let macros = list_macros(&conn).expect("list");
+        let (doomed, keeper) = (macros[0].id.clone(), macros[1].id.clone());
+        insert_usage(&conn, "k1", "2026-08-10T00:00:01Z", "macro", Some(&keeper));
+        insert_usage(&conn, "d1", "2026-08-10T00:00:02Z", "macro", Some(&doomed));
+        assert_eq!(list_recent_usage(&conn, 5).expect("before").len(), 2);
+
+        conn.execute(
+            "UPDATE macros SET deleted_at = '2026-09-03T00:00:00Z' WHERE id = ?1",
+            params![doomed],
+        )
+        .expect("trash");
+        let after = list_recent_usage(&conn, 5).expect("after");
+        assert_eq!(after.len(), 1, "the trashed asset leaves no tombstone");
+        assert_eq!(after[0].record.target_id.as_deref(), Some(keeper.as_str()));
+
+        // The usage row itself was never touched, so restore reconnects by id.
+        conn.execute(
+            "UPDATE macros SET deleted_at = NULL WHERE id = ?1",
+            params![doomed],
+        )
+        .expect("restore");
+        assert_eq!(
+            list_recent_usage(&conn, 5).expect("restored").len(),
+            2,
+            "history returns with the asset"
+        );
     }
 }

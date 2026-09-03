@@ -35,6 +35,7 @@ use repo_core::models::{
     Macro, Modifier, Phase, Phrase, RecentUsageEntry, RecordUsageInput, Scene, SceneWithChildren,
     SubStage, UsageRecord,
 };
+use repo_core::trash::{AssetKind, TrashEntry};
 use repo_core::{repo, DraftRepo, RepoError};
 use repo_write::promote::PromoteOptions;
 
@@ -816,6 +817,35 @@ pub fn reorder_sub_stages(
         repo_write::reorder_sub_stages(c, &scene_id, &ordered_ids)
     })?;
     Ok(OkAck { ok: true })
+}
+
+// ── Trash (ADR-028 P0) ────────────────────────────────────────────────────────
+// Every `delete_*` above is now an in-place `deleted_at` stamp, so these three
+// commands are the rest of that story: put one row back, look at what is in the
+// trash, and destroy it all. Restore and purge are writes and pay the schema
+// guard; the listing is a plain read that only the settings page performs, so it
+// costs the C1 wake budget nothing.
+
+/// Clear an asset's `deleted_at`. Restoring an already-live asset is a no-op.
+#[tauri::command]
+pub fn restore_asset(state: State<'_, AppState>, kind: String, id: String) -> AppResult<OkAck> {
+    let kind = AssetKind::from_str(&kind)
+        .ok_or_else(|| AppError::Repo(RepoError::Other(format!("unknown asset kind `{kind}`"))))?;
+    with_write_conn(&state, |c| repo_write::restore_asset(c, kind, &id))?;
+    Ok(OkAck { ok: true })
+}
+
+/// Everything currently in the trash, newest deletion first.
+#[tauri::command]
+pub fn list_trash(state: State<'_, AppState>) -> AppResult<Vec<TrashEntry>> {
+    with_conn(&state, repo_core::list_trash)
+}
+
+/// Destroy the trash for real, and with it the usage records that lost their
+/// target. Irreversible — the UI must confirm before calling this.
+#[tauri::command]
+pub fn purge_trash(state: State<'_, AppState>) -> AppResult<repo_write::PurgeSummary> {
+    with_write_conn(&state, repo_write::purge_trash)
 }
 
 // ── Data import / export (PRD §6.9 / §7.5) ────────────────────────────────────

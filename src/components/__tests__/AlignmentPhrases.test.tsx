@@ -1,4 +1,10 @@
-import { fireEvent, render, screen, waitFor } from "@testing-library/react";
+import {
+  act,
+  fireEvent,
+  render,
+  screen,
+  waitFor,
+} from "@testing-library/react";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
 import type { AlignmentPhrase } from "../../ipc/types";
@@ -43,6 +49,7 @@ function seed(phrases: AlignmentPhrase[]) {
   useAppStore.setState(appInitial, true);
   usePromptStore.setState({ alignmentPhrasesByPhase: { "phase-1": phrases } });
   useAppStore.setState({ activePhaseId: "phase-1" });
+  useToastStore.getState().clear();
   invokeMock.mockReset();
   invokeMock.mockResolvedValue({ ok: true });
 }
@@ -146,17 +153,52 @@ describe("AlignmentPhrases — in-place editing (ADR-021)", () => {
     expect(call).toBeTruthy();
   });
 
-  it("delete is a two-step inline confirm", () => {
+  // ADR-028 子决策 3: the two-step「永久删除？」confirm is gone.
+  it("delete fires on the first click and the toast undoes it (ADR-028)", async () => {
+    invokeMock.mockImplementation((cmd: string) =>
+      cmd === "list_alignment_phrases"
+        ? Promise.resolve(twoPhrases)
+        : Promise.resolve({ ok: true }),
+    );
     render(<AlignmentPhrases />);
-    fireEvent.click(screen.getByLabelText("删除 次要协议"));
-    // No delete fired yet — the confirm affordance is shown first.
-    expect(
-      invokeMock.mock.calls.find((c) => c[0] === "delete_alignment_phrase"),
-    ).toBeUndefined();
-    fireEvent.click(screen.getByLabelText("确认永久删除"));
+    expect(screen.queryByLabelText("确认永久删除")).toBeNull();
+
+    await act(async () => {
+      fireEvent.click(screen.getByLabelText("删除 次要协议"));
+    });
     expect(
       invokeMock.mock.calls.find((c) => c[0] === "delete_alignment_phrase"),
     ).toBeTruthy();
+
+    const toast = useToastStore.getState();
+    expect(toast.message).toBe("已删除「次要协议」");
+    expect(toast.action?.label).toBe("撤销");
+
+    await act(async () => {
+      toast.action?.onClick();
+    });
+    const restore = invokeMock.mock.calls.find((c) => c[0] === "restore_asset");
+    expect(restore?.[1]).toMatchObject({
+      kind: "alignment_phrase",
+      id: "ap-2",
+    });
+  });
+
+  // A rejected delete removed nothing, so it must NOT offer an undo that would
+  // resurrect a row which never left (the backend refuses a phase's default).
+  it("a rejected delete shows an error with no 撤销", async () => {
+    invokeMock.mockImplementation((cmd: string) =>
+      cmd === "delete_alignment_phrase"
+        ? Promise.reject(new Error("DefaultPhraseProtected"))
+        : Promise.resolve({ ok: true }),
+    );
+    render(<AlignmentPhrases />);
+    await act(async () => {
+      fireEvent.click(screen.getByLabelText("删除 次要协议"));
+    });
+    const toast = useToastStore.getState();
+    expect(toast.intent).toBe("error");
+    expect(toast.action).toBeNull();
   });
 });
 
