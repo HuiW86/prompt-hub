@@ -1,13 +1,13 @@
 ---
 type: test-spec
 project: prompt-hub
-version: v0.8
+version: v0.9
 created: 2026-05-19
 last_modified: 2026-09-03
-status: ratified # v0.8 于 2026-09-03 按 [[CLAUDE#§5.1.2]]「日志不签字」反查归档（§2 计数 / §3 gate 盘面 / §4 Rust 盘面 / §4.3 走查记录属记录类，不进人审队列；数字两轮全部由本机重跑 `pnpm test` 与 `cargo test --workspace` 重新导出，非沿用）；v0.7 同日同法归档（ts-recheck 62 条核 / 8 处修正 / 21 条真机观测无法从代码核）；v0.5 于 2026-09-01 人审批次 ③ ratified。v0.8 内容：ADR-028 **P0（`77637cd`）+ P1（`6aca7eb`）**涟漪——前端 414→457 / Rust 169→183 / 源码级 gate 6→7 / IPC 53→56 / 观察 O3 闭合
+status: ratified # v0.9 于 2026-09-03 同法归档：新增 §4.4 **G5 走查记录**（ADR-028 首个真机门，八项全通过）+ §4.1 G5 行 + §4.3 O3 转「真机已复跑」+ 教训 10 / 11。反查结果 **5 处不一致，全部按代码改正后才写入**（toast 不在 header DOM 里 / 动作簇与整理模式无关 / 说明行漏一个空格 / 确认按钮另有 `aria-label` / 清空还发一条 toast，逐条见 §4.4 反查说明）。测试计数不动（457 / 183，G5 零代码改动）。v0.8 于 2026-09-03 按 [[CLAUDE#§5.1.2]]「日志不签字」反查归档（§2 计数 / §3 gate 盘面 / §4 Rust 盘面 / §4.3 走查记录属记录类，不进人审队列；数字两轮全部由本机重跑 `pnpm test` 与 `cargo test --workspace` 重新导出，非沿用）；v0.7 同日同法归档（ts-recheck 62 条核 / 8 处修正 / 21 条真机观测无法从代码核）；v0.5 于 2026-09-01 人审批次 ③ ratified。v0.8 内容：ADR-028 **P0（`77637cd`）+ P1（`6aca7eb`）**涟漪——前端 414→457 / Rust 169→183 / 源码级 gate 6→7 / IPC 53→56 / 观察 O3 闭合
 author: ai # 🤖 AI 主笔 + 人审（CLAUDE §5.2）
 audience: [ai, human]
-description: prompt-hub 测试规格——前端 Vitest 457 用例 + Rust workspace 183 + 7 源码级 gate + CI 双 job + C1 bench gate；LLM Eval N/A
+description: prompt-hub 测试规格——前端 Vitest 457 用例 + Rust workspace 183 + 7 源码级 gate + CI 双 job + C1 bench gate + 真机门 G1–G5；LLM Eval N/A
 related:
   - 06-prd
   - 07-features
@@ -39,11 +39,13 @@ related:
 >
 > **二轮反查（对 P1 增量，`6aca7eb`）**：数字全部重跑——`pnpm test` **457 / 41**，逐文件 JSON reporter 分组相加 91 + 28 + 244 + 17 + 77 = **457** 与表头自洽；`cargo test --workspace` 12 行 `test result:` 相加 **183**（唯一增量是 `soft_delete_e2e.rs` 6→7）；IPC 仍 **56**（P1 没加命令）。前端 +13 的构成经 `git show 6aca7eb --stat` 与逐文件对拍双向确认：`TrashSection.test.tsx` 12 + `token-gate` 40→41，而 `SettingsModal.test.tsx` 改了内容、条数不变。
 >
-> ⚠️ **本版仍无真机证据**：ADR-028 P0+P1 的用户可见改动（一键删除、撤销 toast、最近区不再出墓碑、废纸篓列表与恢复与清空）全部只有 jsdom 与 Rust 覆盖，尚未跑发布形态走查，[[07-features]] 相关行**不因本版升 `verified`**。
+> ⚠️ **v0.8 当时无真机证据**（原文保留）：ADR-028 P0+P1 的用户可见改动（一键删除、撤销 toast、最近区不再出墓碑、废纸篓列表与恢复与清空）全部只有 jsdom 与 Rust 覆盖，尚未跑发布形态走查，[[07-features]] 相关行**不因本版升 `verified`**。→ **v0.9 已补上**：真机门 **G5 八项全通过**，见 §4.4。
 >
 > **方法记一笔**：第 ⑦ ⑧ 两处不一致是同一个坏习惯——**照着「应该测了什么」写，而不是照着「测了什么」写**。⑦ 把一条用例的两个断言写成两条用例，凑够了「+2」这个数；⑧ 把净 +1 写成纯新增，掩盖了一条被删掉的旧用例。两处都不影响总数，所以**逐文件对拍抓不出来**——那把尺子只量条数，量不出哪条被换掉，后者只有读 diff 才行。这是 v0.7 归档时「逐文件对拍」经验的边界。
 >
 > **P1 补一条**：`token-gate` 又一次「自己长出来一条」（40→41，因为新增了 `TrashSection.module.css`）。这已是同一机制第二次现身（首次是 v0.3 的 `HotkeyRecorder.module.css`）——**凡本轮新增了 CSS module，gate 计数就会 +1，别把它算进「我写了几条测试」**。
+>
+> **v0.9（2026-09-03 · ADR-028 首个真机门）**：新增 §4.4 **G5 走查记录**——八项全通过，删除全链路（一键删除 → 撤销 → 废纸篓恢复 → 清空）在发布形态上跑完，**G4 观察 O3 一并在真机闭合**。**测试计数不动**（前端 457 / Rust 183 / gate 7 / IPC 56）：G5 零代码改动，只取证。§4.1 增 G5 行、§4.3 O3 行由「未经真机复跑」转为已复跑，教训续到 **11**。**一处诚实的空白**：祖先复活路径（恢复话术连带复活废纸篓里的场景与子阶段）**未在真机跑**，理由与证据见 §4.4「不在本门覆盖内的一项」。
 
 ---
 
@@ -181,6 +183,7 @@ E2E 层缺位期间，**布局 / 层叠 / 定位类改动一律由带编号的�
 | G2（五项）| ADR-025 P2 键盘动作层 | **未跑**（P2 未落地）|
 | **G3（四项）**| ADR-027 全局唤起键可配置 | **四项全通过**（2026-08-20，见 §4.2）。项 2 一度判为「不可达」，补上冲突提示后**转为可观测并通过**。**omar 当日另行真机走查，未发现问题**（人工目视，不可回归；覆盖到哪几项未逐条记录）|
 | **G4（二十四项）**| features §7 留证缺口清单（v1.19） | **21 通过（W1–W12 / W14–W19 / W21 / W23 / W24）/ 2 不可达（W13、W20）/ 1 部分（W22）**（2026-09-02 走查，W18 / W21 于同日复跑转通过，见 §4.3）。首次按**发布形态**走查（裸 release 二进制内嵌 dist，非 dev + vite）；发现三个此前所有门都没抓到的缺陷 D1–D3 |
+| **G5（八项）**| ADR-028 删除可撤销（P0 + P1） | **八项全通过**（2026-09-03，见 §4.4）。删除全链路一次走完：迁移 → 一键删除 → 撤销 toast → 撤销恢复 → 废纸篓列表 → 单条恢复 → 最近区无墓碑（**G4 观察 O3 在真机闭合**）→ 清空确认与硬删。**零缺陷、零代码改动**。**一项明确不在覆盖内**：祖先复活路径未真机跑，理由见 §4.4 |
 
 #### 4.2 G3 门项（v0.4 新增 · 涟漪 [[027-configurable-global-hotkey]]）
 
@@ -265,7 +268,7 @@ E2E 层缺位期间，**布局 / 层叠 / 定位类改动一律由带编号的�
 | D2 | 设置弹窗开着按 Esc，弹窗与仪表盘**一起**隐藏 | 首轮记「同在 window 冒泡阶段、未 `stopPropagation`」，**修时纠正**：App 的隐藏监听挂 `document` 冒泡，弹窗 Esc 挂 `window` 冒泡——事件先到 document 再到 window，App 先隐藏，弹窗那边再 stop 也来不及。与 ADR-025 编辑器「Esc 不冒泡」契约不一致（product-spec 区域 9 写「关闭：Esc」指关弹窗）。**已修（第五笔）**：弹窗 Esc 改挂 `document` 捕获阶段并 `stopPropagation`，与 `primitives/Editor.tsx` 同约定；HotkeyRecorder 录键时的 window 捕获仍先于它，录键中 Esc 只取消录键。jsdom 回归 +4（App / SettingsModal 各二，keydown 派发到持焦点的 dialog；`/review` 后补录键态集成测试与长按 Esc `e.repeat` 回归，后者顺带给 App 隐藏监听加守卫——第一下关弹窗后 OS 自动重复的 keydown 此前会漏到隐藏监听）。**W18 Esc 段发布形态复跑通过（第六笔，三步 + 对照），本缺陷闭合** | P2 |
 | D3 | ~~数据库损坏时没有阻断式错误对话框~~ → **改判（第四笔）**：对话框一直会弹，点 OK 后进程 panic、退出码 **101** 而非契约的 1 | 首轮根因「非主线程 NSAlert 不呈现」不成立——tauri-plugin-dialog 本就 `run_on_main_thread`，无 parent 的消息框由 rfd 交给系统进程渲染。真根因是结构性的：失败在 `setup()` 里、事件循环已在跑时被发现，旧实现靠「返回 `Ok(())` 保活 + 内存库顶替 `AppState` + 工作线程 `blocking_show` + `handle.exit(1)`」与半建成的应用共存，而 `RunEvent::Exit` 处理器假定 setup 已完成，`global_shortcut().unregister_all()` 撞上未注册的插件 panic。**已修（第四笔）**：失败分支直接调 `rfd::MessageDialog` 同步弹框（macOS 出进程渲染，阻塞主线程不死锁）后 `std::process::exit(1)`，永不回事件循环；保活的 `return Ok(())` / 内存库 / `window.show()` / 工作线程四件机器全删（`lib.rs` 净删 **16** 行：+39 / −55，`788b372`），`rfd` 升直接依赖（lock 已有同版本同 feature）。W21 复跑通过，**本缺陷闭合**。用户可感知影响为零，级别按事实降 P2 | ~~P1~~ P2 |
 
-**观察（不构成缺陷，供裁决）**：O1 窗口隐藏期间 MCP 写入的草稿，唤起**不刷新** badge，只有导入后 `refreshAll` 才刷新（HANDOFF 第 21 项附带疑问的答案）；O2 焦点不在编辑器内时按 Esc 会隐藏整个仪表盘而编辑器状态保留在 React 里，下次唤起编辑器仍开着——D1 让这种情况更常见；**O3 → 已闭合（2026-09-03，[[028-reversible-delete]] P0）** 原现象：硬删话术后 `usage_records` 成孤儿，最近使用区仍显示「（未知话术）」墓碑条目（与 prd §6.1 soft-delete 悬案同源，归 HANDOFF 21.2）。**修法**：`list_recent_usage` 的四个 LEFT JOIN 各补 `deleted_at IS NULL`，并在 `WHERE` 里滤掉**带 `target_id` 却解析不到**的行；`usage_records` 本身一行不动，资产恢复后历史自动重连（id 从未变过）。**过滤位置在 SQL 的 `LIMIT` 之上**——放到渲染层会让墓碑先占满名额、再被前端抹掉，用户拿到一份莫名其妙变短的列表。**范围窄于子决策 5 的措辞**：composition 的使用记录**根本不带 `target_id`**，永远解析不出名字，但不在过滤范围内——滤掉它们是产品行为变更而非 O3 修复，这条既有缺口 ADR-028 记为「同批可修」而**本次未修**。**守它的是哪条**：Rust 侧是 `repo-core` 的 `list_recent_usage_drops_a_trashed_asset_and_brings_it_back_on_restore`（软删后该行消失、恢复后带着历史回来）；jsdom 侧只有 `MacroGrid` 的删除用例断言删除后确实重拉了一次最近使用区（`syncRecentUsage` 本身与 `useUndoableDelete` 都**没有专属测试**，这是已知的覆盖薄处）；**未经真机复跑**（W5 当时留下的 3 条孤儿行在隔离库里，重跑需重建走查环境）；O4 新建的空场景只有「新增子阶段」入口，没有「添加话术」；O5 UI 新建的 Macro `native=0`，种子 Macro `native=1`，`native` 语义待 prd 明确；O6 面板宽度随角色 chip 增加而变化、设置弹窗随页面高度重新居中——对人无害，对自动化点击是坑；**O7（第三笔新增，确定性）→ 已裁决并修复（2026-09-03）** 现象：Macro 编辑器开着时再点「新增」，编辑器不关、焦点却已在面板外——之后键入全部丢失，按 Esc 走 O2 藏掉整个仪表盘（截图 S3 / S3b / R1a）。这正是 D1 留下的肌肉记忆（以为没打开再点一次）会触发的路径；首轮 05:08 构建上同操作后焦点留在名称框（截图 05），两构建差异原因未查。**根因（修时纠正）**：`AnchoredEditor` 的 pointerdown 处理把锚点直接放行，旧注释称「锚点即 toggle」——**四个宿主没有一个实现 toggle**：Macro「新增」重复设同一个编辑目标（同 React key，面板不重挂）、草稿卡「编辑」重开，对齐话术 chip 与 Scene 话术卡的锚点点击是**复制**（调用态还会隐藏窗口）。放行后实际生效的只有 mousedown 的默认动作——把焦点带到 `tabIndex={-1}` 的按钮上。**修法（结构修法，omar 2026-09-03 确认；否决「二次按下 = 关闭」）**：容器接管锚点二次按下——`preventDefault()` 压掉兼容 mousedown（焦点不离开面板）+ 武装既有 `swallowClickRef`（宿主 click 不再跑，不重开也不复制）+ 仅在面板已失焦时回到 `initialFocus`；**不调 `onDismiss`**，Esc / teardown 焦点归还 / 点外三条分支未动。`src/components/primitives/Editor.tsx` 单文件改动，四个宿主零改动；契约回流 [[03-product-spec]] v0.24 §13.3 规则表第六行 + [[05-design-spec]] §10.2.2 接口契约第 6 条。**jsdom 回归 +5**（409→414，见 §2），撤回修法后 4 条变红。**覆盖边界**：jsdom 不实现 mousedown 的默认聚焦动作，「`preventDefault` 挡住焦点外移」这半边只能真机证。**发布形态复跑通过（2026-09-03，按 `main` + 本改动 `pnpm tauri build --no-bundle` 重建裸 release，内嵌 chunk `BTngK09y` 与 `dist/assets/` 一致，隔离 `HOME=/tmp/ph-o7-home`）**：点「新增」→ 名称框有焦点 → **再点「新增」→ 编辑器仍开、焦点仍在名称框** → 键入 `o7z` 落进名称框（同时弹 O8 的首字母大写气泡）→ 第一次 Esc 只关气泡（O8 既知）→ 第二次 Esc 关编辑器、窗口仍在屏（`onscreen=true`）；`macros` 仍 4 条、`usage_records` 0。chip / 话术卡 / 草稿三宿主同走该 primitive，推定通过、未单独真机开（与 W3 推定同口径）。截图 `/tmp/ph-walk/shots/O7r-*`；**O8（第三笔新增，OS 行为）** 名称框键入后 macOS 弹首字母大写建议气泡，此时第一次 Esc 只关气泡不关编辑器（截图 S1 → S2）；真人也会碰到，非缺陷但走查与用户认知都要算上。另（O7 修复未覆盖，`o7-probe` 2026-09-03 探查已答）：用「取消」关编辑器后焦点落到 body，随后的可打印键被路由进搜索框并切到搜索结果视图（截图 S5）。① 焦点落 body 是**既有缺陷**（HANDOFF 第 34 项）：macOS WebKit 点 `<button>` 不聚焦按钮而是沿祖先链找可鼠标聚焦节点，popover 不改祖先链，焦点落到宿主 `<section tabIndex={0}>` 或 body，`heldFocusRef` 被 `focusin` 记成 false，卸载时的归还门禁跳过；jsdom 无 mousedown 聚焦、现有归还测试只走 Esc 路径，故看不见。② **不存在 type-to-search**：`setQuery` 只有输入框 `onChange` 一个调用点，搜索框只在 ⌘K 与「唤起时 `activeElement` 是 body」两条路径拿焦点（product-spec §13.4「唤起即已默认聚焦」）——截图 S5 是「取消留下 body 焦点 → 隐藏再唤起 → 搜索框按契约接管」，非缺陷。
+**观察（不构成缺陷，供裁决）**：O1 窗口隐藏期间 MCP 写入的草稿，唤起**不刷新** badge，只有导入后 `refreshAll` 才刷新（HANDOFF 第 21 项附带疑问的答案）；O2 焦点不在编辑器内时按 Esc 会隐藏整个仪表盘而编辑器状态保留在 React 里，下次唤起编辑器仍开着——D1 让这种情况更常见；**O3 → 已闭合（2026-09-03，[[028-reversible-delete]] P0）** 原现象：硬删话术后 `usage_records` 成孤儿，最近使用区仍显示「（未知话术）」墓碑条目（与 prd §6.1 soft-delete 悬案同源，归 HANDOFF 21.2）。**修法**：`list_recent_usage` 的四个 LEFT JOIN 各补 `deleted_at IS NULL`，并在 `WHERE` 里滤掉**带 `target_id` 却解析不到**的行；`usage_records` 本身一行不动，资产恢复后历史自动重连（id 从未变过）。**过滤位置在 SQL 的 `LIMIT` 之上**——放到渲染层会让墓碑先占满名额、再被前端抹掉，用户拿到一份莫名其妙变短的列表。**范围窄于子决策 5 的措辞**：composition 的使用记录**根本不带 `target_id`**，永远解析不出名字，但不在过滤范围内——滤掉它们是产品行为变更而非 O3 修复，这条既有缺口 ADR-028 记为「同批可修」而**本次未修**。**守它的是哪条**：Rust 侧是 `repo-core` 的 `list_recent_usage_drops_a_trashed_asset_and_brings_it_back_on_restore`（软删后该行消失、恢复后带着历史回来）；jsdom 侧只有 `MacroGrid` 的删除用例断言删除后确实重拉了一次最近使用区（`syncRecentUsage` 本身与 `useUndoableDelete` 都**没有专属测试**，这是已知的覆盖薄处）；**真机已复跑（2026-09-03，G5 项 7，§4.4）**——复制一条 Macro 让最近区出现 1 条，删掉它后最近区归 0 且**不出「（未知话术）」**，同时 `usage_records` 那一行仍在表里，恢复得回来。⚠️ 措辞要准：**墓碑字面量并未删除**（`RecentList.tsx:83` 还在），只是「有 `target_id` 却解析不到」的行不再可达；`target_id IS NULL` 的 composition 用量仍会命中它，即上文那处未修的既有缺口；O4 新建的空场景只有「新增子阶段」入口，没有「添加话术」；O5 UI 新建的 Macro `native=0`，种子 Macro `native=1`，`native` 语义待 prd 明确；O6 面板宽度随角色 chip 增加而变化、设置弹窗随页面高度重新居中——对人无害，对自动化点击是坑；**O7（第三笔新增，确定性）→ 已裁决并修复（2026-09-03）** 现象：Macro 编辑器开着时再点「新增」，编辑器不关、焦点却已在面板外——之后键入全部丢失，按 Esc 走 O2 藏掉整个仪表盘（截图 S3 / S3b / R1a）。这正是 D1 留下的肌肉记忆（以为没打开再点一次）会触发的路径；首轮 05:08 构建上同操作后焦点留在名称框（截图 05），两构建差异原因未查。**根因（修时纠正）**：`AnchoredEditor` 的 pointerdown 处理把锚点直接放行，旧注释称「锚点即 toggle」——**四个宿主没有一个实现 toggle**：Macro「新增」重复设同一个编辑目标（同 React key，面板不重挂）、草稿卡「编辑」重开，对齐话术 chip 与 Scene 话术卡的锚点点击是**复制**（调用态还会隐藏窗口）。放行后实际生效的只有 mousedown 的默认动作——把焦点带到 `tabIndex={-1}` 的按钮上。**修法（结构修法，omar 2026-09-03 确认；否决「二次按下 = 关闭」）**：容器接管锚点二次按下——`preventDefault()` 压掉兼容 mousedown（焦点不离开面板）+ 武装既有 `swallowClickRef`（宿主 click 不再跑，不重开也不复制）+ 仅在面板已失焦时回到 `initialFocus`；**不调 `onDismiss`**，Esc / teardown 焦点归还 / 点外三条分支未动。`src/components/primitives/Editor.tsx` 单文件改动，四个宿主零改动；契约回流 [[03-product-spec]] v0.24 §13.3 规则表第六行 + [[05-design-spec]] §10.2.2 接口契约第 6 条。**jsdom 回归 +5**（409→414，见 §2），撤回修法后 4 条变红。**覆盖边界**：jsdom 不实现 mousedown 的默认聚焦动作，「`preventDefault` 挡住焦点外移」这半边只能真机证。**发布形态复跑通过（2026-09-03，按 `main` + 本改动 `pnpm tauri build --no-bundle` 重建裸 release，内嵌 chunk `BTngK09y` 与 `dist/assets/` 一致，隔离 `HOME=/tmp/ph-o7-home`）**：点「新增」→ 名称框有焦点 → **再点「新增」→ 编辑器仍开、焦点仍在名称框** → 键入 `o7z` 落进名称框（同时弹 O8 的首字母大写气泡）→ 第一次 Esc 只关气泡（O8 既知）→ 第二次 Esc 关编辑器、窗口仍在屏（`onscreen=true`）；`macros` 仍 4 条、`usage_records` 0。chip / 话术卡 / 草稿三宿主同走该 primitive，推定通过、未单独真机开（与 W3 推定同口径）。截图 `/tmp/ph-walk/shots/O7r-*`；**O8（第三笔新增，OS 行为）** 名称框键入后 macOS 弹首字母大写建议气泡，此时第一次 Esc 只关气泡不关编辑器（截图 S1 → S2）；真人也会碰到，非缺陷但走查与用户认知都要算上。另（O7 修复未覆盖，`o7-probe` 2026-09-03 探查已答）：用「取消」关编辑器后焦点落到 body，随后的可打印键被路由进搜索框并切到搜索结果视图（截图 S5）。① 焦点落 body 是**既有缺陷**（HANDOFF 第 34 项）：macOS WebKit 点 `<button>` 不聚焦按钮而是沿祖先链找可鼠标聚焦节点，popover 不改祖先链，焦点落到宿主 `<section tabIndex={0}>` 或 body，`heldFocusRef` 被 `focusin` 记成 false，卸载时的归还门禁跳过；jsdom 无 mousedown 聚焦、现有归还测试只走 Esc 路径，故看不见。② **不存在 type-to-search**：`setQuery` 只有输入框 `onChange` 一个调用点，搜索框只在 ⌘K 与「唤起时 `activeElement` 是 body」两条路径拿焦点（product-spec §13.4「唤起即已默认聚焦」）——截图 S5 是「取消留下 body 焦点 → 隐藏再唤起 → 搜索框按契约接管」，非缺陷。
 
 **取证方法教训（续 §4.2 三条）**：
 
@@ -275,6 +278,34 @@ E2E 层缺位期间，**布局 / 层叠 / 定位类改动一律由带编号的�
 7. **状态栏「今日复制」按本机时区计日**：本机为 UTC−7，昨夜 23:59 的复制在「今日」不计，不是 bug
 8. **窗口定向截图看不见其他进程持有的窗口**：D3「无任何对话框」的误判源自 §4.2 铁律「禁止全屏截图、只按窗口 ID 定向」——系统级对话框（rfd 无 parent → `CFUserNotificationDisplayAlert`）属于 `UserNotificationCenter`，不在本应用的窗口列表里。走查系统对话框时改按 owner 查 CGWindowList（`kCGWindowOwnerName`），并允许破例全屏截图；「没出现」先问探针能不能看见这类对象（§4.1 教训 2 的第三次现身，应升格为走查前固定自检项）
 9. **合成键盘事件没有 OS 自动重复**（第六笔）：`CGEventPost` 的 keyDown 按住 1 s 只落一个字符——自动重复由物理键盘的 HID 层生成，合成事件拿不到。验长按路径要自己按 OS 口径补事件：每 33 ms 发一次 `kCGKeyboardEventAutorepeat=1` 的 keyDown 再 keyUp，WebKit 侧即为 `e.repeat=true`；先在搜索框长按可打印键自检（落一个字符 = 无重复，落一串 = 有效）。另：终端 `nohup` 起的裸 release 被快捷键唤起后未必是前台应用，键盘事件会落到终端（本轮两次 `⌘,` 打到了 iTerm2），发键前用 System Events 把进程置前
+
+---
+
+### 4.4 G5 走查记录（v0.9 新增 · 2026-09-03 · [[028-reversible-delete]] 首个真机门）
+
+**这一门验的是什么**：ADR-028 把删除从「不可逆 + 六处确认框」改成「一键 + 撤销 + 废纸篓」，P0（`77637cd`）与 P1（`6aca7eb`）落地时**只有 jsdom 与 Rust 覆盖**（前端 457 / Rust 183 / 第七道 gate 12 条 / `soft_delete_e2e.rs` 7 条），用户可见的那一半从未在发布形态上跑过。G5 一次走完**删除全链路**：迁移 → 一键删除 → 撤销 toast → 撤销恢复 → 废纸篓列表 → 单条恢复 → 最近区无墓碑 → 清空确认与硬删。**零缺陷、零代码改动**。
+
+**环境**（照 §4.2 / §4.3 教训 4 的既有口径，不另立新法）：`pnpm tauri build --no-bundle` 在 `ec2867b`、工作树干净时重建裸 release；`strings` 核内嵌 chunk `index-B2I7FDCC.js` 与 `dist/assets/` 一致；隔离 `HOME=/tmp/ph-g5-home`；已装的 `/Applications/prompt-hub.app` 走查前退出、走查后重开（组合键独占）；**真实资产库全程未被触碰**。截图 `/tmp/ph-walk/shots/G5-*`，每步以 `sqlite3` 反查隔离库为主证据。
+
+| # | 门项 | 结果 | 证据 |
+|---|---|---|---|
+| G5-1 | 全新库首启跑 `0013` 迁移 | ✅ | 隔离 `HOME` 首启后 `pragma user_version` = **13**；`PRAGMA table_info(macros)` 含 `deleted_at` |
+| G5-2 | 一键删除，无确认框 | ✅ | 整理态悬停 Macro 卡出**三图标簇** → 点垃圾桶 → **没有 `ConfirmInline` 这一步**，当场删除；`macros` 该行**仍在表里**、`deleted_at` 打上时间戳（不是行消失）；卡片计数 `4 张` → `3 张`；窗口留在屏上 |
+| G5-3 | 撤销 toast | ✅ | 文案「已删除「借力最优解」」+「撤销」按钮，出现在**右上**而非底部 |
+| G5-4 | 撤销真的恢复 | ✅ | 再删一次 → 点「撤销」→ `deleted_at` 翻回 **NULL**，卡片回到列表 |
+| G5-5 | 废纸篓视图 | ✅ | `⌘,` → 数据页：「废纸篓」「1 项」+ 说明行 + 一行「Macro · 借力最优解 · 1分钟前 · 恢复」+「清空废纸篓」按钮 |
+| G5-6 | 从废纸篓单条恢复 | ✅ | 点「恢复」→ 计数 `1 项` → `0 项`，转空态「废纸篓是空的」；SQL 反查 `deleted_at` 为 NULL |
+| G5-7 | **G4 观察 O3 在真机闭合** | ✅ | `⌘K` + Enter 复制一条 Macro → 写入一条 `usage_records`、最近区出现「Macro 先出方案我拍板 刚刚」、计数 1 → 删掉该 Macro → 最近区计数归 **0** 且**不出「（未知话术）」墓碑**，而 `usage_records` 那一行**仍在表里**（恢复得回来，历史不丢） |
+| G5-8 | 清空要确认，确认后才真删 | ✅ | 点「清空废纸篓」→ 行内确认「彻底删除废纸篓中的 1 项，删除后无法恢复」+ ✓ / ✕；**armed 期间 `macros` 仍是 4 行**（确认框是纯本地 state，不碰库）；确认后 `macros` → **3**（真硬删）、`usage_records` → **0**（孤儿清掉）、`pragma foreign_key_check` **返回空**，面板回执「已彻底删除 1 项资产与 1 条使用记录」 |
+
+**不在本门覆盖内的一项（据实记，不算通过）**：**祖先复活路径**——恢复一条话术时连带复活它挂靠的、也在废纸篓里的场景与子阶段（[[028-reversible-delete]] 的第 5 处实装分歧，也是 P1 自己堵上的那个洞）——**未在真机跑**。判断依据：该路径是 `repo-write/src/trash.rs` 单个事务里的纯 SQL（`unchecked_transaction()` → `revive_trashed_ancestors` 全 `UPDATE` → `commit()`），**不经过 WebKit**，而真机门存在的理由正是抓 jsdom 看不见的那类失效（可见性、层叠、焦点、OS 事件）。它由 `repo-write/tests/soft_delete_e2e.rs` 的 `restoring_a_phrase_revives_the_scene_and_sub_stage_it_hangs_from` 覆盖，且该用例经变异验证。**代价说清楚**：自动化能证「行回到了可见集合」，证不了「用户确实又在仪表盘上看见它了」——这半边仍是空白，补法是下一次走查加一步，不是改测试。
+
+**归档反查（[[CLAUDE#§5.1.2]]）：5 处不一致，全部按代码改正后才写入本节**——① 撤销 toast 原记「渲染在 header 里」，**DOM 上不成立**：`<Toast />` 是 `Dashboard.tsx` 根节点末尾与 `StatusBar` / `SettingsModal` 平级的兄弟，`position: fixed` + `top: 24px / right: 32px`（`Toast.module.css`），视觉上**盖在** header 带上而不属于它——「右上、非底部」为真，「在 header 里」为假 ② 三图标簇原记为「整理模式下才有」，实为 `MacroGrid.tsx` 的 `ActionCluster` **无条件渲染**，`interactionMode` 在该组件只决定排序（调用态按 `usageCount`、整理态按 `order_index`）；本轮选整理态是**走查纪律**（教训 10），不是界面条件 ③ 废纸篓说明行漏了一个空格：JSX 跨行文本节点会把换行折叠成一个 U+0020，实际渲染是「…也不会出现在仪表盘或搜索中。<空格>恢复后它回到原来的位置，使用历史一并回来。」 ④ 清空确认的 ✓ / ✕ 只记了字形，实际两枚按钮另有 `aria-label`「确认清空」/「取消」，容器为 `role="alertdialog"` ⑤ 清空成功**除**面板状态行外**还发一条 toast**「已清空废纸篓」，原记漏了。另有两条不改结论但影响措辞的提醒已就地写入：O3 行注明**墓碑字面量并未删除**、只是不再可达；G5-7 那条使用记录的 `source` 落的是 `macro_area` 而非 `search`（`SearchOverlay.tsx` 的 `TODO(ADR-011)` 未落地，与本门无关）。**无法核**的是全部真机观测——`sqlite3` 输出、截图、计数、剪贴板、构建产物身份，代码里没有对应物。
+
+**取证方法教训（续 §4.3，编号接 9）**：
+
+10. ⚠️ **合成点击对「悬停才出现的控件」太快**：一次自带 `mouseMoved` 紧接 `mouseDown` 的合成点击，React 还没渲染出动作簇，点击就落到了**下面那张裸卡片**上——在调用态这等于一次复制 + 一次隐藏窗口，不是本来要点的删除。可靠序列是**移动 → 等约 1 秒 → 截图确认簇已出现 → 再单独发一次点击**。另外，**卡级交互一律在整理态做**：那里误点卡片本体既不复制也不隐藏窗口，而调用态会（§4.3 教训 5 是同一根源的另一面——那条讲「别误触发复制」，这条讲「悬停控件要等它出现」）
+11. **本机坐标换算：物理像素 ÷ 2 = 逻辑点**（@2x），本轮以点中「整理」切换按钮实测确认，不靠推算。另一条省事的定位经验：**撤销 toast（那块压在 header 带上的浮层）里「撤销」按钮距屏幕右边缘的偏移是固定的**，与资产名长短无关——toast 右对齐（`right: var(--s-8)`），名字变长只会把左边缘推出去，按钮不动
 
 ## §5 性能基准（regression test）
 
