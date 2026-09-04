@@ -824,7 +824,7 @@ Scene 节包含 3 个相关模型：**Scene**（场景容器）、**Phrase**（S
 | 执行 | `phase-execute` |
 | 挑错 | `phase-converge` |
 
-`content` 逐字取自原型 `开场对齐台.html` 的 `FORMS` 常量，本文件不复述正文。**理解与沉淀两个相位本轮不接新话术**，它们的默认话术照旧。
+`content` 逐字取自原型 `docs/mockups/开场对齐台.html` 的 `FORMS` 常量，本文件不复述正文。**理解与沉淀两个相位本轮不接新话术**，它们的默认话术照旧。
 
 > **一处将就，写在这里而不是藏起来**：「挑错」被放进「收敛」。挑错要的是找出站不住的地方，收敛要的是从已有方案里选出最优解，二者只是都在做减法。8 相位里确实没有「挑错」的座位（[[029-alignment-coordinates-and-drift-ledger]] §3）。这条将就本身就是最有价值的观测点——若「挑错」的使用量显著压过「收敛」的默认话术，那就是 8 相位该重切的第一份证据。
 
@@ -875,7 +875,7 @@ Scene 节包含 3 个相关模型：**Scene**（场景容器）、**Phrase**（S
 
 #### seed（16 行）
 
-`hint` 逐字取自原型 `开场对齐台.html` 的 `LAYERS` / `DOMAINS` / `MODES` 三个常量。
+`hint` 逐字取自原型 `docs/mockups/开场对齐台.html` 的 `LAYERS` / `DOMAINS` / `MODES` 三个常量。
 
 | axis | order_index | name | hint |
 |---|---|---|---|

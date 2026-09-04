@@ -24,7 +24,7 @@
 
 ## In Progress
 
-- 无。工作区 tracked 文件干净。未跟踪的 `.codex/` / `AGENTS.md` / `dsh-plugin-ziwuliuzhu/` / `开场对齐台.html` 归 omar，不要 stage——`开场对齐台.html` 现是 ADR-029 的触发原型，**仍不进仓**：它的价值已被 ADR 吸收，文件本身留在原地
+- 无。工作区 tracked 文件干净。未跟踪的 `.codex/` / `AGENTS.md` / `dsh-plugin-ziwuliuzhu/` 归 omar，不要 stage。ADR-029 的触发原型已按 omar 2026-09-04 指示移入 `docs/mockups/开场对齐台.html` 并进仓，ADR / prd / features / CHANGELOG 的引用同步改为该路径
 
 ## Next Actions
 

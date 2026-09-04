@@ -1,0 +1,273 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>开场对齐台</title>
+<style>
+  :root{
+    --panel:#23211E;
+    --rail:#2C2925;
+    --rail-in:#1B1916;
+    --ivory:#E9E3D7;
+    --dim:#948C81;
+    --line:#3A3630;
+    --c-form:#C9A227;
+    --c-layer:#7B94AD;
+    --c-domain:#8FA37E;
+    --c-mode:#B57B5C;
+    --sans:system-ui,-apple-system,"PingFang SC","Hiragino Sans GB","Microsoft YaHei",sans-serif;
+    --serif:"Songti SC","Noto Serif SC","Source Han Serif SC",SimSun,Georgia,serif;
+  }
+  *{box-sizing:border-box}
+  html,body{margin:0;padding:0}
+  body{
+    background:var(--panel);
+    color:var(--ivory);
+    font-family:var(--sans);
+    font-size:15px;
+    line-height:1.6;
+    padding:22px 18px 40px;
+  }
+  .wrap{max-width:920px;margin:0 auto}
+
+  header{display:flex;align-items:baseline;gap:14px;flex-wrap:wrap;
+    padding-bottom:14px;border-bottom:1px solid var(--line)}
+  h1{font-family:var(--serif);font-size:26px;font-weight:600;margin:0;letter-spacing:.06em}
+  header p{margin:0;color:var(--dim);font-size:13.5px}
+
+  h2{font-size:12.5px;font-weight:500;color:var(--dim);margin:22px 0 9px;letter-spacing:.14em}
+
+  /* 常用档位 */
+  .presets{display:flex;flex-wrap:wrap;gap:8px}
+  .preset{
+    background:var(--rail);border:1px solid var(--line);color:var(--ivory);
+    font-family:var(--sans);font-size:14px;padding:9px 14px;border-radius:3px;
+    cursor:pointer;display:flex;flex-direction:column;gap:2px;align-items:flex-start;
+    min-width:96px;
+  }
+  .preset span{font-size:11.5px;color:var(--dim);letter-spacing:.03em}
+  .preset:hover{border-color:#55503f}
+  .preset.on{border-color:var(--c-form);background:#332F26}
+  .preset:focus-visible,.chip:focus-visible,button:focus-visible{outline:2px solid var(--c-form);outline-offset:2px}
+
+  /* 四轨 */
+  .rails{margin-top:6px;border:1px solid var(--line);border-radius:4px;overflow:hidden}
+  .rail{display:flex;align-items:center;gap:14px;padding:11px 14px;background:var(--rail);
+    border-bottom:1px solid var(--line)}
+  .rail:last-child{border-bottom:0}
+  .rail>b{flex:0 0 56px;text-align:right;font-weight:500;font-size:13.5px;color:var(--dim)}
+  .slots{display:flex;flex-wrap:wrap;gap:6px;background:var(--rail-in);
+    padding:5px;border-radius:3px;flex:1}
+  .chip{
+    background:transparent;border:1px solid transparent;color:var(--dim);
+    font-family:var(--sans);font-size:13.5px;padding:5px 11px;border-radius:2px;cursor:pointer;
+  }
+  .chip:hover{color:var(--ivory)}
+  .chip.on{color:#1B1916;font-weight:600}
+  .r-form .chip.on{background:var(--c-form)}
+  .r-layer .chip.on{background:var(--c-layer)}
+  .r-domain .chip.on{background:var(--c-domain)}
+  .r-mode .chip.on{background:var(--c-mode)}
+
+  /* 读数 */
+  .readhead{display:flex;align-items:baseline;justify-content:space-between;gap:12px}
+  .read{
+    background:var(--rail-in);border:1px solid var(--line);border-radius:4px;
+    padding:16px 18px;font-family:var(--serif);font-size:16px;line-height:1.85;
+    white-space:pre-wrap;
+  }
+  .coord{color:var(--c-form)}
+  .copy{
+    background:var(--ivory);color:#1B1916;border:0;border-radius:3px;
+    font-family:var(--sans);font-size:13.5px;font-weight:600;padding:8px 16px;cursor:pointer;
+  }
+  .copy.done{background:var(--c-form)}
+
+  /* 中途口令 */
+  .live{display:flex;flex-wrap:wrap;gap:7px;margin-top:9px}
+  .live button{
+    background:transparent;border:1px dashed var(--line);color:var(--ivory);
+    font-family:var(--serif);font-size:14.5px;padding:7px 13px;border-radius:3px;cursor:pointer;
+  }
+  .live button:hover{border-style:solid;border-color:var(--c-mode)}
+
+  details{margin-top:18px;border-top:1px solid var(--line);padding-top:14px}
+  summary{cursor:pointer;color:var(--dim);font-size:13px;letter-spacing:.1em}
+  details ol{margin:12px 0 0;padding-left:20px;color:var(--ivory);font-size:14px}
+  details li{margin-bottom:7px}
+  details li i{font-style:normal;color:var(--dim)}
+
+  .toast{
+    position:fixed;left:50%;bottom:26px;transform:translateX(-50%);
+    background:var(--c-form);color:#1B1916;font-weight:600;font-size:14px;
+    padding:9px 20px;border-radius:3px;opacity:0;pointer-events:none;
+  }
+  .toast.show{opacity:1}
+  @media (prefers-reduced-motion:no-preference){
+    .toast{transition:opacity .18s ease}
+    .copy{transition:background .18s ease}
+  }
+  @media (max-width:600px){
+    .rail{align-items:flex-start;flex-direction:column;gap:6px}
+    .rail>b{text-align:left;flex:none}
+    .slots{width:100%}
+  }
+</style>
+</head>
+<body>
+<div class="wrap">
+
+  <header>
+    <h1>开场对齐台</h1>
+    <p>点一个档位，或自己选四个坐标，复制开场语。</p>
+  </header>
+
+  <h2>常用档位</h2>
+  <div class="presets" id="presets"></div>
+
+  <h2>四轴坐标</h2>
+  <div class="rails">
+    <div class="rail r-form"><b>形态</b><div class="slots" id="s-form"></div></div>
+    <div class="rail r-layer"><b>抽象层</b><div class="slots" id="s-layer"></div></div>
+    <div class="rail r-domain"><b>闭环域</b><div class="slots" id="s-domain"></div></div>
+    <div class="rail r-mode"><b>模式</b><div class="slots" id="s-mode"></div></div>
+  </div>
+
+  <div class="readhead"><h2>开场语</h2><button class="copy" id="copy">复制开场语</button></div>
+  <div class="read" id="read"></div>
+
+  <h2>中途口令</h2>
+  <p style="margin:0 0 2px;color:var(--dim);font-size:13.5px">层的漂移发生在对话中途，不在开场。点一下复制。</p>
+  <div class="live" id="live"></div>
+
+  <details>
+    <summary>跨层规则</summary>
+    <ol>
+      <li>下层的困难不否定上层。<i>可行性、成本、风险是路径层与判据层的输入，不是上层的过滤器。</i></li>
+      <li>层未声明时，取本轮发言中出现的最高层。</li>
+      <li>下行必须先问。<i>上行不受此限。</i></li>
+      <li>上层未定时，下层讨论标注"以下建立在 X 成立的假设上"。</li>
+      <li>发散模式下只做加法。<i>给竞争性解释是加法，砍选项、排序、判可行是减法。</i></li>
+      <li>上层的产出是下层的输入，反向不成立。</li>
+    </ol>
+  </details>
+
+</div>
+<div class="toast" id="toast">已复制</div>
+
+<script>
+const FORMS = {
+  "探讨":"这次是探讨，不要给方案。我描述的痛点只是症状，不要直接当作问题定义。请给出竞争性的解释、指出我没有想到的角度，可以自由断言，不必逐条验证。不要动文件。",
+  "定路径":"目标已经确定，是［填目标］。这次要的是实现路径，不要再论证要不要做，也不要质疑前提是否成立。给方案、步骤和取舍。遇到分叉时按你判断的默认值往下走并说明理由，只有会改变整体方向的分叉才停下来问我，一次只问一个。",
+  "出资产":"这次要产出一份可以反复使用的［规范／模板／清单／流程］。用正式文档体，不要口语。必须写清楚三件事：什么场景下调用它、默认值是什么、什么情况下它失效。写完直接给文件，不要先在对话里讨论结构。",
+  "改稿":"这是现成的［文档／方案／代码］，我认为问题在于［填你的判断］。先判断我的诊断是否成立，补上我没有看到的问题，然后直接改一版给我，不要只给修改建议。改动逐条列出，每处说明为什么改。",
+  "执行":"直接做［填交付物］。要求是［A、B、C］。不要先与我确认方案，不要问细节。没说清楚的地方按你的判断填上，在最后统一列出来给我核对。",
+  "挑错":"这是［填对象］，我要的是挑错，不是改进方案。找出站不住的地方、没有说出口的假设、我可能在自欺的地方。不要给替代方案，也不要为了显得平衡而补充优点。"
+};
+const LAYERS = {
+  "不限":"","意义":"这件事为什么重要","终局":"做成之后世界是什么样","定位":"主语是什么、为谁、边界在哪",
+  "架构":"系统由哪些部分组成","路径":"分几期、每期做什么","判据":"怎么算做成了、什么情况算失败","实现":"具体怎么做"
+};
+const DOMAINS = {
+  "不限":"","技术":"能不能做出来","商业":"谁买单、多少钱","用户":"谁用、什么场景触发",
+  "数据资产":"沉淀什么、如何复利","组织":"谁来做、需要什么能力","合规":"法律边界、知情与权属"
+};
+const MODES = {"发散":"只做加法","收敛":"做减法与排序","侦察":"先取证再判断"};
+
+const PRESETS = [
+  ["终局发散","探讨","终局","不限","发散"],
+  ["问题重铺","探讨","定位","不限","发散"],
+  ["架构推演","探讨","架构","技术","发散"],
+  ["路径落地","定路径","路径","技术","收敛"],
+  ["商业算账","探讨","判据","商业","收敛"],
+  ["资产编译","出资产","不限","不限","收敛"],
+  ["改一版","改稿","不限","不限","收敛"],
+  ["挑错","挑错","定位","不限","收敛"]
+];
+
+const LIVE = ["换挡：探讨","换层：路径层","回到定位层","本轮只谈商业闭环","切收敛","停"];
+
+let state = {form:"探讨", layer:"终局", domain:"不限", mode:"发散"};
+
+function rail(id, dict, key){
+  const box = document.getElementById(id);
+  box.innerHTML = "";
+  Object.keys(dict).forEach(name=>{
+    const b = document.createElement("button");
+    b.className = "chip" + (state[key]===name ? " on" : "");
+    b.textContent = name;
+    if(dict[name]) b.title = dict[name];
+    b.onclick = ()=>{ state[key]=name; render(); };
+    box.appendChild(b);
+  });
+}
+
+function sentence(){
+  const bits = [];
+  if(state.layer !== "不限") bits.push("本轮在" + state.layer + "层");
+  if(state.domain !== "不限") bits.push("只谈" + state.domain + "闭环");
+  bits.push(state.mode + "模式");
+  return bits.join("，") + "。";
+}
+
+function render(){
+  rail("s-form", FORMS, "form");
+  rail("s-layer", LAYERS, "layer");
+  rail("s-domain", DOMAINS, "domain");
+  rail("s-mode", MODES, "mode");
+
+  document.getElementById("read").innerHTML =
+    '<span class="coord">' + sentence() + '</span>\n' + FORMS[state.form];
+
+  document.querySelectorAll(".preset").forEach((el,i)=>{
+    const p = PRESETS[i];
+    el.classList.toggle("on",
+      p[1]===state.form && p[2]===state.layer && p[3]===state.domain && p[4]===state.mode);
+  });
+
+  const c = document.getElementById("copy");
+  c.classList.remove("done"); c.textContent = "复制开场语";
+}
+
+function copyText(t){
+  const done = ()=>{ const el=document.getElementById("toast");
+    el.classList.add("show"); setTimeout(()=>el.classList.remove("show"),1100); };
+  if(navigator.clipboard && window.isSecureContext){
+    navigator.clipboard.writeText(t).then(done).catch(()=>fallback(t,done));
+  } else fallback(t,done);
+}
+function fallback(t,done){
+  const ta=document.createElement("textarea");
+  ta.value=t; ta.style.position="fixed"; ta.style.opacity="0";
+  document.body.appendChild(ta); ta.select();
+  try{ document.execCommand("copy"); done(); }catch(e){}
+  document.body.removeChild(ta);
+}
+
+const pbox = document.getElementById("presets");
+PRESETS.forEach(p=>{
+  const b=document.createElement("button");
+  b.className="preset";
+  b.innerHTML = p[0] + "<span>" + p[1] + " · " + (p[2]==="不限"?"任意层":p[2]+"层") + " · " + p[4] + "</span>";
+  b.onclick = ()=>{ state={form:p[1],layer:p[2],domain:p[3],mode:p[4]}; render(); };
+  pbox.appendChild(b);
+});
+
+const lbox = document.getElementById("live");
+LIVE.forEach(t=>{
+  const b=document.createElement("button");
+  b.textContent=t;
+  b.onclick=()=>copyText(t);
+  lbox.appendChild(b);
+});
+
+document.getElementById("copy").onclick = function(){
+  copyText(sentence() + "\n" + FORMS[state.form]);
+  this.classList.add("done"); this.textContent="已复制";
+};
+
+render();
+</script>
+</body>
+</html>
