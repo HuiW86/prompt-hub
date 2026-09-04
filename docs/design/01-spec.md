@@ -1,10 +1,10 @@
 ---
 type: spec
 project: prompt-hub
-version: v0.7
+version: v0.8
 created: 2026-04-23
-last_modified: 2026-09-01
-status: active  # 2026-09-01 对账：v0.2.0 已发布，pre-code 不再成立。人主笔文档不设人审环节，取 active；status 改动由 AI 执行，omar 同日人审批次 ② 确认（内容未动）
+last_modified: 2026-09-04
+status: active  # v0.8 于 2026-09-04：§3.5 相位表补第 9 行「中途」（ADR-029 出厂相位 8→9，omar 裁定补行，其余一字未动，由 AI 按其指示执行）；2026-09-01 对账：v0.2.0 已发布，pre-code 不再成立。人主笔文档不设人审环节，取 active；status 改动由 AI 执行，omar 同日人审批次 ② 确认（内容未动）
 author: human  # 🧑 人主笔，AI 禁止起草（CLAUDE §5.2）
 related: [[03-product-spec]], [[05-design-spec]], [[06-prd]], [[prompt-hub-mvp]]
 description: 手动 AI 编程仪表盘的产品 spec——What/Why/九条哲学/边界/未决决策
@@ -480,6 +480,7 @@ Macro（宏定义 / Favorites）
 | 收敛 | 对比、评估、给出结论 |
 | 沉淀 | 复盘、提炼、记录 |
 | 迭代 | 基于反馈修订，推翻重来 |
+| 中途 | 对话中途换挡，不在开场——承载「中途口令」（v0.8 · [[029-alignment-coordinates-and-drift-ledger]]，omar 2026-09-04 拍板加此一行） |
 
 **特征**：
 

@@ -8,6 +8,8 @@
 
 把「删掉一条话术它就永远消失了」这个洞补上，并把它一路做到有留证的验收。起点是 omar 2026-09-03 的第一性原理复盘：G4 走查剩下的观察项是门把手，真正的洞是删除不可逆。
 
+**2026-09-04 另开一条线且当日裁完**：[[029-alignment-coordinates-and-drift-ledger]] Accepted，把「漂移发生在中途」接进现有数据模型——**已裁未落地，一行代码没动**，三期分解见 Next Actions 第 41 项。
+
 ## Completed
 
 - **ADR-028 Accepted 并三期全部落地**（`b602e5f` 决策 / `77637cd` P0 / `6aca7eb` P1 / `ec2867b` P2 回流）。裁法是**原地软删除**：七张资产表加 `deleted_at`，行不搬走，恢复是单行 UPDATE，保住 id / `created_at` / 分区 `order_index` / usage 历史——这四样正是 ADR-022 `:57` 与 ADR-025 `:41` 两次否决「搬走再放回」时点名会丢的。选它的前提是**第七道源码级 gate**（`src/ipc/soft-delete-gate.test.ts`）强制读路径带 `deleted_at IS NULL`，把「将来漏写过滤」从可能变成做不到
@@ -22,7 +24,7 @@
 
 ## In Progress
 
-- 无。工作区 tracked 文件干净。未跟踪的 `.codex/` / `AGENTS.md` / `dsh-plugin-ziwuliuzhu/` / `开场对齐台.html` 归 omar，不要 stage
+- 无。工作区 tracked 文件干净。未跟踪的 `.codex/` / `AGENTS.md` / `dsh-plugin-ziwuliuzhu/` / `开场对齐台.html` 归 omar，不要 stage——`开场对齐台.html` 现是 ADR-029 的触发原型，**仍不进仓**：它的价值已被 ADR 吸收，文件本身留在原地
 
 ## Next Actions
 
@@ -45,9 +47,9 @@
 19. **找 2–3 个外部使用者装一版用一周**——`verified` 的下一级门槛，本表不设该状态。**判据 ② ③ 撤销后本项不再是任何状态行的通路**，回到本来面目 (carried from 2026-09-01)
 20. Developer ID 证书 **2027-02-01 到期** + 第 17 项两份 ADR 复核：加日历提醒 (carried from 2026-09-01)
 21. **主环五件事**（omar 认可、明示先不动手）(carried from 2026-09-01)：
-    - 21.1 **主环度量**：给 `usage_records` 补唤起时间戳（migration `0014_*.sql` + `repo_core::usage`；**`0013` 已被 ADR-028 占用**）。先出方案再改
+    - 21.1 **主环度量** → **并入第 41 项**：唤起时间戳（`session_started_at`）已由 [[029-alignment-coordinates-and-drift-ledger]] 子决策 4 收编——会话边界正是按轴归因的前提，两件事合进同一支 migration `0014`（`0013` 已被 ADR-028 占用）。本项不再单独排期
     - 21.3 **启动 `PRAGMA quick_check` + 每日 `VACUUM INTO` 备份（`repo-core/src/backup.rs`）+ 落盘日志（tauri-plugin-log）**。不动数据契约；同批重写 ops-spec §3 / §7 送审；**并入第 32 项**；另记 `commands.rs::import_data` 是同步命令、导入期间主线程冻结，同批评估转 async
-    - 21.4 **S2 最小闭环**：只做「复制过但未归类的内容提示保存」
+    - 21.4 **S2 最小闭环** → **并入第 41 项**：「复制过但未归类的内容提示保存」与 ADR-029 同改 `usage_records`（子决策 3 的 CHECK 整表重建 + 子决策 4 的会话戳）。分两批做等于把全库最高频写入表重建两次，**合批的理由只有这一条**，不是它俩在产品上是一件事
     - 21.5 外部使用者 = 第 19 项
     - 附带待裁：隐藏期间 MCP 写入的草稿唤起不刷新 badge（G4 O1）——是否在 `src-tauri/src/lib.rs` show 路径后发一次 `count_pending`；SOP 占位区是否收起
 22. **user-flows v0.1 重写**（共创，与 omar 同会话做）。六处与实装不符，其中「删除流程」已解除阻塞（替代形态见 [[03-product-spec#13.3]]「删除语义统一契约」与区域 9）(carried from 2026-09-01)
@@ -60,6 +62,12 @@
 38. （低优先）清空废纸篓后 StatusBar「今日复制」计数陈旧到下次加载。`purge_trash` 返回的 `PurgeSummary` 已带条数，清空成功后顺手重拉一次即可 (carried from 2026-09-03)
 39. （低优先）恢复的成功 toast 可能被存活中的撤销 toast 顶掉——Toast 让位规则的必然结果，「那行从列表消失」本身承担反馈。**别为这条放宽让位规则** (carried from 2026-09-03)
 40. （低优先）G5 两处覆盖薄处：六个删除入口只真机走了 Macro 卡一处（其余五处善后同走 `useUndoableDelete`，按 W3 口径记推定）；祖先复活路径未真机跑（纯 SQL 单事务不经 WebKit，由 `soft_delete_e2e.rs` 覆盖）(carried from 2026-09-03)
+41. **ADR-029 落地**（[[029-alignment-coordinates-and-drift-ledger]] Accepted 2026-09-04，**一行代码未落地**；收编原 21.1 与 21.4）(new 2026-09-04)：
+    - **前置（硬）**：[[06-prd]] **v0.15** 与 [[03-product-spec]] **v0.26** 两份 draft 先经 omar 签字。它们是图纸类，[[CLAUDE#§5.1.2]] 不许 AI 自己归档；未签之前 P0 不开工
+    - **P0 数据层**：migration `0014`（`user_version` 13→**14**）——`alignment_phrases` 加 `layer_id` / `domain_id` / `mode_id` / `content_revised_at`；建 `alignment_axis_values`（可配置、随导出、不软删故不进第七道 gate 清单）；`usage_records` **整表重建**（`source` 的 CHECK 由 6 值增至 7，加 `live_cue`）并加 `session_started_at`；`repo-core/src/models.rs` 与 `export.rs`（`DATA_SCHEMA_VERSION` 1.2→**1.3**）/ `repo-write/src/import.rs` 同步；seed 六条形态话术 + 第 9 相位「中途」及其六条口令
+    - **P1 UI**：坐标显示与编辑、相位带 8 站扩 9 站与 `⌘9`、复制时拼坐标前缀、轴取值配置入口
+    - **P2 归因展示**：状态仪表区按轴计数 + `content_revised_at` 切前后两段。**只计数不判断**——说「这条话术后面跟了 7 次换层口令」是记账，说「这条话术在层这一轴上不好」是判断，后者由 [[01-spec#8.1]] 永久禁止
+    - **顺序上的硬约束**：P0 里先修第 32 项再跑 `0014`，理由见下方 Risks 第一条
 
 ## Dropped
 
@@ -69,6 +77,8 @@
 
 > 长期风险在 [[learnings]] 附录 B；此处只留仍会影响下一次改动的。
 
+- **`usage_records` 整表重建的兜底只有一份 pre-migrate 快照**：ADR-029 子决策 3 要给 `source` 加 `live_cue`，而 SQLite 改不了 CHECK——只能建新表 → 搬全部历史行 → 删旧表 → 改名 → 重建三个索引。这是**全库最高频写入的表**，且它不在软删除的保护范围内，出错唯一能回的地方是 `db.rs:198` 的 `pre-migrate` 快照。而**第 32 项那个坑还开着**（迁移每次启动都失败时每次取同一份快照、五槽把旧备份全挤掉）——**跑 `0014` 之前先修它**，否则唯一的兜底自己会被挤掉
+- **`live_cue` 一旦写进历史账，语义就冻住了**：`usage_records` 是 append-only（[[06-prd#6.8]]），改一个已写入枚举值的含义会让所有旧账失真。而「复制口令 ≈ 发生了一次漂移」是 ADR 自己写明的**未验证假设**——建的是观测它的账，不是它的证明。将来口径要改只能**新加一个值**，不能重新解释 `live_cue`
 - **删除的「不可逆点」已经踩下去了**：ADR-028 §6 明写，六处确认框拆除并发布后，再加回确认框是二次伤害；一旦用户开始依赖废纸篓，改成「N 天自动清除」等于单方面缩短承诺
 - **两个各自正确的规则叠出的洞**：`SceneNotEmpty` 只数存活子内容 + 单条恢复 = 资产可能既不在废纸篓也不在仪表盘。改任一边前先读 `revive_trashed_ancestors` 的注释
 - **闸门有四条盲区，动态表名对它完全不可见**：新写按表名拼 SQL 的读语句时它不保护你
