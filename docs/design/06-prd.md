@@ -4,7 +4,7 @@ project: prompt-hub
 version: v0.14
 created: 2026-05-18
 last_modified: 2026-09-03
-status: draft  # v0.14（2026-09-03 · ADR-028 P0 回流）待人审：§6 数据模型契约变更（新增 §6.0-bis 两套删除机制 + 七张资产表加 `deleted_at` + 四处「删除策略」重写 + 导出 data schema 1.1→1.2），属图纸类改动，按 [[CLAUDE#§5.1.2]] 需签字。**v0.12 起登记的 §6.1 drift 就此销账**——旧文承诺 `deprecated = true`、实装是 hard DELETE，现两边都已改正。前 v0.13 于 2026-09-01 人审批次 ④ ratified
+status: ratified  # v0.14 于 2026-09-03 人审批次 ⑧ 经 omar 签字（三份图纸同批过：本文件 + [[03-product-spec]] v0.25 + [[05-design-spec]] v0.22；批次内无新决策，记的都是 ADR-028 已拍板的内容）。本版内容：§6 数据模型契约变更（新增 §6.0-bis 两套删除机制 + 七张资产表加 `deleted_at` + 四处「删除策略」重写 + 导出 data schema 1.1→1.2），属图纸类改动，按 [[CLAUDE#§5.1.2]] 需签字。**v0.12 起登记的 §6.1 drift 就此销账**——旧文承诺 `deprecated = true`、实装是 hard DELETE，现两边都已改正。前 v0.13 于 2026-09-01 人审批次 ④ ratified
 author: ai  # 🤖 AI 主笔 + 人审（CLAUDE §5.2）
 related: [[01-spec]], [[03-product-spec]], [[prompt-hub-mvp]], [[015-expose-mcp-write-pipeline]], [[027-configurable-global-hotkey]], [[028-reversible-delete]], [[mcp-write-pipeline]]
 description: 手动 AI 编程仪表盘的工程契约——数据模型/状态机/NFR/Boundaries/IPC + MCP 接口契约；写后端 / 数据层时召回。版本叙事见 CHANGELOG

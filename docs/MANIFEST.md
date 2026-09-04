@@ -1,12 +1,12 @@
 ---
 type: manifest
 project: prompt-hub
-version: v1.21
+version: v1.22
 status: active
 created: 2026-05-24
 last_modified: 2026-09-03
 audience: [human, ai]
-description: prompt-hub 项目前期准备文件总清单——按方法论 v1.3 六层架构（L0 宪法 / L1 产品契约 / L2 工程规格 / L3 实施规格 / L4 索引 / L5 协作契约）+ ADR + 实施方案 + 视觉原型 + AI 上下文 + 工程护栏（CI/gate 测试）。AI 进项目读完 CLAUDE.md 后接读本文件能 1 分钟拿全貌；不写行数（参考性强但易过期）。v1.21：2026-09-03 [[028-reversible-delete]] Accepted 登记——ADR 总数 27 → **28**、Accepted 24 → **25**；§8 决策表补齐 022–028 七行（该表自 2026-07-06 起停在 021，表头「21 份」与 §1 概览的 27 长期不符，本版一并订正）。v1.20：2026-09-03 人审批次 ⑦ + 新治理规则「日志不签字」（[[CLAUDE#§5.1.2]]）——product-spec **v0.24 ratified** / design-spec **v0.21 ratified** / test-spec **v0.7 ratified**（首份按 5.1.2 由 AI 反查代码后直接归档的文档，非人审）。v1.16：2026-09-01 文档对账日——features v1.18（合计 88→91、S1/ADR-017 状态纠正、§7 重写）+ prd/ops-spec/user-flows/spec 四份 `pre-code` 转出 + learnings v0.5 收编 HANDOFF 长期风险。v1.15：ADR-027 回流 + 冲突提示 + 密度层立论重写 + ADR-026 两项遗留裁决——product-spec v0.22 / design-spec v0.19 / prd v0.13 / features v1.17 / test-spec v0.5，另修正 prd 行的**版本漂移**（本表记 v0.11，实际早已 v0.12）。⚠️ 其余行仍停在 2026-07-06 口径（未随 ADR-022/025/026 更新），属旧账
+description: prompt-hub 项目前期准备文件总清单——按方法论 v1.3 六层架构（L0 宪法 / L1 产品契约 / L2 工程规格 / L3 实施规格 / L4 索引 / L5 协作契约）+ ADR + 实施方案 + 视觉原型 + AI 上下文 + 工程护栏（CI/gate 测试）。AI 进项目读完 CLAUDE.md 后接读本文件能 1 分钟拿全貌；不写行数（参考性强但易过期）。v1.22：2026-09-03 人审批次 ⑧ + ADR-028 三期落地——prd **v0.14 ratified** / product-spec **v0.25 ratified** / design-spec **v0.22 ratified** 三份图纸同批签字（ADR-028 回流的图纸类 draft 至此清零，ops-spec 的 draft 另有欠账不在本批）；另刷新两份记录类文档（features **v1.23** / test-spec **v0.9**）、§8 的 028 行由「实施未开始」改为 P0/P1/P2 已落地 + G5 门八项全过、§1 与 §11.6 登记**第七道源码级 gate**（`soft-delete-gate`，护栏 8 → 9）。v1.21：2026-09-03 [[028-reversible-delete]] Accepted 登记——ADR 总数 27 → **28**、Accepted 24 → **25**；§8 决策表补齐 022–028 七行（该表自 2026-07-06 起停在 021，表头「21 份」与 §1 概览的 27 长期不符，本版一并订正）。v1.20：2026-09-03 人审批次 ⑦ + 新治理规则「日志不签字」（[[CLAUDE#§5.1.2]]）——product-spec **v0.24 ratified** / design-spec **v0.21 ratified** / test-spec **v0.7 ratified**（首份按 5.1.2 由 AI 反查代码后直接归档的文档，非人审）。v1.16：2026-09-01 文档对账日——features v1.18（合计 88→91、S1/ADR-017 状态纠正、§7 重写）+ prd/ops-spec/user-flows/spec 四份 `pre-code` 转出 + learnings v0.5 收编 HANDOFF 长期风险。v1.15：ADR-027 回流 + 冲突提示 + 密度层立论重写 + ADR-026 两项遗留裁决——product-spec v0.22 / design-spec v0.19 / prd v0.13 / features v1.17 / test-spec v0.5，另修正 prd 行的**版本漂移**（本表记 v0.11，实际早已 v0.12）。⚠️ 其余行仍停在 2026-07-06 口径（未随 ADR-022/025/026 更新），属旧账
 related:
   - CLAUDE
   - 02-constitution
@@ -26,16 +26,16 @@ related:
 | 主笔人 | 数量 | 状态 |
 |---|---|---|
 | 🧑 人主笔 | 2 | 2/2 ratified |
-| 🤝 共创 | 6 | 5/6 ratified（含 product-spec **v0.24** / design-spec **v0.21**，2026-09-03 人审批次 ⑦）+ user-flows v0.1 draft（六处与 v0.2.0 不符，[[HANDOFF]] 第 22 项待重写）。⚠️ v1.19 前此格记 6/6，与 user-flows 实况不符 |
-| 🤖 AI 主笔（人审） | 6 | 4/6 ratified（tech-stack / sitemap / prd v0.13 · 2026-09-01 人审批次 ④ / **test-spec v0.7 · 2026-09-03 按 [[CLAUDE#§5.1.2]] 反查归档**）+ ops-spec draft + features in-progress。⚠️ v1.19 前此格记「ops-spec + test-spec v0.2 人审通过 + prd pre-code」，三处均已漂移 |
+| 🤝 共创 | 6 | 5/6 ratified（含 product-spec **v0.25** / design-spec **v0.22**，2026-09-03 人审批次 ⑧）+ user-flows v0.1 draft（六处与 v0.2.0 不符，[[HANDOFF]] 第 22 项待重写）。⚠️ v1.19 前此格记 6/6，与 user-flows 实况不符 |
+| 🤖 AI 主笔（人审） | 6 | 4/6 ratified（tech-stack / sitemap / **prd v0.14 · 2026-09-03 人审批次 ⑧** / **test-spec v0.9 · 2026-09-03 按 [[CLAUDE#§5.1.2]] 反查归档**）+ ops-spec draft + features in-progress。⚠️ v1.19 前此格记「ops-spec + test-spec v0.2 人审通过 + prd pre-code」，三处均已漂移 |
 | 🤖 AI 派生人审（L5） | 2 | 2/2 active |
-| ADR 决策记录 | **28** | **25 Accepted** + 1 Superseded（012 by 019）+ 1 Proposed（005）+ 1 Reserved（011）。2026-09-03 新增 028（删除可撤销）。⚠️ 本行 v1.11 前记「21 / 18 Accepted」已漂移多轮，v1.12 按 `docs/adr/*.md` 逐文件 `status:` 实数重列 |
+| ADR 决策记录 | **28** | **25 Accepted** + 1 Superseded（012 by 019）+ 1 Proposed（005）+ 1 Reserved（011）。2026-09-03 新增 028（删除可撤销），当日 P0/P1/P2 全部落地、真机门 G5 八项全过。⚠️ 本行 v1.11 前记「21 / 18 Accepted」已漂移多轮，v1.12 按 `docs/adr/*.md` 逐文件 `status:` 实数重列 |
 | 实施方案 | 7 | 5 done + 1 active + 1 phased（adr-017 Phase 6 待办）|
 | 技术调研 | 2 | active（索引 + 1 份调研）|
 | 视觉原型 | 1 | v1 已归档至 archive/（2026-05-25）|
 | 项目 AI 上下文 | 2 | active |
 | 反思沉淀 | 2 | active（2026-08-05 新增 postmortems/ 首份；2026-06-04 learnings v0.1）|
-| 工程护栏 | 8 | active（ci.yml + **6 个源码级 gate**：token / b2-separation / ipc-contract / doc-refs / density / theme-parity + bench C1 退出码 gate。2026-08-20 校正——v1.10 记「3 个」时 `doc-refs` / `density` / `theme-parity` 尚未登记）|
+| 工程护栏 | 9 | active（ci.yml + **7 个源码级 gate**：token / b2-separation / ipc-contract / doc-refs / density / theme-parity / **soft-delete** + bench C1 退出码 gate。2026-09-03 第七道 `soft-delete-gate` 随 ADR-028 P0 落地并入册；2026-08-20 校正——v1.10 记「3 个」时 `doc-refs` / `density` / `theme-parity` 尚未登记）|
 
 ---
 
@@ -52,9 +52,9 @@ related:
 
 | 路径 | 内容 | 状态 |
 |---|---|---|
-| `docs/design/03-product-spec.md` | UI 契约（双形态 / 布局 / 交互） | **ratified v0.24**（2026-09-03 人审批次 ⑦：omar 签「编辑器已打开时再按一次打开它的锚点 = 无事发生」，§13.3 保存语义规则表五行 → 六行，G4 观察 O7 涟漪；前 **ratified v0.23** 2026-09-01 人审批次 ⑤ 旧账回流：区域 4 话术卡 title-only 解剖 + 区域 9 密度档 / ADR-024 默认深色，omar 审阅 v0.10–v0.23 通过；前 v0.22 2026-08-20 ADR-026 遗留裁决：Tab 6→5（SOP 退出）+ 区域 6 目标形态与实现分离；同日 v0.21 冲突提示：§13.3 区域 9 冲突形态 1→2 种；同日 v0.20 ADR-027 涟漪：§13.3 区域 9 新增快捷键页 + 设置持久化归属表 + §13.4 三行；同日 v0.19 ADR-025 涟漪：§13.3 新增「编辑容器统一契约」跨区域小节 + §13.4 两行快捷键；前 v0.18/v0.17 ADR-026 固定空间布局 / v0.16 ADR-022 跨 Scene 移动 / v0.15 交互模式 D-0 / v0.14 ADR-021 三层就地编辑；v0.10 起待 omar 人审，前序 v0.8 已 ratified）|
+| `docs/design/03-product-spec.md` | UI 契约（双形态 / 布局 / 交互） | **ratified v0.25**（2026-09-03 人审批次 ⑧：ADR-028 回流，§13.3 新增「删除语义统一契约」五条 + 区域 9 新增废纸篓与「导出含废纸篓」告知 + 编辑容器契约 c 的 Esc 阶梯三级减两级；批次内无新决策，两个裁点都是 ADR-028 子决策 3 / 6 的照签；前 **ratified v0.24** 2026-09-03 人审批次 ⑦：omar 签「编辑器已打开时再按一次打开它的锚点 = 无事发生」，§13.3 保存语义规则表五行 → 六行，G4 观察 O7 涟漪；更前 **ratified v0.23** 2026-09-01 人审批次 ⑤ 旧账回流：区域 4 话术卡 title-only 解剖 + 区域 9 密度档 / ADR-024 默认深色，omar 审阅 v0.10–v0.23 通过；前 v0.22 2026-08-20 ADR-026 遗留裁决：Tab 6→5（SOP 退出）+ 区域 6 目标形态与实现分离；同日 v0.21 冲突提示：§13.3 区域 9 冲突形态 1→2 种；同日 v0.20 ADR-027 涟漪：§13.3 区域 9 新增快捷键页 + 设置持久化归属表 + §13.4 三行；同日 v0.19 ADR-025 涟漪：§13.3 新增「编辑容器统一契约」跨区域小节 + §13.4 两行快捷键；前 v0.18/v0.17 ADR-026 固定空间布局 / v0.16 ADR-022 跨 Scene 移动 / v0.15 交互模式 D-0 / v0.14 ADR-021 三层就地编辑；v0.10 起待 omar 人审，前序 v0.8 已 ratified）|
 | `docs/design/04-user-flows.md` | 用户流（边缘 / 异常 / 跨形态） | draft v0.1（2026-09-01 人审批次 ④：保持 draft，§2–§8 六处与 v0.2.0 实装不符，差异见 HANDOFF 第 22 项；此前 MANIFEST 标 ratified 无人审记录，属误标）|
-| `docs/design/05-design-spec.md` | 视觉/动效 token 体系 | **ratified v0.21**（2026-09-03 人审批次 ⑦：§10.2.2 接口契约第 6 条「容器拥有锚点二次按下」随 product-spec §13.3 签字通过，第 5 条「首焦点归容器 / `initialFocus`」属施工规范随批通过；2026-09-02 D1 修复涟漪加第 5 条 / 2026-09-03 O7 涟漪加第 6 条；前 **ratified v0.20** 2026-09-01 人审批次 ⑥ ADR-024 回流补账，omar 审阅 v0.11–v0.20 通过：§2.4.6 品牌 token + light 加深、§2.5 订正、§2.1 `--t-15`、§8.1 锚点、§9 v0.15 补账；`--t-18` / `--h-modifier-tray` 退役。旧 ratified 标记与「v0.11–v0.18 待人审」矛盾，改正；前 v0.19 2026-08-20 密度层首次收录 + 立论重写（旧「640px 基准窗口」不存在）；同日 v0.18 ADR-025 涟漪：新增 §2.6 层叠标尺 `--z-*` + §10.2.2 `AnchoredEditor` 接口契约；前 v0.17/v0.16 ADR-026 / v0.14 ADR-021 用户内容色 / v0.13 暗 band / v0.12 ADR-019 推翻 flat 锚点；v0.11 起增量待人审，v0.10 已 omar 审定）|
+| `docs/design/05-design-spec.md` | 视觉/动效 token 体系 | **ratified v0.22**（2026-09-03 人审批次 ⑧：ADR-028 回流，§10.2.2 `ConfirmInline` 用量由六处收缩为一处——**唯一消费者是「清空废纸篓」，应用里剩下的唯一不可逆动作** + §11 新增「Toast 让位规则」四行表（撤销 toast 不被普通 toast 顶掉，error 例外）；两项都是行为契约不是施工细节，故随批签字；前 **ratified v0.21** 2026-09-03 人审批次 ⑦：§10.2.2 接口契约第 6 条「容器拥有锚点二次按下」随 product-spec §13.3 签字通过，第 5 条「首焦点归容器 / `initialFocus`」属施工规范随批通过；2026-09-02 D1 修复涟漪加第 5 条 / 2026-09-03 O7 涟漪加第 6 条；更前 **ratified v0.20** 2026-09-01 人审批次 ⑥ ADR-024 回流补账，omar 审阅 v0.11–v0.20 通过：§2.4.6 品牌 token + light 加深、§2.5 订正、§2.1 `--t-15`、§8.1 锚点、§9 v0.15 补账；`--t-18` / `--h-modifier-tray` 退役。旧 ratified 标记与「v0.11–v0.18 待人审」矛盾，改正；前 v0.19 2026-08-20 密度层首次收录 + 立论重写（旧「640px 基准窗口」不存在）；同日 v0.18 ADR-025 涟漪：新增 §2.6 层叠标尺 `--z-*` + §10.2.2 `AnchoredEditor` 接口契约；前 v0.17/v0.16 ADR-026 / v0.14 ADR-021 用户内容色 / v0.13 暗 band / v0.12 ADR-019 推翻 flat 锚点；v0.11 起增量待人审，v0.10 已 omar 审定）|
 
 ---
 
@@ -62,8 +62,8 @@ related:
 
 | 路径 | 内容 | 状态 |
 |---|---|---|
-| `docs/design/06-prd.md` | 数据契约 / API / 状态机 / 错误码 | **ratified v0.13**（2026-09-01 人审批次 ④ omar 审阅 v0.12/v0.13 通过；§6.1 soft-delete drift 已登记，归 HANDOFF 第 21.2 项 ADR；2026-08-20 ADR-027 涟漪：§5.8 补全局唤起键 + 新增 §6.8-bis Setting 表，`user_version` 11→12；前 v0.12 走查修缮 `get_draft` / v0.11 scene-substage-editing §6.4 写入口归属。⚠️ 本表此前记 v0.11 属版本漂移，v1.12 修正。`status: pre-code` 与「表已落地」的矛盾已于 2026-09-01 对账解决）|
-| `docs/design/07-features.md` | **91** 功能矩阵 S1–S5 + AE + 自动更新 + Promptscape 吸收 + 结构编辑 + 数据导入导出 + 走查修缮 + Scene 编辑分层 + UX 任务流 A/B + 锚定编辑容器 | in-progress **v1.21**（2026-09-02 第二笔 D1 修复留证，矩阵不变；同日 v1.20 G4 真机走查：32 行升 verified → 69 / 7 / 1 / 14，缺口清单 39→7，三缺陷 D1–D3；前 v1.19 2026-09-01 人审批次 ①：§1 `verified` 判据修订 + 失效引用改指 test-spec §4.1，37 行 `done`→`verified`、39 行缺留证保持 `done`，§7 新增留证索引 + 缺口清单；同日 v1.18 对账：§4 补三行 + 计数规则显式化 88→91、S1 `planned`→`in-progress`、ADR-017 5/5、§7 重写并点名 `verified` 铁律缺口；2026-08-20 v1.17 层 pill 减二留一 + SOP 退出 Tab；同日 v1.16 冲突提示；同日 v1.15 ADR-027：§3.4 全局唤起键可配置 done + §4 节奏表 87→88；同日 v1.14 ADR-025：§3.8 统一锚定编辑容器 done + §4 节奏表 86→87；前 v1.13/v1.12 ADR-026 / v1.11 ADR-022 / v1.10 UX 批次 A / v1.9 ADR-021 Scene 编辑分层化）|
+| `docs/design/06-prd.md` | 数据契约 / API / 状态机 / 错误码 | **ratified v0.14**（2026-09-03 人审批次 ⑧：ADR-028 回流，新增 §6.0-bis「删除与弃用：两套机制」把 `deleted_at`（安全网，已实装）与 `deprecated`（策展，无人写入）分开 + §6.1/§6.3/§6.4/§6.6 四处删除策略重写 + 七张资产表加 `deleted_at` + §6.9 导出 schema 1.1→1.2。**本批最实在的一笔是销账**——§6.1 自 v0.12 起登记的自相矛盾（文承诺 `deprecated = true`、实装是硬删）挂了三个版本，现两边都已改正；前 **ratified v0.13** 2026-09-01 人审批次 ④ omar 审阅 v0.12/v0.13 通过；2026-08-20 ADR-027 涟漪：§5.8 补全局唤起键 + 新增 §6.8-bis Setting 表，`user_version` 11→12；更前 v0.12 走查修缮 `get_draft` / v0.11 scene-substage-editing §6.4 写入口归属。⚠️ 本表此前记 v0.11 属版本漂移，v1.12 修正。`status: pre-code` 与「表已落地」的矛盾已于 2026-09-01 对账解决）|
+| `docs/design/07-features.md` | **92** 功能矩阵 S1–S5 + AE + 自动更新 + Promptscape 吸收 + 结构编辑 + 数据导入导出 + 走查修缮 + Scene 编辑分层 + UX 任务流 A/B + 锚定编辑容器 + 删除可撤销 | in-progress **v1.23**（2026-09-03 G5 真机门留证：八项全过但矩阵计数**一格未动**——「删除可撤销」一行仍 `done`，§1 三条判据 G5 只补上第 ① 条，② 进过一次已 publish 的 release 与 ③ 自用 ≥1 周均未满足，这是留证表首次「证据齐了但状态不动」；同日 v1.22 ADR-028 P0+P1：§3.8 新增一行 `done`，矩阵 91→**92**；前 v1.21 2026-09-02 第二笔 D1 修复留证，矩阵不变；更前 v1.20 G4 真机走查：32 行升 verified → 69 / 7 / 1 / 14，缺口清单 39→7，三缺陷 D1–D3；前 v1.19 2026-09-01 人审批次 ①：§1 `verified` 判据修订 + 失效引用改指 test-spec §4.1，37 行 `done`→`verified`、39 行缺留证保持 `done`，§7 新增留证索引 + 缺口清单；同日 v1.18 对账：§4 补三行 + 计数规则显式化 88→91、S1 `planned`→`in-progress`、ADR-017 5/5、§7 重写并点名 `verified` 铁律缺口；2026-08-20 v1.17 层 pill 减二留一 + SOP 退出 Tab；同日 v1.16 冲突提示；同日 v1.15 ADR-027：§3.4 全局唤起键可配置 done + §4 节奏表 87→88；同日 v1.14 ADR-025：§3.8 统一锚定编辑容器 done + §4 节奏表 86→87；前 v1.13/v1.12 ADR-026 / v1.11 ADR-022 / v1.10 UX 批次 A / v1.9 ADR-021 Scene 编辑分层化）|
 | `docs/design/08-sitemap.md` | 资产对象树 + 区域地图 + 焦点导航 | ratified v0.2（2026-07-02 omar 人审通过；同日全量重写对齐 product-spec v0.13「单窗口一屏全景 + 浮层」现状；前 v0.1 视图清单已失真）|
 
 ---
@@ -74,7 +74,7 @@ related:
 |---|---|---|
 | `docs/design/09-tech-stack.md` | 全栈技术决议 | ratified v1.3（2026-06-19 ADR-017 涟漪：D14 自动更新 + §4.4 updater 子系统 + plugin-process 依赖锁）|
 | `docs/design/10-ops-spec.md` | 运维规格 | draft v0.3（2026-09-01 人审批次 ④：保持 draft，§3 备份未实装 / §7 发布流程 ADR-001 前措辞，随 HANDOFF 第 21.3 项同批重写；此前 MANIFEST 标 ratified 无人审记录，属误标。2026-06-17 ADR-017 C4：§5.2 telemetry 措辞澄清 + §9.4 反向指针）|
-| `docs/design/11-test-spec.md` | 测试规格 | **ratified v0.7**（2026-09-03 按 [[CLAUDE#§5.1.2]]「日志不签字」由 AI 反查代码后直接归档，**不经人审**：ts-recheck 62 条核 / 8 处修正 / 21 条真机观测无法从代码核；修正后 §2 前端 **414 / 39 文件**、§4.1 G4 口径改 21 通过 / 2 不可达 / 1 部分。本版沿革：2026-09-03 第七笔 O7 裁决修复；2026-09-02 第二笔 D1 修复：前端 **405**，shim 补 focus 拒绝规则，§4.3 D1 行记修复；同日 v0.6 新增 §4.3 G4 走查记录：24 门项 + 三缺陷 + 六观察 + 四教训，两版合并待人审；v0.5 于 2026-09-01 人审批次 ③ omar 审阅 v0.3–v0.5 通过；2026-08-20 冲突提示：前端 **398**，G3 项 2 由不可达转通过；同日 v0.4 ADR-027 涟漪：前端 395 + Rust **168** + IPC **53** + 新增 §4.2 G3 门四项；同日 v0.3 全量刷新 📊 口径：前端 373 + Rust 158 + **6** 源码级 gate + IPC 51，另加 §4.1 真机验收门 / jsdom `popover` shim，均待人审；前 v0.2 2026-07-02 omar 人审通过，口径 154/135/4）|
+| `docs/design/11-test-spec.md` | 测试规格 | **ratified v0.9**（2026-09-03 同法反查归档，**不经人审**：新增 §4.4 **G5 走查记录**——ADR-028 首个真机门，八项全过、零缺陷零代码改动，§4.3 观察 O3 转「真机已复跑」；反查抓出 **5 处不一致，全部按代码改正后才写入**。计数不动：前端 **457 / 41 文件** / Rust **183** / 源码级 gate **7** / IPC **56**。前 **ratified v0.8** 同日归档 ADR-028 P0+P1 涟漪：前端 414→457、Rust 169→183、gate 6→7、IPC 53→56、新增 §3.7 记第七道 gate 含它自列的四条盲区；更前 **ratified v0.7** 同日首份按 5.1.2 归档：ts-recheck 62 条核 / 8 处修正 / 21 条真机观测无法从代码核，修正后 §2 前端 414 / 39 文件、§4.1 G4 口径改 21 通过 / 2 不可达 / 1 部分。本版沿革：2026-09-03 第七笔 O7 裁决修复；2026-09-02 第二笔 D1 修复：前端 **405**，shim 补 focus 拒绝规则，§4.3 D1 行记修复；同日 v0.6 新增 §4.3 G4 走查记录：24 门项 + 三缺陷 + 六观察 + 四教训，两版合并待人审；v0.5 于 2026-09-01 人审批次 ③ omar 审阅 v0.3–v0.5 通过；2026-08-20 冲突提示：前端 **398**，G3 项 2 由不可达转通过；同日 v0.4 ADR-027 涟漪：前端 395 + Rust **168** + IPC **53** + 新增 §4.2 G3 门四项；同日 v0.3 全量刷新 📊 口径：前端 373 + Rust 158 + **6** 源码级 gate + IPC 51，另加 §4.1 真机验收门 / jsdom `popover` shim，均待人审；前 v0.2 2026-07-02 omar 人审通过，口径 154/135/4）|
 
 ---
 
@@ -138,7 +138,7 @@ related:
 | 025 | unified-anchored-editing（编辑器脱离宿主文档流改原生 `popover` top layer 锚定；organize 升级为选择驱动的键盘处理模式；子决策 6 局部修订 ADR-024 的 PhaseBar 主角化；`:125` 立下「撤销优于确认，仅限真正可逆」规矩） | Accepted（2026-08-17，六条子决策全数采纳；P0 + P1-a + P1-b 已落地，P2/P3 待排） |
 | 026 | fixed-spatial-layout（`interactionMode` 回归「只改交互语义」，不再驱动区域重排；双布局收敛为单布局 + 用户可拖拽的纵向分配。起因是实现层 dual-layout 越过 product-spec 三处已批准契约且从未开 ADR） | Accepted（2026-08-18；同日落地，2026-08-19 真机走查通过） |
 | 027 | configurable-global-hotkey（全局唤起键可配置——绑定存 SQLite `settings` 表，`user_version` 11→12；冲突只有 `register()` 失败一种形态；新增 macOS `RunEvent::Reopen` 逃生口，顺带修掉「点 Dock 图标无反应」） | Accepted（2026-08-20；同日落地 + 回流八步完成，G3 门四项全过） |
-| 028 | reversible-delete（删除改为**原地软删除**：七张资产表加 `deleted_at`，行不搬走，恢复是单行 UPDATE，保住 id / created_at / order_index / usage 历史；新增**第七道源码级闸门**强制读路径带过滤；六处「永久删除？」确认框换一键 + 撤销 toast；废纸篓不自动过期、只由用户手动清空） | Accepted（2026-09-03；**实施未开始**，P0/P1/P2 见该 ADR §5） |
+| 028 | reversible-delete（删除改为**原地软删除**：七张资产表加 `deleted_at`，行不搬走，恢复是单行 UPDATE，保住 id / created_at / order_index / usage 历史；新增**第七道源码级闸门**强制读路径带过滤；六处「永久删除？」确认框换一键 + 撤销 toast；废纸篓不自动过期、只由用户手动清空） | Accepted（2026-09-03；**当日 P0 `77637cd` + P1 `6aca7eb` + P2 回流 `ec2867b` 三期全部落地**，真机门 G5 八项全过 `bb344a7`。实施期五条口径修订已记在该 ADR §2，其中最要紧的一条 ADR 从未设想：单条恢复曾能造出一条既不在废纸篓、又不在仪表盘上的资产） |
 
 ---
 
@@ -187,7 +187,7 @@ related:
 
 ---
 
-## §11.6 工程护栏（5 份 · CI + 源码级 gate）
+## §11.6 工程护栏（6 份 · CI + 源码级 gate）
 
 > 非文档但属「体系保真」基础设施——CI workflow 与读源码断言的 gate 测试，破坏契约时在 `pnpm test` / CI 层直接报警。gate 测试随 `pnpm test` 全量执行。
 
@@ -198,6 +198,7 @@ related:
 | `src/styles/token-gate.test.ts` | CSS token 纪律 gate——组件 CSS 禁裸 px/hex/ms + 禁 `var(--layer)` 作文字色（P0-1 新规则） | active |
 | `src/components/__tests__/b2-separation.test.ts` | B2 源码级 gate——任务层 4 组件零 alignment 引用 + DraftInbox scoped 断言（取代已删 composition-b2-separation.test.ts） | active（2026-07-01 P2-2 新增）|
 | `src/ipc/ipc-contract.test.ts` | IPC 三方契约 gate——commands.rs ↔ generate_handler ↔ ipc/index.ts 46 命令双向等价 + 防空转守卫 | active（2026-07-01 P2-3 新增）|
+| `src/ipc/soft-delete-gate.test.ts` | **第七道**源码级 gate（ADR-028 子决策 2）——读 Rust 源码断言凡 SELECT 资产表必带 `deleted_at IS NULL`，豁免须写行内 marker 并在清单里登记；它是选「原地软删除」而非搬行的**前提**，没有它这条路会退化成外部调研反复警告的坑。自列四条盲区，其中**动态表名对它完全不可见** | active（2026-09-03 ADR-028 P0 新增）|
 
 ---
 

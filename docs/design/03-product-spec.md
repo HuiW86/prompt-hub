@@ -4,7 +4,7 @@ project: prompt-hub
 version: v0.25
 created: 2026-05-18
 last_modified: 2026-09-03
-status: draft  # v0.25（2026-09-03 · ADR-028 P0+P1 回流）待人审：§13.3 新增「删除语义统一契约」（六处二次确认改一键 + 撤销 toast）+ 区域 9 新增废纸篓与「导出含废纸篓」告知 + 编辑容器契约 c 的 Esc 阶梯减一级，均为图纸类契约变更，按 [[CLAUDE#§5.1.2]] 需签字。前 v0.24 于 2026-09-03 人审批次 ⑦ ratified（唯一裁点：编辑器已打开时再按一次打开它的锚点 = 无事发生）；更前 v0.23 于 2026-09-01 人审批次 ⑤ ratified
+status: ratified  # v0.25 于 2026-09-03 人审批次 ⑧ 经 omar 签字（与 [[06-prd]] v0.14 / [[05-design-spec]] v0.22 同批）。本版内容：§13.3 新增「删除语义统一契约」（六处二次确认改一键 + 撤销 toast）+ 区域 9 新增废纸篓与「导出含废纸篓」告知 + 编辑容器契约 c 的 Esc 阶梯减一级，均为图纸类契约变更，按 [[CLAUDE#§5.1.2]] 需签字。前 v0.24 于 2026-09-03 人审批次 ⑦ ratified（唯一裁点：编辑器已打开时再按一次打开它的锚点 = 无事发生）；更前 v0.23 于 2026-09-01 人审批次 ⑤ ratified
 author: co  # 🤝 人机共创（CLAUDE §5.2）
 related: [[01-spec]], [[05-design-spec]], [[06-prd]], [[012-lock-visual-quality-anchor]], [[024-dark-cockpit-identity]], [[019-supersede-flat-visual-anchor]], [[020-restore-protocol-dark-band]], [[021-scene-layered-editing]], [[022-cross-scene-phrase-move]], [[025-unified-anchored-editing]], [[027-configurable-global-hotkey]], [[013-alignment-phrases-tab-inclusion]], [[015-expose-mcp-write-pipeline]], [[017-enable-auto-update]], [[018-absorb-promptscape-design]], [[026-fixed-spatial-layout]]
 description: 手动 AI 编程仪表盘的 UI 契约——双形态架构/布局/点击路径/状态反馈/用户旅程/主形态 UI 草案；写 UI / 改交互时召回。版本叙事见 CHANGELOG

@@ -4,7 +4,7 @@ project: prompt-hub
 version: v0.22
 created: 2026-05-18
 last_modified: 2026-09-03
-status: draft  # v0.22（2026-09-03 · ADR-028 P0+P1 回流）待人审：§10.2.2 `ConfirmInline` 用量由六处收缩至一处（清空废纸篓）+ §11 新增「Toast 让位规则」（撤销 toast 不被普通 toast 顶掉，error 例外），两项都是**行为契约**不是施工细节，按 [[CLAUDE#§5.1.2]] 需签字。前 v0.21 于 2026-09-03 人审批次 ⑦ ratified（§10.2.2 接口契约第 6 条随 product-spec「锚点再按一次 = 无事发生」签字，第 5 条 `initialFocus` 必填属施工规范随批通过）；更前 v0.20 于 2026-09-01 人审批次 ⑥ ratified
+status: ratified  # v0.22 于 2026-09-03 人审批次 ⑧ 经 omar 签字（与 [[06-prd]] v0.14 / [[03-product-spec]] v0.25 同批）。本版内容：§10.2.2 `ConfirmInline` 用量由六处收缩至一处（清空废纸篓）+ §11 新增「Toast 让位规则」（撤销 toast 不被普通 toast 顶掉，error 例外），两项都是**行为契约**不是施工细节，按 [[CLAUDE#§5.1.2]] 需签字。前 v0.21 于 2026-09-03 人审批次 ⑦ ratified（§10.2.2 接口契约第 6 条随 product-spec「锚点再按一次 = 无事发生」签字，第 5 条 `initialFocus` 必填属施工规范随批通过）；更前 v0.20 于 2026-09-01 人审批次 ⑥ ratified
 author: co  # 🤝 人机共创（CLAUDE §5.2）
 related: [[01-spec]], [[02-constitution]], [[03-product-spec]], [[012-lock-visual-quality-anchor]], [[023-ui-reshape-before-release]], [[024-dark-cockpit-identity]], [[019-supersede-flat-visual-anchor]], [[020-restore-protocol-dark-band]], [[021-scene-layered-editing]], [[025-unified-anchored-editing]], [[CLAUDE-DESIGN]], [[015-expose-mcp-write-pipeline]], [[016-choose-dnd-and-resizable-layout]], [[018-absorb-promptscape-design]], [[026-fixed-spatial-layout]], [[028-reversible-delete]], [[asset-editing-and-adaptive-layout]]
 description: 手动 AI 编程仪表盘的视觉规范——tokens.css 单一真源 + 主题/elevation/组件视觉契约；写 CSS / 视觉时召回。版本叙事见 CHANGELOG

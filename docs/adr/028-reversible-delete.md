@@ -52,6 +52,8 @@ related:
 >
 > **连带效果**：`purge_trash` 里那条「跳过仍有存活子内容的废纸篓场景」的 FK 保护分支，**从可达降级为防御性**——现在制造不出那种状态了。
 >
+> **实施期口径修订 6 — 第七道闸门只强制 `deleted_at IS NULL` 这一半**：子决策 2 写的是「必须同时带 `deprecated = 0` 与 `deleted_at IS NULL`」，实装的 `src/ipc/soft-delete-gate.test.ts` **只断言 `deleted_at IS NULL`**（`deprecated` 仅出现在它自己的测试夹具里）。这一半是必须的那一半：`deleted_at` 是本 ADR 新引入、且真的会被写入的列，漏过滤就会把废纸篓里的东西漏回界面；而 `deprecated` 的过滤在所有读路径上已经写了几个月且**至今无人写入**（§3 约束 3），今天漏一处也不会有任何行因此现形。**代价写在这里**：一旦将来做策展功能、给 `deprecated` 接上写入方，这道闸门必须同步扩到两个谓词，否则那一刻起「忘记过滤」这类坑就只被堵住了一半。
+>
 > 另两处非修订的实施说明：① 删除默认对齐话术仍被 `DefaultAlignmentPhraseProtected` 拒绝，`delete_scene` 仍被 `SceneNotEmpty` 拒绝（后者的子内容计数现在只数存活行）——本 ADR §5「显式不裁」第 2 条已声明不动这两条产品行为 ② toast 让位规则有一个刻意的例外：**error toast 仍然顶掉撤销 toast**。藏掉一次失败等于告诉用户「成功了」，那是正确性缺陷；而丢一个撤销按钮是可承受的，因为那一行已经稳稳躺在废纸篓里。
 
 ## 3. Context
