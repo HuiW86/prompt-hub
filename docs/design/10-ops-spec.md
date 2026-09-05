@@ -3,8 +3,8 @@ type: ops-spec
 project: prompt-hub
 version: v0.5
 created: 2026-05-19
-last_modified: 2026-09-04
-status: draft  # **待 omar 人审**。v0.5（2026-09-04）兑现 [[HANDOFF]] 第 21.3 项：§3.1 / §3.2 / §3.3 / §5.1 / §7 / §8 按实装重写——自动备份改为 `VACUUM INTO` `.db` 快照三种触发（迁移前 / 导入前 / 每日）并按前缀独立配额 + 哈希去重（顺带销掉 [[HANDOFF]] 第 32 项那个「迁移每次失败就把旧快照全挤掉」的坑）、备份目录按真实路径且用户不可改、新增启动 `PRAGMA quick_check` 与手工恢复步骤、落盘日志改 `tauri-plugin-log` 真实路径与滚动策略、§7 按 `.github/workflows/release.yml` 实际流水线重写（删 Sparkle / Squirrel / Windows / 「待 ADR-001」措辞）、§8 首行改 `quick_check` 失败预案。**本版之前的三笔欠账至此清零**。前 v0.4（2026-09-03 · [[028-reversible-delete]] 回流）新增 §3.0 废纸篓与备份的分工；v0.3 于 2026-09-01 人审批次 ④ omar 裁决保持 draft
+last_modified: 2026-09-05
+status: ratified  # v0.5 于 2026-09-05 人审批次 ⑩ 经 omar 签字（与 [[03-product-spec]] v0.27 同批），自 v0.3 起挂的 draft 至此转正——理由是本版每条都有代码对应且过了真机门 G6。v0.5（2026-09-04）兑现 [[HANDOFF]] 第 21.3 项：§3.1 / §3.2 / §3.3 / §5.1 / §7 / §8 按实装重写——自动备份改为 `VACUUM INTO` `.db` 快照三种触发（迁移前 / 导入前 / 每日）并按前缀独立配额 + 哈希去重（顺带销掉 [[HANDOFF]] 第 32 项那个「迁移每次失败就把旧快照全挤掉」的坑）、备份目录按真实路径且用户不可改、新增启动 `PRAGMA quick_check` 与手工恢复步骤、落盘日志改 `tauri-plugin-log` 真实路径与滚动策略、§7 按 `.github/workflows/release.yml` 实际流水线重写（删 Sparkle / Squirrel / Windows / 「待 ADR-001」措辞）、§8 首行改 `quick_check` 失败预案。**本版之前的三笔欠账至此清零**。前 v0.4（2026-09-03 · [[028-reversible-delete]] 回流）新增 §3.0 废纸篓与备份的分工；v0.3 于 2026-09-01 人审批次 ④ omar 裁决保持 draft
 author: ai  # 🤖 AI 主笔 + 人审（CLAUDE §5.2）
 audience: [ai, human]
 description: prompt-hub 运营规格——部署/性能预算/备份/升级回滚/监控（本地单人语境）

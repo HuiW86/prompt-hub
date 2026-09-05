@@ -40,7 +40,7 @@
 
 ## Next Actions
 
-> 编号沿用旧账，只列仍开着的。**建议起手：第 42 项**（装一版当前树的构建，收掉真实库已在 13 而正式版仍是 12 的错位），然后**第 43 项人审批次 ⑩**签三份图纸，再进第 41 项 ADR-029 P0（第 32 项已修，`0014` 的前置已满足）。
+> 编号沿用旧账，只列仍开着的。第 42 / 43 项已于 2026-09-05 完成。**建议起手：第 41 项 ADR-029 P0**（第 32 项已修，`0014` 的前置已满足）。
 
 1. **ADR-025 P2 键盘动作层**——omar 2026-08-20 明示暂不做。去掉动作簇 `data-nav-item`（`src/components/AlignmentPhrases.tsx` / `scene/ViewPhraseCard.tsx` / `MacroGrid.tsx`）；键位表挂 `src/hooks/useRegionNav.ts`；落地时须兑现 product-spec §13.3「`⌘Enter` 保存并推进到下一条」（`PhraseFormEditor.tsx` 现只保存并关闭）。验收门 G2 五项 (carried from 2026-08-20)
 3. `docs/MANIFEST.md` 除近数轮触及的行外其余仍停在 2026-07-06 口径（§8 决策表已于第九段补齐 022–028）(carried from 2026-07-21)
@@ -60,7 +60,7 @@
 20. Developer ID 证书 **2027-02-01 到期** + 第 17 项两份 ADR 复核：加日历提醒 (carried from 2026-09-01)
 21. **主环五件事**（omar 认可、明示先不动手）(carried from 2026-09-01)：
     - 21.1 **主环度量** → **并入第 41 项**：唤起时间戳（`session_started_at`）已由 [[029-alignment-coordinates-and-drift-ledger]] 子决策 4 收编——会话边界正是按轴归因的前提，两件事合进同一支 migration `0014`（`0013` 已被 ADR-028 占用）。本项不再单独排期
-    - 21.3 → **已落地并过 G6（2026-09-04），见 Completed**；ops-spec §3 / §7 重写待第 43 项签字
+    - 21.3 → **已落地并过 G6（2026-09-04），见 Completed**；ops-spec v0.5 已于 2026-09-05 批次 ⑩ ratified
     - 21.4 **S2 最小闭环** → **并入第 41 项**：「复制过但未归类的内容提示保存」与 ADR-029 同改 `usage_records`（子决策 3 的 CHECK 整表重建 + 子决策 4 的会话戳）。分两批做等于把全库最高频写入表重建两次，**合批的理由只有这一条**，不是它俩在产品上是一件事
     - 21.5 外部使用者 = 第 19 项
     - 附带待裁：隐藏期间 MCP 写入的草稿唤起不刷新 badge（G4 O1）——是否在 `src-tauri/src/lib.rs` show 路径后发一次 `count_pending`；SOP 占位区是否收起
@@ -78,8 +78,8 @@
     - **P1 UI**：坐标显示（chip 同行灰字短标 `.ph-meta`，product-spec 区域 2-bis）与编辑（锚定浮层三个选择器）、相位带 8 站扩 9 站与 `⌘9`（`src/components/PhaseBar.tsx` / `useRegionNav.ts` 键位表）、复制时拼坐标前缀（对齐话术四个复制入口共用一处拼装）、轴取值就地配置「管理…」+ 删除走 `ConfirmInline`（消费者 1→2）
     - **P2 归因展示**：状态仪表区按轴计数 + `content_revised_at` 切前后两段。**只计数不判断**——说「这条话术后面跟了 7 次换层口令」是记账，说「这条话术在层这一轴上不好」是判断，后者由 [[01-spec#8.1]] 永久禁止
     - **顺序上的硬约束已解除**：第 32 项 2026-09-04 已修（分前缀配额 + 哈希去重），`0014` 可直接排
-42. **装一版当前树的构建到 `/Applications`**（new 2026-09-04）：真实库已在 `user_version` 13（本轮 bench 事故迁的），正式版 0.2.0 是 schema 12、PID 51541 自 9 月 3 日运行至今。0.2.0 重启能开 13 的库（`open_and_migrate` 只向上迁移，新列有默认值），但它的删除仍是 ADR-028 之前的硬删。`pre-migrate-1788586113.db`（v12）在 `backups/` 里可退回。装之前先退出正式版
-43. **人审批次 ⑩**（new 2026-09-04）：ops-spec v0.5（§3 备份策略 / §5.1 日志 / §7 发布流程 / §8 预案按实装重写）、tech-stack v1.4（+log 插件）、product-spec v0.27（**唯一裁点**：设置弹窗数据页忙碌中禁止关窗，推荐签——async 导入后它是唯一互斥）
+42. ~~装一版当前树的构建到 `/Applications`~~ → **已完成（2026-09-05 01:30 PDT）**：`main@d32bda6` 以 `pnpm tauri build --bundles app --config '{"bundle":{"createUpdaterArtifacts":false}}'` 出包（Developer ID 签名、未公证、不产 updater 件），旧 0.2.0（schema 12）移入 `~/.Trash/prompt-hub-0.2.0-schema12.app`，新版启动日志 `user_version=13 quick_check=ok`、无迁移、无新 `pre-migrate` 快照。安装前手工快照 `backups/manual-pre-install-1788595906.db`（v13）。**注意**：Info.plist 版本仍是 0.2.0，与已发布的 0.2.0 不可分辨，`latest.json` 若发 0.2.1 会正常覆盖它
+43. ~~人审批次 ⑩~~ → **已完成（2026-09-05）**：product-spec v0.27 / ops-spec v0.5 转 ratified，两个裁点（忙碌中禁止关窗 / ops-spec 转正）均按推荐通过；tech-stack v1.4 本就 ratified 只知悉。CLAUDE.md §7 指针与 CHANGELOG 2026-09-05 已同步
 44. （低优先）导入期间弹窗锁死但无进度反馈，慢导入看起来像卡死。要补的是**进度**，不是放宽守卫（verifier 意见，new 2026-09-04）
 45. （低优先，G6 未验）1 MiB 日志滚动是否真保留一份旧文件；后台每小时线程跨长会话（含休眠唤醒）的每日排期；`pre-import` 快照路径 G6 未重走 (new 2026-09-04)
 46. **Codex 代理账户再充值到 ≥ $3** 后补跑 `/codex review`：本轮零结论中断 (new 2026-09-04)
@@ -92,7 +92,7 @@
 
 > 长期风险在 [[learnings]] 附录 B；此处只留仍会影响下一次改动的。
 
-- **真实库与正式版错位**：真实库 `user_version` 13，正式版 0.2.0 schema 12 仍在跑（第 42 项）。**任何在真实 HOME 上跑工作树二进制的动作都会迁库**——bench 已隔离，`pnpm tauri dev` 仍会。要在真实库上验东西，先想清楚这一步是不是迁移
+- **真实库与正式版错位已收掉**（2026-09-05，第 42 项）：`/Applications` 现为 `d32bda6` 构建、schema 13。仍成立的一半：**任何在真实 HOME 上跑工作树二进制的动作都会迁库**——bench 已隔离，`pnpm tauri dev` 仍会；等 `0014` 落地后这条又会变回「错位」，届时照第 42 项流程再装一版
 - **`usage_records` 整表重建的兜底**：ADR-029 子决策 3 要给 `source` 加 `live_cue`，SQLite 改不了 CHECK——建新表 → 搬历史行 → 删旧表 → 改名 → 重建索引。全库最高频写入的表且不在软删除保护范围内，出错只能回 `db.rs` 的 `pre-migrate` 快照。第 32 项已修：迁移反复失败只占一个槽、不会挤掉 `pre-import` / `daily`，兜底自此稳定
 - **快照文件的 mtime 不等于内容捕获时刻**：`Unchanged` 会刷被保留文件的 mtime，挑快照恢复时**以文件名里的 unix 秒为准**（ops-spec §3.1 / §3.3）
 - **`.tmp` 清扫按年龄不按 pid**：跨进程共用 `backups/` 时只清 1 小时以上的残留，1 小时内的可能是另一进程在途——别改成「凡不是本进程的都清」
