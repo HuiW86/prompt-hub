@@ -59,6 +59,10 @@ tokio = { version = "1", features = ["time"] }
 tauri-plugin-log = "2"
 # The facade the whole workspace logs through; the plugin is the sink.
 log = "0.4"
+# Wake session stamps (ADR-029). Already compiled as a repo-core dependency, so
+# declaring it here adds no build cost — only the ability to format one RFC 3339
+# timestamp per wake without inventing a second time representation.
+chrono = "0.4"
 
 [target.'cfg(target_os = "macos")'.dependencies]
 # Used to set NSWindowCollectionBehavior so the overlay joins all Spaces

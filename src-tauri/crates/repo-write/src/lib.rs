@@ -1,3 +1,4 @@
+pub mod alignment_axis_values;
 pub mod alignment_phrases;
 pub mod asset_repo;
 pub mod compositions;
@@ -11,6 +12,10 @@ mod soft_delete;
 pub mod sub_stages;
 pub mod trash;
 
+pub use alignment_axis_values::{
+    create_alignment_axis_value, delete_alignment_axis_value, reorder_alignment_axis_values,
+    update_alignment_axis_value,
+};
 pub use alignment_phrases::{
     create_alignment_phrase, delete_alignment_phrase, reorder_alignment_phrases,
     set_default_alignment_phrase, update_alignment_phrase,

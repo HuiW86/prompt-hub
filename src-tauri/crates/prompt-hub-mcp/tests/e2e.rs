@@ -102,6 +102,58 @@ async fn server_advertises_all_fourteen_tools() {
     service.cancel().await.expect("clean shutdown");
 }
 
+/// There is no golden JSON schema for the read tools — they serialize the
+/// repo-core models directly, so a new model field appears in the MCP payload
+/// with no code change here. That is convenient and it is also how a field can
+/// start crossing the process boundary without anyone deciding it should, so
+/// the ADR-029 additions are pinned: present, read-only, and correctly typed.
+#[tokio::test]
+async fn list_alignment_phrases_exposes_the_adr_029_fields_read_only() {
+    let (_dir, service) = spawn().await;
+    let (is_error, rows) = call(&service, "list_alignment_phrases", json!({})).await;
+    assert!(!is_error);
+    let rows = rows.as_array().expect("array of phrases");
+    assert_eq!(rows.len(), 20, "8 defaults + 6 form phrases + 6 live cues");
+
+    for row in rows {
+        for key in [
+            "kind",
+            "layerId",
+            "domainId",
+            "modeId",
+            "cueAxis",
+            "contentRevisedAt",
+        ] {
+            assert!(
+                row.get(key).is_some(),
+                "missing {key} on an alignment phrase: {row}"
+            );
+        }
+        // The counts that are computed per query must never appear here — they
+        // belong to the Tauri list command, not to a model.
+        assert!(row.get("refCount").is_none());
+        assert!(row.get("trashedRefCount").is_none());
+    }
+
+    let stop = rows
+        .iter()
+        .find(|r| r["id"] == "ap-live-stop")
+        .expect("the 中途 default");
+    assert_eq!(stop["kind"], "cue");
+    // 「停」 is a halt, not a drift: it belongs to no axis (ADR-029 子决策 4).
+    assert!(stop["cueAxis"].is_null());
+
+    let shift_layer = rows
+        .iter()
+        .find(|r| r["id"] == "ap-live-shift-layer")
+        .expect("a cue with an axis");
+    assert_eq!(shift_layer["cueAxis"], "layer");
+
+    // The write side is unchanged: an MCP client stages drafts and drafts carry
+    // no coordinates, so nothing here can set one.
+    service.cancel().await.expect("clean shutdown");
+}
+
 #[tokio::test]
 async fn draft_crud_roundtrips_over_stdio() {
     let (_dir, service) = spawn().await;

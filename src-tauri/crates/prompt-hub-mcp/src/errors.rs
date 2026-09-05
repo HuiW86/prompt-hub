@@ -87,6 +87,17 @@ pub fn repo_error(err: RepoError) -> CallToolResult {
              fixed from here — tell the user to open the prompt-hub desktop app, \
              which will point them at their backups."
         ),
+        // Tauri-only write path (ADR-029): coordinates are assigned in the
+        // desktop app's phrase editor, and the MCP server can only stage
+        // drafts. Unreachable here but kept exhaustive for the shared enum.
+        RepoError::AxisValueMismatch {
+            id,
+            expected,
+            found,
+        } => format!(
+            "Axis value '{id}' is on the '{found}' axis, not '{expected}'. \
+             Coordinates are assigned in the desktop app."
+        ),
         RepoError::Other(msg) => msg,
     };
     CallToolResult::error(vec![Content::text(text)])

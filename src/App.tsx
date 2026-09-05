@@ -5,6 +5,7 @@ import { usePhaseSelect } from "./hooks/usePhaseSelect";
 import { ipc } from "./ipc";
 import { Dashboard } from "./layouts/Dashboard";
 import { usePromptStore } from "./stores/promptStore";
+import { startWakeListener } from "./stores/sessionStore";
 import { selectIsSearching, useSearchStore } from "./stores/searchStore";
 import { useSettingsStore } from "./stores/settingsStore";
 import { useUpdaterStore } from "./stores/updaterStore";
@@ -19,6 +20,24 @@ function App() {
   useEffect(() => {
     void refreshAll();
   }, [refreshAll]);
+
+  // Session stamps (ADR-029). Rust emits `wake` after the overlay is on screen;
+  // every usage record written until the next wake carries that timestamp, which
+  // is what makes "the cues that followed this opening phrase" a bounded
+  // question. Nothing here runs on the wake hot path — the listener is
+  // registered once and the handler only writes one string into a store.
+  useEffect(() => {
+    let unlisten: (() => void) | undefined;
+    let cancelled = false;
+    void startWakeListener().then((fn) => {
+      if (cancelled) fn();
+      else unlisten = fn;
+    });
+    return () => {
+      cancelled = true;
+      unlisten?.();
+    };
+  }, []);
 
   // Hydrate the wake chord from Rust (ADR-027). SQLite owns it because setup()
   // registers the chord before any renderer exists; this read is only so the UI

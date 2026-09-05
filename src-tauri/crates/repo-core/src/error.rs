@@ -44,6 +44,17 @@ pub enum RepoError {
     // tell the user to empty the scene first.
     #[error("scene `{scene_id}` is not empty (has phrases or sub-stages) and cannot be deleted")]
     SceneNotEmpty { scene_id: String },
+    // ADR-029: a coordinate id was assigned to the wrong column — e.g. a
+    // `layer` value handed to `mode_id`. Rejected rather than coerced, because
+    // silently dropping it would leave the user looking at a coordinate they
+    // thought they set, and silently accepting it would put a layer name where
+    // the copy path expects a mode name.
+    #[error("axis value `{id}` belongs to axis `{found}`, not `{expected}`")]
+    AxisValueMismatch {
+        id: String,
+        expected: String,
+        found: String,
+    },
     // Import (PRD §7.5 / §7.7): the backup file's data schema_version is a major
     // version this build can't safely restore. Major bumps are breaking by
     // contract (§7.7.1), so refuse rather than partially apply an unknown shape.

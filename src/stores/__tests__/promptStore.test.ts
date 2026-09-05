@@ -50,6 +50,12 @@ const fakeAlignments: AlignmentPhrase[] = [
     notes: null,
     deprecated: false,
     orderIndex: 0,
+    kind: "opening",
+    layerId: null,
+    domainId: null,
+    modeId: null,
+    cueAxis: null,
+    contentRevisedAt: null,
   },
 ];
 
@@ -227,6 +233,7 @@ describe("promptStore", () => {
       sopId: null,
       sopStepOrder: null,
       phaseId: null,
+      sessionStartedAt: null,
     };
     const refreshedRecent: RecentUsageEntry[] = [
       { record: fakeRecord, targetName: "借力最优解", targetContent: "..." },
@@ -246,6 +253,7 @@ describe("promptStore", () => {
       sopId: null,
       sopStepOrder: null,
       phaseId: null,
+      sessionStartedAt: null,
     });
 
     const state = usePromptStore.getState();
@@ -271,6 +279,7 @@ describe("promptStore", () => {
       sopId: null,
       sopStepOrder: null,
       phaseId: null,
+      sessionStartedAt: null,
     };
     invokeMock.mockImplementation((cmd: string) => {
       if (cmd === "record_usage") return Promise.resolve(fakeRecord);
@@ -287,6 +296,7 @@ describe("promptStore", () => {
       sopId: null,
       sopStepOrder: null,
       phaseId: null,
+      sessionStartedAt: null,
     });
 
     const phrase = usePromptStore.getState().scenes[0].phrases[0];
@@ -724,6 +734,12 @@ describe("promptStore", () => {
       notes: null,
       deprecated: false,
       orderIndex: 1,
+      kind: "opening",
+      layerId: null,
+      domainId: null,
+      modeId: null,
+      cueAxis: null,
+      contentRevisedAt: null,
     };
     invokeMock.mockImplementation((cmd: string) => {
       if (cmd === "create_alignment_phrase") return Promise.resolve(created);
@@ -1288,6 +1304,7 @@ describe("promptStore", () => {
           sopId: null,
           sopStepOrder: null,
           phaseId: null,
+          sessionStartedAt: null,
         },
         targetName: targetId,
         targetContent: "...",
@@ -1352,6 +1369,7 @@ describe("promptStore", () => {
         sopId: null,
         sopStepOrder: null,
         phaseId: null,
+        sessionStartedAt: null,
       };
       invokeMock.mockImplementation((cmd: string) => {
         if (cmd === "record_usage") return Promise.resolve(record);
@@ -1368,6 +1386,7 @@ describe("promptStore", () => {
         sopId: null,
         sopStepOrder: null,
         phaseId: null,
+        sessionStartedAt: null,
       });
 
       expect(

@@ -51,6 +51,12 @@ const fakeAlignments: AlignmentPhrase[] = fakePhases.map((p, idx) => ({
   notes: null,
   deprecated: false,
   orderIndex: 0,
+  kind: "opening",
+  layerId: null,
+  domainId: null,
+  modeId: null,
+  cueAxis: null,
+  contentRevisedAt: null,
 }));
 
 const fakeMacros: Macro[] = [
@@ -334,47 +340,51 @@ describe("Dashboard click → IPC flow", () => {
     usePromptStore.setState(initialStore, true);
     useAppStore.setState(initialAppStore, true);
     invokeMock.mockReset();
-    invokeMock.mockImplementation((cmd: string) => {
-      switch (cmd) {
-        case "list_phases":
-          return Promise.resolve(fakePhases);
-        case "list_alignment_phrases":
-          return Promise.resolve(fakeAlignments);
-        case "list_macros":
-          return Promise.resolve(fakeMacros);
-        case "list_modifiers":
-          return Promise.resolve([]);
-        case "list_compositions":
-          return Promise.resolve([]);
-        case "list_scenes_with_children":
-          return Promise.resolve(fakeScenes);
-        case "list_recent_usage":
-          return Promise.resolve(fakeRecent);
-        case "count_today_usage":
-          return Promise.resolve(0);
-        case "list_drafts":
-          return Promise.resolve([]);
-        case "count_pending_drafts":
-          return Promise.resolve(0);
-        case "record_usage":
-          return Promise.resolve({
-            id: "rec-x",
-            timestamp: "2026-05-23T10:00:00Z",
-            targetType: "macro",
-            targetId: null,
-            source: "macro_area",
-            modifierIds: null,
-            sopId: null,
-            sopStepOrder: null,
-            phaseId: null,
-          });
-        case "hide_window":
-          return Promise.resolve();
-        default:
-          return Promise.reject(new Error(`unexpected ${cmd}`));
-      }
-    });
+    invokeMock.mockImplementation(baseInvoke);
   });
+
+  // The default backend for every test in this block. Named so a single test
+  // can swap one command's response and delegate the rest.
+  function baseInvoke(cmd: string) {
+    switch (cmd) {
+      case "list_phases":
+        return Promise.resolve(fakePhases);
+      case "list_alignment_phrases":
+        return Promise.resolve(fakeAlignments);
+      case "list_macros":
+        return Promise.resolve(fakeMacros);
+      case "list_modifiers":
+        return Promise.resolve([]);
+      case "list_compositions":
+        return Promise.resolve([]);
+      case "list_scenes_with_children":
+        return Promise.resolve(fakeScenes);
+      case "list_recent_usage":
+        return Promise.resolve(fakeRecent);
+      case "count_today_usage":
+        return Promise.resolve(0);
+      case "list_drafts":
+        return Promise.resolve([]);
+      case "count_pending_drafts":
+        return Promise.resolve(0);
+      case "record_usage":
+        return Promise.resolve({
+          id: "rec-x",
+          timestamp: "2026-05-23T10:00:00Z",
+          targetType: "macro",
+          targetId: null,
+          source: "macro_area",
+          modifierIds: null,
+          sopId: null,
+          sopStepOrder: null,
+          phaseId: null,
+        });
+      case "hide_window":
+        return Promise.resolve();
+      default:
+        return Promise.reject(new Error(`unexpected ${cmd}`));
+    }
+  }
 
   function findRecordUsageInputs() {
     return invokeMock.mock.calls
@@ -490,6 +500,38 @@ describe("Dashboard click → IPC flow", () => {
     expect(input.targetType).toBe("alignment");
     expect(input.source).toBe("phase_bar");
     expect(input.phaseId).toBe("phase-0");
+  });
+
+  // ADR-029 口径 7 applied at a real call site. The keyboard launcher copies a
+  // phase's default phrase; when that default is a CUE (中途 / ⌘9), the record
+  // must say `live_cue`, not `phase_bar`. A `phase_bar` record is what the
+  // drift ledger treats as an opening anchor, so getting this wrong would make
+  // 「停」 an anchor for every cue that followed it — permanently, because
+  // usage_records is append-only.
+  it("⌘1 records live_cue when the phase's default phrase is a cue", async () => {
+    invokeMock.mockImplementation((cmd: string) => {
+      if (cmd === "list_alignment_phrases") {
+        return Promise.resolve(
+          fakeAlignments.map((a, idx) =>
+            idx === 0 ? { ...a, kind: "cue", cueAxis: "layer" } : a,
+          ),
+        );
+      }
+      return baseInvoke(cmd);
+    });
+
+    render(<App />);
+    await screen.findByRole("button", { name: "借力最优解" });
+    fireEvent.keyDown(document, { key: "1", metaKey: true });
+    await waitFor(() =>
+      expect(findRecordUsageInputs().length).toBeGreaterThan(0),
+    );
+    const input = findRecordUsageInputs()[0].input as {
+      targetType: string;
+      source: string;
+    };
+    expect(input.targetType).toBe("alignment");
+    expect(input.source).toBe("live_cue");
   });
 
   it("after ⌘1 the StatusBar reflects the active phase name", async () => {

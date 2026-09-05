@@ -31,9 +31,10 @@ const RECENT_USAGE_LIMIT_MAX: i64 = 100;
 
 use crate::error::{AppError, AppResult};
 use repo_core::models::{
-    AlignmentPhrase, Composition, Draft, DraftPayload, DraftStatus, DraftSummary, DraftTargetType,
-    Macro, Modifier, Phase, Phrase, RecentUsageEntry, RecordUsageInput, Scene, SceneWithChildren,
-    SubStage, UsageRecord,
+    AlignmentAxisValue, AlignmentAxisValueWithRefs, AlignmentPhrase, AlignmentPhraseCoordinates,
+    AxisKind, Composition, Draft, DraftPayload, DraftStatus, DraftSummary, DraftTargetType,
+    DriftLedger, Macro, Modifier, Phase, Phrase, RecentUsageEntry, RecordUsageInput, Scene,
+    SceneWithChildren, SubStage, UsageRecord,
 };
 use repo_core::trash::{AssetKind, TrashEntry};
 use repo_core::{repo, DraftRepo, RepoError};
@@ -546,29 +547,126 @@ pub fn reorder_modifiers(
 // drafts. Reorder is scoped to a single phase; delete refuses the phase default
 // (B2: alignment phrases are the protocol layer, every phase keeps one default).
 
+// `coordinates` is optional on the wire so a caller that only knows about
+// name/content (every call site before ADR-029) keeps working unchanged: absent
+// means an opening phrase with no coordinates, which is what those callers were
+// creating implicitly all along.
 #[tauri::command]
 pub fn create_alignment_phrase(
     state: State<'_, AppState>,
     phase_id: String,
     name: String,
     content: String,
+    coordinates: Option<AlignmentPhraseCoordinates>,
 ) -> AppResult<AlignmentPhrase> {
+    let coords = coordinates.unwrap_or_default();
     with_write_conn(&state, |c| {
-        repo_write::create_alignment_phrase(c, &phase_id, &name, &content)
+        repo_write::create_alignment_phrase(c, &phase_id, &name, &content, &coords)
     })
 }
 
+// Both optional args mean "the caller said nothing", which is NOT the same as
+// "the caller said empty". `notes` absent leaves the existing note alone (it is
+// the companion of a content revision, not a field every edit rewrites — 06-prd
+// §6.6); `coordinates` absent leaves `kind` and all four coordinate columns
+// alone, which is what keeps the plain name/content editor from demoting a live
+// cue to an opening phrase without anyone asking it to.
 #[tauri::command]
 pub fn update_alignment_phrase(
     state: State<'_, AppState>,
     id: String,
     name: String,
     content: String,
+    notes: Option<String>,
+    coordinates: Option<AlignmentPhraseCoordinates>,
 ) -> AppResult<OkAck> {
     with_write_conn(&state, |c| {
-        repo_write::update_alignment_phrase(c, &id, &name, &content)
+        repo_write::update_alignment_phrase(
+            c,
+            &id,
+            &name,
+            &content,
+            notes.as_deref(),
+            coordinates.as_ref(),
+        )
     })?;
     Ok(OkAck { ok: true })
+}
+
+// ── Alignment coordinate axes (ADR-029) ──────────────────────────────────────
+// The value lists behind the three coordinate axes. Not assets: no trash, no
+// deprecation, hard delete. The list read carries the two reference counts the
+// delete confirmation needs, so no separate count command exists — the moment
+// you need the counts is always the moment you already needed the list
+// (06-prd §6.6-bis).
+
+#[tauri::command]
+pub fn list_alignment_axis_values(
+    state: State<'_, AppState>,
+) -> AppResult<Vec<AlignmentAxisValueWithRefs>> {
+    with_conn(&state, repo::list_alignment_axis_values)
+}
+
+#[tauri::command]
+pub fn create_alignment_axis_value(
+    state: State<'_, AppState>,
+    axis: String,
+    name: String,
+    hint: Option<String>,
+) -> AppResult<AlignmentAxisValue> {
+    let axis = parse_axis(&axis)?;
+    with_write_conn(&state, |c| {
+        repo_write::create_alignment_axis_value(c, axis, &name, hint.as_deref())
+    })
+}
+
+#[tauri::command]
+pub fn update_alignment_axis_value(
+    state: State<'_, AppState>,
+    id: String,
+    name: String,
+    hint: Option<String>,
+) -> AppResult<OkAck> {
+    with_write_conn(&state, |c| {
+        repo_write::update_alignment_axis_value(c, &id, &name, hint.as_deref())
+    })?;
+    Ok(OkAck { ok: true })
+}
+
+/// Irreversible: there is no trash for axis values. Phrases pointing at the
+/// deleted value fall back to "unconstrained on that axis", trashed ones
+/// included. The UI must confirm first, reporting both counts.
+#[tauri::command]
+pub fn delete_alignment_axis_value(state: State<'_, AppState>, id: String) -> AppResult<OkAck> {
+    with_write_conn(&state, |c| repo_write::delete_alignment_axis_value(c, &id))?;
+    Ok(OkAck { ok: true })
+}
+
+#[tauri::command]
+pub fn reorder_alignment_axis_values(
+    state: State<'_, AppState>,
+    axis: String,
+    ordered_ids: Vec<String>,
+) -> AppResult<OkAck> {
+    let axis = parse_axis(&axis)?;
+    with_write_conn(&state, |c| {
+        repo_write::reorder_alignment_axis_values(c, axis, &ordered_ids)
+    })?;
+    Ok(OkAck { ok: true })
+}
+
+fn parse_axis(axis: &str) -> AppResult<AxisKind> {
+    AxisKind::parse(axis)
+        .ok_or_else(|| AppError::Repo(RepoError::Other(format!("unknown axis `{axis}`"))))
+}
+
+/// The drift ledger (ADR-029 子决策 4): how many live cues followed each opening
+/// phrase, per axis, split by that phrase's last content revision. A read, and
+/// only ever counts — the status dashboard must not render it as a verdict
+/// (01-spec §8.1).
+#[tauri::command]
+pub fn summarize_drift_ledger(state: State<'_, AppState>) -> AppResult<DriftLedger> {
+    with_conn(&state, repo::summarize_drift_ledger)
 }
 
 #[tauri::command]

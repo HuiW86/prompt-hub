@@ -472,7 +472,7 @@ mod tests {
         let phases: i64 = restored
             .query_row("SELECT COUNT(*) FROM phases", [], |r| r.get(0))
             .expect("count phases in snapshot");
-        assert_eq!(phases, 8, "snapshot must carry committed seed rows");
+        assert_eq!(phases, 9, "snapshot must carry committed seed rows");
     }
 
     #[test]

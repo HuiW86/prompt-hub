@@ -35,6 +35,7 @@ const SUMMARY: ImportSummary = {
   phases: 0,
   alignmentPhrases: 0,
   compositions: 0,
+  alignmentAxisValues: 16,
 };
 
 describe("SettingsModal — data page export/import", () => {

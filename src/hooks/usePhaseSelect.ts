@@ -1,5 +1,6 @@
 import { useCallback } from "react";
 
+import { alignmentUsageSource } from "../ipc/usageSource";
 import { useAppStore } from "../stores/appStore";
 import { usePromptStore } from "../stores/promptStore";
 
@@ -31,7 +32,10 @@ export function usePhaseSelect() {
         {
           targetType: "alignment",
           targetId: def.id,
-          source: "phase_bar",
+          // ⌘9 copies 中途's default, which is a cue — it records `live_cue`,
+          // not `phase_bar`, so 中途 can never become an opening anchor in the
+          // drift ledger (06-prd §6.8).
+          source: alignmentUsageSource(def, "phase_bar"),
           modifierIds: null,
           sopId: null,
           sopStepOrder: null,

@@ -1,6 +1,11 @@
 import { useCopy } from "../hooks/useCopy";
 import { useRegionNav } from "../hooks/useRegionNav";
-import type { UsageTargetType } from "../ipc/types";
+import type {
+  RecentUsageEntry,
+  UsageSource,
+  UsageTargetType,
+} from "../ipc/types";
+import { alignmentUsageSource, findAlignmentPhrase } from "../ipc/usageSource";
 import { usePromptStore } from "../stores/promptStore";
 import { relativeTime } from "../utils/time";
 
@@ -20,8 +25,21 @@ const TYPE_LABELS: Record<UsageTargetType, string> = {
 
 export function RecentList() {
   const recent = usePromptStore((s) => s.recentUsage);
+  const alignmentPhrasesByPhase = usePromptStore(
+    (s) => s.alignmentPhrasesByPhase,
+  );
   const copy = useCopy();
   const onRegionKeyDown = useRegionNav();
+
+  // Only alignment rows can be cues; everything else keeps `recent`.
+  function sourceFor(entry: RecentUsageEntry): UsageSource {
+    if (entry.record.targetType !== "alignment") return "recent";
+    const phrase = findAlignmentPhrase(
+      alignmentPhrasesByPhase,
+      entry.record.targetId,
+    );
+    return phrase ? alignmentUsageSource(phrase, "recent") : "recent";
+  }
 
   return (
     <section
@@ -55,7 +73,10 @@ export function RecentList() {
                       {
                         targetType: entry.record.targetType,
                         targetId: entry.record.targetId,
-                        source: "recent",
+                        // Re-copying a cue from here records `live_cue`, not
+                        // `recent`: the class of the phrase decides, never the
+                        // region the click came from (06-prd §6.8).
+                        source: sourceFor(entry),
                         modifierIds: null,
                         sopId: null,
                         sopStepOrder: null,

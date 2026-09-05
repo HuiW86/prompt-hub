@@ -87,7 +87,7 @@ fn create_one(conn: &Connection, kind: AssetKind) -> String {
         AssetKind::AlignmentPhrase => {
             // Non-default on purpose: the phase default is still protected from
             // deletion (D-c), which ADR-028 did not reopen.
-            create_alignment_phrase(conn, "phase-diverge", "对齐话术", "body")
+            create_alignment_phrase(conn, "phase-diverge", "对齐话术", "body", &Default::default())
                 .expect("alignment phrase")
                 .id
         }
@@ -264,7 +264,8 @@ fn restoring_a_trashed_default_alignment_phrase_demotes_it_instead_of_failing() 
 
     // The slot is free now, so a second phrase can take the default.
     let successor =
-        create_alignment_phrase(&conn, "phase-diverge", "新的默认", "body").expect("create");
+        create_alignment_phrase(&conn, "phase-diverge", "新的默认", "body", &Default::default())
+            .expect("create");
     repo_write::set_default_alignment_phrase(&conn, "phase-diverge", &successor.id)
         .expect("appoint a new default while the old one is in the trash");
 
@@ -394,6 +395,7 @@ fn purge_trash_destroys_only_trashed_rows_and_leaves_the_schema_consistent() {
                 sop_id: None,
                 sop_step_order: None,
                 phase_id: None,
+                session_started_at: None,
             },
         )
         .expect("record usage");
@@ -409,6 +411,7 @@ fn purge_trash_destroys_only_trashed_rows_and_leaves_the_schema_consistent() {
             sop_id: None,
             sop_step_order: None,
             phase_id: Some("phase-diverge".to_string()),
+            session_started_at: None,
         },
     )
     .expect("record composition usage");

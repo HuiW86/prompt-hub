@@ -1,5 +1,5 @@
 #!/usr/bin/env node
-// Hotkey-wake benchmark — measure show()+set_focus() Rust call latency.
+// Hotkey-wake benchmark — measure fit_to_active_monitor + show() + focus + wake emit (Rust wake path) latency.
 //
 // Builds src-tauri with `--features bench`, spawns the resulting binary
 // which auto-cycles show/hide N times and emits JSON-line samples to
@@ -140,7 +140,9 @@ async function main() {
     ? "✗ OVER BUDGET"
     : "✓ within constitution C1 200ms budget";
   console.log("");
-  console.log("hotkey-wake results (show()+set_focus() Rust call):");
+  console.log(
+    "hotkey-wake results (fit_to_active_monitor + show() + focus + wake emit (Rust wake path)):",
+  );
   console.log(`  n      = ${ms.length}`);
   console.log(`  mean   = ${mean.toFixed(3)} ms`);
   console.log(`  p50    = ${p50.toFixed(3)} ms`);

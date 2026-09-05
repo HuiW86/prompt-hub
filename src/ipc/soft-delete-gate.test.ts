@@ -86,6 +86,14 @@ const EXPECTED_EXEMPTIONS = [
   "src-tauri/crates/repo-write/src/alignment_phrases.rs :: SELECT is_default, deleted_at FROM alignment_phr",
   // Restore reads the row it is about to bring back.
   "src-tauri/crates/repo-write/src/trash.rs :: SELECT phase_id, is_default FROM alignment_phras",
+  // ADR-029 `list_alignment_axis_values`: one of the two counts this read exists
+  // to produce is the number of TRASHED phrases pointing at each axis value.
+  // `ON DELETE SET NULL` is a SQL-level action that cannot see `deleted_at`, so
+  // deleting an axis value blanks their coordinates too — reporting only the
+  // live count would hide the half of the blast radius the user cannot check
+  // (06-prd §6.6-bis). The alive count in the same statement DOES carry the
+  // predicate; the marker covers the statement as a whole.
+  "src-tauri/crates/repo-core/src/repo.rs :: SELECT v.id, v.axis, v.name, v.hint, v.order_ind",
 ];
 
 // ── Source scanning ──────────────────────────────────────────────────────────

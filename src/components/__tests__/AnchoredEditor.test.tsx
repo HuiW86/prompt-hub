@@ -36,6 +36,12 @@ function makePhrase(over: Partial<AlignmentPhrase>): AlignmentPhrase {
     notes: null,
     deprecated: false,
     orderIndex: 0,
+    kind: "opening",
+    layerId: null,
+    domainId: null,
+    modeId: null,
+    cueAxis: null,
+    contentRevisedAt: null,
     ...over,
   };
 }

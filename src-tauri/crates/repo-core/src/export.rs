@@ -4,9 +4,10 @@ use serde::{Deserialize, Serialize};
 
 use crate::error::RepoResult;
 use crate::models::{
-    AlignmentPhrase, Composition, Macro, Modifier, Phase, Phrase, Scene, SubStage,
+    AlignmentAxisValue, AlignmentPhrase, AxisKind, Composition, Macro, Modifier, Phase, Phrase,
+    Scene, SubStage,
 };
-use crate::repo::{parse_ts, parse_ts_opt};
+use crate::repo::{alignment_phrase_from_row, hydrate_alignment_phrase, parse_ts, parse_ts_opt};
 
 // The data-layer schema version of the export envelope (PRD §6.9 / §7.7). This is
 // the `major.minor` contract for the JSON file itself, NOT the SQLite migration
@@ -16,7 +17,16 @@ use crate::repo::{parse_ts, parse_ts_opt};
 // 1.1 → 1.2: every asset row gained the optional `deletedAt` field (ADR-028).
 // Backward-compatible in both directions — a 1.1 file simply has no `deletedAt`
 // and deserializes as alive; a 1.2 file read by a 1.1 build ignores the field.
-pub const DATA_SCHEMA_VERSION: &str = "1.2";
+//
+// 1.2 → 1.3 (ADR-029): a new TOP-LEVEL key `alignment_axis_values`, six new
+// fields on every `alignment_phrases` row, and `sessionStartedAt` on usage
+// records (which this envelope does not carry). Compatibility is still judged
+// on MAJOR only, so 1.1 and 1.2 backups restore unchanged: a phrase with no
+// `kind` reads as an opening phrase and one with no coordinates reads as
+// unconstrained. This is the first new top-level key since 1.0 → 1.1, which is
+// why import.rs pins down what a MISSING key means as well as an empty one
+// (06-prd §6.9 rules ① and ②).
+pub const DATA_SCHEMA_VERSION: &str = "1.3";
 
 // The full-fidelity backup envelope (PRD §6.9). Unlike the read paths in `repo`,
 // every list here is UNFILTERED — deprecated assets, invisible phases/scenes AND
@@ -44,6 +54,14 @@ pub struct ExportBundle {
     pub phases: Vec<Phase>,
     pub alignment_phrases: Vec<AlignmentPhrase>,
     pub compositions: Vec<Composition>,
+    // ADR-029. Not an asset, but user content — the coordinate system the user
+    // defined for themselves — so unlike `settings` it travels with the export
+    // (06-prd §6.6-bis "与导出的关系"). `Option` is the wire contract, not
+    // laziness: `None` means the key was absent (a 1.1 / 1.2 file), which the
+    // import must treat as "leave this table alone", while `Some(vec![])` means
+    // the user really does have no axis values and the table should be emptied.
+    #[serde(default)]
+    pub alignment_axis_values: Option<Vec<AlignmentAxisValue>>,
 }
 
 /// Read every asset table at full fidelity and assemble the §6.9 export envelope.
@@ -59,6 +77,7 @@ pub fn export_bundle(conn: &Connection) -> RepoResult<ExportBundle> {
         phases: export_phases(conn)?,
         alignment_phrases: export_alignment_phrases(conn)?,
         compositions: export_compositions(conn)?,
+        alignment_axis_values: Some(export_alignment_axis_values(conn)?),
     })
 }
 
@@ -210,38 +229,62 @@ fn export_alignment_phrases(conn: &Connection) -> RepoResult<Vec<AlignmentPhrase
     // all, so that export-then-import is never a silent permanent delete.
     let mut stmt = conn.prepare(
         "SELECT id, phase_id, name, content, is_default, usage_count, last_used_at,
-                created_at, notes, deprecated, order_index, deleted_at
+                created_at, notes, deprecated, order_index, deleted_at,
+                kind, layer_id, domain_id, mode_id, cue_axis, content_revised_at
          FROM alignment_phrases
          ORDER BY phase_id ASC, order_index ASC, created_at ASC",
     )?;
-    let raw = stmt.query_map([], |row| {
-        Ok((
-            AlignmentPhrase {
-                id: row.get("id")?,
-                phase_id: row.get("phase_id")?,
-                name: row.get("name")?,
-                content: row.get("content")?,
-                is_default: row.get::<_, i64>("is_default")? != 0,
-                usage_count: row.get("usage_count")?,
-                last_used_at: None,
-                created_at: Utc::now(),
-                notes: row.get("notes")?,
-                deprecated: row.get::<_, i64>("deprecated")? != 0,
-                order_index: row.get("order_index")?,
-                deleted_at: None,
-            },
-            row.get::<_, Option<String>>("last_used_at")?,
-            row.get::<_, String>("created_at")?,
-            row.get::<_, Option<String>>("deleted_at")?,
-        ))
-    })?;
-    let mut out = Vec::new();
+    let raw = stmt
+        .query_map([], alignment_phrase_from_row)?
+        .collect::<rusqlite::Result<Vec<_>>>()?;
+    let mut out = Vec::with_capacity(raw.len());
     for r in raw {
-        let (mut ap, last, created, deleted) = r?;
-        ap.last_used_at = parse_ts_opt(last)?;
-        ap.created_at = parse_ts(created)?;
-        ap.deleted_at = parse_ts_opt(deleted)?;
-        out.push(ap);
+        out.push(hydrate_alignment_phrase(r)?);
+    }
+    Ok(out)
+}
+
+// The axis values, exactly five columns wide (06-prd §6.6-bis).
+//
+// This does NOT go through `repo::list_alignment_axis_values`, and the reason is
+// the whole point of `AlignmentAxisValue` being a separate struct from
+// `AlignmentAxisValueWithRefs`: `refCount` / `trashedRefCount` are computed per
+// query, so writing them into a backup file would freeze one machine's counts
+// into the import contract, where they would be wrong on every other machine.
+//
+// No soft-delete exemption marker: this table has no `deleted_at` column at all,
+// which is why it is not on the seventh gate's list of seven.
+fn export_alignment_axis_values(conn: &Connection) -> RepoResult<Vec<AlignmentAxisValue>> {
+    let mut stmt = conn.prepare(
+        "SELECT id, axis, name, hint, order_index
+         FROM alignment_axis_values
+         ORDER BY axis ASC, order_index ASC",
+    )?;
+    let rows = stmt
+        .query_map([], |row| {
+            Ok((
+                row.get::<_, String>("id")?,
+                row.get::<_, String>("axis")?,
+                row.get::<_, String>("name")?,
+                row.get::<_, Option<String>>("hint")?,
+                row.get::<_, i64>("order_index")?,
+            ))
+        })?
+        .collect::<rusqlite::Result<Vec<_>>>()?;
+    let mut out = Vec::with_capacity(rows.len());
+    for (id, axis, name, hint, order_index) in rows {
+        let axis = AxisKind::parse(&axis).ok_or_else(|| {
+            crate::error::RepoError::Other(format!(
+                "alignment_axis_values.axis holds unknown value `{axis}`"
+            ))
+        })?;
+        out.push(AlignmentAxisValue {
+            id,
+            axis,
+            name,
+            hint,
+            order_index,
+        });
     }
     Ok(out)
 }
@@ -445,9 +488,14 @@ mod tests {
         let conn = db::open_in_memory().expect("open db");
         let bundle = export_bundle(&conn).expect("export");
         assert_eq!(bundle.schema_version, DATA_SCHEMA_VERSION);
-        // Seed fixtures: 8 phases, 8 default alignment phrases, 4 macros, 3 scenes.
-        assert_eq!(bundle.phases.len(), 8);
-        assert_eq!(bundle.alignment_phrases.len(), 8);
+        // Seed fixtures after 0014: 9 phases, 20 alignment phrases (8 defaults +
+        // 6 form phrases + 6 live cues), 4 macros, 3 scenes, 16 axis values.
+        assert_eq!(bundle.phases.len(), 9);
+        assert_eq!(bundle.alignment_phrases.len(), 20);
+        assert_eq!(
+            bundle.alignment_axis_values.as_ref().map(Vec::len),
+            Some(16)
+        );
         assert_eq!(bundle.macros.len(), 4);
         assert_eq!(bundle.scenes.len(), 3);
     }
@@ -478,6 +526,6 @@ mod tests {
         let conn = db::open_in_memory().expect("open db");
         let json = export_json(&conn).expect("to json");
         let back: ExportBundle = serde_json::from_str(&json).expect("parse back");
-        assert_eq!(back.phases.len(), 8);
+        assert_eq!(back.phases.len(), 9);
     }
 }

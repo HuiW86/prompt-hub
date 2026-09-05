@@ -5,10 +5,12 @@
 // path N times, prints JSON-line samples to stdout, then exits the
 // process so the harness can collect the binary's output.
 //
-// macOS uses show() + orderFrontRegardless (mirroring lib.rs wake path
-// after the NSPanel isa-swizzle fix); other platforms keep show() +
-// set_focus(). Without this split, bench would call activateIgnoringOtherApps
-// via set_focus and stop reflecting real ⌥Space behavior.
+// Calls `crate::wake_on_main_thread` — the exact function the global-shortcut
+// handler and the macOS reopen handler call — rather than re-implementing it.
+// An earlier version inlined show() + orderFrontRegardless here, which meant
+// anything later added to the real wake path (the ADR-029 `wake` emit, for one)
+// was invisible to the benchmark. The measured sequence is now, in order:
+// fit_to_active_monitor -> show() -> platform focus -> emit `wake`.
 //
 // Scope caveat: measures the Rust call latency only. Does NOT include the
 // OS global-shortcut event dispatch (~10ms per M0-3 manual vs automated
@@ -76,11 +78,7 @@ fn wake_sample(app: &AppHandle) -> Option<u128> {
                 return;
             };
             let t0 = Instant::now();
-            let _ = window.show();
-            #[cfg(not(target_os = "macos"))]
-            let _ = window.set_focus();
-            #[cfg(target_os = "macos")]
-            crate::macos::order_front(&window);
+            crate::wake_on_main_thread(&window);
             let _ = tx.send(Some(t0.elapsed().as_micros()));
         })
         .ok()?;

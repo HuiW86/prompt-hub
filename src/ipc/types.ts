@@ -15,7 +15,24 @@ export type UsageSource =
   | "recent"
   | "sop"
   | "composition"
-  | "phase_bar";
+  | "phase_bar"
+  // ADR-029. The one value that names a phrase CLASS rather than an entry
+  // point: a live cue records this wherever it was copied from, so "recent"
+  // and "phase_bar" stop being the complete set of copies made from those
+  // regions. Deliberate overload — 06-prd §6.8.
+  | "live_cue";
+
+// Which kind of alignment phrase (ADR-029). Both kinds belong to a phase and
+// both obey the protocol/task separation; they differ in when they are used.
+export type PhraseKind = "opening" | "cue";
+
+// Which axis a live cue corrects. Includes "form", which has no coordinate
+// column of its own — form is carried by phaseId.
+export type CueAxis = "form" | "layer" | "domain" | "mode";
+
+// The three coordinate axes. No "form": that would be a second source of truth
+// for which phase a phrase belongs to.
+export type AxisKind = "layer" | "domain" | "mode";
 
 export interface Phase {
   id: string;
@@ -40,6 +57,94 @@ export interface AlignmentPhrase {
   deprecated: boolean;
   // Sort position WITHIN the phase (migration 0007, decision D-c).
   orderIndex: number;
+  // ── ADR-029 ────────────────────────────────────────────────────────────────
+  kind: PhraseKind;
+  // null on an axis means "unconstrained", NOT an axis value named 不限.
+  layerId: string | null;
+  domainId: string | null;
+  modeId: string | null;
+  // Only meaningful when kind === "cue"; null covers openings and 「停」.
+  cueAxis: CueAxis | null;
+  // When `content` last actually changed. Untouched by rename, coordinate
+  // edits and set-default, so the drift ledger's split point is not moved by
+  // edits that are not revisions.
+  contentRevisedAt: string | null;
+}
+
+// One value on one coordinate axis. Not an asset: no trash, no deprecation,
+// hard delete only (06-prd §6.6-bis).
+export interface AlignmentAxisValue {
+  id: string;
+  axis: AxisKind;
+  name: string;
+  hint: string | null;
+  orderIndex: number;
+}
+
+// What listAlignmentAxisValues returns. The two counts are computed per query,
+// never stored and never exported.
+//
+// `trashedRefCount` matters because ON DELETE SET NULL is a SQL-level action
+// that cannot see `deletedAt`: deleting an axis value blanks the coordinates of
+// TRASHED phrases too. Show it whenever it is greater than zero, or the delete
+// confirmation under-reports exactly the part of the blast radius the user
+// cannot check.
+export interface AlignmentAxisValueWithRefs extends AlignmentAxisValue {
+  refCount: number;
+  trashedRefCount: number;
+}
+
+// The ADR-029 classification + coordinates, sent as one payload by the create
+// and update commands. Omitting it entirely means "an opening phrase with no
+// coordinates" — the pre-ADR-029 behaviour.
+export interface AlignmentPhraseCoordinates {
+  kind: PhraseKind;
+  cueAxis: CueAxis | null;
+  layerId: string | null;
+  domainId: string | null;
+  modeId: string | null;
+}
+
+// ── Drift ledger (ADR-029 子决策 4) ───────────────────────────────────────────
+// Counts, never judgements. Do NOT render a threshold, a ranking or a verdict
+// from these numbers — 01-spec §8.1 forbids the app from judging alignment.
+
+export interface AxisTally {
+  form: number;
+  layer: number;
+  domain: number;
+  mode: number;
+}
+
+export interface AnchorDrift {
+  phraseId: string;
+  name: string;
+  revisedAt: string | null;
+  // Cues stamped strictly before revisedAt; everything else is `after`. With
+  // revisedAt === null there is no split point, so the whole tally is in
+  // `after` and `before` is all zeros. before + after is always the total.
+  before: AxisTally;
+  after: AxisTally;
+}
+
+export interface DriftLedger {
+  anchors: AnchorDrift[];
+  // Every attributable cue copy. Deliberately NOT the sum of the anchor
+  // tallies; every reason it can exceed them, so the gap is never read as a
+  // rounding error:
+  //   1. 「停」 — a halt, not a drift. No cueAxis, so it is filed nowhere.
+  //   2. A cue fired before any opening phrase in its session — no anchor to
+  //      attribute it to. Also in `unattributed`.
+  //   3. A cue whose ANCHOR phrase is in the trash — the record still bounds
+  //      the session, but an unlistable phrase cannot be shown as a row. Also
+  //      in `unattributed`.
+  //   4. A cue whose OWN phrase is in the trash — its axis cannot be resolved,
+  //      so like 「停」 it is filed nowhere. NOT in `unattributed`: it did have
+  //      an anchor.
+  // Records with no sessionStartedAt (everything written before migration 0014)
+  // are outside all of this and appear in no counter.
+  liveCueTotal: number;
+  unattributed: number;
 }
 
 export interface Macro {
@@ -139,8 +244,14 @@ export interface UsageRecord {
   sopId: string | null;
   sopStepOrder: number | null;
   phaseId: string | null;
+  // The wake this copy belonged to (ADR-029). null on every row written before
+  // migration 0014; the drift ledger skips those rather than inventing a
+  // session boundary for them.
+  sessionStartedAt: string | null;
 }
 
+// Callers leave sessionStartedAt off: the ipc layer stamps it from
+// sessionStore, so no call site has to remember which wake it is in.
 export interface RecordUsageInput {
   targetType: UsageTargetType;
   targetId: string | null;
@@ -149,6 +260,7 @@ export interface RecordUsageInput {
   sopId: string | null;
   sopStepOrder: number | null;
   phaseId: string | null;
+  sessionStartedAt?: string | null;
 }
 
 export interface RecentUsageEntry {
@@ -287,4 +399,8 @@ export interface ImportSummary {
   phases: number;
   alignmentPhrases: number;
   compositions: number;
+  // null when the backup carried no `alignment_axis_values` key at all (a 1.1 /
+  // 1.2 file): the table did not take part in the restore, which is not the
+  // same statement as "restored zero rows".
+  alignmentAxisValues: number | null;
 }

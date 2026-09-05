@@ -59,14 +59,49 @@ fn wake_main_window(app: &tauri::AppHandle) {
     let Some(window) = app.get_webview_window("main") else {
         return;
     };
-    let _ = app.run_on_main_thread(move || {
-        fit_to_active_monitor(&window);
-        let _ = window.show();
-        #[cfg(not(target_os = "macos"))]
-        let _ = window.set_focus();
-        #[cfg(target_os = "macos")]
-        macos::wake(&window);
-    });
+    let _ = app.run_on_main_thread(move || wake_on_main_thread(&window));
+}
+
+// The wake itself, already on the main thread. Split out from
+// `wake_main_window` so the bench harness measures THIS — the same sequence the
+// chord runs, emit included — instead of its own copy of it. A bench that
+// re-implements the path it is timing stops being a measurement of the path
+// (the emit added by ADR-029 sat outside the old bench's stopwatch entirely).
+#[cfg(desktop)]
+pub(crate) fn wake_on_main_thread(window: &tauri::WebviewWindow) {
+    fit_to_active_monitor(window);
+    let _ = window.show();
+    #[cfg(not(target_os = "macos"))]
+    let _ = window.set_focus();
+    #[cfg(target_os = "macos")]
+    macos::wake(window);
+    // AFTER the window is up, never before: the C1 budget is measured to the
+    // moment the overlay is on screen, and nothing about this stamp is worth a
+    // millisecond of it. Formatting one timestamp is all that happens here — no
+    // database, no lock, no allocation worth naming.
+    //
+    // This is the session boundary the drift ledger groups by (ADR-029 子决策 4
+    // / HANDOFF 21.1): every usage record written until the next wake carries
+    // this value, which is what makes "the cues that followed this opening
+    // phrase" a bounded question instead of a search through all history.
+    emit_wake(window);
+}
+
+// One `wake` event carrying the moment this summon happened. The frontend
+// stamps every usage record with it; a record written before any wake (a dev
+// window, a test) falls back to the renderer's own start time, and one written
+// by a build older than this carries NULL, which the ledger skips.
+#[cfg(desktop)]
+fn emit_wake(window: &tauri::WebviewWindow) {
+    use tauri::Emitter;
+    let started_at = chrono::Utc::now().to_rfc3339();
+    if let Err(e) = window.emit(
+        "wake",
+        serde_json::json!({ "sessionStartedAt": started_at }),
+    ) {
+        // A dropped stamp costs one session's attribution, not the wake itself.
+        log::warn!("failed to emit wake event: {e}");
+    }
 }
 
 // Fatal-startup handler: surface `message` in a native error dialog, then
@@ -412,6 +447,12 @@ pub fn run() {
             commands::delete_alignment_phrase,
             commands::reorder_alignment_phrases,
             commands::set_default_alignment_phrase,
+            commands::list_alignment_axis_values,
+            commands::create_alignment_axis_value,
+            commands::update_alignment_axis_value,
+            commands::delete_alignment_axis_value,
+            commands::reorder_alignment_axis_values,
+            commands::summarize_drift_ledger,
             commands::create_composition,
             commands::update_composition,
             commands::delete_composition,

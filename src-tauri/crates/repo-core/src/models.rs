@@ -17,6 +17,165 @@ pub struct Phase {
     pub default_alignment_phrase_id: Option<String>,
 }
 
+// Which kind of alignment phrase this is (ADR-029 子决策 3). Both kinds are
+// alignment phrases, both belong to a phase, both obey the protocol/task
+// separation of 02-constitution B2 — the difference is WHEN they are used and,
+// consequently, which `source` their copy records.
+//
+// A column rather than an inference from `phase_id`: the six cues are seeded
+// under 中途, but a phase is user-editable, so storing "this is a cue" in "which
+// phase it happens to sit in" loses the fact the moment anyone moves it.
+#[derive(Debug, Serialize, Deserialize, Copy, Clone, PartialEq, Eq, Default)]
+#[serde(rename_all = "snake_case")]
+pub enum PhraseKind {
+    #[default]
+    Opening,
+    Cue,
+}
+
+impl PhraseKind {
+    pub fn as_str(self) -> &'static str {
+        match self {
+            PhraseKind::Opening => "opening",
+            PhraseKind::Cue => "cue",
+        }
+    }
+
+    pub fn parse(s: &str) -> Option<Self> {
+        match s {
+            "opening" => Some(PhraseKind::Opening),
+            "cue" => Some(PhraseKind::Cue),
+            _ => None,
+        }
+    }
+}
+
+// Which axis a live cue corrects, for the per-axis drift tally. Includes `Form`,
+// which has no coordinate column at all (form is carried by phase_id) — that is
+// half the reason this is its own column rather than a reuse of the three
+// coordinates (ADR-029 口径 3).
+#[derive(Debug, Serialize, Deserialize, Copy, Clone, PartialEq, Eq, Hash)]
+#[serde(rename_all = "snake_case")]
+pub enum CueAxis {
+    Form,
+    Layer,
+    Domain,
+    Mode,
+}
+
+impl CueAxis {
+    pub fn as_str(self) -> &'static str {
+        match self {
+            CueAxis::Form => "form",
+            CueAxis::Layer => "layer",
+            CueAxis::Domain => "domain",
+            CueAxis::Mode => "mode",
+        }
+    }
+
+    pub fn parse(s: &str) -> Option<Self> {
+        match s {
+            "form" => Some(CueAxis::Form),
+            "layer" => Some(CueAxis::Layer),
+            "domain" => Some(CueAxis::Domain),
+            "mode" => Some(CueAxis::Mode),
+            _ => None,
+        }
+    }
+}
+
+// The three coordinate axes an AlignmentAxisValue can belong to. Deliberately
+// NOT the same set as CueAxis: there is no `form` axis here because form is
+// phase_id, and a `Form` row in this table would be a second source of truth
+// for which phase a phrase belongs to (06-prd §6.6 字段设计理由).
+#[derive(Debug, Serialize, Deserialize, Copy, Clone, PartialEq, Eq, Hash)]
+#[serde(rename_all = "snake_case")]
+pub enum AxisKind {
+    Layer,
+    Domain,
+    Mode,
+}
+
+impl AxisKind {
+    pub fn as_str(self) -> &'static str {
+        match self {
+            AxisKind::Layer => "layer",
+            AxisKind::Domain => "domain",
+            AxisKind::Mode => "mode",
+        }
+    }
+
+    pub fn parse(s: &str) -> Option<Self> {
+        match s {
+            "layer" => Some(AxisKind::Layer),
+            "domain" => Some(AxisKind::Domain),
+            "mode" => Some(AxisKind::Mode),
+            _ => None,
+        }
+    }
+
+    /// The `alignment_phrases` column this axis writes into. Used to validate
+    /// that a coordinate id actually belongs to the axis it is being assigned to.
+    pub fn phrase_column(self) -> &'static str {
+        match self {
+            AxisKind::Layer => "layer_id",
+            AxisKind::Domain => "domain_id",
+            AxisKind::Mode => "mode_id",
+        }
+    }
+}
+
+// One value on one coordinate axis (06-prd §6.6-bis). NOT an asset: no
+// `deleted_at`, no `deprecated`, no `usage_count`. This is exactly the five
+// columns of the table and exactly what the export carries — the read-only
+// reference counts live on `AlignmentAxisValueWithRefs` instead, so they cannot
+// leak into a backup file and become part of the import contract.
+#[derive(Debug, Serialize, Deserialize, Clone, PartialEq, Eq)]
+#[serde(rename_all = "camelCase")]
+pub struct AlignmentAxisValue {
+    pub id: String,
+    pub axis: AxisKind,
+    pub name: String,
+    pub hint: Option<String>,
+    pub order_index: i64,
+}
+
+// What `list_alignment_axis_values` returns: the row plus the two counts the
+// delete confirmation needs. Both are computed per query, never stored.
+//
+// `trashed_ref_count` is not decoration. `ON DELETE SET NULL` is a SQL-level
+// action and SQL has never heard of `deleted_at`, so deleting an axis value
+// blanks the coordinates of trashed phrases too — reporting only the live count
+// would under-report exactly the part of the blast radius the user cannot see
+// (06-prd §6.6-bis).
+#[derive(Debug, Serialize, Deserialize, Clone)]
+#[serde(rename_all = "camelCase")]
+pub struct AlignmentAxisValueWithRefs {
+    #[serde(flatten)]
+    pub value: AlignmentAxisValue,
+    pub ref_count: i64,
+    pub trashed_ref_count: i64,
+}
+
+// The ADR-029 classification + coordinate fields, as one payload shared by the
+// create and update write paths (and therefore by their two Tauri commands).
+// Grouped rather than spread over five more positional parameters: they are
+// edited together in one form and validated together against the axis table.
+#[derive(Debug, Serialize, Deserialize, Clone, Default)]
+#[serde(rename_all = "camelCase")]
+pub struct AlignmentPhraseCoordinates {
+    #[serde(default)]
+    pub kind: PhraseKind,
+    #[serde(default)]
+    pub cue_axis: Option<CueAxis>,
+    #[serde(default)]
+    pub layer_id: Option<String>,
+    #[serde(default)]
+    pub domain_id: Option<String>,
+    #[serde(default)]
+    pub mode_id: Option<String>,
+}
+
 #[derive(Debug, Serialize, Deserialize, Clone)]
 #[serde(rename_all = "camelCase")]
 pub struct AlignmentPhrase {
@@ -37,6 +196,27 @@ pub struct AlignmentPhrase {
     // only the export (full fidelity) and the trash surfaces ever see Some.
     #[serde(default)]
     pub deleted_at: Option<DateTime<Utc>>,
+    // ── ADR-029 ──────────────────────────────────────────────────────────────
+    // All six default when absent, which is what lets a 1.1 / 1.2 backup file
+    // deserialize into this struct: a phrase with no `kind` is an opening
+    // phrase, and a phrase with no coordinates is unconstrained on every axis
+    // (06-prd §6.9 compatibility clause).
+    #[serde(default)]
+    pub kind: PhraseKind,
+    // NULL on any axis means "unconstrained", NOT a row named 不限.
+    #[serde(default)]
+    pub layer_id: Option<String>,
+    #[serde(default)]
+    pub domain_id: Option<String>,
+    #[serde(default)]
+    pub mode_id: Option<String>,
+    // Only meaningful when `kind == Cue`; NULL covers both openings and 「停」.
+    #[serde(default)]
+    pub cue_axis: Option<CueAxis>,
+    // When `content` last actually changed — the ledger's before/after split
+    // point. Untouched by rename, coordinate edits and set-default.
+    #[serde(default)]
+    pub content_revised_at: Option<DateTime<Utc>>,
 }
 
 #[derive(Debug, Serialize, Deserialize, Clone)]
@@ -215,6 +395,14 @@ pub enum UsageSource {
     Sop,
     Composition,
     PhaseBar,
+    // ADR-029: the one value that is a phrase CLASS rather than an entry point.
+    // A cue copied from the recents strip records this, not `Recent`; ⌘9 from
+    // the phase bar records this, not `PhaseBar`. Judged purely by the phrase's
+    // `kind`, never by where the user clicked (06-prd §6.8). The cost is that
+    // `Recent` / `PhaseBar` stop being the complete set of copies made from
+    // those regions; the gain is that the 中途 phase can never be mistaken for
+    // an opening anchor, since anchors are `PhaseBar` records.
+    LiveCue,
 }
 
 impl UsageSource {
@@ -226,6 +414,20 @@ impl UsageSource {
             UsageSource::Sop => "sop",
             UsageSource::Composition => "composition",
             UsageSource::PhaseBar => "phase_bar",
+            UsageSource::LiveCue => "live_cue",
+        }
+    }
+
+    pub fn parse(s: &str) -> Option<Self> {
+        match s {
+            "macro_area" => Some(UsageSource::MacroArea),
+            "scene" => Some(UsageSource::Scene),
+            "recent" => Some(UsageSource::Recent),
+            "sop" => Some(UsageSource::Sop),
+            "composition" => Some(UsageSource::Composition),
+            "phase_bar" => Some(UsageSource::PhaseBar),
+            "live_cue" => Some(UsageSource::LiveCue),
+            _ => None,
         }
     }
 }
@@ -242,6 +444,13 @@ pub struct UsageRecord {
     pub sop_id: Option<String>,
     pub sop_step_order: Option<i64>,
     pub phase_id: Option<String>,
+    // ADR-029: the wake this copy belonged to. Identical for every record made
+    // during one summon; NULL for everything written before migration 0014 and
+    // for any caller that does not know its session. Stored on the record
+    // rather than in a sessions table because a session here has no attributes
+    // — GROUP BY this column is the whole concept (06-prd §6.8).
+    #[serde(default)]
+    pub session_started_at: Option<DateTime<Utc>>,
 }
 
 #[derive(Debug, Serialize, Deserialize, Clone)]
@@ -254,6 +463,92 @@ pub struct RecordUsageInput {
     pub sop_id: Option<String>,
     pub sop_step_order: Option<i64>,
     pub phase_id: Option<String>,
+    // Absent = "no session known", which the ledger skips rather than guesses.
+    #[serde(default)]
+    pub session_started_at: Option<DateTime<Utc>>,
+}
+
+// ── Drift ledger (ADR-029 子决策 4 / 06-prd §6.8) ─────────────────────────────
+// Counts, never judgements. "This phrase was followed by 7 layer cues" is
+// bookkeeping; "this phrase is weak on the layer axis" is a verdict, and
+// 01-spec §8.1 forbids the app from reaching one. Nothing here carries a
+// threshold, a rank or a recommendation, and the status dashboard must not
+// render one either.
+
+/// Per-axis cue tally for one segment of one anchor phrase.
+#[derive(Debug, Serialize, Deserialize, Clone, Copy, Default, PartialEq, Eq)]
+#[serde(rename_all = "camelCase")]
+pub struct AxisTally {
+    pub form: i64,
+    pub layer: i64,
+    pub domain: i64,
+    pub mode: i64,
+}
+
+impl AxisTally {
+    fn bump(&mut self, axis: CueAxis) {
+        match axis {
+            CueAxis::Form => self.form += 1,
+            CueAxis::Layer => self.layer += 1,
+            CueAxis::Domain => self.domain += 1,
+            CueAxis::Mode => self.mode += 1,
+        }
+    }
+}
+
+/// One opening phrase and the cues that followed it inside the same wake.
+///
+/// `before` holds the cues whose timestamp is strictly earlier than
+/// `revised_at`; everything else is `after`. When `revised_at` is None the
+/// phrase's content has never changed, so there is no split point and nothing
+/// can be earlier than it — the whole tally sits in `after`, and `before` is
+/// all zeros. `before + after` is therefore always the phrase's full attributed
+/// total, split or not.
+#[derive(Debug, Serialize, Deserialize, Clone)]
+#[serde(rename_all = "camelCase")]
+pub struct AnchorDrift {
+    pub phrase_id: String,
+    pub name: String,
+    pub revised_at: Option<DateTime<Utc>>,
+    pub before: AxisTally,
+    pub after: AxisTally,
+}
+
+/// The whole ledger: per-anchor tallies plus the two session-level totals.
+///
+/// `live_cue_total` counts every attributable cue copy. It is deliberately NOT
+/// the sum of the anchor tallies, and every reason it can exceed them is listed
+/// here so the gap is never mistaken for a rounding error (ADR-029 子决策 4):
+///
+///   1. **「停」** — a halt, not a drift. It has no `cue_axis`, so it is counted
+///      and filed in no column (06-prd §6.8 step 4).
+///   2. **A cue fired before any opening phrase in its session** — there is no
+///      anchor to attribute it to. Also counted in `unattributed`.
+///   3. **A cue whose ANCHOR phrase is in the trash** — the anchor record still
+///      bounds the session, but a phrase nobody can list cannot be shown as a
+///      row. Also counted in `unattributed`.
+///   4. **A cue whose OWN phrase is in the trash** — its axis cannot be
+///      resolved, so like 「停」 it is counted and filed nowhere. NOT counted in
+///      `unattributed`: it did have an anchor.
+///
+/// Rows whose `session_started_at` is NULL (everything written before migration
+/// 0014) are outside all of these — they never enter the algorithm at all and
+/// appear in no counter.
+#[derive(Debug, Serialize, Deserialize, Clone)]
+#[serde(rename_all = "camelCase")]
+pub struct DriftLedger {
+    pub anchors: Vec<AnchorDrift>,
+    pub live_cue_total: i64,
+    pub unattributed: i64,
+}
+
+impl AnchorDrift {
+    pub(crate) fn count(&mut self, axis: CueAxis, at: DateTime<Utc>) {
+        match self.revised_at {
+            Some(revised) if at < revised => self.before.bump(axis),
+            _ => self.after.bump(axis),
+        }
+    }
 }
 
 // A recent usage entry enriched with the title/content of its target, so the UI

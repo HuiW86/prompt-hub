@@ -96,7 +96,31 @@ const invoked = new Set(
   ),
 );
 
+// The exact size of the command surface. Not a guard against drift between the
+// three sources — the set comparisons below do that — but against silent GROWTH:
+// every new command is a new piece of attack surface and a new thing to keep in
+// sync, so adding one should require editing this number and saying why.
+//
+// 56 → 62 with ADR-029: five commands for the coordinate axis values (list /
+// create / update / delete / reorder) and one for the drift ledger. The axis
+// reference counts deliberately did NOT get a command of their own — they ride
+// on the list read, because the moment you need them is the moment you already
+// needed the list (06-prd §6.6-bis).
+const EXPECTED_COMMAND_COUNT = 62;
+
 describe("IPC contract — commands.rs / lib.rs / ipc/index.ts stay in sync", () => {
+  it("exposes exactly the expected number of commands", () => {
+    expect(defined.size, "command count changed in commands.rs").toBe(
+      EXPECTED_COMMAND_COUNT,
+    );
+    expect(registered.size, "command count changed in lib.rs").toBe(
+      EXPECTED_COMMAND_COUNT,
+    );
+    expect(invoked.size, "command count changed in ipc/index.ts").toBe(
+      EXPECTED_COMMAND_COUNT,
+    );
+  });
+
   it("parses a plausible number of commands from each side", () => {
     // Guard the parsers themselves: if a refactor breaks a regex, the sets
     // would drain to zero and the equality checks below would pass vacuously.

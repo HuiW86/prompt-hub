@@ -1,13 +1,20 @@
 import { invoke } from "@tauri-apps/api/core";
 
+import { currentSessionStartedAt } from "../stores/sessionStore";
+
 import type {
+  AlignmentAxisValue,
+  AlignmentAxisValueWithRefs,
   AlignmentPhrase,
+  AlignmentPhraseCoordinates,
+  AxisKind,
   Composition,
   Draft,
   DraftPayload,
   DraftStatus,
   DraftSummary,
   DraftTargetType,
+  DriftLedger,
   GroupKind,
   ImportSummary,
   Macro,
@@ -71,8 +78,21 @@ export const ipc = {
   countTodayUsage: () => invoke<number>("count_today_usage"),
   // suppressHide=true keeps the window after the copy (D-0 整理态); omitted /
   // false preserves 调用态 复制即隐藏.
+  //
+  // The session stamp (ADR-029) is applied HERE, not at the call sites: which
+  // wake a copy belongs to is a property of the app's state, not of the button
+  // that was pressed, and putting it in one place is what keeps the drift
+  // ledger from silently losing records whenever a new copy path is added. A
+  // caller that has already set it wins, which is what makes the behaviour
+  // testable without a live wake event.
   recordUsage: (input: RecordUsageInput, suppressHide?: boolean) =>
-    invoke<UsageRecord>("record_usage", { input, suppressHide }),
+    invoke<UsageRecord>("record_usage", {
+      input: {
+        ...input,
+        sessionStartedAt: input.sessionStartedAt ?? currentSessionStartedAt(),
+      },
+      suppressHide,
+    }),
   hideWindow: () => invoke<void>("hide_window"),
   showWindow: () => invoke<void>("show_window"),
   // True when the wake chord registered at startup (or at the last rebind).
@@ -171,25 +191,38 @@ export const ipc = {
   // ── AlignmentPhrase direct editing (plan asset-editing §0 Q2/Q6, decision
   // D-c) — Tauri-only. reorder is scoped to one phase; delete refuses the
   // phase default at the backend.
+  // `coordinates` omitted = an opening phrase with no coordinates, which is
+  // exactly what every call site created before ADR-029.
   createAlignmentPhrase: (args: {
     phaseId: string;
     name: string;
     content: string;
+    coordinates?: AlignmentPhraseCoordinates;
   }) =>
     invoke<AlignmentPhrase>("create_alignment_phrase", {
       phaseId: args.phaseId,
       name: args.name,
       content: args.content,
+      coordinates: args.coordinates,
     }),
+  // `notes` omitted = leave the existing note alone; it is the companion of a
+  // content revision, not a field every edit rewrites. The backend stamps
+  // `contentRevisedAt` only when `content` actually differs from what is
+  // stored, so renaming or re-coordinating never moves the ledger's split
+  // point (06-prd §6.6).
   updateAlignmentPhrase: (args: {
     id: string;
     name: string;
     content: string;
+    notes?: string;
+    coordinates?: AlignmentPhraseCoordinates;
   }) =>
     invoke<OkAck>("update_alignment_phrase", {
       id: args.id,
       name: args.name,
       content: args.content,
+      notes: args.notes,
+      coordinates: args.coordinates,
     }),
   deleteAlignmentPhrase: (id: string) =>
     invoke<OkAck>("delete_alignment_phrase", { id }),
@@ -202,6 +235,46 @@ export const ipc = {
       phaseId: args.phaseId,
       id: args.id,
     }),
+
+  // ── Alignment coordinate axes (ADR-029) — Tauri-only. The value lists behind
+  // the three coordinate axes. Not assets: no trash, hard delete, and the
+  // delete is irreversible, so it must be confirmed with both counts from
+  // listAlignmentAxisValues shown. There is no separate count command on
+  // purpose — needing the counts and needing the list are the same moment.
+  listAlignmentAxisValues: () =>
+    invoke<AlignmentAxisValueWithRefs[]>("list_alignment_axis_values"),
+  createAlignmentAxisValue: (args: {
+    axis: AxisKind;
+    name: string;
+    hint?: string;
+  }) =>
+    invoke<AlignmentAxisValue>("create_alignment_axis_value", {
+      axis: args.axis,
+      name: args.name,
+      hint: args.hint,
+    }),
+  updateAlignmentAxisValue: (args: {
+    id: string;
+    name: string;
+    hint?: string;
+  }) =>
+    invoke<OkAck>("update_alignment_axis_value", {
+      id: args.id,
+      name: args.name,
+      hint: args.hint,
+    }),
+  // Irreversible. Phrases pointing at the value fall back to "unconstrained on
+  // that axis", trashed ones included.
+  deleteAlignmentAxisValue: (id: string) =>
+    invoke<OkAck>("delete_alignment_axis_value", { id }),
+  reorderAlignmentAxisValues: (axis: AxisKind, orderedIds: string[]) =>
+    invoke<OkAck>("reorder_alignment_axis_values", { axis, orderedIds }),
+
+  // The drift ledger (ADR-029 子决策 4): how many live cues followed each
+  // opening phrase, per axis, split by that phrase's last content revision.
+  // Counts only — never render a threshold, a ranking or a verdict from them
+  // (01-spec §8.1).
+  summarizeDriftLedger: () => invoke<DriftLedger>("summarize_drift_ledger"),
 
   // ── Composition direct editing (plan asset-editing §0 Q2/Q6, decision A +
   // per-phase) — Tauri-only. The body is a modifierIds array (decision D-b);

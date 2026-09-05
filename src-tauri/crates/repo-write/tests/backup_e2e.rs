@@ -26,7 +26,7 @@ fn count(conn: &Connection, table: &str) -> i64 {
         .expect("count")
 }
 
-/// Checklist A: the exported JSON declares schema_version 1.1 and omits the
+/// Checklist A: the exported JSON declares its schema_version and omits the
 /// non-portable tables entirely (keys absent, not empty arrays).
 #[test]
 fn exported_json_shape_matches_data_contract() {
@@ -40,14 +40,20 @@ fn exported_json_shape_matches_data_contract() {
     // trash would turn export-then-import into a silent permanent delete. Minor
     // bump on purpose — `check_schema_version` gates on MAJOR, so 1.1 files
     // written before this still import.
-    assert_eq!(obj["schema_version"], "1.2");
+    //
+    // 1.2 → 1.3 with ADR-029: a new top-level `alignment_axis_values` key plus
+    // six new fields on every alignment phrase. Still a minor bump, still
+    // gated on MAJOR, so 1.1 and 1.2 files continue to import.
+    assert_eq!(obj["schema_version"], "1.3");
 
     // D2 + SOP-not-shipped: these keys must be ABSENT from the envelope.
     assert!(!obj.contains_key("usage_records"), "usage_records must not export");
     assert!(!obj.contains_key("sops"), "sops must not export");
     assert!(!obj.contains_key("sop_steps"), "sop_steps must not export");
 
-    // The 8 asset tables that DO round-trip.
+    // The 8 asset tables that DO round-trip, plus the axis values — user
+    // content that is not an asset, and the first row of this file where "not
+    // an asset" and "not exported" come apart (06-prd §6.6-bis).
     for key in [
         "modifiers",
         "macros",
@@ -57,9 +63,21 @@ fn exported_json_shape_matches_data_contract() {
         "phases",
         "alignment_phrases",
         "compositions",
+        "alignment_axis_values",
     ] {
         assert!(obj[key].is_array(), "missing asset array: {key}");
     }
+
+    // Exported axis values carry exactly the five stored columns. refCount /
+    // trashedRefCount are computed per query and belong to the list command
+    // only — writing them here would freeze one machine's counts into the
+    // import contract, where they are wrong everywhere else.
+    let first = obj["alignment_axis_values"][0]
+        .as_object()
+        .expect("an axis value");
+    let mut keys: Vec<&str> = first.keys().map(String::as_str).collect();
+    keys.sort_unstable();
+    assert_eq!(keys, vec!["axis", "hint", "id", "name", "orderIndex"]);
 }
 
 /// Checklist A + C / D2: a usage_record present before backup is never written

@@ -2672,6 +2672,7 @@ dependencies = [
 name = "prompt-hub"
 version = "0.2.0"
 dependencies = [
+ "chrono",
  "log",
  "objc2",
  "objc2-app-kit",

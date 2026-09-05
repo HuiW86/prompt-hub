@@ -17,6 +17,7 @@ import { usePromptStore } from "../stores/promptStore";
 import { useToastStore } from "../stores/toastStore";
 import { toUserMessage } from "../utils/errorMessage";
 import type { AlignmentPhrase } from "../ipc/types";
+import { alignmentUsageSource } from "../ipc/usageSource";
 
 import { ActionCluster, IconButton, PhraseFormEditor } from "./primitives";
 import primitiveStyles from "./primitives/primitives.module.css";
@@ -209,7 +210,9 @@ export function AlignmentPhrases() {
                   {
                     targetType: "alignment",
                     targetId: p.id,
-                    source: "phase_bar",
+                    // A cue records `live_cue` wherever it is copied from, so
+                    // it can never be mistaken for an opening anchor.
+                    source: alignmentUsageSource(p, "phase_bar"),
                     modifierIds: null,
                     sopId: null,
                     sopStepOrder: null,

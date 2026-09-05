@@ -3,6 +3,7 @@ import { useCallback, useEffect, useMemo, useRef } from "react";
 import { useCopy } from "../hooks/useCopy";
 import { useSearchResults } from "../hooks/useSearchResults";
 import type { AlignmentPhrase, Macro, Phrase } from "../ipc/types";
+import { alignmentUsageSource } from "../ipc/usageSource";
 import {
   SEARCH_LISTBOX_ID,
   searchOptionId,
@@ -103,7 +104,7 @@ export function SearchOverlay() {
             targetType: "alignment",
             targetId: item.ap.id,
             // TODO(ADR-011): set source: "search"
-            source: "phase_bar",
+            source: alignmentUsageSource(item.ap, "phase_bar"),
             modifierIds: null,
             sopId: null,
             sopStepOrder: null,
