@@ -1,13 +1,13 @@
 ---
 type: test-spec
 project: prompt-hub
-version: v0.10
+version: v0.11
 created: 2026-05-19
 last_modified: 2026-09-04
-status: ratified # v0.10 于 2026-09-04 同法归档（[[CLAUDE#§5.1.2]]，§4.x 属记录类）：omar 撤销 [[07-features#§1]] `verified` 判据的 ② ③ 条，本版只随之改两处措辞——§4.1 表头注明「门过 + 留证登记 = `verified` 全部条件」，§4.2 前的 v0.8 提示补一句该行已于 2026-09-04 升 `verified`。**本版增量不含任何新的代码事实断言**（零代码改动、零新测试、计数全部不动：前端 457 / Rust 183 / gate 7 / IPC 56），故无可反查项，非「跳过反查」。v0.9 于 2026-09-03 同法归档：新增 §4.4 **G5 走查记录**（ADR-028 首个真机门，八项全通过）+ §4.1 G5 行 + §4.3 O3 转「真机已复跑」+ 教训 10 / 11。反查结果 **5 处不一致，全部按代码改正后才写入**（toast 不在 header DOM 里 / 动作簇与整理模式无关 / 说明行漏一个空格 / 确认按钮另有 `aria-label` / 清空还发一条 toast，逐条见 §4.4 反查说明）。测试计数不动（457 / 183，G5 零代码改动）。v0.8 于 2026-09-03 按 [[CLAUDE#§5.1.2]]「日志不签字」反查归档（§2 计数 / §3 gate 盘面 / §4 Rust 盘面 / §4.3 走查记录属记录类，不进人审队列；数字两轮全部由本机重跑 `pnpm test` 与 `cargo test --workspace` 重新导出，非沿用）；v0.7 同日同法归档（ts-recheck 62 条核 / 8 处修正 / 21 条真机观测无法从代码核）；v0.5 于 2026-09-01 人审批次 ③ ratified。v0.8 内容：ADR-028 **P0（`77637cd`）+ P1（`6aca7eb`）**涟漪——前端 414→457 / Rust 169→183 / 源码级 gate 6→7 / IPC 53→56 / 观察 O3 闭合
+status: ratified # v0.11 于 2026-09-04 归档（[[HANDOFF]] 第 21.3 项落地涟漪）：两处改动都属**记录类**，按 [[CLAUDE#§5.1.2]] 不进人审队列——① §1 分层表 Rust 行的「覆盖范围」列补「启动自检」一词（`open_and_migrate` 迁移前跑 `PRAGMA quick_check`）。**这是描述该层覆盖到哪些模块，不是改测试分层本身**；§1 中真正属图纸的三层结构、工具与触发时机一字未动 ② §2 / §4 计数刷新：前端 457 → **461**（组件组 244 → 248，全在 `SettingsModal`）、Rust 183 → **192**（repo-core unit 49 → 58，`backup.rs` +7 / `db.rs` +2）。**两个数都是本机实跑导出、不抄任何人给的数**（`vitest --reporter=json` 逐文件相加 91 + 28 + 248 + 17 + 77 = 461 与表头自洽；`cargo test --workspace` 12 行 `test result:` 相加 192），verifier 复跑确认。gate 仍 **7** / IPC 仍 **56** / `user_version` 仍 **13** ③ 新增 §4.5 **G6 走查记录**（五项全通过、零缺陷零代码改动）+ §4.1 增 G6 行 + 教训续到 **12**。G6 属 §4.x 记录类，同法反查归档：逐句对 `/tmp/ph-walk/shots/G6-run-*.log` 与 `backup.rs` / `db.rs` 源码核过，未验的四项（`pre-import` 路径 / 1 MiB 滚动 / 后台每小时线程 / 忙碌守卫）**据实列在 §4.5 末段，不算通过**。前端 chunk `index-6Y1huvpK.js`。v0.10 于 2026-09-04 同法归档（[[CLAUDE#§5.1.2]]，§4.x 属记录类）：omar 撤销 [[07-features#§1]] `verified` 判据的 ② ③ 条，本版只随之改两处措辞——§4.1 表头注明「门过 + 留证登记 = `verified` 全部条件」，§4.2 前的 v0.8 提示补一句该行已于 2026-09-04 升 `verified`。**本版增量不含任何新的代码事实断言**（零代码改动、零新测试、计数全部不动：前端 457 / Rust 183 / gate 7 / IPC 56），故无可反查项，非「跳过反查」。v0.9 于 2026-09-03 同法归档：新增 §4.4 **G5 走查记录**（ADR-028 首个真机门，八项全通过）+ §4.1 G5 行 + §4.3 O3 转「真机已复跑」+ 教训 10 / 11。反查结果 **5 处不一致，全部按代码改正后才写入**（toast 不在 header DOM 里 / 动作簇与整理模式无关 / 说明行漏一个空格 / 确认按钮另有 `aria-label` / 清空还发一条 toast，逐条见 §4.4 反查说明）。测试计数不动（457 / 183，G5 零代码改动）。v0.8 于 2026-09-03 按 [[CLAUDE#§5.1.2]]「日志不签字」反查归档（§2 计数 / §3 gate 盘面 / §4 Rust 盘面 / §4.3 走查记录属记录类，不进人审队列；数字两轮全部由本机重跑 `pnpm test` 与 `cargo test --workspace` 重新导出，非沿用）；v0.7 同日同法归档（ts-recheck 62 条核 / 8 处修正 / 21 条真机观测无法从代码核）；v0.5 于 2026-09-01 人审批次 ③ ratified。v0.8 内容：ADR-028 **P0（`77637cd`）+ P1（`6aca7eb`）**涟漪——前端 414→457 / Rust 169→183 / 源码级 gate 6→7 / IPC 53→56 / 观察 O3 闭合
 author: ai # 🤖 AI 主笔 + 人审（CLAUDE §5.2）
 audience: [ai, human]
-description: prompt-hub 测试规格——前端 Vitest 457 用例 + Rust workspace 183 + 7 源码级 gate + CI 双 job + C1 bench gate + 真机门 G1–G5；LLM Eval N/A
+description: prompt-hub 测试规格——前端 Vitest 461 用例 + Rust workspace 192 + 7 源码级 gate + CI 双 job + C1 bench gate + 真机门 G1–G6；LLM Eval N/A
 related:
   - 06-prd
   - 07-features
@@ -23,7 +23,7 @@ related:
 > 覆盖率目标见 [[07-features#§5]]。
 >
 > **标注约定**（沿用文档体系三标）：📊 实测（有命令输出背书，标注口径日期）/ 🎯 目标（规格要求，未必已落地）/ ⚠️ 红线（违反即 block）。
-> 本版 📊 数字口径：前端与 Rust 均为 **2026-09-03 本机实测，基线 `main` @ `6aca7eb`（ADR-028 P0+P1）**——`pnpm test`（JSON reporter 逐文件计数，**457 / 41**）+ `cargo test --workspace`（**183**，逐 suite 从 `test result:` 行相加）。未单独标注日期的条目沿用 2026-08-20 口径。
+> 本版 📊 数字口径：前端与 Rust 均为 **2026-09-04 本机实测**（[[HANDOFF]] 第 21.3 项落地后，工作树未提交）——`pnpm exec vitest run --reporter=json`（逐文件计数分组相加 91 + 28 + 248 + 17 + 77 = **461 / 41 文件**）+ `cargo test --workspace`（12 行 `test result:` 相加 **192**）。前端 chunk `index-6Y1huvpK.js`。未单独标注日期的条目沿用 2026-08-20 口径。
 >
 > **v0.3 全量刷新**：v0.2 的口径停在 2026-07-02，其间前端 154→**373**、Rust 135→**158**、源码级 gate 4→**6**、IPC 命令 48→**51**。数字标了日期不算说谎，但**差了一个半月和两倍用例量的规格文件已无参考价值**——v0.3 把全部 📊 推到当日实测。
 >
@@ -57,7 +57,7 @@ v0.1 规划的四层金字塔已落地为下表实际形态（Playwright E2E 层
 |---|---|---|---|
 | 前端单元 + 集成 | Vitest 4（jsdom + `src/test/setup.ts`，含 `popover` shim） | stores / hooks / 组件渲染与交互 / App Tab cycle | 本地 `pnpm test` + CI frontend job |
 | 源码级 gate | Vitest（文本级解析源码，共 **7** 个，见 §3） | token 纪律 / B2 物理分离 / IPC 三方契约 / 文档引用契约 / 密度层单调性 / 双光主题对等 / **软删除读路径过滤** | 同上（7 个全部随 `pnpm test` 跑）|
-| Rust 单元 + 集成 | cargo test `--workspace`（tempfile SQLite fixture + trybuild） | repo-core / repo-write / MCP server / 迁移 / 备份 | 本地 + CI rust job |
+| Rust 单元 + 集成 | cargo test `--workspace`（tempfile SQLite fixture + trybuild） | repo-core / repo-write / MCP server / 迁移 / 备份 / **启动自检** | 本地 + CI rust job |
 | 性能基准 | 自研 bench 脚本（`bench/*.bench.mjs`） | 唤起延迟（C1）/ 冷启动 | 主形态路径改动后手动跑；hotkey-wake 兼作自动化 gate（§5） |
 | E2E（Playwright） | 🎯 未落地 | 完整用户 flow（快捷键 / 窗口切换） | —— 现由 ADR-012 Phase 5 式真机验收（screencapture + 手点）临时顶位 |
 
@@ -67,7 +67,11 @@ v0.1 规划的四层金字塔已落地为下表实际形态（Playwright E2E 层
 
 ## §2 前端 Vitest 盘面
 
-📊 **457 用例 / 41 测试文件，全绿**（2026-09-03 第九笔实测，`main` @ `6aca7eb`；v0.5 口径 398 于 2026-08-20 逐文件计数）。
+📊 **461 用例 / 41 测试文件，全绿**（2026-09-04 第十笔实测，[[HANDOFF]] 第 21.3 项落地后；v0.5 口径 398 于 2026-08-20 逐文件计数）。
+
+> **v0.11 +4（第 21.3 项 · 设置弹窗忙碌守卫）**：全部落在 `SettingsModal` 10→**14**——忙碌中 Esc 不关窗 / 忙碌中点遮罩不关窗 / 忙碌中点 × 不关窗 / 导入 settle 后可关，另有空闲态点遮罩仍可关一条作对照。**文件数不变**（41），新增用例进的是既有文件。这四条守的是 `import_data` 转 async 之后新出现的窗口：主线程不再冻结，于是「冻结」这个意外的互斥没了。
+>
+> ⚠️ **jsdom 只能验一半**：「导入真的在跑」在这里是个替身（`dataBusy` 由测试直接置位），真机上那半边归 G6。
 
 > v0.3 记 373 / 37。**+22 的逐文件构成经 worktree 对拍取得，不是估算**：新增 `utils/__tests__/accelerator.test.ts` **9** + `components/__tests__/HotkeyRecorder.test.tsx` **7**；既有文件 `settingsStore` 8→11、`HotkeyBanner` 5→7；**`token-gate` 39→40 是它自己长出来的**——该 gate 按 CSS module 文件枚举用例，新增的 `HotkeyRecorder.module.css` 自动入册并通过。这一条顺带证明 [[CLAUDE#§4]] 4.1 的 token 纪律确实盖住了新组件，而不靠人记得去查。
 >
@@ -93,7 +97,7 @@ v0.1 规划的四层金字塔已落地为下表实际形态（Playwright E2E 层
 |---|---|---|---|
 | stores（7 文件） | 91 | `src/stores/__tests__/{appStore 2, promptStore 45, searchStore 4, settingsStore 11, toastStore 16, updaterStore 12}.test.ts` + `src/stores/prompt/__tests__/helpers 1` | Zustand store actions / 复制失败可见 + toast intent 分级与**让位规则** / updater 状态机 / draft 计数联动 / **软删除恢复与废纸篓 slice** |
 | hooks（4 文件） | 28 | `src/hooks/__tests__/{useAnchoredPosition 13, useRegionNav 8, useCopy 4, useSearchResults 3}` | **锚定定位与滚动祖先订阅**（ADR-025）/ 区域内漫游导航 / 复制 / 搜索结果派生 |
-| 组件（21 文件） | 244 | `src/App.test.tsx` 27 + `src/components/__tests__/*`：ScenePanel 54 / ScenePropertiesEditor 22 / AnchoredEditor 26 / SearchOverlay 17 / DraftInbox 15 / **TrashSection 12** / SettingsModal 10 / HotkeyRecorder 10 / AlignmentPhrases 9 / MacroGrid 8 / HotkeyBanner 7 / ScenePanelFocusRestore 5 / ModifierGrid 4 / UpdaterBanner 4 / ErrorBoundary 3 / ModeToggle 3 / PhaseBar 3 / SearchBar 3 / RecentList 1 / StatusBar 1 | 组件渲染 / 交互 / Tab cycle 6 区断言（[[03-product-spec#13.4]]）/ 编辑器关闭规则表分支 / **一键删除 + 撤销 toast** / **废纸篓列表 · 恢复 · 清空** |
+| 组件（21 文件） | 248 | `src/App.test.tsx` 27 + `src/components/__tests__/*`：ScenePanel 54 / ScenePropertiesEditor 22 / AnchoredEditor 26 / SearchOverlay 17 / DraftInbox 15 / **TrashSection 12** / **SettingsModal 14** / HotkeyRecorder 10 / AlignmentPhrases 9 / MacroGrid 8 / HotkeyBanner 7 / ScenePanelFocusRestore 5 / ModifierGrid 4 / UpdaterBanner 4 / ErrorBoundary 3 / ModeToggle 3 / PhaseBar 3 / SearchBar 3 / RecentList 1 / StatusBar 1 | 组件渲染 / 交互 / Tab cycle 6 区断言（[[03-product-spec#13.4]]）/ 编辑器关闭规则表分支 / **一键删除 + 撤销 toast** / **废纸篓列表 · 恢复 · 清空** |
 | utils（2 文件） | 17 | `src/utils/__tests__/errorMessage.test.ts` 8 + `src/utils/__tests__/accelerator.test.ts` 9 | IPC 错误信息归一 / 快捷键 accelerator 解析与格式化 |
 | 源码级 gate（7 文件） | 77 | token-gate 41 / **soft-delete-gate 12** / theme-parity 8 / ipc-contract 6 / b2-separation 5 / density-gate 3 / doc-refs-gate 2 | 见 §3 |
 
@@ -153,12 +157,12 @@ v0.1 规划的四层金字塔已落地为下表实际形态（Playwright E2E 层
 
 ## §4 Rust workspace 测试盘面
 
-📊 **183 用例，全绿**（2026-09-03 第九笔实测 `cargo test --workspace --manifest-path src-tauri/Cargo.toml`；2026-09-02 口径 169，**ADR-028 P0 +13 / P1 +1**）：
+📊 **192 用例，全绿**（2026-09-04 第十笔实测 `cargo test --workspace --manifest-path src-tauri/Cargo.toml`；2026-09-03 口径 183，**第 21.3 项 +9**）：
 
 | crate / suite | 用例数 📊 | 覆盖对象 |
 |---|---|---|
 | repo-write（unit） | 99 | 全部写路径 CRUD / promote 4 arm / reorder / `move_phrase` + MoveReceipt / **七处原地软删 + `restore_asset` + `purge_trash`**（tempfile SQLite fixture） |
-| repo-core（unit） | 49 | 读路径（除 §3.7 登记豁免的 8 处外均带 `deleted_at IS NULL`——7 处导出 + 1 处废纸篓视图就在本 crate）/ 迁移（含 `open_and_migrate` 两条负路径）/ `count_pending_drafts` 等 free fn。**本轮 +3**：`db.rs` 两条 `0013` 迁移测试（在有数据的库上加列后原行仍存活 / 重建后的默认索引让废纸篓里的默认话术腾出名额）+ `repo.rs` 一条最近使用区（软删后该行消失、恢复后带着历史回来）|
+| repo-core（unit） | 58 | 读路径（除 §3.7 登记豁免的 8 处外均带 `deleted_at IS NULL`——7 处导出 + 1 处废纸篓视图就在本 crate）/ 迁移（含 `open_and_migrate` 两条负路径）/ `count_pending_drafts` 等 free fn。**v0.11 +9（第 21.3 项）**：`backup.rs` **+7**——分前缀配额（一类快照的风暴挤不掉另一类）/ 哈希去重（库没变就复用旧快照、变了才落新盘）/ **`Unchanged` 仍刷 mtime**（verifier 抓出的 D1：不刷则每日排期永远结不清，每小时白跑一次 `VACUUM INTO`）/ **扫掉中断留下的 `.tmp`**（D3）/ `daily` 配额 7 / due 判定（无快照或最近一份满 24h）/ 同秒写入按写序排列；`db.rs` **+2**——健康库通过 `quick_check`、逐页写坏的库被拒绝且不 panic。**v0.8 +3**：`db.rs` 两条 `0013` 迁移测试（在有数据的库上加列后原行仍存活 / 重建后的默认索引让废纸篓里的默认话术腾出名额）+ `repo.rs` 一条最近使用区（软删后该行消失、恢复后带着历史回来）|
 | prompt-hub-mcp（unit） | 8 | MCP server 工具层 |
 | prompt-hub-mcp `tests/e2e.rs` | 6 | MCP 14 tool 端到端 |
 | prompt-hub-mcp `tests/trybuild_negative.rs` | 1 | 编译期负例（禁 import repo-write 写面，B 类边界的类型层强制） |
@@ -186,6 +190,7 @@ E2E 层缺位期间，**布局 / 层叠 / 定位类改动一律由带编号的�
 | **G3（四项）**| ADR-027 全局唤起键可配置 | **四项全通过**（2026-08-20，见 §4.2）。项 2 一度判为「不可达」，补上冲突提示后**转为可观测并通过**。**omar 当日另行真机走查，未发现问题**（人工目视，不可回归；覆盖到哪几项未逐条记录）|
 | **G4（二十四项）**| features §7 留证缺口清单（v1.19） | **21 通过（W1–W12 / W14–W19 / W21 / W23 / W24）/ 2 不可达（W13、W20）/ 1 部分（W22）**（2026-09-02 走查，W18 / W21 于同日复跑转通过，见 §4.3）。首次按**发布形态**走查（裸 release 二进制内嵌 dist，非 dev + vite）；发现三个此前所有门都没抓到的缺陷 D1–D3 |
 | **G5（八项）**| ADR-028 删除可撤销（P0 + P1） | **八项全通过**（2026-09-03，见 §4.4）。删除全链路一次走完：迁移 → 一键删除 → 撤销 toast → 撤销恢复 → 废纸篓列表 → 单条恢复 → 最近区无墓碑（**G4 观察 O3 在真机闭合**）→ 清空确认与硬删。**零缺陷、零代码改动**。**一项明确不在覆盖内**：祖先复活路径未真机跑，理由见 §4.4 |
+| **G6（五项）**| [[HANDOFF]] 第 21.3 项可靠性底座 | **五项全通过**（2026-09-04，见 §4.5）。空库首启落日志与两份快照 → 同日再启不重拍 → 拨老 25h 且改过数据则重拍 → 拨老 25h 未改数据则复用并刷 mtime → 打坏 `macros` 根页后启动弹阻断框、退出码 1、`backups/` 未被触碰。**零缺陷、零代码改动**。**四项明确不在覆盖内**：`pre-import` 快照路径 / 1 MiB 日志滚动 / 后台每小时线程跨长会话 / 设置弹窗忙碌守卫，理由见 §4.5 末段 |
 
 #### 4.2 G3 门项（v0.4 新增 · 涟漪 [[027-configurable-global-hotkey]]）
 
@@ -308,6 +313,37 @@ E2E 层缺位期间，**布局 / 层叠 / 定位类改动一律由带编号的�
 
 10. ⚠️ **合成点击对「悬停才出现的控件」太快**：一次自带 `mouseMoved` 紧接 `mouseDown` 的合成点击，React 还没渲染出动作簇，点击就落到了**下面那张裸卡片**上——在调用态这等于一次复制 + 一次隐藏窗口，不是本来要点的删除。可靠序列是**移动 → 等约 1 秒 → 截图确认簇已出现 → 再单独发一次点击**。另外，**卡级交互一律在整理态做**：那里误点卡片本体既不复制也不隐藏窗口，而调用态会（§4.3 教训 5 是同一根源的另一面——那条讲「别误触发复制」，这条讲「悬停控件要等它出现」）
 11. **本机坐标换算：物理像素 ÷ 2 = 逻辑点**（@2x），本轮以点中「整理」切换按钮实测确认，不靠推算。另一条省事的定位经验：**撤销 toast（那块压在 header 带上的浮层）里「撤销」按钮距屏幕右边缘的偏移是固定的**，与资产名长短无关——toast 右对齐（`right: var(--s-8)`），名字变长只会把左边缘推出去，按钮不动
+
+### 4.5 G6 走查记录（v0.11 新增 · 2026-09-04 · [[HANDOFF]] 第 21.3 项可靠性底座）
+
+**这一门验的是什么**：启动自检、自动备份、落盘日志三件事的失败形态**在界面上一模一样**——快照没落盘、日志没写、自检没跑，用户看到的窗口没有任何区别。Rust 单测证得了「函数被调用且返回对了」，证不了「那份文件真的躺在那儿」。所以本门的主证据不是截图，是**隔离 `HOME` 下的 `~/Library/Logs/dev.prompt-hub/prompt-hub.log` 与 `backups/` 目录列表**。
+
+**环境**（照 §4.3 教训 4 的既有口径）：`pnpm tauri build --no-bundle` 在当前工作树重建裸 release，内嵌 chunk `index-6Y1huvpK.js` 与 `dist/assets/` 一致；隔离 `HOME=/tmp/ph-g6-home`；真实资产库全程未触碰。
+
+> ⚠️ **本门与前几门有一处不同：不需要退出正式版**。`/Applications/prompt-hub.app`（0.2.0，PID 51541）全程在跑并持有 ⌥Space——G6 五项没有一项需要唤起窗口，全部靠进程启停与文件系统取证。前几门那条「须先退出正式版」的前置在这里不适用。
+
+**证据**：`/tmp/ph-walk/shots/G6-run-1.log` / `G6-run-2.log` / `G6-run-3.log`（脚本全程输出）+ `G6-5-dialog.png`。
+
+| # | 门项 | 结果 | 证据 |
+|---|---|---|---|
+| G6-1 | 空库首启：日志落盘 + 迁移前后两类快照 | ✅ | 日志文件 **1618 B**，含 13 条 `migration N (name) applied`、一条 `prompt-hub 0.2.0 started: db=… user_version=13 quick_check=ok`、一条 `backup written: …/daily-1788589364.db`；`backups/` 两份——`pre-migrate-1788589364.db`（**4096 B**，迁移前拍的空库）与 `daily-1788589364.db`（**208896 B**，迁移后的完整库）。两者体积差本身就是「快照拍在迁移之前」的证据 |
+| G6-2 | 同日再启不重复拍 | ✅ | 日志只多一条 `started`，**无 `backup` 行**；`backups/` 文件数与内容均不变 |
+| G6-3 | 拨老 25h + 改过数据 → 重拍 | ✅ | 把 daily 快照 mtime 拨老 25h 并改一条 `macros.name` 后启动：日志 `backup written: …/daily-1788589667.db`，`backups/` 出现第二份 daily |
+| G6-4 | 拨老 25h + 未改数据 → 复用并刷 mtime | ✅ | 日志 `backup unchanged, kept …/daily-1788589364.db (daily)`，文件数不变；**被保留文件的 mtime 刷成当次时刻**——verifier 抓出的 D1 修复在真机可见（不刷则每日排期永远结不清，每小时白跑一次 `VACUUM INTO`）|
+| G6-5 | 库损坏 → 阻断弹框 + 退出码 1 + 不动备份 | ✅ | `PRAGMA wal_checkpoint(TRUNCATE)` 后向 `macros` 根页（**page 19**）写 800 字节随机数据；`sqlite3` 自身 `quick_check` 报 **4 条 cell offset 越界**。启动 → 原生弹框「prompt-hub failed to start」，正文含**库路径 + 四行 quick_check 错误 + `backups/` 路径 + 四步恢复指引**（另存坏库 / 换最近快照 / 删 `-wal` 与 `-shm` / 重启）；按 Return 后进程退出码 **1**；日志两条 ERROR（`quick_check failed: …` 与 `startup aborted: …`，含同样全文）；**`backups/` 未被触碰** |
+
+**不在本门覆盖内的四项（据实记，不算通过）**：
+
+1. **`pre-import` 快照路径本门未走**——它是既有能力，G5 之前已验；本门三种触发只真机走了 `pre-migrate` 与 `daily` 两种
+2. **1 MiB 日志滚动是否真保留一份旧文件未跑**——本门日志最大才 1618 B，离滚动阈值三个数量级
+3. **后台每小时线程跨长会话未观测**——本门靠拨 mtime 模拟时间流逝，进程都是启了就退；「一个开着不动的应用会不会在第 61 分钟自己拍一份」没验
+4. **设置弹窗忙碌守卫只有 jsdom**——它是 §3.16 第四行，本门未覆盖；jsdom 里「导入真的在跑」只是个替身（`dataBusy` 由测试直接置位）
+
+**取证方法教训（续 §4.4，编号接 12）**：
+
+12. ⚠️ **首轮 G6-5 两次没检出，不是自检没生效，是损坏没造成**。两个原因叠在一起：① **进程被 SIGTERM 结束不跑退出 checkpoint**，WAL 里留着那些页的干净副本，而读页时 WAL 优先——主文件里刚写进去的垃圾被整个盖住，`quick_check` 照样报 `ok` ② **page 2 是无关页**，写坏了也不参与 b-tree 校验。造损坏的正确做法是**先 `PRAGMA wal_checkpoint(TRUNCATE)` 把 WAL 清空，再打某张表的根页**。这条与 §4.3 教训「走查记录里的根因，修之前再读一遍代码」是同一类错误：**看到「没报错」就写成「功能没生效」，而真相是输入根本没送到**。判一项「验不过」之前先证明**被测条件确实成立**
+
+---
 
 ## §5 性能基准（regression test）
 

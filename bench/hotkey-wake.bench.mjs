@@ -13,8 +13,9 @@
 
 import { spawn, spawnSync } from "node:child_process";
 import { fileURLToPath } from "node:url";
-import { dirname, resolve } from "node:path";
-import { existsSync } from "node:fs";
+import { dirname, join, resolve } from "node:path";
+import { existsSync, mkdtempSync, rmSync } from "node:fs";
+import { tmpdir } from "node:os";
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
 const REPO = resolve(__dirname, "..");
@@ -25,6 +26,18 @@ const RUN_TIMEOUT_MS = 60_000;
 // Constitution C1: 主形态唤起 ≤ 200ms P95. Exceeding it exits non-zero so
 // this script can gate CI / pre-release checks, not just print a verdict.
 const C1_BUDGET_MS = 200;
+
+// The binary resolves its database through Tauri's app_data_dir(), which on
+// macOS is $HOME/Library/Application Support/<identifier> — so a bench run
+// under the real HOME opens, migrates and writes the developer's own library.
+// A worktree binary can therefore silently migrate the live database to a
+// schema the installed build does not understand. Every spawn below gets a
+// throwaway HOME instead; the DB is created from scratch inside it (db.rs
+// create_dir_all) and deleted when the run ends. The cargo build keeps the
+// real HOME — it needs ~/.cargo.
+function makeSandboxHome() {
+  return mkdtempSync(join(tmpdir(), "ph-bench-"));
+}
 
 function build() {
   console.log("cargo build --features bench …");
@@ -47,9 +60,12 @@ function build() {
   }
 }
 
-function runAndCollect() {
+function runAndCollect(home) {
   return new Promise((resolveP, rejectP) => {
-    const proc = spawn(BINARY, [], { stdio: ["ignore", "pipe", "pipe"] });
+    const proc = spawn(BINARY, [], {
+      stdio: ["ignore", "pipe", "pipe"],
+      env: { ...process.env, HOME: home },
+    });
     const samples = [];
     let buf = "";
     let done = false;
@@ -105,8 +121,14 @@ function percentile(sorted, p) {
 
 async function main() {
   build();
-  console.log(`spawn ${BINARY} (auto-cycle bench mode) …`);
-  const samples = await runAndCollect();
+  const home = makeSandboxHome();
+  console.log(`spawn ${BINARY} (auto-cycle bench mode, HOME=${home}) …`);
+  let samples;
+  try {
+    samples = await runAndCollect(home);
+  } finally {
+    rmSync(home, { recursive: true, force: true });
+  }
   const ms = samples.map((us) => us / 1000);
   const sorted = [...ms].sort((a, b) => a - b);
   const mean = ms.reduce((s, x) => s + x, 0) / ms.length;

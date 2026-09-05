@@ -1,10 +1,10 @@
 ---
 type: product-spec
 project: prompt-hub
-version: v0.26
+version: v0.27
 created: 2026-05-18
 last_modified: 2026-09-04
-status: ratified  # v0.26 于 2026-09-04 经 omar 签字（人审批次 ⑨，与 [[06-prd]] v0.15 同批；两个裁点——spec §3.5 补第 9 行 / `⌘9` 顶掉当前相位记为已知代价——均按推荐通过）。起草说明——[[029-alignment-coordinates-and-drift-ledger]] 图纸回流：第 9 相位「中途」入相位带（`⌘9`）+ 对齐话术三列可空坐标（复制时拼前缀）+ 中途口令隐式记账 + 状态栏一格口令计数 + 轴取值就地可配。**本版是图纸，尚未落地**，代码里一行都还没有。按 [[CLAUDE#§5.1.2]] 属图纸类改动（改的是「应该长什么样」），需 omar 签字后才转 ratified。前 v0.25 于 2026-09-03 人审批次 ⑧ 经 omar 签字（与 [[06-prd]] v0.14 / [[05-design-spec]] v0.22 同批），内容为 §13.3 新增「删除语义统一契约」+ 区域 9 废纸篓与「导出含废纸篓」告知 + 编辑容器契约 c 的 Esc 阶梯减一级；更前 v0.24 / v0.23 见文末修订记录
+status: draft  # **待 omar 签**。v0.27（2026-09-04 · [[HANDOFF]] 第 21.3 项回流）**只加一条契约**：§13.3 区域 9「数据页忙碌中弹窗不可关」——导入 / 导出进行中，Esc 被认领后无事发生、遮罩与 × 无效，按钮态显 disabled。**本批唯一裁点：导入中禁止关窗（推荐：通过）**——理由是 `import_data` 转 async 之后主线程不再冻结，而「主线程冻结」此前恰好是唯一挡着用户在导入期间改资产的东西，这条守卫是 async 化之后的唯一互斥，不是交互偏好。其余一字未动。前 v0.26 于 2026-09-04 经 omar 签字（人审批次 ⑨，与 [[06-prd]] v0.15 同批；两个裁点——spec §3.5 补第 9 行 / `⌘9` 顶掉当前相位记为已知代价——均按推荐通过）。起草说明——[[029-alignment-coordinates-and-drift-ledger]] 图纸回流：第 9 相位「中途」入相位带（`⌘9`）+ 对齐话术三列可空坐标（复制时拼前缀）+ 中途口令隐式记账 + 状态栏一格口令计数 + 轴取值就地可配。**本版是图纸，尚未落地**，代码里一行都还没有。按 [[CLAUDE#§5.1.2]] 属图纸类改动（改的是「应该长什么样」），需 omar 签字后才转 ratified。前 v0.25 于 2026-09-03 人审批次 ⑧ 经 omar 签字（与 [[06-prd]] v0.14 / [[05-design-spec]] v0.22 同批），内容为 §13.3 新增「删除语义统一契约」+ 区域 9 废纸篓与「导出含废纸篓」告知 + 编辑容器契约 c 的 Esc 阶梯减一级；更前 v0.24 / v0.23 见文末修订记录
 author: co  # 🤝 人机共创（CLAUDE §5.2）
 related: [[01-spec]], [[05-design-spec]], [[06-prd]], [[012-lock-visual-quality-anchor]], [[024-dark-cockpit-identity]], [[019-supersede-flat-visual-anchor]], [[020-restore-protocol-dark-band]], [[021-scene-layered-editing]], [[022-cross-scene-phrase-move]], [[025-unified-anchored-editing]], [[027-configurable-global-hotkey]], [[013-alignment-phrases-tab-inclusion]], [[015-expose-mcp-write-pipeline]], [[017-enable-auto-update]], [[018-absorb-promptscape-design]], [[026-fixed-spatial-layout]], [[028-reversible-delete]], [[029-alignment-coordinates-and-drift-ledger]]
 description: 手动 AI 编程仪表盘的 UI 契约——双形态架构/布局/点击路径/状态反馈/用户旅程/主形态 UI 草案；写 UI / 改交互时召回。版本叙事见 CHANGELOG
@@ -983,6 +983,7 @@ dirty 判定以**初始值快照**比对，不以「是否聚焦过」判定。
 
   唤起键在 `setup()` 阶段注册，那一刻 localStorage 不可达——这是它入库的**唯一**理由，也是判据可机械执行的原因。该表**不进导出/导入**：它是机器本地配置，不是可带走的资产。
 - **B2 合规**：强调色只染中性面（导航焦点环 / swatch / 开关 on 态），**不染 protocol/task 语义层**（[[02-constitution#B2]] / [[05-design-spec#13.1]]）；数据页导出/导入按表整搬，不混协议层与任务层
+- **数据页忙碌中弹窗不可关（v0.27 新增）**：导入 / 导出进行中，**三条关窗路径一律无效**——Esc 被弹窗认领后无事发生、点遮罩无效、点 × 无效；同时按钮态显 disabled，让「现在关不掉」看得见而不是点了没反应。**为什么是契约不是偏好**：`import_data` 转 async 之后主线程不再冻结，而「主线程冻结」此前恰好是唯一挡着用户在导入期间去改资产的东西——冻结一撤，导入中改的资产会被整库替换静默抹掉。这条守卫是 async 化之后的**唯一互斥**。次要收益是失败信息不再留在一个已经关掉的弹窗里（[[HANDOFF]] 第 33 项由待裁升必修）
 - **不进 Tab cycle 总数**：模态弹窗有自己的焦点域，不计入 §13.4 区域级 5-tab 全景循环
 - **与设置语义的历史校正**：v0.5「⌘, 唤起配置面板（编辑 Scene/Phase/Modifier）」的旧措辞已被本区域取代——⌘, 现打开本设置弹窗（外观 + 更新），资产编辑走各区域就地编辑态
 
@@ -992,7 +993,7 @@ dirty 判定以**初始值快照**比对，不以「是否聚焦过」判定。
 |--------|------|------|
 | `⌥ Space` | 全局唤起仪表盘 | 默认值，**可在设置 › 快捷键改绑**（v0.20 落地 · [[027-configurable-global-hotkey]]）。绑定存 SQLite `settings` 表而非 localStorage——Rust 在 setup 阶段注册，早于任何渲染进程 |
 | `ESC` | 关闭仪表盘 | 任何时候可用 |
-| `ESC`（录键态） | 取消录制，不改绑定 | v0.20 · 录键期间键盘被全量捕获（window capture + `stopPropagation`），**一次 ESC 取消录制、第二次才关设置弹窗**。见 §13.3 区域 9 快捷键页 |
+| `ESC`（录键态） | 取消录制，不改绑定 | v0.20 · 录键期间键盘被全量捕获（window capture + `stopPropagation`），**一次 ESC 取消录制、第二次才关设置弹窗**。见 §13.3 区域 9 快捷键页。**数据页忙碌中（导入 / 导出进行中）：Esc 被认领但不关窗**（§13.3 区域 9，v0.27） |
 | `⏎` | 复制当前选中项 + 自动隐藏窗口 | 主形态默认行为 |
 | `⌘K` | 焦点跳到搜索框 | 唤起即已默认聚焦 |
 | `⌘1` - `⌘9` | 直接切换到第 N 个相位 + 复制它的默认对齐话术 + 复制即隐藏 | 哲学七的极速通道。**`⌘9` 为 v0.26 新增**（[[029-alignment-coordinates-and-drift-ledger]]）：第 9 格是「中途」相位、默认话术是「停」，所以 `⌘9` 的实义是**一键叫停**；与 `⌘1-8` 同语义（键盘 = 切换 + 复制 + 隐藏，鼠标点击只切换不复制）。序号映射的是**可见**相位列表的第 N 格，相位隐藏后序号顺延 |

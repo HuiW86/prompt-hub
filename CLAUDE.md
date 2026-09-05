@@ -56,6 +56,7 @@ cargo clippy --workspace --all-targets --manifest-path src-tauri/Cargo.toml -- -
 pnpm bench:cold-start                                     # spawn → 首次 CGWindow entry P95（debug build baseline ~258ms / p50 ~175ms，2026-06-12 M0-4 签名后回归；C1 不约束此项）
 pnpm bench:hotkey-wake                                    # show()+set_focus() Rust 调用 P95（baseline ~13-15ms，2026-06-05 auto-cycle 主线程修复后口径，2026-06-12 签名后复测 12.9-13.5ms 无回归；旧 ~0.02ms 为跑不通的失效数字；不含 OS shortcut dispatch ~10ms）。P95 超 200ms 时退出码 1（2026-07-01 P0-6），可作自动化 C1 gate
 # BENCH_ROUNDS=N pnpm bench:cold-start                    # 自定义轮数（默认 20）
+# ⚠️ 两个 bench 自 2026-09-04 起在一次性 HOME（mkdtemp）里跑空库，不再触碰真实资产库（此前 bench 会把真实库迁到工作树 schema，2026-09-04 就发生过一次）；cold-start 旧 baseline 取自真实库、之后取自空库，跨此日期的数字不可直接比较
 ```
 
 **lockfile 政策**（[[004-choose-package-manager#6]]）：禁用 `npm install` / `yarn install` / `bun install` —— 它们会产生 lockfile 冲突。
@@ -79,7 +80,7 @@ pnpm bench:hotkey-wake                                    # show()+set_focus() R
 - `docs/design/CLAUDE-DESIGN.md` — 用 Claude Design (claude.ai/design) 设计 UI 时（L5 sticky context）
 - `docs/workflows/claude-design-prompts.md` — 在 Claude Design 跑 task 时（L5 prompt 模板 + 迭代 checklist）
 - `docs/plans/prompt-hub-mvp.md` — 实施任务清单
-- `docs/design/09-tech-stack.md` v1.3 — 生成 import 语句时
+- `docs/design/09-tech-stack.md` v1.4 — 生成 import 语句时
 - `docs/adr/*` — 决策追溯时
 
 ### 冷区（仅显式查询时取）
@@ -209,4 +210,5 @@ AI 不得擅自起草人主笔文档（spec / constitution），可起草共创 
 - **自动更新（ADR-017）**：Phase 1-6 全部销账——客户端 + CI 出包 landed（CHANGELOG 2026-06-19），Phase 6 真机验收随 0.2.0 发布实测通过（0.1.1 → 0.2.0 更新链路 + 更新后签名链复验，CHANGELOG 2026-08-20）
 - **最近一轮改动（2026-07-12 UX 任务流批次 A+B + 模式契约回流）**：批次 A——D-0 显式整理模式落地（`interactionMode` 持久化 + Header ModeToggle + 整理态整卡=预览/复制显式化 + suppressHide 门控，usage 照计）+ promote 落地定位 / discard 可撤销 / 保存 toast / ⌘Enter 统一 / footer wrap，契约回流 product-spec v0.15 §4.0.7；批次 B——ADR-022 跨 Scene 话术移动（`move_phrase` + MoveReceipt 撤销 + 分层选择器，双路径语义等价），契约回流 product-spec v0.16 §13.3；两批均 verifier 对抗审查 PASS（前端 222→309 / cargo 147→155），NEEDS HUMAN 真机走查待验、确认前不入对外发布说明；明细见 CHANGELOG 2026-07-12 两条目 + [[2026-07-12-ux-taskflow-audit]] + [[HANDOFF]]
 - **最近一轮改动（2026-08-17/18 前端结构收口）**：外部独立前端评价触发的两轮裁决——ADR-025 六条全通过 + P0 落地（PhaseBar 去掉 `flex-grow`/`font-size` 的布局漂移）；ADR-026 通过并当日落地（模式不再重排布局，两态共用一套空间，Macro/Scene 改用户可拖拽 + 像素下限）。附带 CLAUDE §5.1.1 新增**减法快车道**（四类纯删除 UI 改动不走八步）。335 测试 / lint / build 全绿，但**布局与视觉权重两项 jsdom 验不了，真机走查前不入对外发布说明**；ADR-026 的契约回流八步是新账优先项，见 [[HANDOFF]]
+- **最近一轮改动（2026-09-04 第 21.3 项：启动自检 + 备份去重 + 落盘日志）**：`open_and_migrate` 在 `configure` 之前跑 `PRAGMA quick_check`，非 `ok` 走既有 `fail_startup` 弹框（含库路径 + `backups/` 路径 + 四步手工恢复），不自动回滚；`backup.rs` 快照配额改**按前缀独立**（pre-migrate 5 / pre-import 5 / daily 7）+ `VACUUM INTO` 临时文件后 sha256 去重（`Unchanged` 刷被保留文件 mtime、按年龄清 `.tmp` 残留），HANDOFF 第 32 项「迁移反复失败把旧备份全挤掉」整类坑消掉；每日备份 = 启动检查一次 + 每小时后台线程；接 `tauri-plugin-log`（仅 Rust 侧，`~/Library/Logs/dev.prompt-hub/prompt-hub.log`，1 MiB × KeepOne，不记话术内容）；`import_data` / `export_data` 转 async，随之设置弹窗数据页忙碌中 Esc / 遮罩 / × **不可关**（第 33 项由待裁升必修：async 后这是防「导入中改资产被整库替换抹掉」的唯一互斥）。IPC 仍 56 / `user_version` 仍 13 / Rust 183→**192** / 前端 457→**461**；verifier 两轮（首轮 FAIL 抓 D1 白跑 VACUUM / D2 弹窗可关 / D3 `.tmp` 残留，修后 PASS）；**真机门 G6 五项全过**（[[11-test-spec#4.5]]）。涟漪：ops-spec **v0.5 draft** / product-spec **v0.27 draft**（唯一裁点：忙碌中禁止关窗）/ tech-stack **v1.4** / features **v1.26**（矩阵 106，74 verified / 7 done）/ test-spec v0.11。Codex 第二意见因代理余额不足中断，无结论
 - **下一动作**：见 [[HANDOFF#Next-Actions]]（行动项单一真相源）

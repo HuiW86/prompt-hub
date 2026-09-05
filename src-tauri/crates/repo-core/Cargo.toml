@@ -17,8 +17,11 @@ serde_json = "1"
 chrono = { version = "0.4", features = ["serde"] }
 uuid = { version = "1", features = ["v4", "serde"] }
 thiserror = "2"
-# payload_hash dedup for draft staging (plan §4.1)
+# payload_hash dedup for draft staging (plan §4.1) + backup content dedup
 sha2 = "0.10"
+# Logging facade only — this crate never installs a sink. The Tauri binary and
+# the MCP server each pick their own; a library that picked one would fight them.
+log = "0.4"
 
 [dev-dependencies]
 tempfile = "3"

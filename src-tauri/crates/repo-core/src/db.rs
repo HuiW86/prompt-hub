@@ -102,12 +102,81 @@ pub fn open_and_migrate(path: &Path) -> RepoResult<Connection> {
         std::fs::create_dir_all(parent)?;
     }
     let conn = Connection::open(path)?;
+    // Self-check before anything else touches the file. Two reasons for this
+    // exact position: `configure` sets journal_mode, which *rewrites the file
+    // header* — there is no reason to write to a file we may be about to refuse
+    // — and applying migration DDL on top of a damaged b-tree is what turns a
+    // file the user could still have restored into one nobody can. Refuse
+    // instead, and let lib.rs point them at backups/ (HANDOFF 21.3).
+    //
+    // busy_timeout is the one setting that has to precede the check: it is pure
+    // connection state (it writes nothing) and without it a database another
+    // process is mid-write on would come back SQLITE_BUSY instead of waiting.
+    conn.busy_timeout(BUSY_TIMEOUT)?;
+    quick_check(&conn)?;
     configure(&conn)?;
     // Snapshot into the backups/ dir next to the DB file before any migration
     // touches the schema. Fresh installs (no pending migrations) skip this.
     let backups_dir = crate::backup::backups_dir_for(path);
     run_migrations_with_backup(&conn, Some(&backups_dir))?;
     Ok(conn)
+}
+
+/// `PRAGMA quick_check`: the cheap half of `integrity_check` — it verifies page
+/// and b-tree structure but skips the index-content cross-check, which is what
+/// keeps it fast enough to sit on the startup path of every launch.
+///
+/// A healthy database answers with the single row `ok`. Anything else (rows
+/// describing damage, or a statement that fails with a corruption code because
+/// the file is too broken to even walk) becomes
+/// [`RepoError::IntegrityCheckFailed`]. Non-corruption errors are passed through
+/// unchanged so a locked or busy database is not mislabelled as damaged.
+fn quick_check(conn: &Connection) -> RepoResult<()> {
+    // Cap the rows we pull: quick_check on a badly damaged file can emit one row
+    // per broken page, and the detail string ends up in a dialog a human reads.
+    const MAX_DETAIL_ROWS: usize = 5;
+
+    let rows: Vec<String> = match conn
+        .prepare("PRAGMA quick_check")
+        .and_then(|mut stmt| {
+            stmt.query_map([], |row| row.get::<_, String>(0))?
+                .collect::<rusqlite::Result<Vec<String>>>()
+        }) {
+        Ok(rows) => rows,
+        Err(e) if is_corruption(&e) => {
+            let detail = e.to_string();
+            log::error!("quick_check could not run: {detail}");
+            return Err(RepoError::IntegrityCheckFailed { detail });
+        }
+        Err(e) => return Err(e.into()),
+    };
+
+    if rows.first().is_some_and(|first| first == "ok") {
+        return Ok(());
+    }
+
+    let detail = if rows.is_empty() {
+        "quick_check returned no result".to_string()
+    } else {
+        rows.iter()
+            .take(MAX_DETAIL_ROWS)
+            .cloned()
+            .collect::<Vec<_>>()
+            .join("; ")
+    };
+    log::error!("quick_check failed: {detail}");
+    Err(RepoError::IntegrityCheckFailed { detail })
+}
+
+/// Whether a rusqlite error means "this file is damaged" as opposed to "this
+/// database is busy / locked / misused".
+fn is_corruption(err: &rusqlite::Error) -> bool {
+    use rusqlite::ffi::ErrorCode;
+    matches!(
+        err,
+        rusqlite::Error::SqliteFailure(e, _)
+            if matches!(e.code, ErrorCode::DatabaseCorrupt | ErrorCode::NotADatabase)
+    )
 }
 
 /// Open the database read-only for a non-owner consumer (the MCP server).
@@ -195,7 +264,7 @@ fn run_migrations_with_backup(conn: &Connection, backups_dir: Option<&Path>) -> 
     // nothing pending).
     if has_pending {
         if let Some(dir) = backups_dir {
-            crate::backup::snapshot(conn, dir, "pre-migrate")?;
+            crate::backup::snapshot(conn, dir, crate::backup::PREFIX_PRE_MIGRATE)?;
         }
     }
 
@@ -215,6 +284,7 @@ fn run_migrations_with_backup(conn: &Connection, backups_dir: Option<&Path>) -> 
         })?;
         tx.pragma_update(None, "user_version", m.target_version)?;
         tx.commit()?;
+        log::info!("migration {} ({}) applied", m.target_version, m.name);
     }
     Ok(())
 }
@@ -390,6 +460,68 @@ mod tests {
         assert!(
             err.to_string().contains("not a database"),
             "expected sqlite 'file is not a database', got {err}"
+        );
+    }
+
+    // ── Startup self-check (HANDOFF 21.3) ────────────────────────────────────
+
+    #[test]
+    fn open_and_migrate_passes_quick_check_on_a_healthy_database() {
+        let dir = tempfile::tempdir().expect("tempdir");
+        let path = dir.path().join("prompt-hub.db");
+        let _first = open_and_migrate(&path).expect("first open must self-check clean");
+        // The reopen is the shape every launch after the first sees: a populated
+        // file with a live WAL beside it, and nothing pending to migrate.
+        let conn = open_and_migrate(&path).expect("reopen must self-check clean");
+        quick_check(&conn).expect("an explicit check on a healthy db reports ok");
+    }
+
+    /// Overwrite everything past page 1 with garbage. Page 1 carries the file
+    /// header and the `sqlite_master` b-tree root, so the file still opens and
+    /// still describes its own schema — the damage is exactly the kind only an
+    /// integrity check finds, which is the point of running one at startup.
+    fn corrupt_every_page_after_the_first(path: &Path) {
+        let mut bytes = std::fs::read(path).expect("read db");
+        // Bytes 16..18 hold the page size; the value 1 encodes 65536.
+        let page_size = match u16::from_be_bytes([bytes[16], bytes[17]]) {
+            1 => 65_536usize,
+            n => n as usize,
+        };
+        assert!(
+            bytes.len() > page_size * 2,
+            "the fixture db must have pages beyond the first for this to damage anything"
+        );
+        for byte in bytes.iter_mut().skip(page_size) {
+            *byte = 0xAB;
+        }
+        std::fs::write(path, &bytes).expect("write corrupted db");
+    }
+
+    #[test]
+    fn open_and_migrate_refuses_a_database_that_fails_quick_check() {
+        let dir = tempfile::tempdir().expect("tempdir");
+        let path = dir.path().join("prompt-hub.db");
+        {
+            let conn = open_and_migrate(&path).expect("build a healthy db");
+            // Fold the WAL back into the main file and drop it, so the bytes we
+            // damage below are the only copy of those pages — otherwise SQLite
+            // would read the good originals out of `-wal` and see nothing wrong.
+            conn.execute_batch("PRAGMA wal_checkpoint(TRUNCATE)")
+                .expect("checkpoint");
+        }
+        std::fs::remove_file(path.with_extension("db-wal")).ok();
+        std::fs::remove_file(path.with_extension("db-shm")).ok();
+
+        corrupt_every_page_after_the_first(&path);
+
+        let err = open_and_migrate(&path).expect_err("a damaged file must not be migrated");
+        assert!(
+            matches!(err, RepoError::IntegrityCheckFailed { .. }),
+            "expected IntegrityCheckFailed, got {err:?}"
+        );
+        assert!(
+            !err.to_string().is_empty(),
+            "the dialog shown to the user is built from this message"
         );
     }
 

@@ -855,15 +855,23 @@ pub fn purge_trash(state: State<'_, AppState>) -> AppResult<repo_write::PurgeSum
 // write (strategy D1=A) and pays the schema-drift guard like every write path.
 // Both stay entirely on-disk — no network (A2).
 
+// Both are `async` for one reason and it is not concurrency: a *synchronous*
+// Tauri command runs on the main thread (see the note in show_window), so a
+// multi-megabyte export or a wipe-and-restore import froze the whole window for
+// its duration — no repaint, no spinner, the OS beachball. `async` moves the
+// body onto the async runtime's thread pool, leaving the main thread free to
+// draw. There is no `.await` inside either body and the connection mutex is
+// therefore never held across a suspension point; the guard lives and dies
+// inside one uninterrupted stretch of work.
 #[tauri::command]
-pub fn export_data(state: State<'_, AppState>, path: String) -> AppResult<()> {
+pub async fn export_data(state: State<'_, AppState>, path: String) -> AppResult<()> {
     let json = with_conn(&state, repo_core::export_json)?;
     std::fs::write(&path, json).map_err(repo_core::RepoError::from)?;
     Ok(())
 }
 
 #[tauri::command]
-pub fn import_data(
+pub async fn import_data(
     state: State<'_, AppState>,
     path: String,
 ) -> AppResult<repo_write::ImportSummary> {
@@ -884,8 +892,10 @@ fn import_with_backup(
 ) -> AppResult<repo_write::ImportSummary> {
     let backups_dir = repo_core::backups_dir_for(db_path);
     // RepoError -> AppError via `?`; surfaces to the renderer as "backup
-    // failed" so the user knows the import did NOT run.
-    repo_core::snapshot(conn, &backups_dir, "pre-import")?;
+    // failed" so the user knows the import did NOT run. `Unchanged` is as good
+    // as `Written`: it means the identical bytes are already on disk under this
+    // prefix, so the restore path the user needs exists either way.
+    repo_core::snapshot(conn, &backups_dir, repo_core::PREFIX_PRE_IMPORT)?;
     Ok(guard_schema_then(conn, |c| {
         repo_write::import_json(c, json)
     })?)

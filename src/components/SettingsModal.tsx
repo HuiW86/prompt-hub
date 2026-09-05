@@ -118,6 +118,14 @@ export function SettingsModal() {
   const [dataBusy, setDataBusy] = useState(false);
   const [dataStatus, setDataStatus] = useState<string | null>(null);
 
+  // Mirror of dataBusy for the Escape listener, which is registered once per
+  // open and must not be torn down (and re-run its initial-focus landing) every
+  // time the flag flips. Handlers read `.current` at event time instead.
+  const dataBusyRef = useRef(false);
+  useEffect(() => {
+    dataBusyRef.current = dataBusy;
+  }, [dataBusy]);
+
   // Modal container ref (initial focus landing point + focus-trap boundary).
   const modalRef = useRef<HTMLDivElement>(null);
   // Element that had focus before the modal opened, to restore on close.
@@ -224,9 +232,18 @@ export function SettingsModal() {
     // primitives/Editor.tsx: document capture + stop. HotkeyRecorder's own
     // window-capture swallow still runs ahead of this while a chord is being
     // recorded, so Escape mid-recording only cancels the recording.
+    // While an export/import is in flight the dialog also refuses to close.
+    // import_json truncates every asset table and refreshAll() reloads on top
+    // of it, so a dismissed modal invites the user back to the dashboard to
+    // create or edit assets that the running import then wipes without a
+    // trace. The key is still claimed and cancelled either way: letting it
+    // fall through to App's hide listener would hide the whole dashboard
+    // behind the import, which is the same accident one step removed.
     const onEscape = (e: KeyboardEvent) => {
       if (e.key !== "Escape") return;
+      e.preventDefault();
       e.stopPropagation();
+      if (dataBusyRef.current) return;
       close();
     };
 
@@ -285,6 +302,8 @@ export function SettingsModal() {
       className={styles.overlay}
       role="presentation"
       onClick={(e) => {
+        // Same guard as Escape: no dismissal while the data page is working.
+        if (dataBusy) return;
         if (e.target === e.currentTarget) close();
       }}
     >
@@ -342,10 +361,14 @@ export function SettingsModal() {
         <div className={styles.content}>
           <div className={styles.contentHead}>
             <span className={styles.contentTitle}>{TAB_TITLES[tab]}</span>
+            {/* The third dismissal path, held to the same rule as Escape and
+                the overlay — a guard that leaves the most visible close
+                button live is not a guard. */}
             <button
               type="button"
               className={styles.close}
               aria-label="关闭"
+              disabled={dataBusy}
               onClick={close}
             >
               <X size={16} strokeWidth={2} aria-hidden />

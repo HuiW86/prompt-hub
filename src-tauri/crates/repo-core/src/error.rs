@@ -56,6 +56,13 @@ pub enum RepoError {
         size_bytes: usize,
         limit_bytes: usize,
     },
+    // Startup self-check (HANDOFF 21.3): `PRAGMA quick_check` reported damage
+    // before any migration ran. Deliberately NOT auto-repaired — the honest move
+    // is to stop and point the user at `backups/`, because a migration applied
+    // on top of a corrupt b-tree is how a recoverable file becomes an
+    // unrecoverable one.
+    #[error("database integrity check failed: {detail}")]
+    IntegrityCheckFailed { detail: String },
     #[error("{0}")]
     Other(String),
 }

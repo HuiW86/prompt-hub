@@ -251,3 +251,111 @@ describe("SettingsModal — focus domain", () => {
     trigger.remove();
   });
 });
+
+// A whole-table replace is running behind the dialog: import_json truncates
+// every asset table and refreshAll() reloads on top of it. Dismissing the modal
+// mid-flight sends the user back to a dashboard whose next edit the import is
+// about to erase without a trace, so every dismissal path is held shut until
+// the data page goes idle again.
+describe("SettingsModal — dismissal while the data page is busy", () => {
+  let refreshAllMock: ReturnType<typeof vi.fn<() => Promise<void>>>;
+
+  beforeEach(() => {
+    usePromptStore.setState(promptInitial, true);
+    useSettingsStore.setState(settingsInitial, true);
+    refreshAllMock = vi.fn<() => Promise<void>>().mockResolvedValue(undefined);
+    usePromptStore.setState({ refreshAll: refreshAllMock });
+    useSettingsStore.setState({ settingsOpen: true });
+    invokeMock.mockReset();
+    saveMock.mockReset();
+    openMock.mockReset();
+    confirmMock.mockReset();
+  });
+
+  function openDataTab() {
+    render(<SettingsModal />);
+    fireEvent.click(screen.getByRole("button", { name: "数据" }));
+  }
+
+  // Starts an import that never settles on its own and hands back the resolver,
+  // so a case can hold the modal in the busy state for as long as it needs.
+  async function startPendingImport() {
+    openMock.mockResolvedValue("/tmp/backup.json");
+    confirmMock.mockResolvedValue(true);
+    let release!: (summary: ImportSummary) => void;
+    const pending = new Promise<ImportSummary>((res) => {
+      release = res;
+    });
+    invokeMock.mockImplementation((cmd: string) => {
+      if (cmd === "import_data") return pending;
+      if (cmd === "list_trash") return Promise.resolve([]);
+      return Promise.resolve(undefined);
+    });
+
+    openDataTab();
+    fireEvent.click(screen.getByRole("button", { name: /导入备份/ }));
+    await waitFor(() =>
+      expect(invokeMock).toHaveBeenCalledWith("import_data", {
+        path: "/tmp/backup.json",
+      }),
+    );
+    return release;
+  }
+
+  it("Escape neither closes the modal nor reaches App's hide listener mid-import", async () => {
+    await startPendingImport();
+    const dialog = screen.getByRole("dialog");
+
+    // Stand-in for App's document hide listener (bubble phase, App.tsx:60).
+    // The modal must keep claiming Escape while busy — falling through would
+    // hide the entire dashboard behind the running import.
+    const leaked = vi.fn();
+    document.addEventListener("keydown", leaked);
+    fireEvent.keyDown(dialog, { key: "Escape" });
+    document.removeEventListener("keydown", leaked);
+
+    expect(useSettingsStore.getState().settingsOpen).toBe(true);
+    expect(screen.getByRole("dialog")).toBeInTheDocument();
+    expect(leaked).not.toHaveBeenCalled();
+    expect(invokeMock.mock.calls.some(([cmd]) => cmd === "hide_window")).toBe(
+      false,
+    );
+  });
+
+  it("overlay click and the close button are both inert mid-import", async () => {
+    await startPendingImport();
+    const dialog = screen.getByRole("dialog");
+    const overlay = dialog.parentElement as HTMLElement;
+
+    fireEvent.click(overlay);
+    expect(useSettingsStore.getState().settingsOpen).toBe(true);
+    expect(screen.getByRole("dialog")).toBeInTheDocument();
+
+    expect(screen.getByRole("button", { name: "关闭" })).toBeDisabled();
+  });
+
+  it("releases the guard once the import settles", async () => {
+    const release = await startPendingImport();
+    const dialog = screen.getByRole("dialog");
+
+    release(SUMMARY);
+    expect(await screen.findByText("已导入 7 条记录")).toBeInTheDocument();
+    expect(refreshAllMock).toHaveBeenCalledTimes(1);
+    expect(screen.getByRole("button", { name: "关闭" })).toBeEnabled();
+
+    fireEvent.keyDown(dialog, { key: "Escape" });
+    expect(useSettingsStore.getState().settingsOpen).toBe(false);
+  });
+
+  it("overlay click still closes the dialog when the data page is idle", () => {
+    invokeMock.mockImplementation((cmd: string) =>
+      Promise.resolve(cmd === "list_trash" ? [] : undefined),
+    );
+    openDataTab();
+
+    const overlay = screen.getByRole("dialog").parentElement as HTMLElement;
+    fireEvent.click(overlay);
+
+    expect(useSettingsStore.getState().settingsOpen).toBe(false);
+  });
+});

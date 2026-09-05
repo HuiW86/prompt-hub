@@ -145,9 +145,16 @@
     color var(--d-fast) var(--ease);
 }
 
-.close:hover {
+.close:hover:not(:disabled) {
   background: var(--surface-2);
   color: var(--fg-1);
+}
+
+/* Disabled while an export/import is running: matches .actionBtn:disabled so
+   the whole data page reads as one locked unit. */
+.close:disabled {
+  opacity: var(--op-dim);
+  cursor: not-allowed;
 }
 
 .close:focus-visible {

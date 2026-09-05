@@ -1,10 +1,10 @@
 ---
 type: tech-stack
 project: prompt-hub
-version: v1.3
+version: v1.4
 created: 2026-05-19
-updated: 2026-06-19
-status: ratified  # ADR-001~004/006~009/015/016/017 全部 Accepted；ADR-005（prompt-combiner 复用）仍 Proposed
+updated: 2026-09-04
+status: ratified  # ADR-001~004/006~009/015/016/017 全部 Accepted；ADR-005（prompt-combiner 复用）仍 Proposed。v1.4（2026-09-04 · [[HANDOFF]] 第 21.3 项）登记两个新 Rust 依赖 `tauri-plugin-log` `^2` + `log` `0.4`（见 §4.5 / §7）——**不开 ADR**：两者都不是 major bump，且 `tauri-plugin-log` 是 Tauri 2.x 官方插件、与已在册的 updater / process 同族同协议，[[#§8-升级流程]] 只对 major bump 强制 ADR
 author: ai  # 🤖 AI 主笔 + 人审（CLAUDE §5.2）
 audience: [ai]
 description: prompt-hub 技术栈快照——全栈选型与依赖版本锁定（Tauri 2.x + React 19.2 等决策表）；生成 import / 评估依赖时召回
@@ -162,6 +162,19 @@ related:
 
 **Rust MSRV**：updater 不抬高 MSRV，仍 1.77.2+（见 §4 表）。
 
+### 4.5 落盘日志（v1.4 新增 · [[HANDOFF]] 第 21.3 项）
+
+| 维度 | 选定 | 版本 | 来源 |
+|---|---|---|---|
+| **日志 sink** | `tauri-plugin-log`（**仅 Rust 侧**，不注册 JS 插件绑定）| `^2` | 落盘日志，路径与滚动策略见 [[10-ops-spec#§5.1]] |
+| **日志 facade** | `log` | `0.4` | 全 workspace 统一走它打日志；库 crate 只依赖 facade、**从不装 sink** |
+
+**为什么只装 Rust 侧**：不注册 JS 绑定，渲染进程就既写不进也读不出那份文件——一条比约定更硬的边界，与 [[02-constitution#A2]] 同向。
+
+**为什么 facade 与 sink 分开**：`repo-core` 这类库 crate 只依赖 `log`，装 sink 的只有两个 bin（Tauri 主 app 装 `tauri-plugin-log`，MCP server 另走 `tracing` → stderr，见 §4.3）。库要是自己挑了 sink，就会跟宿主打架。
+
+**与 §4.3 的 `tracing` 并存不冲突**：两条日志链路服务两个进程——MCP server 的 stdout 被 JSON-RPC 独占故日志必须走 stderr，主 app 没这个约束故落盘。
+
 ---
 
 ## §5 数据层
@@ -182,7 +195,7 @@ macOS:   ~/Library/Application Support/dev.prompt-hub/
 Windows: %APPDATA%\dev.prompt-hub\
 ```
 
-由 Tauri `path::app_data_dir()` 解析。完整备份策略见 [[10-ops-spec#§3]]（`cp .db + WAL`）。
+由 Tauri `path::app_data_dir()` 解析。备份写在同级的 `backups/` 子目录，形态是 `VACUUM INTO` 出的整库 `.db` 快照（**不是 `cp .db + WAL`**——WAL 模式下拷主文件会漏掉还在 `-wal` 里的已提交页）。完整策略见 [[10-ops-spec#§3]]。
 
 ### 5.2 数据规模与索引基线
 
@@ -257,6 +270,8 @@ cargo clippy --manifest-path src-tauri/Cargo.toml -- -D warnings
 | `clsx` | `^2.0` | 微依赖，CSS Modules 变体组合 | 自由 |
 | `rmcp` (Rust) | `=1.7` **精确锁** | MCP SDK 1.x API 仍在演进，新 minor/major 可能破协议；精确锁防意外 bump（[[mcp-write-pipeline#§10]] R3）| 任意 bump → ADR |
 | `tracing` / `tracing-subscriber` (Rust) | `^0.1` | MCP server 日志走 stderr（stdout 被 JSON-RPC 独占）| 自由 |
+| `tauri-plugin-log` (Rust) | `^2` | Tauri 2.x 插件协议；落盘日志，**仅 Rust 侧**不注册 JS 绑定（§4.5）| major bump → ADR |
+| `log` (Rust) | `0.4` | 日志 facade，库 crate 只依赖它、不装 sink（§4.5）| 自由 |
 
 ### 7.1 VaultX 借鉴的依赖组合（待建仓 `cargo build` 实测）
 

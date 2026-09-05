@@ -1,9 +1,11 @@
 use std::io::Write;
 use std::sync::atomic::{AtomicBool, AtomicU64, Ordering};
 use std::sync::Mutex;
+use std::time::{Duration, SystemTime};
 
 use tauri::{Manager, PhysicalPosition, PhysicalSize, RunEvent};
 use tauri_plugin_global_shortcut::{GlobalShortcutExt, ShortcutState};
+use tauri_plugin_log::{Target, TargetKind};
 
 #[cfg(feature = "bench")]
 mod bench;
@@ -94,7 +96,11 @@ fn wake_main_window(app: &tauri::AppHandle) {
 // Nothing has been opened yet, so there is nothing to unwind; process::exit
 // is the entire contract (features §3.12: path in the dialog + exit code 1).
 fn fail_startup(message: String) -> ! {
-    // stderr first: a headless launch (SSH, CI, a crashed window server) has no
+    // The log file outlives the dialog the user is about to dismiss, and it is
+    // the only artifact they can send us afterwards. Safe here: plugins are
+    // initialized before setup runs, so the sink already exists.
+    log::error!("startup aborted: {message}");
+    // stderr too: a headless launch (SSH, CI, a crashed window server) has no
     // dialog to read, and exit code 1 alone says nothing about why. Not
     // eprintln!: that panics on EPIPE, which would turn this path into an
     // abort with no dialog when a wrapper's pipe reader has gone away.
@@ -107,9 +113,90 @@ fn fail_startup(message: String) -> ! {
     std::process::exit(1)
 }
 
+// How often the background thread wakes to ask whether a daily backup is owed.
+// The *schedule* is a full day (repo_core::DAILY_BACKUP_INTERVAL); polling more
+// often than that is what makes the schedule survive a machine that was asleep,
+// or an app left running for a week.
+const DAILY_BACKUP_POLL: Duration = Duration::from_secs(60 * 60);
+
+// Take a `daily-*.db` snapshot if the newest one is at least a day old.
+//
+// Best-effort by construction: every failure is logged and swallowed. A backup
+// that could not be taken is a smaller problem than a startup that refuses to
+// finish or a background thread that dies silently.
+//
+// The connection mutex is held for exactly one `VACUUM INTO`. That is the same
+// lock every IPC command takes, so this must never be called from anything on
+// the wake path — it is called from setup (once) and from its own thread.
+fn run_daily_backup_if_due(app: &tauri::AppHandle) {
+    let Some(state) = app.try_state::<AppState>() else {
+        // Only reachable if the thread outlives managed state during shutdown.
+        return;
+    };
+    let backups_dir = repo_core::backups_dir_for(&state.db_path);
+    if !repo_core::daily_backup_due(&backups_dir, SystemTime::now()) {
+        return;
+    }
+    // let-else rather than `match`: the guard has to be a binding that drops
+    // before `state` does, and a `match` scrutinee's temporary Result outlives
+    // `state` at the closing brace.
+    let Ok(conn) = state.conn.lock() else {
+        log::warn!("daily backup skipped: state lock poisoned");
+        return;
+    };
+    // snapshot() logs the written / unchanged outcome itself.
+    if let Err(e) = repo_core::snapshot(&conn, &backups_dir, repo_core::PREFIX_DAILY) {
+        log::warn!("daily backup failed: {e}");
+    }
+}
+
+// Keep the daily schedule running for as long as the app does.
+//
+// A dedicated std thread rather than an async task, and the reason is the shape
+// of the schedule, not the blocking. A short blocking command on a tokio worker
+// is fine — it is what Tauri recommends for heavy commands and what
+// `import_data` now does. This one differs by being periodic rather than
+// request-driven: it has to outlive every request and spend an hour at a time
+// asleep, which is exactly what a shared runtime worker must never do.
+fn spawn_daily_backup_thread(app: tauri::AppHandle) {
+    std::thread::spawn(move || loop {
+        std::thread::sleep(DAILY_BACKUP_POLL);
+        run_daily_backup_if_due(&app);
+    });
+}
+
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
 pub fn run() {
+    // On-disk logging (HANDOFF 21.3). `targets` REPLACES the plugin defaults
+    // (Stdout + LogDir) rather than appending, which is what keeps a release
+    // build from writing to a stdout nobody is reading.
+    //
+    // Nothing here is wired to the webview: no `TargetKind::Webview`, and the
+    // capability file grants no `log:` permission, so the renderer can neither
+    // write to this file nor read it. What lands on disk is paths, versions,
+    // counts and error text — never phrase or asset content, which constitution
+    // A2 keeps out of anywhere the user did not put it themselves.
+    let mut log_targets = vec![Target::new(TargetKind::LogDir {
+        file_name: Some("prompt-hub".into()),
+    })];
+    if cfg!(debug_assertions) {
+        log_targets.push(Target::new(TargetKind::Stdout));
+    }
+    let log_plugin = tauri_plugin_log::Builder::new()
+        .targets(log_targets)
+        // One megabyte, one rotated file kept. The point of this log is the last
+        // launch or two, not an archive.
+        .max_file_size(1024 * 1024)
+        .rotation_strategy(tauri_plugin_log::RotationStrategy::KeepOne)
+        .level(if cfg!(debug_assertions) {
+            log::LevelFilter::Debug
+        } else {
+            log::LevelFilter::Info
+        })
+        .build();
+
     let app = tauri::Builder::default()
+        .plugin(log_plugin)
         // Auto-update (ADR-017). The check/download/install commands are driven
         // from the frontend (updaterStore) over the capability allowlist; the
         // process plugin backs relaunch() after install (#2273). The actual
@@ -133,9 +220,23 @@ pub fn run() {
                     repo_core::db::open_and_migrate(&db_path)
                         .map(|conn| (conn, db_path.clone()))
                         .map_err(|e| {
+                            // Name both paths. The startup self-check refuses to
+                            // migrate a damaged file rather than repairing it, so
+                            // the only move left is a manual restore — and a
+                            // dialog that says "it's broken" without saying where
+                            // the snapshots are leaves the user with nothing to
+                            // do. No automatic rollback: picking which snapshot
+                            // to lose work back to is the user's call, not ours.
                             format!(
-                                "Failed to open or migrate the database at\n{}\n\n{e}",
-                                db_path.display()
+                                "Failed to open or migrate the database at\n{}\n\n{e}\n\n\
+                                 Automatic snapshots of this database are kept in\n{}\n\n\
+                                 To recover: quit prompt-hub, and keep a copy of the damaged \
+                                 database file somewhere safe before you touch it. Then replace \
+                                 it with the most recent snapshot from that folder, and delete \
+                                 prompt-hub.db-wal and prompt-hub.db-shm from beside it. \
+                                 Start prompt-hub again.",
+                                db_path.display(),
+                                repo_core::backups_dir_for(&db_path).display()
                             )
                         })
                 });
@@ -162,9 +263,25 @@ pub fn run() {
             let hotkey = if commands::parse_accelerator(&stored).is_ok() {
                 stored
             } else {
-                eprintln!("stored wake chord {stored:?} is not a valid accelerator; using default");
+                log::warn!(
+                    "stored wake chord {stored:?} is not a valid accelerator; using default"
+                );
                 repo_core::settings::DEFAULT_GLOBAL_HOTKEY.to_string()
             };
+
+            // One line per launch, recorded while the connection is still in
+            // hand. This is the line that answers "which build, which file,
+            // which schema" when a user reports something months from now —
+            // quick_check is in it because reaching this point proves it passed.
+            let user_version: u32 = conn
+                .pragma_query_value(None, "user_version", |row| row.get(0))
+                .unwrap_or(0);
+            log::info!(
+                "prompt-hub {} started: db={} user_version={} quick_check=ok",
+                app.package_info().version,
+                db_path.display(),
+                user_version
+            );
 
             app.manage(AppState {
                 conn: Mutex::new(conn),
@@ -240,7 +357,7 @@ pub fn run() {
                 // handler below and `show_window` — and the user can rebind to a
                 // free chord from settings (ADR-027).
                 if let Err(e) = app.global_shortcut().register(toggle) {
-                    eprintln!("global shortcut {hotkey} registration failed: {e}");
+                    log::error!("global shortcut {hotkey} registration failed: {e}");
                     app.state::<AppState>()
                         .hotkey_registered
                         .store(false, Ordering::Relaxed);
@@ -249,6 +366,15 @@ pub fn run() {
                 #[cfg(feature = "bench")]
                 bench::spawn_wake_cycle(app.handle().clone());
             }
+
+            // Daily snapshots (HANDOFF 21.3). Placed last in setup so nothing
+            // above — least of all the wake chord — waits on a VACUUM. The first
+            // check is synchronous because a machine that is only ever awake for
+            // minutes at a time would otherwise never reach the first poll; from
+            // then on the thread carries the schedule.
+            run_daily_backup_if_due(app.handle());
+            spawn_daily_backup_thread(app.handle().clone());
+
             Ok(())
         })
         .invoke_handler(tauri::generate_handler![
@@ -346,10 +472,10 @@ pub fn run() {
                         // it with execute_batch rather than pragma_update (which is
                         // for `PRAGMA k = v` and would error on the returned rows).
                         if let Err(e) = conn.execute_batch("PRAGMA wal_checkpoint(TRUNCATE)") {
-                            eprintln!("exit checkpoint failed: {e}");
+                            log::warn!("exit checkpoint failed: {e}");
                         }
                     }
-                    Err(_) => eprintln!("exit checkpoint skipped: state lock poisoned"),
+                    Err(_) => log::warn!("exit checkpoint skipped: state lock poisoned"),
                 }
             }
         }

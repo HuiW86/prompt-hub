@@ -54,6 +54,11 @@ thiserror = "2"
 # use tokio::time::sleep inside tauri::async_runtime::spawn (P1-1 cancelable
 # 200ms hide). `time` feature is the only thing we need.
 tokio = { version = "1", features = ["time"] }
+# On-disk logging (HANDOFF 21.3). The Rust side only: no JS plugin binding is
+# registered, so nothing in the renderer can write to or read the log file.
+tauri-plugin-log = "2"
+# The facade the whole workspace logs through; the plugin is the sink.
+log = "0.4"
 
 [target.'cfg(target_os = "macos")'.dependencies]
 # Used to set NSWindowCollectionBehavior so the overlay joins all Spaces

@@ -1,10 +1,10 @@
 ---
 type: ops-spec
 project: prompt-hub
-version: v0.4
+version: v0.5
 created: 2026-05-19
-last_modified: 2026-09-03
-status: draft  # **保持 draft**。v0.4（2026-09-03 · [[028-reversible-delete]] 回流）新增 §3.0 废纸篓与备份的分工，未触碰本文件的既有欠账：§3.1 自动备份四种触发均未实装（仅 `backup.rs` 底座）、§7 发布流程仍是 ADR-001 前措辞（Sparkle/Squirrel/Windows），与 release.yml + ADR-017 + 签名 runbook 脱节；随 HANDOFF 第 21.3 项实装备份时同批重写 §3.1/§7 再送审。前 v0.3 于 2026-09-01 人审批次 ④ omar 裁决保持 draft
+last_modified: 2026-09-04
+status: draft  # **待 omar 人审**。v0.5（2026-09-04）兑现 [[HANDOFF]] 第 21.3 项：§3.1 / §3.2 / §3.3 / §5.1 / §7 / §8 按实装重写——自动备份改为 `VACUUM INTO` `.db` 快照三种触发（迁移前 / 导入前 / 每日）并按前缀独立配额 + 哈希去重（顺带销掉 [[HANDOFF]] 第 32 项那个「迁移每次失败就把旧快照全挤掉」的坑）、备份目录按真实路径且用户不可改、新增启动 `PRAGMA quick_check` 与手工恢复步骤、落盘日志改 `tauri-plugin-log` 真实路径与滚动策略、§7 按 `.github/workflows/release.yml` 实际流水线重写（删 Sparkle / Squirrel / Windows / 「待 ADR-001」措辞）、§8 首行改 `quick_check` 失败预案。**本版之前的三笔欠账至此清零**。前 v0.4（2026-09-03 · [[028-reversible-delete]] 回流）新增 §3.0 废纸篓与备份的分工；v0.3 于 2026-09-01 人审批次 ④ omar 裁决保持 draft
 author: ai  # 🤖 AI 主笔 + 人审（CLAUDE §5.2）
 audience: [ai, human]
 description: prompt-hub 运营规格——部署/性能预算/备份/升级回滚/监控（本地单人语境）
@@ -14,6 +14,8 @@ related:
   - 11-test-spec
   - 03-product-spec
   - 028-reversible-delete
+  - 017-enable-auto-update
+  - m0-4-macos-signing
 ---
 
 # Ops Spec: prompt-hub
@@ -80,7 +82,7 @@ related:
 | 修的是什么 | **我点错了**——删了一条不该删的资产 | **库坏了 / 整个库出事了**：迁移失败、文件损坏、误导入整库替换 |
 | 粒度 | 单条资产，原地恢复 | 整库，回到过去某一时刻 |
 | 恢复代价 | 一次 UPDATE，**此后的其他改动一律不受影响** | **丢掉快照之后的全部改动** |
-| 保留 | **永不自动过期**，只由用户手动清空 | 见 §3.1 各触发点的保留期；`VACUUM INTO` 迁移前快照**五槽轮转**，会被挤掉 |
+| 保留 | **永不自动过期**，只由用户手动清空 | 见 §3.1：**按前缀各自独立配额 + 哈希去重**，一类快照的循环挤不掉另一类 |
 | 用户入口 | 设置 · 数据页（[[03-product-spec#13.3]] 区域 9） | 导出备份 / 文件系统 |
 
 **为什么必须写在这里**：删错一条话术若要靠备份来救，代价是把整个库退回到某个过去的时刻，此后所有别的工作一起丢——**那是备份，不是撤销**。反过来，废纸篓也救不了一个损坏的数据库文件：它就在那个文件里面。
@@ -92,23 +94,50 @@ related:
 
 **与导出的交叉**：导出**包含**废纸篓内容（[[028-reversible-delete]] 子决策 6），否则「导出再导入」会变成一次静默的永久删除。因此一份备份文件里可能有用户以为已经删掉的东西，见 [[03-product-spec#13.3]] 区域 9 对用户的告知。
 
-### 3.1 自动备份触发
+### 3.1 自动备份触发（v0.5 按实装重写）
 
-| 触发点 | 备份内容 | 命名规则 | 保留期 |
-|---|---|---|---|
-| 启动时 schema_version 不一致 | 完整数据 JSON | `backup-{timestamp}-{old_version}.json` | 永久（用户决定何时删） |
-| 用户主动「清空所有数据」 | 同上 | `backup-{timestamp}-pre-wipe.json` | 永久 |
-| 用户主动导出 | 同上 | `prompt-hub-{timestamp}.json` | 用户自管 |
-| 每月 1 号（启动时检测） | 同上 | `auto-monthly-{YYYY-MM}.json` | 最近 6 个月 |
+**备份的形态只有一种**：SQLite `VACUUM INTO` 出的整库 `.db` 快照。不是 JSON——WAL 模式下光拷 `.db` 主文件会漏掉还在 `-wal` 里的已提交页，而 `VACUUM INTO` 让 SQLite 自己写一份一致且已 checkpoint 的副本，对活连接安全。
+
+| 触发点 | 内容 | 命名 | 配额 | 去重 |
+|---|---|---|---|---|
+| **迁移前**：启动时发现有待跑迁移，在跑之前 | 整库快照 | `pre-migrate-<unix>.db` | 5 | 与**同前缀**最近一份 sha256 相同则不落盘 |
+| **导入前**：整库替换导入执行之前 | 同上 | `pre-import-<unix>.db` | 5 | 同上 |
+| **每日**：启动时检查一次 + 后台线程每小时检查，最近一份早于 24h 即拍 | 同上 | `daily-<unix>.db` | 7 | 同上 |
+
+**配额按前缀各自独立**——`pre-migrate` 的循环挤不掉 `daily`，反之亦然。这一条是本版**唯一的行为修正**，销掉 [[HANDOFF]] 第 32 项：旧实现全目录共用五槽，于是「迁移每次启动都失败」时每次都拍一份新的 `pre-migrate`，五次之内就把所有旧快照挤光——**兜底自己把自己吃掉了**。哈希去重是同一个坑的第二道闸：库没变就不留新快照，重复启动不再消耗配额。
+
+⚠️ **快照文件的 mtime 不等于内容捕获时刻**。命中去重时被保留的那份快照会被**刷成当次检查的时刻**——「我们看过了，库没变」与「写了一份一模一样的副本」对每日排期是同一件事，不刷则该库永远逾期、每小时白跑一次 `VACUUM INTO`。代价是 mtime 从此只回答「最后一次确认它仍代表当前库是什么时候」。**挑快照恢复时以文件名里的 unix 秒为准**，那个数才是内容被捕获的时刻。
+
+**用户主动导出与上表并列，不进这张表**——它不是自动触发的，也不占配额、不参与去重：用户在保存对话框自选落点，导出的是八张资产表的 JSON（`data schema 1.2`，不含 `usage_records` 与 `settings`）。**二者不互相替代**：快照是应用自己拍的、整库的、有配额会轮转的；导出是用户自己拍的、自管的、放在用户选的地方。前者救「库出事了」，后者救「这台机器出事了」。导出**包含**废纸篓内容（§3.0 末段）。
 
 ### 3.2 备份位置
 
-- 默认：`~/Library/Application Support/prompt-hub/backups/`（macOS）/ `%APPDATA%/prompt-hub/backups/`（Windows）
-- 用户可在配置面板改默认目录到 iCloud / Dropbox / Git 仓库
+```
+~/Library/Application Support/dev.prompt-hub/backups/
+```
 
-### 3.3 恢复 flow
+由 Tauri `path::app_data_dir()` 解析后拼 `backups` 子目录，与 `prompt-hub.db` 同级。
 
-详见 [[04-user-flows#§3]]。关键约束：恢复前再做一次当前数据备份（防恢复失败丢失现有数据）。
+**用户不可改这个目录**。v0.4 及以前写的「用户可在配置面板改默认目录到 iCloud / Dropbox / Git 仓库」**从未实装**，本版删去——想把备份放进网盘的用户走导出（§3.1 表下那段），那条路径本来就由用户指定落点。
+
+### 3.3 启动完整性自检与手工恢复（v0.5 新增）
+
+**自检**：`open_and_migrate` 在跑任何迁移之前先跑一次 `PRAGMA quick_check`。
+
+- 结果为 `ok` → 照常继续
+- 非 `ok` → 原生弹框（**框内同时给出库文件路径与 backups 目录路径**）+ 退出码 1
+
+**不自动回滚，也不自动挑一份快照替换。** 理由是自动恢复必须替用户选一份快照，而选错的代价是**静默丢掉那份快照之后的全部改动**（§3.0 第三行）；库已经坏了这一刻，用户至少还知道自己昨天做了什么，程序不知道。所以这里只做两件事：把坏消息说清楚，把两个路径递到手上。
+
+**手工恢复步骤**（弹框文案含第 2 / 3 / 4 步要点）：
+
+1. 退出 prompt-hub
+2. **先把当前那个坏库另存一份**（`prompt-hub.db` 改名或复制走）——恢复失败时它是唯一的现场
+3. 从 `backups/` 里挑一份快照（**按文件名里的 unix 秒挑，不按文件修改时间**，原因见 §3.1 末段），复制并改名为 `prompt-hub.db` 覆盖过去
+4. **删掉同目录的 `prompt-hub.db-wal` 与 `prompt-hub.db-shm`**——它们属于旧库，留着会让 SQLite 拿新文件配旧日志
+5. 启动，确认数据回到快照那一刻
+
+> 第 2 步是硬约束，自 v0.1 起未变：**恢复前先备份当前**。第 4 步是本版新写明的——WAL 与共享内存文件不删是 `VACUUM INTO` 快照恢复最容易踩的一脚。
 
 ---
 
@@ -120,7 +149,7 @@ related:
 
 - 用户感知：无
 - 备份：自动
-- 失败处理：静默回滚 + 错误日志写入 `~/...prompt-hub/logs/`
+- 失败处理：静默回滚 + 错误写入落盘日志（路径与滚动策略见 §5.1）
 - 用户介入门槛：仅在连续 3 次启动迁移失败时弹窗
 
 ### 4.2 major 升级（强同意）
@@ -145,9 +174,19 @@ related:
 | 类型 | 实现 | 数据流向 |
 |---|---|---|
 | 性能自采样 | `metrics_log` in localStorage | 本地，用户在 view:status-panel 查看 |
-| 错误日志 | 文件日志 `~/...prompt-hub/logs/error.log` | 本地，按 7 天滚动 |
-| 迁移日志 | `migration_log` in localStorage | 本地，用户在配置面板查看 |
+| **落盘日志**（v0.5 按实装重写）| `tauri-plugin-log` → `~/Library/Logs/dev.prompt-hub/prompt-hub.log` | 本地文件，**不出站**（[[02-constitution#A2]]）|
+| **迁移日志**（v0.5 改口径）| 迁移步骤直接进上面那份落盘日志，不再单开 `migration_log` | 同上 |
 | UsageRecord | 主数据 | 本地，append-only |
+
+**落盘日志的三条口径**：
+
+- **滚动按大小不按天**：单文件上限 1 MiB，滚动后保留一份旧文件。日志的用途是「刚才出了什么事」，按天保留会让一次密集失败把有用的那几行冲掉，按大小则总能留住最近的两个 MiB。v0.4 写的「按 7 天滚动」从未实装，本版删去
+- **级别**：release 构建 Info，dev 构建 Debug
+- **只有 Rust 侧**：不注册 JS 插件绑定，渲染进程既写不进也读不出这份文件
+
+**记什么**：启动信息（版本 / 库路径 / `user_version` / `quick_check` 结果）、迁移逐步、快照结果（written / unchanged / pruned）、快捷键注册失败、退出 checkpoint。
+
+**不记什么**：**任何话术内容**。日志里出现的是 id、表名、计数与路径，不是用户写的字。这条不是习惯是红线——本文件 §5.2 禁的是上报，而日志连上报都没有就已经不该抄用户的内容。
 
 ### 5.2 禁用的监控（明确拒绝）
 
@@ -179,21 +218,32 @@ related:
 
 ---
 
-## §7 发布流程（建仓后细化）
+## §7 发布流程（v0.5 按 `release.yml` 实际流水线重写）
 
-> 待 ADR-001 决议（Tauri vs Electron）后补具体命令。当前框架：
+> 本节此前停在 ADR-001 之前的框架（Sparkle / Squirrel / Windows / 「待 ADR-001」），与已经跑过三次的真实流水线脱节。本版按 `.github/workflows/release.yml` 与 [[017-enable-auto-update]] 重写。逐步操作手册见 `docs/release-runbook.md`，签名与公证的一次性前置见 [[m0-4-macos-signing]]。
 
-```
-1. version bump (semver) + CHANGELOG 更新
-2. 跑全量 test-spec（[[11-test-spec]]）
-3. 跑性能基准 vs main baseline
-4. 构建多平台安装包
-5. 签名 + 公证
-6. 上传到 GitHub Releases / 自托管 update server
-7. 更新 update manifest（Sparkle / Squirrel）
-8. 跨设备烟雾测试（Mac + Windows + 副屏）
-9. 通过后宣布
-```
+**触发只有一个：push 一个 `v*.*.*` tag。** `workflow_dispatch` / `repository_dispatch` / `schedule` 都**故意不列**——它们能绕过 tag 这道闸，列上去等于给发布开后门（ADR-017 §5.5）。
+
+### 7.1 五段链路
+
+| 段 | 在哪跑 | 做什么 | 关键闸门 |
+|---|---|---|---|
+| ① 打 tag | 本地 | version bump 三处（`package.json` / `tauri.conf.json` / `Cargo.toml`）+ 写 `docs/release-notes/<tag>.md` | tag 一推就不可撤，先跑全量 [[11-test-spec]] |
+| ② **build job** | `macos-latest`，`aarch64` + `x86_64` 双 target 矩阵 | `check-version.sh` 校验三处版本与 tag 一致 → `tauri build`（`--bundles app,dmg`）→ 公证 `.app` → **另行公证并 staple `.dmg`** → 打包 `.app` 上传 | **「断言已公证已 staple」**：`stapler validate` × 2 + `spctl -a` + `codesign --verify --deep --strict` |
+| ③ **sign job** | 同上，挂 `release-signing` 保护环境 | 断言构建产物在场 → 打 `.app.tar.gz` → `tauri signer sign` 出 minisign `.sig` → `jq` 拼 `latest.json` → 建 **draft** release | `assert-provenance.sh`：tag ↔ `latest.json` ↔ 每份产物三者版本与文件名必须一致 |
+| ④ **人工 publish** | GitHub 网页 | 本地强制核对产物（`docs/release-runbook.md` §3）后把 draft 转正式 | draft **不会**被当作 `releases/latest`，publish 那一刻更新通道才激活 |
+| ⑤ 客户端取更 | 用户机器 | `tauri-plugin-updater` 拉 `releases/latest/download/latest.json`，minisign 验签后原地替换 | 首启 opt-in + 总开关（§9.3）|
+
+### 7.2 三条结构性约束
+
+- **build 与 sign 必须是两个 job**：build job 里没有 minisign 私钥，所以一个被投毒的构建期依赖偷不走它；sign job 挂 required-reviewer 环境，私钥只在人批准之后才注入。**单人项目里这道人审必然是自批**，所以它换来的不是第二双眼睛——补偿控制是 publish 前的本地强制核对，见 `docs/release-runbook.md` §3
+- **公证 → 打包 → minisign，顺序锁死**：先签名再改归档字节会让 `.sig` 与交付文件失配，updater 校验必挂（ADR-017 §6）
+- **`.dmg` 不进 `latest.json`**：它是新用户的直装包，只走 Apple 签名 + 公证；updater 消费的是 `.app.tar.gz`，那份才 minisign
+
+### 7.3 已经踩过的两脚（都已加断言）
+
+- **公证 fail-open**（2026-08-05，v0.1.0）：凭据变量名传错，Tauri 拼不出凭据集**静默跳过公证**且构建照样绿。修法是 ② 段那条断言——断言产物本身，而不是相信步骤名。复盘见 `docs/postmortems/2026-08-05-notarization-fail-open.md`
+- **产物过期 fail-open**（2026-08-10）：审批等了三天，`retention-days: 1` 先到期，`download-artifact` 下载到零个文件仍退出 0。修法是 ③ 段开头那条「断言构建产物在场」+ 保留期改 7 天
 
 发布频率：建议 minor ≤每月 1 次，major 半年内不超 1 次（[[02-constitution#E1]] 类似精神）。
 
@@ -203,7 +253,7 @@ related:
 
 | 场景 | 预案 |
 |---|---|
-| 用户数据 localStorage 损坏 | 自动尝试最近一份备份恢复，失败则提示用户手动选择备份文件 |
+| **启动 `quick_check` 失败**（库损坏）| 原生弹框给出库路径 + `backups/` 路径，退出码 1。**不自动回滚、不自动挑快照**——恢复要选哪一份快照只有用户知道，选错等于静默丢掉那份之后的全部改动。手工步骤见 §3.3 |
 | 升级后无法启动 | v1.x 二进制保留 ≥12 个月，用户可下载旧版回退 |
 | 签名密钥泄露 | 立即吊销 + 重新签发新版本 + 通过更新通道告警旧版本不可用 |
 | GitHub Releases 不可访问 | 提供备用下载点（自托管 / 镜像） |

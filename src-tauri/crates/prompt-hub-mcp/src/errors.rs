@@ -79,6 +79,14 @@ pub fn repo_error(err: RepoError) -> CallToolResult {
             "Backup schema version '{found}' is unsupported (this build restores \
              v{expected_major}.x). Importing only happens in the desktop app."
         ),
+        // Tauri-only startup self-check (HANDOFF 21.3): only `open_and_migrate`
+        // runs quick_check, and this server opens read-only. Unreachable here
+        // but kept exhaustive for the shared error enum.
+        RepoError::IntegrityCheckFailed { detail } => format!(
+            "The database failed its integrity check ({detail}). This can't be \
+             fixed from here — tell the user to open the prompt-hub desktop app, \
+             which will point them at their backups."
+        ),
         RepoError::Other(msg) => msg,
     };
     CallToolResult::error(vec![Content::text(text)])

@@ -13,8 +13,16 @@
 import { spawn, spawnSync } from "node:child_process";
 import { performance } from "node:perf_hooks";
 import { fileURLToPath } from "node:url";
-import { dirname, resolve } from "node:path";
-import { existsSync, mkdirSync, writeFileSync, statSync } from "node:fs";
+import { dirname, join, resolve } from "node:path";
+import {
+  existsSync,
+  mkdirSync,
+  mkdtempSync,
+  rmSync,
+  writeFileSync,
+  statSync,
+} from "node:fs";
+import { tmpdir } from "node:os";
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
 const REPO = resolve(__dirname, "..");
@@ -89,11 +97,25 @@ async function killTree(pid) {
   } catch {}
 }
 
-async function runOnce() {
+// The binary resolves its database through Tauri's app_data_dir(), which on
+// macOS is $HOME/Library/Application Support/<identifier> — so a bench run
+// under the real HOME opens, migrates and writes the developer's own library.
+// A worktree binary can therefore silently migrate the live database to a
+// schema the installed build does not understand. Every round spawns under a
+// throwaway HOME instead: the DB is created from scratch inside it (db.rs
+// create_dir_all), which also makes the timing reproducible rather than a
+// function of whatever happens to be in the developer's library. The warm-up
+// round absorbs the one-time creation + migration cost.
+function makeSandboxHome() {
+  return mkdtempSync(join(tmpdir(), "ph-bench-"));
+}
+
+async function runOnce(home) {
   const t0 = performance.now();
   const proc = spawn(BINARY, [], {
     stdio: "ignore",
     detached: false,
+    env: { ...process.env, HOME: home },
   });
   let elapsed = null;
   const deadline = t0 + TIMEOUT_MS;
@@ -121,16 +143,23 @@ function percentile(sorted, p) {
 async function main() {
   ensureProbe();
   console.log(`cold-start bench — ${ROUNDS} rounds, binary=${BINARY}`);
+  const home = makeSandboxHome();
+  console.log(`sandbox HOME=${home}`);
   const samples = [];
-  // Warm-up round (often slower due to disk cache miss); discarded.
-  console.log("warm-up…");
-  await runOnce();
-  for (let i = 0; i < ROUNDS; i++) {
-    const ms = await runOnce();
-    samples.push(ms);
-    console.log(
-      `  round ${String(i + 1).padStart(2, "0")}: ${ms.toFixed(2)} ms`,
-    );
+  try {
+    // Warm-up round (often slower due to disk cache miss, and pays the
+    // one-time DB creation in the sandbox HOME); discarded.
+    console.log("warm-up…");
+    await runOnce(home);
+    for (let i = 0; i < ROUNDS; i++) {
+      const ms = await runOnce(home);
+      samples.push(ms);
+      console.log(
+        `  round ${String(i + 1).padStart(2, "0")}: ${ms.toFixed(2)} ms`,
+      );
+    }
+  } finally {
+    rmSync(home, { recursive: true, force: true });
   }
   const sorted = [...samples].sort((a, b) => a - b);
   const mean = samples.reduce((s, x) => s + x, 0) / samples.length;
