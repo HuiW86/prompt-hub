@@ -1,13 +1,13 @@
 ---
 type: test-spec
 project: prompt-hub
-version: v0.11
+version: v0.12
 created: 2026-05-19
-last_modified: 2026-09-04
-status: ratified # v0.11 于 2026-09-04 归档（[[HANDOFF]] 第 21.3 项落地涟漪）：两处改动都属**记录类**，按 [[CLAUDE#§5.1.2]] 不进人审队列——① §1 分层表 Rust 行的「覆盖范围」列补「启动自检」一词（`open_and_migrate` 迁移前跑 `PRAGMA quick_check`）。**这是描述该层覆盖到哪些模块，不是改测试分层本身**；§1 中真正属图纸的三层结构、工具与触发时机一字未动 ② §2 / §4 计数刷新：前端 457 → **461**（组件组 244 → 248，全在 `SettingsModal`）、Rust 183 → **192**（repo-core unit 49 → 58，`backup.rs` +7 / `db.rs` +2）。**两个数都是本机实跑导出、不抄任何人给的数**（`vitest --reporter=json` 逐文件相加 91 + 28 + 248 + 17 + 77 = 461 与表头自洽；`cargo test --workspace` 12 行 `test result:` 相加 192），verifier 复跑确认。gate 仍 **7** / IPC 仍 **56** / `user_version` 仍 **13** ③ 新增 §4.5 **G6 走查记录**（五项全通过、零缺陷零代码改动）+ §4.1 增 G6 行 + 教训续到 **12**。G6 属 §4.x 记录类，同法反查归档：逐句对 `/tmp/ph-walk/shots/G6-run-*.log` 与 `backup.rs` / `db.rs` 源码核过，未验的四项（`pre-import` 路径 / 1 MiB 滚动 / 后台每小时线程 / 忙碌守卫）**据实列在 §4.5 末段，不算通过**。前端 chunk `index-6Y1huvpK.js`。v0.10 于 2026-09-04 同法归档（[[CLAUDE#§5.1.2]]，§4.x 属记录类）：omar 撤销 [[07-features#§1]] `verified` 判据的 ② ③ 条，本版只随之改两处措辞——§4.1 表头注明「门过 + 留证登记 = `verified` 全部条件」，§4.2 前的 v0.8 提示补一句该行已于 2026-09-04 升 `verified`。**本版增量不含任何新的代码事实断言**（零代码改动、零新测试、计数全部不动：前端 457 / Rust 183 / gate 7 / IPC 56），故无可反查项，非「跳过反查」。v0.9 于 2026-09-03 同法归档：新增 §4.4 **G5 走查记录**（ADR-028 首个真机门，八项全通过）+ §4.1 G5 行 + §4.3 O3 转「真机已复跑」+ 教训 10 / 11。反查结果 **5 处不一致，全部按代码改正后才写入**（toast 不在 header DOM 里 / 动作簇与整理模式无关 / 说明行漏一个空格 / 确认按钮另有 `aria-label` / 清空还发一条 toast，逐条见 §4.4 反查说明）。测试计数不动（457 / 183，G5 零代码改动）。v0.8 于 2026-09-03 按 [[CLAUDE#§5.1.2]]「日志不签字」反查归档（§2 计数 / §3 gate 盘面 / §4 Rust 盘面 / §4.3 走查记录属记录类，不进人审队列；数字两轮全部由本机重跑 `pnpm test` 与 `cargo test --workspace` 重新导出，非沿用）；v0.7 同日同法归档（ts-recheck 62 条核 / 8 处修正 / 21 条真机观测无法从代码核）；v0.5 于 2026-09-01 人审批次 ③ ratified。v0.8 内容：ADR-028 **P0（`77637cd`）+ P1（`6aca7eb`）**涟漪——前端 414→457 / Rust 169→183 / 源码级 gate 6→7 / IPC 53→56 / 观察 O3 闭合
+last_modified: 2026-09-05
+status: ratified # v0.12 于 2026-09-05 归档（[[029-alignment-coordinates-and-drift-ledger]] 三期落地涟漪，P0 `0329520` / P1 `345e37f` / P2 `3af8308`）：本版改动**全属记录类**，按 [[CLAUDE#§5.1.2]] 不进人审队列——① §2 / §4 计数全量刷新：前端 461 → **531**（41 → **45** 文件），Rust 192 → **227**；② §3 源码级 gate 仍 **7 个**，但两处盘面数变了：`ipc-contract` 覆盖命令数 56 → **62**，`soft-delete-gate` 的豁免 marker 12 → **13** 处 / 登记清单 10 → **11** 条（新增的一条是 `list_alignment_axis_values` 的引用计数读——`ON DELETE SET NULL` 是 SQL 层动作，看不见 `deleted_at`，故删一条轴取值也会把废纸篓里那些话术的坐标一并抹掉，只报存活数会藏起一半爆炸半径）；③ §4.1 新增 **G7 行**并在**同版第二笔**填入结果——ADR-029 的第一个真机门于 2026-09-05 18:05–18:52 PDT 跑完：**6 通过 / 2 部分 / 1 缺陷已修**（`4a68fa9`），逐项记录见新增的 **§4.6**；两项「部分」是 ② 紧凑档未切换验证与 ⑦ Dock / Reopen 路径未验（裸二进制没有 Dock 图标）。④ 前端计数随缺陷修复的回归用例再 +1：531 → **532**（`AlignmentPhrases.test.tsx` 28 → 29，组件组 291 → 292，文件数仍 45），本机重跑导出。**两个计数都是本机实跑导出、不抄任何人给的数**（`pnpm exec vitest run --reporter=json` 逐文件计数分组相加 101 + 28 + 291 + 31 + 80 = 531 与表头自洽；`cargo test --workspace` 12 行 `test result:` 相加 227）。`user_version` 13 → **14**，导出 data schema 1.2 → **1.3**。**本版不新增 §4.x 走查记录**——G7 跑完之后才写。前 v0.11 于 2026-09-04 归档（[[HANDOFF]] 第 21.3 项落地涟漪）：两处改动都属**记录类**，按 [[CLAUDE#§5.1.2]] 不进人审队列——① §1 分层表 Rust 行的「覆盖范围」列补「启动自检」一词（`open_and_migrate` 迁移前跑 `PRAGMA quick_check`）。**这是描述该层覆盖到哪些模块，不是改测试分层本身**；§1 中真正属图纸的三层结构、工具与触发时机一字未动 ② §2 / §4 计数刷新：前端 457 → **461**（组件组 244 → 248，全在 `SettingsModal`）、Rust 183 → **192**（repo-core unit 49 → 58，`backup.rs` +7 / `db.rs` +2）。**两个数都是本机实跑导出、不抄任何人给的数**（`vitest --reporter=json` 逐文件相加 91 + 28 + 248 + 17 + 77 = 461 与表头自洽；`cargo test --workspace` 12 行 `test result:` 相加 192），verifier 复跑确认。gate 仍 **7** / IPC 仍 **56** / `user_version` 仍 **13** ③ 新增 §4.5 **G6 走查记录**（五项全通过、零缺陷零代码改动）+ §4.1 增 G6 行 + 教训续到 **12**。G6 属 §4.x 记录类，同法反查归档：逐句对 `/tmp/ph-walk/shots/G6-run-*.log` 与 `backup.rs` / `db.rs` 源码核过，未验的四项（`pre-import` 路径 / 1 MiB 滚动 / 后台每小时线程 / 忙碌守卫）**据实列在 §4.5 末段，不算通过**。前端 chunk `index-6Y1huvpK.js`。v0.10 于 2026-09-04 同法归档（[[CLAUDE#§5.1.2]]，§4.x 属记录类）：omar 撤销 [[07-features#§1]] `verified` 判据的 ② ③ 条，本版只随之改两处措辞——§4.1 表头注明「门过 + 留证登记 = `verified` 全部条件」，§4.2 前的 v0.8 提示补一句该行已于 2026-09-04 升 `verified`。**本版增量不含任何新的代码事实断言**（零代码改动、零新测试、计数全部不动：前端 457 / Rust 183 / gate 7 / IPC 56），故无可反查项，非「跳过反查」。v0.9 于 2026-09-03 同法归档：新增 §4.4 **G5 走查记录**（ADR-028 首个真机门，八项全通过）+ §4.1 G5 行 + §4.3 O3 转「真机已复跑」+ 教训 10 / 11。反查结果 **5 处不一致，全部按代码改正后才写入**（toast 不在 header DOM 里 / 动作簇与整理模式无关 / 说明行漏一个空格 / 确认按钮另有 `aria-label` / 清空还发一条 toast，逐条见 §4.4 反查说明）。测试计数不动（457 / 183，G5 零代码改动）。v0.8 于 2026-09-03 按 [[CLAUDE#§5.1.2]]「日志不签字」反查归档（§2 计数 / §3 gate 盘面 / §4 Rust 盘面 / §4.3 走查记录属记录类，不进人审队列；数字两轮全部由本机重跑 `pnpm test` 与 `cargo test --workspace` 重新导出，非沿用）；v0.7 同日同法归档（ts-recheck 62 条核 / 8 处修正 / 21 条真机观测无法从代码核）；v0.5 于 2026-09-01 人审批次 ③ ratified。v0.8 内容：ADR-028 **P0（`77637cd`）+ P1（`6aca7eb`）**涟漪——前端 414→457 / Rust 169→183 / 源码级 gate 6→7 / IPC 53→56 / 观察 O3 闭合
 author: ai # 🤖 AI 主笔 + 人审（CLAUDE §5.2）
 audience: [ai, human]
-description: prompt-hub 测试规格——前端 Vitest 461 用例 + Rust workspace 192 + 7 源码级 gate + CI 双 job + C1 bench gate + 真机门 G1–G6；LLM Eval N/A
+description: prompt-hub 测试规格——前端 Vitest 532 + Rust 227 + 7 源码级 gate + CI 双 job + C1 bench gate + 真机门 G1–G7；LLM Eval N/A
 related:
   - 06-prd
   - 07-features
@@ -15,6 +15,7 @@ related:
   - 025-unified-anchored-editing
   - 027-configurable-global-hotkey
   - 028-reversible-delete
+  - 029-alignment-coordinates-and-drift-ledger
 ---
 
 # Test Spec: prompt-hub
@@ -23,7 +24,7 @@ related:
 > 覆盖率目标见 [[07-features#§5]]。
 >
 > **标注约定**（沿用文档体系三标）：📊 实测（有命令输出背书，标注口径日期）/ 🎯 目标（规格要求，未必已落地）/ ⚠️ 红线（违反即 block）。
-> 本版 📊 数字口径：前端与 Rust 均为 **2026-09-04 本机实测**（[[HANDOFF]] 第 21.3 项落地后，工作树未提交）——`pnpm exec vitest run --reporter=json`（逐文件计数分组相加 91 + 28 + 248 + 17 + 77 = **461 / 41 文件**）+ `cargo test --workspace`（12 行 `test result:` 相加 **192**）。前端 chunk `index-6Y1huvpK.js`。未单独标注日期的条目沿用 2026-08-20 口径。
+> 本版 📊 数字口径：前端与 Rust 均为 **2026-09-05 本机实测**（G7 缺陷修复后，`main` @ **`4a68fa9`**）——`pnpm exec vitest run --reporter=json`（逐文件计数分组相加 101 + 28 + 292 + 31 + 80 = **532 / 45 文件**）+ `cargo test --workspace`（12 行 `test result:` 相加 **227**，`4a68fa9` 是纯前端修复，Rust 侧未复跑口径不变）。未单独标注日期的条目沿用 2026-08-20 口径。
 >
 > **v0.3 全量刷新**：v0.2 的口径停在 2026-07-02，其间前端 154→**373**、Rust 135→**158**、源码级 gate 4→**6**、IPC 命令 48→**51**。数字标了日期不算说谎，但**差了一个半月和两倍用例量的规格文件已无参考价值**——v0.3 把全部 📊 推到当日实测。
 >
@@ -67,7 +68,16 @@ v0.1 规划的四层金字塔已落地为下表实际形态（Playwright E2E 层
 
 ## §2 前端 Vitest 盘面
 
-📊 **461 用例 / 41 测试文件，全绿**（2026-09-04 第十笔实测，[[HANDOFF]] 第 21.3 项落地后；v0.5 口径 398 于 2026-08-20 逐文件计数）。
+📊 **532 用例 / 45 测试文件，全绿**（2026-09-05 第十二笔实测，G7 缺陷修复后 `main` @ `4a68fa9`；同日第十一笔 531 取自 `3af8308`，v0.11 口径 461 / 41 于 2026-09-04）。
+
+> **v0.12 +70（ADR-029 三期 · 461 → 531，文件 41 → 45）**：逐文件用 vitest JSON reporter 复算，四个新文件 + 六个既有文件长大——
+>
+> - **新文件 4 个 / +37**：`utils/__tests__/alignmentCopyText.test.ts` **10**（复制文本拼装 7 条 + chip 次级文字 3 条；含「三轴全空则逐字节等于原 `content`」这条把「旧话术零变化」钉死的用例）/ `components/__tests__/DriftLedgerView.test.tsx` **13**（空态 / 排序 / 逐轴行与行合计 / 修订前后切分 / 逐轴总计 / 两处缺口与合计对得上 / 读失败不退化成空态，另加一个**措辞禁令扫描**：`纠偏|漂移|出错|偏离|不好|建议|效果不佳|排名|评价` 一律不许出现在用户可见文案里）/ `stores/__tests__/sessionStore.test.ts` **10**（会话戳与本次唤起的口令计数）/ `ipc/usageSource.test.ts` **4**（口令一律记 `live_cue`，与它从哪个区被复制无关）
+> - **既有文件 +33**：`AlignmentPhrases` 9 → **28**（+19：chip 坐标 4 / 编辑器三个坐标选择器 6 / 「管理…」轴取值面 9；**G7 之后再 +1 至 29**，见下条）/ `StatusBar` 1 → **6**（+5）/ `App.test` 27 → **30**（+3，全是 `⌘9`）/ `RecentList` 1 → **3** / `SearchOverlay` 17 → **18** / **`token-gate` 41 → 43 又是它自己长出来的**——P1 的 `alignment.module.css` 与 P2 的 `driftLedger.module.css` 按 CSS 文件枚举自动入册并通过，与 v0.3 的 `HotkeyRecorder.module.css`、v0.8 的 `TrashSection.module.css` 是同一机制第三次现身；`ipc-contract` 6 → **7**（新增一条「命令面大小恰好等于 62」的断言，守的不是三方漂移而是**静默增长**）
+>
+> **G7 之后再 +1（`4a68fa9`）**：531 → **532**，唯一一条是 `AlignmentPhrases.test.tsx` 的 `re-pulls axis values on open so the confirm reports the current refCount (G7 缺陷)`——守 **D-G7-1**（§4.6）。这条用例的来源值得记：**它不是写完代码时想到的，是真机门指出来的**，而这类「数据是对的、只是store 里那份过期了」的缺陷，jsdom 里所有既有用例都是绿的，因为它们各自只走一步。
+>
+> ⚠️ **jsdom 验不了这一批的四类东西**：真实形状库的 13→14 迁移（这里跑的是 tempfile 空库）/ 9 格相位带的像素 / `⌘9` 走 OS 快捷键分发 / **原生 `select` 弹窗与「点外关闭」规则的冲突**——jsdom 的 `<select>` 不弹原生菜单，而那正是三个坐标选择器最可能出事的地方。四类全部归 **G7**（§4.1）。
 
 > **v0.11 +4（第 21.3 项 · 设置弹窗忙碌守卫）**：全部落在 `SettingsModal` 10→**14**——忙碌中 Esc 不关窗 / 忙碌中点遮罩不关窗 / 忙碌中点 × 不关窗 / 导入 settle 后可关，另有空闲态点遮罩仍可关一条作对照。**文件数不变**（41），新增用例进的是既有文件。这四条守的是 `import_data` 转 async 之后新出现的窗口：主线程不再冻结，于是「冻结」这个意外的互斥没了。
 >
@@ -95,11 +105,11 @@ v0.1 规划的四层金字塔已落地为下表实际形态（Playwright E2E 层
 
 | 分组 | 用例 📊 | 文件 | 覆盖对象 |
 |---|---|---|---|
-| stores（7 文件） | 91 | `src/stores/__tests__/{appStore 2, promptStore 45, searchStore 4, settingsStore 11, toastStore 16, updaterStore 12}.test.ts` + `src/stores/prompt/__tests__/helpers 1` | Zustand store actions / 复制失败可见 + toast intent 分级与**让位规则** / updater 状态机 / draft 计数联动 / **软删除恢复与废纸篓 slice** |
+| stores（8 文件） | 101 | `src/stores/__tests__/{appStore 2, promptStore 45, searchStore 4, **sessionStore 10**, settingsStore 11, toastStore 16, updaterStore 12}.test.ts` + `src/stores/prompt/__tests__/helpers 1` | Zustand store actions / 复制失败可见 + toast intent 分级与**让位规则** / updater 状态机 / draft 计数联动 / 软删除恢复与废纸篓 slice / **唤起会话戳与本次唤起的口令计数** |
 | hooks（4 文件） | 28 | `src/hooks/__tests__/{useAnchoredPosition 13, useRegionNav 8, useCopy 4, useSearchResults 3}` | **锚定定位与滚动祖先订阅**（ADR-025）/ 区域内漫游导航 / 复制 / 搜索结果派生 |
-| 组件（21 文件） | 248 | `src/App.test.tsx` 27 + `src/components/__tests__/*`：ScenePanel 54 / ScenePropertiesEditor 22 / AnchoredEditor 26 / SearchOverlay 17 / DraftInbox 15 / **TrashSection 12** / **SettingsModal 14** / HotkeyRecorder 10 / AlignmentPhrases 9 / MacroGrid 8 / HotkeyBanner 7 / ScenePanelFocusRestore 5 / ModifierGrid 4 / UpdaterBanner 4 / ErrorBoundary 3 / ModeToggle 3 / PhaseBar 3 / SearchBar 3 / RecentList 1 / StatusBar 1 | 组件渲染 / 交互 / Tab cycle 6 区断言（[[03-product-spec#13.4]]）/ 编辑器关闭规则表分支 / **一键删除 + 撤销 toast** / **废纸篓列表 · 恢复 · 清空** |
-| utils（2 文件） | 17 | `src/utils/__tests__/errorMessage.test.ts` 8 + `src/utils/__tests__/accelerator.test.ts` 9 | IPC 错误信息归一 / 快捷键 accelerator 解析与格式化 |
-| 源码级 gate（7 文件） | 77 | token-gate 41 / **soft-delete-gate 12** / theme-parity 8 / ipc-contract 6 / b2-separation 5 / density-gate 3 / doc-refs-gate 2 | 见 §3 |
+| 组件（22 文件） | 292 | `src/App.test.tsx` 30 + `src/components/__tests__/*`：ScenePanel 54 / **AlignmentPhrases 29** / AnchoredEditor 26 / ScenePropertiesEditor 22 / SearchOverlay 18 / DraftInbox 15 / **DriftLedgerView 13** / TrashSection 12 / SettingsModal 14 / HotkeyRecorder 10 / MacroGrid 8 / HotkeyBanner 7 / **StatusBar 6** / ScenePanelFocusRestore 5 / ModifierGrid 4 / UpdaterBanner 4 / ErrorBoundary 3 / ModeToggle 3 / PhaseBar 3 / RecentList 3 / SearchBar 3 | 组件渲染 / 交互 / Tab cycle 6 区断言（[[03-product-spec#13.4]]）/ 编辑器关闭规则表分支 / 一键删除 + 撤销 toast / 废纸篓列表 · 恢复 · 清空 / **chip 坐标与三个坐标选择器** / **轴取值管理面** / **状态栏口令计数与漂移账明细（含措辞禁令扫描）** |
+| utils（4 文件） | 31 | `src/utils/__tests__/errorMessage.test.ts` 8 + `src/utils/__tests__/accelerator.test.ts` 9 + **`src/utils/__tests__/alignmentCopyText.test.ts` 10** + **`src/ipc/usageSource.test.ts` 4** | IPC 错误信息归一 / 快捷键 accelerator 解析与格式化 / **复制文本拼坐标前缀与 chip 次级文字** / **口令复制一律记 `live_cue`**（后者放在 `src/ipc/` 下但不是 gate，按职能归本组）|
+| 源码级 gate（7 文件） | 80 | **token-gate 43** / soft-delete-gate 12 / theme-parity 8 / **ipc-contract 7** / b2-separation 5 / density-gate 3 / doc-refs-gate 2 | 见 §3 |
 
 🎯 单元测试范围要求（自 v0.1 保留，按现行架构改述）：核心业务逻辑（store actions / promote 语义 / schema 校验）覆盖 ≥90%；状态机转移（draft `pending→promoted/discarded`、SOP `active/paused/completed` 等，见 [[06-prd#7]]）穷举合法转移 + 拒绝非法转移；[[02-constitution]] 边界约束（资产数量上限 / 单条话术 ≤5000 字符 / 恶意 JSON 拒绝）必测。
 
@@ -121,7 +131,9 @@ v0.1 规划的四层金字塔已落地为下表实际形态（Playwright E2E 层
 
 ### 3.3 ipc-contract（`src/ipc/ipc-contract.test.ts`）
 
-守护 Tauri IPC 三方契约：`commands.rs` 的 `#[tauri::command]` 集合 ↔ `lib.rs` 的 `generate_handler![…]` 注册表 ↔ `src/ipc/index.ts` 的 `invoke("…")` 字面量，三向名字集合等价。动因：前端测试 mock `invoke`、Rust 测试打 command 层以下的 repo fn，命令「定义了没注册 / 名字漂移」只会在运行时炸（ADR-015 补遗-2 踩过同类坑）。📊 当前覆盖 **56 个命令**（2026-09-03 实测：`commands.rs` 56 个 `#[tauri::command]` ↔ `src/ipc/index.ts` 56 个 `invoke<>` 字面量；v0.8 增 `restore_asset` / `list_trash` / `purge_trash`，v0.4 增 `get_global_hotkey` / `set_global_hotkey`。v0.2 记 48——gate 动态解析源码，无需随命令数改测试）。
+守护 Tauri IPC 三方契约：`commands.rs` 的 `#[tauri::command]` 集合 ↔ `lib.rs` 的 `generate_handler![…]` 注册表 ↔ `src/ipc/index.ts` 的 `invoke("…")` 字面量，三向名字集合等价。动因：前端测试 mock `invoke`、Rust 测试打 command 层以下的 repo fn，命令「定义了没注册 / 名字漂移」只会在运行时炸（ADR-015 补遗-2 踩过同类坑）。📊 当前覆盖 **62 个命令**（2026-09-05 实测：`commands.rs` 62 个 `#[tauri::command]` ↔ `src/ipc/index.ts` 62 个 `invoke<>` 字面量；v0.12 增 ADR-029 六个——轴取值的 list / create / update / delete / reorder 五个 + 漂移账一个；v0.8 增 `restore_asset` / `list_trash` / `purge_trash`，v0.4 增 `get_global_hotkey` / `set_global_hotkey`。v0.2 记 48——gate 动态解析源码，无需随命令数改测试）。
+
+> **v0.12 起本 gate 多了一条不同性质的用例**（6 → **7**）：`EXPECTED_COMMAND_COUNT = 62` 是一个写死的数，它守的**不是三方漂移**（那是另外六条集合比对的事），是**静默增长**——每加一个命令都是一块新的攻击面和一处新的同步负担，所以加命令必须顺手改这个数并说明理由。ADR-029 那六个里**没有「轴取值引用计数」这一个**：两个计数搭 list 读的便车返回，因为需要它们的那一刻正是已经需要那张列表的那一刻（[[06-prd#6.6-bis]]）。
 
 ### 3.4 doc-governance 引用契约（`scripts/doc-governance/doc-refs-gate.test.ts`，本轮新增）
 
@@ -143,11 +155,13 @@ v0.1 规划的四层金字塔已落地为下表实际形态（Playwright E2E 层
 
 扫描 `src-tauri/src` 与 `src-tauri/crates` 的 Rust 源码，按资产表逐个计谓词；无法遵守的语句必须在紧邻上方写 `// soft-delete-gate: exempt — <理由>` 并在测试内的 `EXPECTED_EXEMPTIONS` 清单登记——清单与实扫结果必须**完全相等**（多一条少一条都红），**加豁免因此是一个需要过审的显式动作**。
 
-📊 源码里带 marker 的共 **12 处，归四类**：**导出** 7 处（全保真备份，[[06-prd#6.9]] / 子决策 6）/ **废纸篓视图本身** 1 处（它要选的正是别人都藏起来的行）/ **恢复读取** 2 处 / **删除路径的存在性探针** 2 处（要看得见废纸篓行，才能把「已经删过了」这个空操作与「根本没这个 id」这个错误分开）。
+📊 源码里带 marker 的共 **13 处，归五类**（v0.12 由 12 处 / 四类增至此）：**导出** 7 处（全保真备份，[[06-prd#6.9]] / 子决策 6）/ **废纸篓视图本身** 1 处（它要选的正是别人都藏起来的行）/ **恢复读取** 2 处 / **删除路径的存在性探针** 2 处（要看得见废纸篓行，才能把「已经删过了」这个空操作与「根本没这个 id」这个错误分开）/ **轴取值的引用计数读** 1 处（v0.12 新增）。
+
+> **v0.12 那条新豁免为什么必须开**：`list_alignment_axis_values` 这条读要产出的两个数里，有一个正是**指向该取值的废纸篓话术条数**。三列坐标的外键声明是 `ON DELETE SET NULL`，而 `ON DELETE` 是 SQL 层动作、**看不见 `deleted_at`**——删掉一条轴取值，会把废纸篓里那些话术的坐标也一并抹掉。只报存活数，等于藏起用户自己没法核对的那一半爆炸半径（[[06-prd#6.6-bis]]）。同一条语句里的**存活计数照旧带谓词**，marker 覆盖的是整条语句。这一条同样落在「软删除自己的机件」那一类，**不是面向用户的列表读**，所以下面那条「没有任何一条豁免能把废纸篓里的行漏进用户看得见的列表」仍然成立。
 
 > ⚠️ **别把「豁免有十几处」读成闸门被稀释了**：这四类**全是软删除自己的机件，没有一条是面向用户的列表读**——因此**没有任何一条豁免能把一条废纸篓里的行漏进用户看得见的列表**，而那正是这道闸门要防的唯一一件事。
 >
-> ⚠️ **12 处 marker 只有 10 条进得了清单，差的两条不是漏登记**：软删与恢复各有一条**按表名动态拼**的 SQL（`repo-write/src/soft_delete.rs` 与 `repo-write/src/trash.rs`），它们对扫描器**根本不可见**（下方盲区 3），写 marker 只是给读代码的人看的，扫不到自然也就登记不上。**这正是盲区 3 的实证**：真要有人新写一条动态表名的读语句，这道闸门不会拦他。
+> ⚠️ **13 处 marker 只有 11 条进得了清单，差的两条不是漏登记**：软删与恢复各有一条**按表名动态拼**的 SQL（`repo-write/src/soft_delete.rs` 与 `repo-write/src/trash.rs`），它们对扫描器**根本不可见**（下方盲区 3），写 marker 只是给读代码的人看的，扫不到自然也就登记不上。**这正是盲区 3 的实证**：真要有人新写一条动态表名的读语句，这道闸门不会拦他。
 
 📊 **12 条用例**：3 条扫真实源码（找得到源码与资产读 / 每条非豁免读都带谓词 / 豁免集合与清单完全相等），9 条**用夹具自检这把尺子本身**（漏谓词要报 / 补上要过 / 多表 JOIN 要逐表计 / 豁免注释要认 / 远处的豁免注释不得覆盖到下一条语句 / 写语句要跳过 / 无该列的表要跳过 / 注释里的 SQL 不算 / 扫到 `#[cfg(test)]` 即停）。
 
@@ -157,14 +171,14 @@ v0.1 规划的四层金字塔已落地为下表实际形态（Playwright E2E 层
 
 ## §4 Rust workspace 测试盘面
 
-📊 **192 用例，全绿**（2026-09-04 第十笔实测 `cargo test --workspace --manifest-path src-tauri/Cargo.toml`；2026-09-03 口径 183，**第 21.3 项 +9**）：
+📊 **227 用例，全绿**（2026-09-05 第十一笔实测 `cargo test --workspace --manifest-path src-tauri/Cargo.toml`；2026-09-04 口径 192，**ADR-029 P0 `0329520` +35**。P1 `345e37f` 与 P2 `3af8308` 是纯前端改动，Rust 侧一条没动）：
 
 | crate / suite | 用例数 📊 | 覆盖对象 |
 |---|---|---|
-| repo-write（unit） | 99 | 全部写路径 CRUD / promote 4 arm / reorder / `move_phrase` + MoveReceipt / **七处原地软删 + `restore_asset` + `purge_trash`**（tempfile SQLite fixture） |
-| repo-core（unit） | 58 | 读路径（除 §3.7 登记豁免的 8 处外均带 `deleted_at IS NULL`——7 处导出 + 1 处废纸篓视图就在本 crate）/ 迁移（含 `open_and_migrate` 两条负路径）/ `count_pending_drafts` 等 free fn。**v0.11 +9（第 21.3 项）**：`backup.rs` **+7**——分前缀配额（一类快照的风暴挤不掉另一类）/ 哈希去重（库没变就复用旧快照、变了才落新盘）/ **`Unchanged` 仍刷 mtime**（verifier 抓出的 D1：不刷则每日排期永远结不清，每小时白跑一次 `VACUUM INTO`）/ **扫掉中断留下的 `.tmp`**（D3）/ `daily` 配额 7 / due 判定（无快照或最近一份满 24h）/ 同秒写入按写序排列；`db.rs` **+2**——健康库通过 `quick_check`、逐页写坏的库被拒绝且不 panic。**v0.8 +3**：`db.rs` 两条 `0013` 迁移测试（在有数据的库上加列后原行仍存活 / 重建后的默认索引让废纸篓里的默认话术腾出名额）+ `repo.rs` 一条最近使用区（软删后该行消失、恢复后带着历史回来）|
+| repo-write（unit） | **117** | 全部写路径 CRUD / promote 4 arm / reorder / `move_phrase` + MoveReceipt / 七处原地软删 + `restore_asset` + `purge_trash`（tempfile SQLite fixture）。**v0.12 +18（ADR-029 P0）**：新文件 `alignment_axis_values.rs` **7**（16 条 seed 分轴有序 / 追加只在本轴内 / 无提示也能建 / 改名改提示与未知 id / 重排拒收外轴 id / **删除把存活与废纸篓里的坐标一并置 NULL** / 硬删且报未知 id）+ `alignment_phrases.rs` **7**（存坐标与 `kind` / 跨轴 id 被拒且一个字节都不写 / **`coordinates` 载荷缺席则坐标与 `kind` 原封不动** / 显式全 null 才清空 / 更新时跨轴被拒不动行 / 只改名或只改坐标**不刷** `content_revised_at` / 正文真变了才打戳并写 `notes`）+ `import.rs` **4**（1.2 备份缺 `alignment_axis_values` 键时本表不动 / 显式空数组才清空 / 往返保住坐标与 `kind` 与修订戳 / 坐标指向不存在的轴取值则整笔回滚）|
+| repo-core（unit） | **74** | 读路径（除 §3.7 登记豁免的 8 处外均带 `deleted_at IS NULL`——7 处导出 + 1 处废纸篓视图就在本 crate）/ 迁移（含 `open_and_migrate` 两条负路径）/ `count_pending_drafts` 等 free fn。**v0.11 +9（第 21.3 项）**：`backup.rs` **+7**——分前缀配额（一类快照的风暴挤不掉另一类）/ 哈希去重（库没变就复用旧快照、变了才落新盘）/ **`Unchanged` 仍刷 mtime**（verifier 抓出的 D1：不刷则每日排期永远结不清，每小时白跑一次 `VACUUM INTO`）/ **扫掉中断留下的 `.tmp`**（D3）/ `daily` 配额 7 / due 判定（无快照或最近一份满 24h）/ 同秒写入按写序排列；`db.rs` **+2**——健康库通过 `quick_check`、逐页写坏的库被拒绝且不 panic。**v0.12 +16（ADR-029 P0）**：`db.rs` **+5** 全是 `0014`——`usage_records` 整表重建后**逐行比对无一丢失** / seed 出第 9 相位与它的六条口令与 16 条轴取值 / 第 9 相位的「一相位一默认」部分唯一索引仍成立 / 有数据的磁盘库走 runner 升到 14 / 三列坐标外键真的是 `SET NULL`；`repo.rs` **+11**——`drift_ledger_*` **8** 条（归到前面那条开场话术 / 无会话戳的行跳过且绝不跨会话配对 / 任何锚点之前的口令记未归因 / **「停」进合计但不进任一轴** / 锚点在废纸篓则记未归因 / 口令自身在废纸篓只进合计 / 按 `content_revised_at` 切前后两段 / 用 `source` 而非 `target_type` 分开锚点与口令）+ `record_usage` 往返会话戳与 `live_cue` + 轴取值引用计数把存活与废纸篓分开数 + 轴取值按轴再按位序。**v0.8 +3**：`db.rs` 两条 `0013` 迁移测试（在有数据的库上加列后原行仍存活 / 重建后的默认索引让废纸篓里的默认话术腾出名额）+ `repo.rs` 一条最近使用区（软删后该行消失、恢复后带着历史回来）|
 | prompt-hub-mcp（unit） | 8 | MCP server 工具层 |
-| prompt-hub-mcp `tests/e2e.rs` | 6 | MCP 14 tool 端到端 |
+| prompt-hub-mcp `tests/e2e.rs` | **7** | MCP 14 tool 端到端。**v0.12 +1**：`list_alignment_phrases_exposes_the_adr_029_fields_read_only`——外部 AI 读得到坐标与 `kind`，但**写不进**（B 类边界不因加了字段而松动）|
 | prompt-hub-mcp `tests/trybuild_negative.rs` | 1 | 编译期负例（禁 import repo-write 写面，B 类边界的类型层强制） |
 | repo-write `tests/backup_e2e.rs` | 3 | 备份端到端 |
 | repo-write `tests/soft_delete_e2e.rs`（v0.8 新增） | 7 | 软删除端到端，**逐条**：① 六类资产恢复后 `id` / `created_at` / `order_index` 三者不变 ② 软删的行离开列表读但仍在表里 ③ 恢复一条已被顶替的默认对齐话术**降级而非报错** ④ `list_trash` 按删除时间倒序列出各类、默认为空 ⑤ 清空只销毁废纸篓里的行、留下一致的 schema 并清掉孤儿 usage ⑥ 可见列表重排**跳过废纸篓里的邻居**，回填隐藏 id 被拒。⑦（P1 新增）**恢复一条话术会连同它挂靠的场景 / 子阶段一起复活**，不留下够不着的资产。**「恢复后 usage 历史重连」不在本文件**，由 `repo-core` 的 `list_recent_usage` 用例守（见上一行）|
@@ -191,6 +205,7 @@ E2E 层缺位期间，**布局 / 层叠 / 定位类改动一律由带编号的�
 | **G4（二十四项）**| features §7 留证缺口清单（v1.19） | **21 通过（W1–W12 / W14–W19 / W21 / W23 / W24）/ 2 不可达（W13、W20）/ 1 部分（W22）**（2026-09-02 走查，W18 / W21 于同日复跑转通过，见 §4.3）。首次按**发布形态**走查（裸 release 二进制内嵌 dist，非 dev + vite）；发现三个此前所有门都没抓到的缺陷 D1–D3 |
 | **G5（八项）**| ADR-028 删除可撤销（P0 + P1） | **八项全通过**（2026-09-03，见 §4.4）。删除全链路一次走完：迁移 → 一键删除 → 撤销 toast → 撤销恢复 → 废纸篓列表 → 单条恢复 → 最近区无墓碑（**G4 观察 O3 在真机闭合**）→ 清空确认与硬删。**零缺陷、零代码改动**。**一项明确不在覆盖内**：祖先复活路径未真机跑，理由见 §4.4 |
 | **G6（五项）**| [[HANDOFF]] 第 21.3 项可靠性底座 | **五项全通过**（2026-09-04，见 §4.5）。空库首启落日志与两份快照 → 同日再启不重拍 → 拨老 25h 且改过数据则重拍 → 拨老 25h 未改数据则复用并刷 mtime → 打坏 `macros` 根页后启动弹阻断框、退出码 1、`backups/` 未被触碰。**零缺陷、零代码改动**。**四项明确不在覆盖内**：`pre-import` 快照路径 / 1 MiB 日志滚动 / 后台每小时线程跨长会话 / 设置弹窗忙碌守卫，理由见 §4.5 末段 |
+| **G7（八项）**| [[029-alignment-coordinates-and-drift-ledger]] 三期（P0 + P1 + P2） | **6 通过 / 2 部分 / 1 缺陷已修**（2026-09-05 18:05–18:52 PDT，见 §4.6）。通过：① 真实库 v13 快照升 14 且 38 行 `usage_records` 全保留 / ③ `⌘9` 复制「停」并记 `live_cue` 带会话戳 / ④ 复制文本逐字节等于前缀 + 换行 + 正文 / ⑤ 原生 `select` 弹窗不触发外点关闭、footer 可达 / ⑥ 确认框报活的 `refCount`（**修后**）/ ⑧ 状态栏计数与明细逐行对得上 `usage_records`。**部分**：② 9 格等宽字号字重一致但**紧凑档未切换验证** / ⑦ 快捷键路径写会话戳通过而 **Dock / Reopen 路径未验**（裸二进制没有 Dock 图标）。**缺陷 D-G7-1 已修** `4a68fa9`（`refCount` 读的是启动时的缓存，确认框把在用的取值报成「0 条」），回归用例 +1、Vitest 531 → **532**。**四项明确不在覆盖内**：紧凑档 / Dock reopen / content 真变时的修订打戳 / 导出 1.3 真机往返 |
 
 #### 4.2 G3 门项（v0.4 新增 · 涟漪 [[027-configurable-global-hotkey]]）
 
@@ -343,6 +358,49 @@ E2E 层缺位期间，**布局 / 层叠 / 定位类改动一律由带编号的�
 
 12. ⚠️ **首轮 G6-5 两次没检出，不是自检没生效，是损坏没造成**。两个原因叠在一起：① **进程被 SIGTERM 结束不跑退出 checkpoint**，WAL 里留着那些页的干净副本，而读页时 WAL 优先——主文件里刚写进去的垃圾被整个盖住，`quick_check` 照样报 `ok` ② **page 2 是无关页**，写坏了也不参与 b-tree 校验。造损坏的正确做法是**先 `PRAGMA wal_checkpoint(TRUNCATE)` 把 WAL 清空，再打某张表的根页**。这条与 §4.3 教训「走查记录里的根因，修之前再读一遍代码」是同一类错误：**看到「没报错」就写成「功能没生效」，而真相是输入根本没送到**。判一项「验不过」之前先证明**被测条件确实成立**
 
+### 4.6 G7 走查记录（v0.12 第二笔 · 2026-09-05 · [[029-alignment-coordinates-and-drift-ledger]] 三期）
+
+**这一门验的是什么**：这一批的四类风险 jsdom 一类都碰不到——**真实形状的库**（工作树上跑的全是 tempfile 空库，真实库里 `usage_records` 有历史行要保全）、**9 格相位带的像素**、**`⌘9` 走 OS 快捷键分发**、**三个原生 `select` 弹窗与「点外关闭」规则的冲突**（jsdom 的 `<select>` 根本不弹原生菜单，而那正是最可能出事的地方）。本门的主证据是**每步用 `sqlite3` 反查隔离库**，截图只作辅证。
+
+**环境**：`pnpm tauri build --no-bundle` 重建裸 release，`strings` 核内嵌 chunk `index-Da-E5vjQ.js` 与 `dist/assets/` 一致（修复后重建为 `index-B2tPyOB8.js`）；隔离 `HOME=/tmp/ph-g7-home`；库是**真实库 v13 的快照副本**（取自 `backups/manual-pre-install-1788595906.db`：38 条 `usage_records` / 3 种 `source` / 13 条话术 / 8 相位）。正式版 `/Applications/prompt-hub.app` 走查前退出、走查后重开；**真实库全程未触碰**（走查后复核：仍 `user_version` 13、40 行、默认未变）。截图 `/tmp/ph-walk/shots/G7-*`。
+
+> ⚠️ **这是本门第一条教训，也是它差点白跑的原因**：先用裸 `cargo build --release` 出的二进制在真机上 **webview 全白、⌘ 键无反应**，换空 `HOME` 同样全白——那条路径不会把 `dist` 正确嵌进去。G5 / G6 的口径本来就是 `pnpm tauri build --no-bundle`，偏离它的代价是**看起来像功能坏了，其实是壳没装对**。
+
+| # | 门项 | 结果 | 证据 |
+|---|---|---|---|
+| G7-1 | 真实形状库 13→14 迁移 + `pre-migrate` 快照 + `usage_records` 全行保留 | ✅ | 日志 `migration 14 (0014_alignment_coordinates) applied` + `user_version=14 quick_check=ok`；`backups/` 落 `pre-migrate-1788656707.db`（**225280 B**）与 `daily-1788656707.db`。整表重建后 `usage_records` **38 行一行不少**、3 种 `source` 原样、新列 `session_started_at` 全 NULL（历史行本就没有会话）；三个索引重建；`foreign_key_check` 为空。seed 落位：`phases` 9 行（`phase-live｜中途｜8｜ap-live-stop`）/ `alignment_phrases` 25 条（cue 6 + opening 19）/ `alignment_axis_values` 16 条 |
+| G7-2 | 相位带 9 格紧凑档可读、字号字重不变 | ⚠️ **部分** | 9 格等宽，字号字重与其余 8 格一致，「9 中途 ⌘9」可读（截图 `G7-2-phasebar`）。**但只在默认密度档验的——紧凑档未切换验证**，而门项写的正是「紧凑档」 |
+| G7-3 | `⌘9` = 切中途 + 剪贴板「停」+ 记 `live_cue` 带会话戳 | ✅ | 剪贴板得「停」；`usage_records` 新行 `live_cue｜ap-live-stop｜phase-live`，`session_started_at` 与同一次唤起里 `⌘1` 那行**同值** `2026-09-06T01:14:36`——会话边界在真机上成立。相位带切到中途、chip 行出六条口令、「停」高亮为默认。**窗口驻留是整理态的契约行为**，不是漏隐藏 |
+| G7-4 | 带坐标话术复制 = 前缀 + 换行 + 正文 | ✅ | 经 UI 给「默认 · 发散」选层=路径 / 域=技术 / 模式=收敛并保存，点 chip 复制，剪贴板**逐字节**为 `'本轮在路径层，只谈技术闭环，收敛模式。\n我们做发散,铺开可能性,先不下结论。'`；chip 上以灰色次级文字同行显示「路径 · 技术 · 收敛」，无坐标的 chip 外观不变。**`content_revised_at` 保存后仍 NULL**——只改坐标不打戳，与契约一致。⚠️ `⌘1-9` / 搜索 / 最近区三条复制路径**未单独真机走**（四入口同一个 helper，由 jsdom 覆盖）|
+| G7-5 | 三个选择器与原生 select 弹窗不触发外点关闭、面板变高后 footer 可达 | ✅ | 三个选择器默认「不限」；原生 `select` 弹窗在 popover top layer 内打开、选中后**编辑面仍开着**、外点关闭规则未被触发（二轮复跑确认）；「管理…」展开后面板变高变宽，footer 的取消 / 保存仍可达 |
+| G7-6 | 轴取值删除 `ConfirmInline` 报 `refCount`（含 0）与废纸篓追加句 | ✅ **（修后）** | 首轮**不通过**——见下方 **D-G7-1**。`4a68fa9` 修复并重建后复验：同一会话内把「默认 · 发散」的模式改为「发散」保存，再开模式的「管理…」，「发散」行确认框报「**1 条**话术的『模式』坐标将被清空，删除后无法恢复」；「路径」行报 1 条。**全程只按 ✕ 取消，未真删** |
+| G7-7 | wake 事件在快捷键与 Dock 重开两条路径都写会话戳 | ⚠️ **部分** | 快捷键（⌥Space）路径**通过**，证据同 G7-3。**Dock / Reopen 路径未验**：裸二进制没有 Dock 图标，而 `osascript 'tell application "prompt-hub" to reopen'` 实际唤起的是 `/Applications` 里的正式版（`d32bda6`，schema 13，开的是真实库），根本不是隔离实例。要验须先装成 `.app` |
+| G7-8 | 状态栏「中途口令 N 次」N=0 不渲染、明细内容 | ✅ | N=0 时状态栏**无该格**；两次「停」后显示「中途口令 2 次」；点开「中途口令明细」——按开场话术表为空、按轴合计全 0、「未归入任何一轴：2 次」「未归到任何开场话术：0 次」「中途口令合计：2 次」。再做 `⌘1`（锚点）→ `⌘9` → 点「换层：路径层」chip 后，明细显示「默认 · 发散」行 层=1 / 合计 1，按轴合计 层 1，「未归入任何一轴 3」，合计 4，与 `usage_records` **逐行对得上**。⚠️ **空态文案未真机触发**——隔离库在有口令记录之前，那一格按契约根本不渲染，也就点不开。这不是漏验，是**契约把这条路堵死了** |
+
+**缺陷 D-G7-1（已修 `4a68fa9`）· 确认框把在用的轴取值报成「0 条」**
+
+首轮「管理…」→ 删「路径」，确认框报「**0 条**话术的『层』坐标将被清空」——而那个值**刚刚**被「默认 · 发散」引用过（G7-4 那一步保存的）。根因不在 SQL：`refCount` / `trashedRefCount` 是**每次查询现算**的，而 store 里那份轴取值列表是**启动时拉的**，此后保存的坐标它一无所知。修法两处——`AxisValueManager` 挂载时 `refreshAlignmentAxisValues()`，以及话术 create / update **带 coordinates 成功后**也重拉一次。回归用例 +1（Vitest 531 → **532**）。
+
+> **这个缺陷的形状值得记**：数据层是对的（后端现算的数就是 1），UI 也是对的（它忠实显示了手上那份数），错的是**两者之间那份副本的年龄**。所有既有 jsdom 用例都绿——因为它们各自只走一步，没有任何一条把「保存坐标」和「打开管理面」串成一次会话。**真机门抓到它，靠的正是它必须连着做完一串动作。**而它报错的方向是最坏的那个：**把有代价的删除说成没代价的**。
+
+**一处未复现的孤例（原因未明，据实记）**：首轮点选「路径」那一刻，选择器没变，且状态栏的会话计数被清零——**像是发生了一次 wake**。二轮同步骤复跑正常，三个选择器与两次「管理…」全部正常，未再出现。**未定位，不算缺陷也不算通过**，记在这里等它下次出现。
+
+**不在本门覆盖内的四项（据实记，不算通过）**：
+
+1. **紧凑档下的相位带未看**（G7-2）——只验了默认密度档
+2. **Dock / Reopen 路径的会话戳未验**（G7-7）——裸二进制没有 Dock 图标，须装成 `.app` 后重跑
+3. **`content` 真的变了时打 `content_revised_at` 戳**——真机只验了反面（只改坐标不打戳），正面仅有 jsdom 与 cargo 用例
+4. **导出 1.3 的真机往返**——本门没做导出 / 导入，1.2 旧备份的兼容路径也没在真机上走过
+
+**取证方法教训（续 §4.5，编号接 13）**：
+
+13. ⚠️ **裸 release 必须用 `pnpm tauri build --no-bundle`，`cargo build --release` 的产物在真机上白屏**。后者不会把 `dist` 正确嵌进去，表现是 webview 全白、⌘ 键无反应，换空 `HOME` 也一样。这与 §4.5 教训 12 同源：**看起来像功能坏了，先证明被测对象是对的那个**
+14. ⚠️ **窗口隐藏之后 `screencapture -l` 仍能截到陈旧画面，而 `-R` 抓到的是屏幕上层的别的应用**。所以每次发合成按键之前，先按 `wid` 核 `onscreen=true`——否则那串按键会**打进用户的前台应用**，而截图还会给你一张看起来合理的旧图
+15. ⚠️ **原生 `select` 弹窗的纵向位置随当前选中项对齐而移动**，点某个选项必须按 `wid` 报出的弹窗几何现算，固定坐标一定点错
+16. ⚠️ **`tell application "prompt-hub"` 唤起的是 `/Applications` 里的正式版，不是你手上那个裸二进制**。G7-7 就是这么废掉的——脚本「成功」了，但它操作的是另一个进程、另一个库
+
+---
+
 ---
 
 ## §5 性能基准（regression test）
@@ -356,6 +414,8 @@ E2E 层缺位期间，**布局 / 层叠 / 定位类改动一律由带编号的�
 | 搜索延迟（300 条 Phrase） | 🎯 ≤100ms | tinybench | 未单测 | warning |
 
 **触发**：任何主形态启动路径改动必须附 benchmark 结果（[[CLAUDE#§4.4]]）。📊 **最近一次复测 2026-08-20：p95 `14.226ms`**（ADR-025 P1-b 合入后在 `main` 上跑），与 2026-06-12 签名后基线 12.9–13.5ms 同档，无回归——锚定浮层不在唤起路径上，符合预期。
+
+> ⚠️ **v0.12 起这个数字过期了，且过期得有理由**：[[029-alignment-coordinates-and-drift-ledger]] P0（`0329520`）在唤起路径上加了一次 `emit_wake`——`lib.rs` 的 `wake_on_main_thread` 在 `show()` 之后向 webview 发一个带 RFC 3339 时间戳的 `wake` 事件。这是自 2026-06-12 签名基线以来**第一次真的动了 C1 约束的那条路径**（此前每一轮「未复跑」的理由都是「没碰唤起路径」，这一轮不成立）。bench 脚本已随同一支 commit 改为走 `wake_on_main_thread` 本身而不是它自己的一份拷贝，**emit 因此计入秒表内**（旧脚本会把它整个漏在计时之外）。**已于同日复跑：p95 `14.139ms`**（2026-09-05，verifier 在隔离 `HOME` 下实测，emit 已计入秒表内）——与 2026-08-20 的 `14.226ms` 同档，**加了一次 `emit_wake` 没有把唤起推离 C1 预算**，离 200ms 死线仍有一个数量级。这一项就此结清，不再是待办。
 
 ---
 

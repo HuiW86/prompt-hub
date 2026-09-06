@@ -45,3 +45,4 @@ pnpm-debug.log*
 
 # AI session cache (codex session ids, etc.)
 .context/
+.gstack/

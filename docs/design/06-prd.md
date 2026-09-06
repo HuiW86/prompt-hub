@@ -4,7 +4,7 @@ project: prompt-hub
 version: v0.15
 created: 2026-05-18
 last_modified: 2026-09-04
-status: ratified  # v0.15 于 2026-09-04 经 omar 签字（人审批次 ⑨，与 [[03-product-spec]] v0.26 同批，批次内两个裁点均按推荐通过）。本版是 [[029-alignment-coordinates-and-drift-ledger]] 的图纸回流（对齐坐标四轴 + 中途口令隐式记账），属图纸类改动，按 [[CLAUDE#§5.1.2]] 需 omar 签字后才转 `ratified`。**本版描述的契约尚未落地**——migration `0014`、六个新 IPC、复制拼前缀、按轴归因全部未编码，正文里标 🎯 的字段与命令一律读作「已裁决、未实装」。前 v0.14 于 2026-09-03 人审批次 ⑧ 经 omar 签字（三份图纸同批过：本文件 + [[03-product-spec]] v0.25 + [[05-design-spec]] v0.22；批次内无新决策，记的都是 ADR-028 已拍板的内容）。本版内容：§6 数据模型契约变更（新增 §6.0-bis 两套删除机制 + 七张资产表加 `deleted_at` + 四处「删除策略」重写 + 导出 data schema 1.1→1.2），属图纸类改动，按 [[CLAUDE#§5.1.2]] 需签字。**v0.12 起登记的 §6.1 drift 就此销账**——旧文承诺 `deprecated = true`、实装是 hard DELETE，现两边都已改正。前 v0.13 于 2026-09-01 人审批次 ④ ratified
+status: ratified  # v0.15 于 2026-09-04 经 omar 签字（人审批次 ⑨，与 [[03-product-spec]] v0.26 同批，批次内两个裁点均按推荐通过）。本版是 [[029-alignment-coordinates-and-drift-ledger]] 的图纸回流（对齐坐标四轴 + 中途口令隐式记账），属图纸类改动，按 [[CLAUDE#§5.1.2]] 需 omar 签字后才转 `ratified`。**本版描述的契约已于 2026-09-05 落地**（ADR-029 P0 `0329520` / P1 `345e37f` / P2 `3af8308`，真机门 G7 6 过 / 2 部分 / 1 缺陷已修 `4a68fa9`，见 [[11-test-spec#4.6]]）。前 v0.14 于 2026-09-03 人审批次 ⑧ 经 omar 签字（三份图纸同批过：本文件 + [[03-product-spec]] v0.25 + [[05-design-spec]] v0.22；批次内无新决策，记的都是 ADR-028 已拍板的内容）。本版内容：§6 数据模型契约变更（新增 §6.0-bis 两套删除机制 + 七张资产表加 `deleted_at` + 四处「删除策略」重写 + 导出 data schema 1.1→1.2），属图纸类改动，按 [[CLAUDE#§5.1.2]] 需签字。**v0.12 起登记的 §6.1 drift 就此销账**——旧文承诺 `deprecated = true`、实装是 hard DELETE，现两边都已改正。前 v0.13 于 2026-09-01 人审批次 ④ ratified
 author: ai  # 🤖 AI 主笔 + 人审（CLAUDE §5.2）
 related: [[01-spec]], [[03-product-spec]], [[prompt-hub-mvp]], [[015-expose-mcp-write-pipeline]], [[027-configurable-global-hotkey]], [[028-reversible-delete]], [[029-alignment-coordinates-and-drift-ledger]], [[mcp-write-pipeline]]
 description: 手动 AI 编程仪表盘的工程契约——数据模型/状态机/NFR/Boundaries/IPC + MCP 接口契约；写后端 / 数据层时召回。版本叙事见 CHANGELOG
@@ -1138,7 +1138,7 @@ SOP 节包含 2 个相关模型：**SOP**（标准作业流程）、**SOPStep**�
 - `usage_records` 可选——大数据量场景下可只导出当前资产、不导出历史使用记录
 - 所有 ID 在导出 JSON 内部保持一致（不重新生成），导入时按 ID 还原关联
 
-**实现现状（2026-06-28 落地，2026-09-03 更新至 data schema_version `1.2`；🎯 1.3 已裁未实装）**：导出/导入已落地（repo-core `export.rs` + repo-write `import.rs`），实际导出 **8 张资产表**（🎯 v0.15 起 **9 张**，见下）+ `schema_version` / `exported_at` 两个顶层字段，与上方建议结构有**五处**刻意差异（v0.14 之前是三处，此后一直没随条目数改口，本版一并更正）：
+**实现现状（2026-06-28 落地，2026-09-03 更新至 data schema_version `1.2`，2026-09-05 更新至 `1.3`——ADR-029 P0 `0329520`，本节标 🎯 v0.15 的两条导入契约与 `alignment_axis_values` 键均已实装；⚠️ **真机门 G7 未覆盖导出 / 导入往返**，这两条契约至今只有 jsdom 与 cargo 用例）**：导出/导入已落地（repo-core `export.rs` + repo-write `import.rs`），实际导出 **9 张表**（2026-09-05 由 8 张增至 9 张，新增的 `alignment_axis_values` 见下；它不是资产但是用户内容）+ `schema_version` / `exported_at` 两个顶层字段，与上方建议结构有**五处**刻意差异（v0.14 之前是三处，此后一直没随条目数改口，本版一并更正）：
 - **不含 `usage_records`**（决策 D2）：导出仅含资产，使用记录不随备份带走；因此整库替换导入时 `usage_records` 一并清空（其 `phase_id` FK 在还原后会悬空，故不保留）——语义为"还原到备份时的资产状态"。
 - **不含 `sops`**：SOP 功能仍 `planned`（S3 / v1.2 未编码，无 SOP 写入路径），故本期导出不含 `sops` 键。待 SOP 落地（S3）再补 `sops` + `sop_steps` 导出/导入，届时 data schema_version 视字段变更决定是否 bump。
 - 全保真：导出走独立无过滤 SELECT，**包含** `deprecated=1` / `visible=0` 行（读路径会过滤这些行，但备份必须完整），保证整库替换不丢数据。
@@ -1715,7 +1715,7 @@ PRD 不复刻风险表，避免双源真理漂移；实施侧风险/缓解以 pl
 
 ### v0.15（2026-09-04）— ADR-029 涟漪：对齐坐标四轴 + 中途口令隐式记账
 
-**触发**：[[029-alignment-coordinates-and-drift-ledger]] Accepted（2026-09-04）后按方法论 §7 回流。**本版是图纸类改动**（[[CLAUDE#§5.1.2]]），需 omar 签字后才转 `ratified`。**本版描述的契约尚未落地**——migration `0014`、六个新 IPC、复制拼前缀、按轴归因全部未编码；正文里标 🎯 的字段与命令一律读作「已裁决、未实装」。
+**触发**：[[029-alignment-coordinates-and-drift-ledger]] Accepted（2026-09-04）后按方法论 §7 回流。**本版是图纸类改动**（[[CLAUDE#§5.1.2]]），需 omar 签字后才转 `ratified`。**本版描述的契约已于次日 2026-09-05 全部落地**（P0 `0329520` / P1 `345e37f` / P2 `3af8308`；G7 见 [[11-test-spec#4.6]]）。
 
 | 章节 | 改动 |
 |------|------|
