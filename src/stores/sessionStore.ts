@@ -25,13 +25,30 @@ interface WakePayload {
 
 interface SessionState {
   sessionStartedAt: string;
+  /**
+   * Live cues copied since the current wake began — the number the status bar
+   * cell reads (03-product-spec 区域 7 「范围是本次唤起会话，不是今日」).
+   *
+   * Kept HERE rather than derived from `summarize_drift_ledger`, which is
+   * cross-session by construction: the ledger answers "over all wakes", and no
+   * argument narrows it to this one. A counter that lives beside the session
+   * stamp cannot disagree with the stamp about which wake it is in.
+   */
+  liveCueCount: number;
   /** Called by the wake listener; exposed for tests. */
   setSessionStartedAt: (at: string) => void;
+  /** Called by the ipc layer after a `live_cue` record lands. */
+  noteLiveCue: () => void;
 }
 
 export const useSessionStore = create<SessionState>((set) => ({
   sessionStartedAt: new Date().toISOString(),
-  setSessionStartedAt: (at) => set({ sessionStartedAt: at }),
+  liveCueCount: 0,
+  // A wake IS a new session, so the count starts over with it. The two fields
+  // are written in one set() for that reason: leaving the counter behind would
+  // let the cell report cues from a summon that has already ended.
+  setSessionStartedAt: (at) => set({ sessionStartedAt: at, liveCueCount: 0 }),
+  noteLiveCue: () => set((s) => ({ liveCueCount: s.liveCueCount + 1 })),
 }));
 
 /**
@@ -60,4 +77,12 @@ export async function startWakeListener(): Promise<UnlistenFn> {
 /** The session stamp the ipc layer puts on every usage record. */
 export function currentSessionStartedAt(): string {
   return useSessionStore.getState().sessionStartedAt;
+}
+
+/**
+ * Count one live cue against the current wake. Called from the ipc layer once
+ * the write has landed, so the cell never counts a copy the database refused.
+ */
+export function noteLiveCue(): void {
+  useSessionStore.getState().noteLiveCue();
 }

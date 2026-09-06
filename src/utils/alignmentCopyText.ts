@@ -2,6 +2,7 @@ import type {
   AlignmentAxisValue,
   AlignmentPhrase,
   AxisKind,
+  CueAxis,
 } from "../ipc/types";
 
 /**
@@ -17,6 +18,23 @@ export const AXIS_LABELS: Record<AxisKind, string> = {
 
 /** The axes in their canonical order — 层 · 域 · 模式 (03-product-spec 区域 2-bis). */
 export const AXIS_ORDER: readonly AxisKind[] = ["layer", "domain", "mode"];
+
+/**
+ * The four columns the cue tally is filed under (03-product-spec 区域 7
+ * 「按形态 / 层 / 域 / 模式四栏分列」). Built ON TOP of AXIS_LABELS rather than
+ * beside it, so the three coordinate axes can only ever be called one thing.
+ *
+ * 形态 has no coordinate column of its own — a phrase's form is carried by its
+ * phase — but a cue can still correct it, which is why the cue vocabulary is
+ * one word wider than the coordinate vocabulary.
+ */
+export const CUE_AXIS_LABELS: Record<CueAxis, string> = {
+  form: "形态",
+  ...AXIS_LABELS,
+};
+
+/** 形态 · 层 · 域 · 模式, fixed. Column order is not a finding. */
+export const CUE_AXIS_ORDER: readonly CueAxis[] = ["form", ...AXIS_ORDER];
 
 /** Only the three coordinate columns are needed, so recents/search rows and
  *  half-built editor drafts can be passed without faking a whole phrase. */

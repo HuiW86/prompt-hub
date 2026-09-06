@@ -36,7 +36,10 @@ describe("sessionStore — the wake boundary the drift ledger groups by", () => 
   beforeEach(() => {
     listenMock.mockReset();
     invokeMock.mockReset();
-    useSessionStore.setState({ sessionStartedAt: new Date().toISOString() });
+    useSessionStore.setState({
+      sessionStartedAt: new Date().toISOString(),
+      liveCueCount: 0,
+    });
   });
 
   // A dev window that has been open since `pnpm tauri dev` started has never
@@ -83,6 +86,57 @@ describe("sessionStore — the wake boundary the drift ledger groups by", () => 
     const unlisten = await startWakeListener();
     expect(typeof unlisten).toBe("function");
     expect(currentSessionStartedAt()).toBeTruthy();
+  });
+});
+
+describe("liveCueCount — the number the status bar cell reads", () => {
+  beforeEach(() => {
+    listenMock.mockReset();
+    invokeMock.mockReset();
+    invokeMock.mockResolvedValue({ id: "u1" });
+    useSessionStore.setState({
+      sessionStartedAt: "2026-09-05T09:00:00+00:00",
+      liveCueCount: 0,
+    });
+  });
+
+  it("counts a live cue copy", async () => {
+    await ipc.recordUsage(RECORD);
+    expect(useSessionStore.getState().liveCueCount).toBe(1);
+  });
+
+  // The predicate is the recorded `source`, which usageSource.ts derives from
+  // the phrase's kind alone — so an opening phrase sent from the phase bar is
+  // not a cue no matter which region the click came from.
+  it("does not count a copy that is not a cue", async () => {
+    await ipc.recordUsage({ ...RECORD, source: "phase_bar" });
+    expect(useSessionStore.getState().liveCueCount).toBe(0);
+  });
+
+  // A number on screen has to be backed by a row in the table.
+  it("does not count a write the database refused", async () => {
+    invokeMock.mockRejectedValueOnce(new Error("disk is full"));
+    await expect(ipc.recordUsage(RECORD)).rejects.toThrow();
+    expect(useSessionStore.getState().liveCueCount).toBe(0);
+  });
+
+  // 03-product-spec 区域 7: 「范围是本次唤起会话，不是今日」. A new wake is a new
+  // session, so the count starts over with the stamp it is grouped by.
+  it("starts over on every wake", async () => {
+    let handler: WakeHandler | undefined;
+    listenMock.mockImplementation((_name: string, cb: WakeHandler) => {
+      handler = cb;
+      return Promise.resolve(() => {});
+    });
+    await startWakeListener();
+
+    await ipc.recordUsage(RECORD);
+    await ipc.recordUsage(RECORD);
+    expect(useSessionStore.getState().liveCueCount).toBe(2);
+
+    handler?.({ payload: { sessionStartedAt: "2026-09-05T11:00:00+00:00" } });
+    expect(useSessionStore.getState().liveCueCount).toBe(0);
+    expect(currentSessionStartedAt()).toBe("2026-09-05T11:00:00+00:00");
   });
 });
 

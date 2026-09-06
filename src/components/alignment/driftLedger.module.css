@@ -1,0 +1,165 @@
+/* Cue tally — the on-demand detail surface behind the status bar's
+   「中途口令 N 次」 cell (ADR-029 子决策 4, 03-product-spec 区域 7).
+
+   Kept out of alignment.module.css on purpose: everything in that file lives
+   INSIDE the anchored phrase editor and resolves its neutral tokens through
+   ProtocolBand's band-scoped remap (ADR-020). This panel sits above the scrim,
+   outside the band, so it reads the global surface tokens the settings dialog
+   reads. Frame values are borrowed from that dialog rather than newly minted:
+   it is the same kind of object, so it should not be a different size.
+
+   No colour encodes a quantity anywhere below. A red cell or a bar length is a
+   verdict, and 01-spec §8.1 forbids the app from reaching one; every number is
+   the same weight as every other number. */
+
+.overlay {
+  position: fixed;
+  inset: 0;
+  z-index: var(--z-modal);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: var(--s-6);
+  background: var(--scrim);
+}
+
+.panel {
+  display: flex;
+  flex-direction: column;
+  width: 100%;
+  max-width: var(--w-settings-modal);
+  max-height: 80vh;
+  overflow: hidden;
+  background: var(--surface-1);
+  border: var(--hairline) solid var(--border-2);
+  border-radius: var(--r-frame);
+  box-shadow: var(--shadow-2);
+}
+
+.head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--s-2);
+  padding: var(--s-3) var(--s-4);
+  border-bottom: var(--hairline) solid var(--border-1);
+}
+
+.title {
+  composes: ph-page-title from "../../styles/typography.module.css";
+  margin: 0;
+}
+
+.body {
+  flex: 1;
+  min-height: 0;
+  overflow-y: auto;
+  padding: var(--s-4);
+}
+
+.view {
+  display: flex;
+  flex-direction: column;
+  gap: var(--s-4);
+}
+
+.section {
+  display: flex;
+  flex-direction: column;
+  gap: var(--s-2);
+}
+
+.heading {
+  composes: ph-label from "../../styles/typography.module.css";
+  margin: 0;
+}
+
+/* ── The per-phrase table ──────────────────────────────────────────────────── */
+
+.table {
+  composes: ph-card-body from "../../styles/typography.module.css";
+  width: 100%;
+  border-collapse: collapse;
+}
+
+.table th,
+.table td {
+  padding: var(--s-1_5) var(--s-2);
+  text-align: left;
+  vertical-align: baseline;
+  font-weight: var(--w-400);
+}
+
+/* Applied per <th scope="col"> rather than via `.table thead th`: `composes`
+   only accepts a single local class selector. */
+.colHead {
+  composes: ph-meta from "../../styles/typography.module.css";
+  border-bottom: var(--hairline) solid var(--border-1);
+  white-space: nowrap;
+}
+
+/* One tbody per phrase — the hairline separates phrases, not rows, so a split
+   phrase still reads as one entry rather than three unrelated lines. */
+.group + .group th,
+.group + .group td {
+  border-top: var(--hairline) solid var(--border-1);
+}
+
+.nameCol {
+  width: 100%;
+  min-width: 0;
+}
+
+/* Counts align on their last digit; tabular figures keep the columns from
+   twitching between renders. */
+.num.num {
+  width: var(--s-10);
+  text-align: right;
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+}
+
+/* The two revision segments read as detail under their phrase, never as
+   phrases of their own. */
+.subRow th,
+.subRow td {
+  padding-top: 0;
+  color: var(--fg-3);
+}
+
+.subCell {
+  composes: ph-meta from "../../styles/typography.module.css";
+  padding-left: var(--s-4);
+}
+
+/* ── Plain count lines (per-axis totals, and the three reconciling lines) ──── */
+
+.lines {
+  composes: ph-card-body from "../../styles/typography.module.css";
+  display: flex;
+  flex-direction: column;
+  gap: var(--s-1);
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  font-variant-numeric: tabular-nums;
+}
+
+.grand {
+  padding-top: var(--s-1);
+  border-top: var(--hairline) solid var(--border-1);
+  color: var(--fg-1);
+}
+
+/* Loading / failed-read line. A failed read says so here; it never degrades
+   into the empty state, which would report an absence of data as a fact. */
+.status {
+  composes: ph-card-body from "../../styles/typography.module.css";
+  margin: 0;
+}
+
+.empty {
+  composes: ph-empty from "../../styles/typography.module.css";
+  margin: 0;
+  padding: var(--s-6) 0;
+}

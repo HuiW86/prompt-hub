@@ -35,6 +35,30 @@
   white-space: nowrap;
 }
 
+/* 「中途口令 N 次」 (03-product-spec 区域 7). A button, but the same row, the
+   same type and the same colour as the readings beside it — no icon, no accent,
+   no badge, because it is a reading and not a prompt. Declared after .mono so
+   the two classes compose without a specificity fight; only the properties a
+   <button> does not inherit are restated here. */
+.cueCell {
+  border: 0;
+  padding: 0;
+  background: transparent;
+  font-weight: var(--w-500);
+  line-height: var(--lh-tight);
+  cursor: pointer;
+}
+
+.cueCell:hover {
+  color: var(--fg-1);
+}
+
+.cueCell:focus-visible {
+  outline: var(--border-thick) solid var(--accent);
+  outline-offset: var(--s-0_5);
+  border-radius: var(--r-1);
+}
+
 .dot {
   width: var(--s-1_5);
   height: var(--s-1_5);

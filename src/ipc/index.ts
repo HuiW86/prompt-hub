@@ -1,6 +1,6 @@
 import { invoke } from "@tauri-apps/api/core";
 
-import { currentSessionStartedAt } from "../stores/sessionStore";
+import { currentSessionStartedAt, noteLiveCue } from "../stores/sessionStore";
 
 import type {
   AlignmentAxisValue,
@@ -85,14 +85,24 @@ export const ipc = {
   // ledger from silently losing records whenever a new copy path is added. A
   // caller that has already set it wins, which is what makes the behaviour
   // testable without a live wake event.
-  recordUsage: (input: RecordUsageInput, suppressHide?: boolean) =>
-    invoke<UsageRecord>("record_usage", {
+  //
+  // The session-scoped cue counter is bumped here for the same reason and in
+  // the same breath: the status bar's 「中途口令 N 次」 must count every cue copy
+  // and only cue copies, and `source === "live_cue"` is exactly that predicate
+  // (usageSource.ts owns the decision, so no call site has to repeat it). The
+  // bump lands AFTER the invoke resolves — a rejected write must not leave a
+  // number on screen that no record backs.
+  recordUsage: async (input: RecordUsageInput, suppressHide?: boolean) => {
+    const record = await invoke<UsageRecord>("record_usage", {
       input: {
         ...input,
         sessionStartedAt: input.sessionStartedAt ?? currentSessionStartedAt(),
       },
       suppressHide,
-    }),
+    });
+    if (input.source === "live_cue") noteLiveCue();
+    return record;
+  },
   hideWindow: () => invoke<void>("hide_window"),
   showWindow: () => invoke<void>("show_window"),
   // True when the wake chord registered at startup (or at the last rebind).

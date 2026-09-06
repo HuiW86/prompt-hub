@@ -1,7 +1,11 @@
+import { useRef, useState } from "react";
+
 import { useAppStore } from "../stores/appStore";
 import { usePromptStore } from "../stores/promptStore";
+import { useSessionStore } from "../stores/sessionStore";
 import { useUpdaterStore } from "../stores/updaterStore";
 
+import { DriftLedgerPanel } from "./alignment/DriftLedgerPanel";
 import { Kbd } from "./primitives";
 import styles from "./StatusBar.module.css";
 
@@ -39,52 +43,103 @@ export function StatusBar() {
         ? "更新失败 · 重试"
         : "检查更新";
 
+  // 「中途口令 N 次」 (03-product-spec 区域 7, ADR-029 子决策 4). Scope is THIS
+  // wake, not today — sessionStore resets the count on every wake event, which
+  // is what makes the neighbouring 「今日复制」 a different number rather than a
+  // contradicting one.
+  //
+  // N = 0 renders nothing at all, separator included: the same restraint the
+  // 待审 badge follows. An empty cell would imply the count belongs on screen
+  // and just happens to be nought, which quietly asks the user why they have
+  // not needed a cue yet.
+  const liveCueCount = useSessionStore((s) => s.liveCueCount);
+  const [ledgerOpen, setLedgerOpen] = useState(false);
+  const cueCellRef = useRef<HTMLButtonElement>(null);
+
+  const closeLedger = () => {
+    setLedgerOpen(false);
+    // Hand focus back explicitly rather than relying on "whatever was focused
+    // when we opened": WebKit does not focus a button on click, so on the real
+    // target that would be the document body.
+    cueCellRef.current?.focus();
+  };
+
   return (
-    <footer
-      className={styles.statusBar}
-      aria-label="状态栏"
-      data-region="status-bar"
-    >
-      <span className={styles.grp}>
-        <span
-          className={`${styles.dot} ${hasActivePhase ? styles.dotProto : styles.dotIdle}`}
-          aria-hidden
-        />
-        <span>
-          当前相位：{activePhaseName}
-          <span className={styles.srOnly}>。</span>
-        </span>
-      </span>
-      <span className={styles.sep} aria-hidden />
-      <span className={`${styles.grp} ${styles.mono}`}>
-        今日复制 {todayCount} 次<span className={styles.srOnly}>。</span>
-      </span>
-      <span className={styles.spacer} />
-      <span className={styles.grp}>
-        <span>搜索</span>
-        <Kbd sm>⌘K</Kbd>
-      </span>
-      <span className={styles.grp}>
-        <span>复制</span>
-        <Kbd sm>⏎</Kbd>
-      </span>
-      <span className={styles.grp}>
-        <span>设置</span>
-        <Kbd sm>⌘,</Kbd>
-      </span>
-      <button
-        type="button"
-        className={styles.updater}
-        onClick={() =>
-          updaterEnabled ? void checkUpdate(true) : reopenOptIn()
-        }
-        disabled={updaterStatus === "checking"}
-        // Keep StatusBar out of the region-level Tab cycle (same pattern as the
-        // DraftInbox badge); the banner is the keyboard-reachable surface.
-        tabIndex={-1}
+    <>
+      <footer
+        className={styles.statusBar}
+        aria-label="状态栏"
+        data-region="status-bar"
       >
-        {updaterLabel}
-      </button>
-    </footer>
+        <span className={styles.grp}>
+          <span
+            className={`${styles.dot} ${hasActivePhase ? styles.dotProto : styles.dotIdle}`}
+            aria-hidden
+          />
+          <span>
+            当前相位：{activePhaseName}
+            <span className={styles.srOnly}>。</span>
+          </span>
+        </span>
+        <span className={styles.sep} aria-hidden />
+        <span className={`${styles.grp} ${styles.mono}`}>
+          今日复制 {todayCount} 次<span className={styles.srOnly}>。</span>
+        </span>
+        {liveCueCount > 0 && (
+          <>
+            <span className={styles.sep} aria-hidden />
+            <button
+              ref={cueCellRef}
+              type="button"
+              className={`${styles.grp} ${styles.mono} ${styles.cueCell}`}
+              // The accessible name carries the visible text as well as the
+              // action, so a voice-control user can say what they can read
+              // (WCAG 2.5.3) and a screen-reader user still learns it opens.
+              aria-label={`中途口令 ${liveCueCount} 次，查看明细`}
+              aria-haspopup="dialog"
+              aria-expanded={ledgerOpen}
+              // Same opt-out as the updater link beside it: §13.4's Tab cycle is
+              // region-level and the status bar is not a region, so a tabbable
+              // control here would silently become a seventh stop in a six-stop
+              // cycle. The panel it opens is a modal with its own focus domain.
+              tabIndex={-1}
+              onClick={() => setLedgerOpen(true)}
+            >
+              中途口令 {liveCueCount} 次
+            </button>
+          </>
+        )}
+        <span className={styles.spacer} />
+        <span className={styles.grp}>
+          <span>搜索</span>
+          <Kbd sm>⌘K</Kbd>
+        </span>
+        <span className={styles.grp}>
+          <span>复制</span>
+          <Kbd sm>⏎</Kbd>
+        </span>
+        <span className={styles.grp}>
+          <span>设置</span>
+          <Kbd sm>⌘,</Kbd>
+        </span>
+        <button
+          type="button"
+          className={styles.updater}
+          onClick={() =>
+            updaterEnabled ? void checkUpdate(true) : reopenOptIn()
+          }
+          disabled={updaterStatus === "checking"}
+          // Keep StatusBar out of the region-level Tab cycle (same pattern as the
+          // DraftInbox badge); the banner is the keyboard-reachable surface.
+          tabIndex={-1}
+        >
+          {updaterLabel}
+        </button>
+      </footer>
+      {/* Outside the <footer> so a dialog never nests inside the contentinfo
+          landmark; still owned by StatusBar, which holds the ref focus goes
+          back to. */}
+      {ledgerOpen && <DriftLedgerPanel onClose={closeLedger} />}
+    </>
   );
 }
