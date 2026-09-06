@@ -92,6 +92,14 @@ Rust 的 +35 全在 P0：repo-write unit 99 → 117（新文件 `alignment_axis_
 
 ---
 
+### 附：第 47 项当晚完成 — 正式版追上 `0014`，G7-7 的 Dock 路径顺手补验
+
+`main@a2763aa`（代码同 `4a68fa9`）以 `--bundles app` + 关闭 updater 产物出包（Developer ID 签名、未公证、Info.plist 仍 0.2.0），内嵌 chunk `index-B2tPyOB8.js` 与 `dist/assets/` 一致。装前手工拍 `manual-pre-install-1788663353.db`（schema 13 / 41 行 `usage_records` / `integrity_check` ok），退出正式版、旧包经 Finder 移入废纸篓、`ditto` 装入。首次启动日志三行：`pre-migrate-1788663553.db` 落盘 → `migration 14 (0014_alignment_coordinates) applied` → `user_version=14 quick_check=ok`。**真实库整表重建后 41 行一行不少**、三种 `source` 原样、`foreign_key_check` 空，seed 落位 phases 9 / alignment_phrases 25 / axis values 16。第 42 项预告的那次 schema 错位至此收掉：正式版与真实库同为 14。
+
+**G7-7 由「部分」转「通过」**：⌥Space 唤起 → `⌘1` 记 S1 → 调用态复制后窗口自隐 → `tell application "prompt-hub" to reopen` 触发 `RunEvent::Reopen`，窗口回屏且应用成为前台 → `⌘1` 记 S2；S2 ≠ S1、两者非空，装前历史行仍 NULL。G7 口径改 **7 通过 / 1 部分 / 1 缺陷已修**，未覆盖项 4 → 3。涟漪 [[11-test-spec]] v0.13（教训续到 17：`onscreen=true` 不等于键盘能打进 webview，取证前先点一下窗口）/ [[07-features]] v1.28（只改备注，矩阵不动）。
+
+---
+
 ## 2026-09-05（六）· 第一段 — **人审批次 ⑩**：第 21.3 项的两份图纸签字 + 正式版追上真实库
 
 > 触发：前一日第三段把 [[10-ops-spec]] 与 [[03-product-spec]] 改成 draft（[[CLAUDE#§5.1.2]]），送审要点记在 [[HANDOFF]] 第 43 项。omar 本日签字通过。零代码改动，只改 `status:` 与指针。
