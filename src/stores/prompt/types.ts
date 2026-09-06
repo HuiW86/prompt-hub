@@ -1,6 +1,9 @@
 import type { AssetKind } from "../../ipc";
 import type {
+  AlignmentAxisValueWithRefs,
   AlignmentPhrase,
+  AlignmentPhraseCoordinates,
+  AxisKind,
   Composition,
   DraftPayload,
   DraftSummary,
@@ -21,6 +24,12 @@ export type LoadState = "idle" | "loading" | "ready" | "error";
 export interface PromptState {
   phases: Phase[];
   alignmentPhrasesByPhase: Record<string, AlignmentPhrase[]>;
+  // The three coordinate axes' value lists (ADR-029), in the order the backend
+  // returns them (by axis, then order_index). The by-id map is stored rather
+  // than derived so the copy path and every chip can look a coordinate up
+  // without rebuilding an object per render.
+  alignmentAxisValues: AlignmentAxisValueWithRefs[];
+  alignmentAxisValuesById: Record<string, AlignmentAxisValueWithRefs>;
   compositionsByPhase: Record<string, Composition[]>;
   macros: Macro[];
   modifiers: Modifier[];
@@ -106,21 +115,48 @@ export interface PromptState {
   // Direct alignment-phrase editing (plan asset-editing §0 Q2/Q6, decision D-c).
   // Operates on the grouped alignmentPhrasesByPhase structure; reorder is scoped
   // to one phase bucket. delete throws if the backend rejects the phase default.
+  // `coordinates` omitted leaves the classification and all three coordinates
+  // exactly as they are (create: an opening phrase with none). Passing it writes
+  // all five fields at once, so a caller that edits one axis must send the other
+  // four unchanged — see AlignmentPhraseEditor, which preserves kind / cueAxis.
   createAlignmentPhrase: (args: {
     phaseId: string;
     name: string;
     content: string;
+    coordinates?: AlignmentPhraseCoordinates;
   }) => Promise<void>;
   updateAlignmentPhrase: (args: {
     id: string;
     name: string;
     content: string;
+    coordinates?: AlignmentPhraseCoordinates;
   }) => Promise<void>;
   deleteAlignmentPhrase: (id: string) => Promise<void>;
   reorderAlignmentPhrases: (
     phaseId: string,
     orderedIds: string[],
   ) => Promise<void>;
+  // Coordinate axis values (ADR-029 子决策 2). Not assets: hard delete, no
+  // trash, no optimistic patching — each mutation re-pulls the list because the
+  // per-row reference counts are computed per query. deleteAlignmentAxisValue
+  // also re-pulls the phrases, whose coordinates the delete blanked server-side.
+  refreshAlignmentAxisValues: () => Promise<void>;
+  createAlignmentAxisValue: (args: {
+    axis: AxisKind;
+    name: string;
+    hint?: string;
+  }) => Promise<void>;
+  updateAlignmentAxisValue: (args: {
+    id: string;
+    name: string;
+    hint?: string;
+  }) => Promise<void>;
+  deleteAlignmentAxisValue: (id: string) => Promise<void>;
+  reorderAlignmentAxisValues: (
+    axis: AxisKind,
+    orderedIds: string[],
+  ) => Promise<void>;
+
   // P3-6: swap the phase's protocol default. Optimistically flips isDefault
   // inside the phase bucket AND the phases[].defaultAlignmentPhraseId pointer
   // (both mirror the single backend transaction); rolls back both on rejection.

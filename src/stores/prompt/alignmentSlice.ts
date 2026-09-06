@@ -13,11 +13,12 @@ export const createAlignmentSlice: StateCreatorSlice<
     | "setDefaultAlignmentPhrase"
   >
 > = (set, get) => ({
-  createAlignmentPhrase: async ({ phaseId, name, content }) => {
+  createAlignmentPhrase: async ({ phaseId, name, content, coordinates }) => {
     const created = await ipc.createAlignmentPhrase({
       phaseId,
       name,
       content,
+      coordinates,
     });
     set((state) => ({
       alignmentPhrasesByPhase: {
@@ -30,17 +31,23 @@ export const createAlignmentSlice: StateCreatorSlice<
     }));
   },
 
-  updateAlignmentPhrase: async ({ id, name, content }) => {
+  // The optimistic patch mirrors exactly what the backend writes: with
+  // `coordinates` omitted the five classification fields are left alone, so the
+  // patch must leave them alone too. `contentRevisedAt` is deliberately NOT
+  // touched here — the backend stamps it only when `content` actually changed,
+  // and guessing at that client-side would move the drift ledger's split point
+  // on a rename (06-prd §6.6).
+  updateAlignmentPhrase: async ({ id, name, content, coordinates }) => {
     const snapshot = get().alignmentPhrasesByPhase;
     const next: Record<string, AlignmentPhrase[]> = {};
     for (const [phaseId, list] of Object.entries(snapshot)) {
       next[phaseId] = list.map((a) =>
-        a.id === id ? { ...a, name, content } : a,
+        a.id === id ? { ...a, name, content, ...(coordinates ?? {}) } : a,
       );
     }
     set({ alignmentPhrasesByPhase: next });
     try {
-      await ipc.updateAlignmentPhrase({ id, name, content });
+      await ipc.updateAlignmentPhrase({ id, name, content, coordinates });
     } catch (err) {
       set({ alignmentPhrasesByPhase: snapshot });
       throw err;

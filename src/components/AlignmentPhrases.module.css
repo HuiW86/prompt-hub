@@ -114,6 +114,18 @@
   color: var(--fg-1);
 }
 
+/* Coordinate short label — same line as the name, between it and the action
+   cluster (03-product-spec 区域 2-bis 「坐标可见」). `.ph-meta` already fixes
+   11/400/tight and --fg-3, which is the whole typographic contract for this
+   element; no new color is introduced. It never shrinks and never truncates —
+   the NAME is what gives way when the chip runs out of room, because two
+   phrases in one phase are often told apart by coordinates rather than by name. */
+.chipCoords {
+  composes: ph-meta from "../styles/typography.module.css";
+  flex-shrink: 0;
+  white-space: nowrap;
+}
+
 /* Action cluster hidden until the chip is hovered / focused (density guard —
    ADR-021 §6). focus-within keeps it reachable for keyboard roaming. */
 .chipActions {

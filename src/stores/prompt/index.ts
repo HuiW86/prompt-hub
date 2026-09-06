@@ -4,6 +4,7 @@ export { createDraftsSlice } from "./draftsSlice";
 export { createMacroSlice } from "./macroSlice";
 export { createModifierSlice } from "./modifierSlice";
 export { createAlignmentSlice } from "./alignmentSlice";
+export { createAxisValueSlice } from "./axisValueSlice";
 export { createCompositionSlice } from "./compositionSlice";
 export { createSceneSlice } from "./sceneSlice";
 export { createTrashSlice } from "./trashSlice";

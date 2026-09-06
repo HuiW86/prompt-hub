@@ -109,7 +109,7 @@ function App() {
       //   1. App ESC (this file, earlier effect) — falls through if focus is
       //      in SearchBar with a non-empty value; SearchOverlay now also
       //      intercepts Escape to clear the query when it owns the screen.
-      //   2. App ⌘/Ctrl 1-8 (here) — phase switch + AlignmentPhrase copy.
+      //   2. App ⌘/Ctrl 1-9 (here) — phase switch + AlignmentPhrase copy.
       //   3. SearchBar ⌘/Ctrl K — focus + select the input.
       //   4. SearchOverlay ↑↓⏎ — only active while isSearching.
       // All later listeners early-return on non-matching modifiers so the
@@ -118,7 +118,7 @@ function App() {
         !isPrimaryModifier(e) ||
         e.shiftKey ||
         e.altKey ||
-        !/^[1-8]$/.test(e.key)
+        !/^[1-9]$/.test(e.key)
       ) {
         return;
       }

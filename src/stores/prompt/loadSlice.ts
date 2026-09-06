@@ -3,6 +3,7 @@ import { toUserMessage } from "../../utils/errorMessage";
 
 import {
   RECENT_LIMIT,
+  indexAxisValuesById,
   indexByPhase,
   indexCompositionsByPhase,
 } from "./helpers";
@@ -15,6 +16,8 @@ export const initialPromptState: Pick<
   PromptState,
   | "phases"
   | "alignmentPhrasesByPhase"
+  | "alignmentAxisValues"
+  | "alignmentAxisValuesById"
   | "compositionsByPhase"
   | "macros"
   | "modifiers"
@@ -28,6 +31,8 @@ export const initialPromptState: Pick<
 > = {
   phases: [],
   alignmentPhrasesByPhase: {},
+  alignmentAxisValues: [],
+  alignmentAxisValuesById: {},
   compositionsByPhase: {},
   macros: [],
   modifiers: [],
@@ -49,6 +54,7 @@ export const createLoadSlice: StateCreatorSlice<
       const [
         phases,
         alignments,
+        axisValues,
         compositions,
         macros,
         modifiers,
@@ -60,6 +66,10 @@ export const createLoadSlice: StateCreatorSlice<
       ] = await Promise.all([
         ipc.listPhases(),
         ipc.listAlignmentPhrases(),
+        // Part of the first load, not lazily fetched when an editor opens: the
+        // coordinate names are needed to assemble what a ⌘1-9 copy puts on the
+        // clipboard, and that can fire before any editor has ever been opened.
+        ipc.listAlignmentAxisValues(),
         ipc.listCompositions(),
         ipc.listMacros(),
         ipc.listModifiers(),
@@ -72,6 +82,8 @@ export const createLoadSlice: StateCreatorSlice<
       set({
         phases,
         alignmentPhrasesByPhase: indexByPhase(alignments),
+        alignmentAxisValues: axisValues,
+        alignmentAxisValuesById: indexAxisValuesById(axisValues),
         compositionsByPhase: indexCompositionsByPhase(compositions),
         macros,
         modifiers,

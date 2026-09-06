@@ -3,10 +3,11 @@ import { useCallback } from "react";
 import { alignmentUsageSource } from "../ipc/usageSource";
 import { useAppStore } from "../stores/appStore";
 import { usePromptStore } from "../stores/promptStore";
+import { buildAlignmentCopyText } from "../utils/alignmentCopyText";
 
 import { useCopy } from "./useCopy";
 
-// Keyboard launcher path (⌘1-⌘8, B5-1): activate the phase AND copy its default
+// Keyboard launcher path (⌘1-⌘9, B5-1): activate the phase AND copy its default
 // AlignmentPhrase (source='phase_bar'), which triggers copy-then-hide so the
 // user grabs the opener and the window dismisses. PhaseBar mouse clicks
 // deliberately do NOT use this — clicking inside the open window means
@@ -23,12 +24,15 @@ export function usePhaseSelect() {
   return useCallback(
     function selectPhase(phaseId: string): void {
       setActivePhase(phaseId);
-      const aps =
-        usePromptStore.getState().alignmentPhrasesByPhase[phaseId] ?? [];
+      const state = usePromptStore.getState();
+      const aps = state.alignmentPhrasesByPhase[phaseId] ?? [];
       const def = aps.find((a) => a.isDefault) ?? aps[0];
       if (!def) return;
       void copy(
-        def.content,
+        // Same assembly as the chip row and the search overlay: what reaches
+        // the clipboard cannot depend on which entry point was used
+        // (03-product-spec 「对齐坐标与漂移账契约」b).
+        buildAlignmentCopyText(def, state.alignmentAxisValuesById),
         {
           targetType: "alignment",
           targetId: def.id,

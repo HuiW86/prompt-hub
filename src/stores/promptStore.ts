@@ -2,6 +2,7 @@ import { create } from "zustand";
 
 import {
   createAlignmentSlice,
+  createAxisValueSlice,
   createCompositionSlice,
   createDraftsSlice,
   createLoadSlice,
@@ -36,6 +37,7 @@ export const usePromptStore = create<PromptState>()((set, get) => {
     ...createMacroSlice(set, get, refresh),
     ...createModifierSlice(set, get, refresh),
     ...createAlignmentSlice(set, get, refresh),
+    ...createAxisValueSlice(set, get, refresh),
     ...createCompositionSlice(set, get, refresh),
     ...createSceneSlice(set, get, refresh),
     ...createTrashSlice(set, get, refresh),

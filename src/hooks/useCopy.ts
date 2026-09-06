@@ -17,7 +17,7 @@ import { writeClipboard } from "./useClipboard";
 //   3. record_usage runs last; failure surfaces in console but does not block.
 // The returned function is wrapped in useCallback so callers can safely put it
 // in useEffect deps without tearing down document-level keydown listeners on
-// every keystroke (see App.tsx ⌘1-8 and SearchOverlay ↑↓⏎ effects).
+// every keystroke (see App.tsx ⌘1-9 and SearchOverlay ↑↓⏎ effects).
 export function useCopy() {
   const recordCopy = usePromptStore((s) => s.recordCopy);
   const showToast = useToastStore((s) => s.show);

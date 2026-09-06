@@ -4,12 +4,14 @@ import { useCopy } from "../hooks/useCopy";
 import { useSearchResults } from "../hooks/useSearchResults";
 import type { AlignmentPhrase, Macro, Phrase } from "../ipc/types";
 import { alignmentUsageSource } from "../ipc/usageSource";
+import { usePromptStore } from "../stores/promptStore";
 import {
   SEARCH_LISTBOX_ID,
   searchOptionId,
   selectIsSearching,
   useSearchStore,
 } from "../stores/searchStore";
+import { buildAlignmentCopyText } from "../utils/alignmentCopyText";
 
 import styles from "./SearchOverlay.module.css";
 
@@ -34,6 +36,7 @@ export function SearchOverlay() {
   const setSelectedIndex = useSearchStore((s) => s.setSelectedIndex);
   const clearQuery = useSearchStore((s) => s.clearQuery);
   const results = useSearchResults();
+  const axisValuesById = usePromptStore((s) => s.alignmentAxisValuesById);
   const copy = useCopy();
   const itemRefs = useRef<Array<HTMLDivElement | null>>([]);
 
@@ -99,7 +102,11 @@ export function SearchOverlay() {
         );
       } else {
         void copy(
-          item.ap.content,
+          // The coordinate prefix is assembled here exactly as it is on the
+          // chip row and under ⌘1-9 — one phrase, one clipboard string, no
+          // matter which entry point produced it (03-product-spec 「对齐坐标与
+          // 漂移账契约」b).
+          buildAlignmentCopyText(item.ap, axisValuesById),
           {
             targetType: "alignment",
             targetId: item.ap.id,
@@ -114,7 +121,7 @@ export function SearchOverlay() {
         );
       }
     },
-    [copy],
+    [copy, axisValuesById],
   );
 
   useEffect(() => {

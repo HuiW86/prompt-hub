@@ -15,11 +15,19 @@ import { useUndoableDelete } from "../hooks/useUndoableDelete";
 import { useAppStore } from "../stores/appStore";
 import { usePromptStore } from "../stores/promptStore";
 import { useToastStore } from "../stores/toastStore";
+import {
+  buildAlignmentCopyText,
+  formatAlignmentCoordinates,
+} from "../utils/alignmentCopyText";
 import { toUserMessage } from "../utils/errorMessage";
 import type { AlignmentPhrase } from "../ipc/types";
 import { alignmentUsageSource } from "../ipc/usageSource";
 
-import { ActionCluster, IconButton, PhraseFormEditor } from "./primitives";
+import {
+  AlignmentPhraseEditor,
+  type AlignmentPhraseSubmit,
+} from "./alignment/AlignmentPhraseEditor";
+import { ActionCluster, IconButton } from "./primitives";
 import primitiveStyles from "./primitives/primitives.module.css";
 import styles from "./AlignmentPhrases.module.css";
 
@@ -30,6 +38,10 @@ const GHOST_ADD_ANCHOR = "__ghost_add__";
 export function AlignmentPhrases() {
   const activePhaseId = useAppStore((s) => s.activePhaseId);
   const phrasesByPhase = usePromptStore((s) => s.alignmentPhrasesByPhase);
+  // Coordinate names, for the chip's short label and for the copy prefix. The
+  // by-id map is held in the store rather than derived here so reading it never
+  // hands Zustand a freshly built object.
+  const axisValuesById = usePromptStore((s) => s.alignmentAxisValuesById);
   const reorderAlignmentPhrases = usePromptStore(
     (s) => s.reorderAlignmentPhrases,
   );
@@ -126,10 +138,19 @@ export function AlignmentPhrases() {
   // the user's attention has moved on. Unreported, a failed save is pixel-for-
   // pixel a successful one. Re-throw after the toast so the shared editor
   // re-enables its save button and holds the draft (see its `onSubmit` doc).
-  const handleCreate = async (name: string, content: string) => {
+  const handleCreate = async ({
+    name,
+    content,
+    coordinates,
+  }: AlignmentPhraseSubmit) => {
     if (activePhaseId == null) return;
     try {
-      await createAlignmentPhrase({ phaseId: activePhaseId, name, content });
+      await createAlignmentPhrase({
+        phaseId: activePhaseId,
+        name,
+        content,
+        coordinates,
+      });
     } catch (err) {
       showError(toUserMessage(err, "新增失败"));
       throw err;
@@ -153,9 +174,12 @@ export function AlignmentPhrases() {
     });
   };
 
-  const handleUpdate = async (id: string, name: string, content: string) => {
+  const handleUpdate = async (
+    id: string,
+    { name, content, coordinates }: AlignmentPhraseSubmit,
+  ) => {
     try {
-      await updateAlignmentPhrase({ id, name, content });
+      await updateAlignmentPhrase({ id, name, content, coordinates });
     } catch (err) {
       showError(toUserMessage(err, "保存失败"));
       throw err;
@@ -183,30 +207,25 @@ export function AlignmentPhrases() {
           // row must not collapse a slot out from under the floating panel.
           <Fragment key={p.id}>
             {editingId === p.id && (
-              <PhraseFormEditor
-                layer="protocol"
-                presentation="anchored"
-                mode="edit"
+              <AlignmentPhraseEditor
+                phrase={p}
                 anchor={anchors.get(p.id)}
-                ariaLabel="编辑对齐话术"
-                initialName={p.name}
-                initialContent={p.content}
-                submitLabel="保存"
-                onSubmit={({ name, content }) =>
-                  handleUpdate(p.id, name, content)
-                }
+                onSubmit={(values) => handleUpdate(p.id, values)}
                 onClose={() => setEditingId(null)}
               />
             )}
             <PhraseChip
               phrase={p}
+              coordinates={formatAlignmentCoordinates(p, axisValuesById)}
               anchorRef={anchors.ref(p.id)}
               flash={flashId === p.id}
               canMoveLeft={idx > 0}
               canMoveRight={idx < phrases.length - 1}
               onCopy={() =>
                 void copy(
-                  p.content,
+                  // Never the raw content: the coordinate prefix is assembled
+                  // at copy time, identically at every entry point (contract b).
+                  buildAlignmentCopyText(p, axisValuesById),
                   {
                     targetType: "alignment",
                     targetId: p.id,
@@ -235,16 +254,11 @@ export function AlignmentPhrases() {
       {activePhaseId != null && (
         <>
           {adding && (
-            <PhraseFormEditor
-              layer="protocol"
-              presentation="anchored"
-              mode="create"
+            <AlignmentPhraseEditor
+              phrase={null}
               anchor={anchors.get(GHOST_ADD_ANCHOR)}
-              ariaLabel="新增对齐话术"
-              initialName={restoredDraft?.name}
-              initialContent={restoredDraft?.content}
-              submitLabel="新增"
-              onSubmit={({ name, content }) => handleCreate(name, content)}
+              initialDraft={restoredDraft}
+              onSubmit={handleCreate}
               onClose={() => {
                 setRestoredDraft(null);
                 setAdding(false);
@@ -272,6 +286,9 @@ export function AlignmentPhrases() {
 
 interface PhraseChipProps {
   phrase: AlignmentPhrase;
+  /** Pre-formatted 层 · 域 · 模式 short label, or null when all three are NULL
+   *  — in which case the chip renders no coordinate element at all. */
+  coordinates: string | null;
   /** Hands the chip element up so the anchored editor can pin to it. */
   anchorRef: (el: HTMLElement | null) => void;
   flash: boolean;
@@ -292,6 +309,7 @@ interface PhraseChipProps {
 // swaps itself for a confirm row.
 function PhraseChip({
   phrase,
+  coordinates,
   anchorRef,
   flash,
   canMoveLeft,
@@ -340,7 +358,19 @@ function PhraseChip({
         className={phrase.isDefault ? styles.dot : styles.dotDim}
         aria-hidden
       />
-      <span className={styles.chipName}>{phrase.name}</span>
+      <span className={styles.chipName} title={phrase.name}>
+        {phrase.name}
+      </span>
+      {/* Coordinates sit between the name and the action cluster on the SAME
+          line — no second row, so --h-phrases / --h-chip are untouched. The
+          name truncates first; this label never does, because phrases in one
+          phase are often told apart by their coordinates rather than by name
+          (03-product-spec 区域 2-bis 「截断优先级」). Rendered only when at
+          least one axis resolves, so a zero-coordinate chip is pixel-identical
+          to what it was before ADR-029. */}
+      {coordinates != null && (
+        <span className={styles.chipCoords}>{coordinates}</span>
+      )}
       <ActionCluster className={styles.chipActions}>
         {/* Only non-defaults offer the swap — the current default already shows
             the filled dot. */}

@@ -7,7 +7,10 @@ import {
 } from "@testing-library/react";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
-import type { AlignmentPhrase } from "../../ipc/types";
+import type {
+  AlignmentAxisValueWithRefs,
+  AlignmentPhrase,
+} from "../../ipc/types";
 
 const invokeMock = vi.fn();
 vi.mock("@tauri-apps/api/core", () => ({
@@ -230,5 +233,437 @@ describe("AlignmentPhrases — re-pressing the chip while editing (G4 缺陷 O7)
       invokeMock.mock.calls.find((c) => c[0] === "record_usage"),
     ).toBeUndefined();
     expect(screen.getByPlaceholderText("名称")).toHaveFocus();
+  });
+});
+
+// ── ADR-029 坐标 ────────────────────────────────────────────────────────────
+
+const axisValues: AlignmentAxisValueWithRefs[] = [
+  {
+    id: "axv-layer-path",
+    axis: "layer",
+    name: "路径",
+    hint: "分几期、每期做什么",
+    orderIndex: 0,
+    refCount: 0,
+    trashedRefCount: 0,
+  },
+  {
+    id: "axv-layer-arch",
+    axis: "layer",
+    name: "架构",
+    hint: null,
+    orderIndex: 1,
+    refCount: 2,
+    trashedRefCount: 3,
+  },
+  {
+    id: "axv-domain-tech",
+    axis: "domain",
+    name: "技术",
+    hint: null,
+    orderIndex: 0,
+    refCount: 0,
+    trashedRefCount: 0,
+  },
+  {
+    id: "axv-mode-converge",
+    axis: "mode",
+    name: "收敛",
+    hint: null,
+    orderIndex: 0,
+    refCount: 0,
+    trashedRefCount: 0,
+  },
+];
+
+function seedWithAxes(phrases: AlignmentPhrase[]) {
+  seed(phrases);
+  usePromptStore.setState({
+    alignmentAxisValues: axisValues,
+    alignmentAxisValuesById: Object.fromEntries(
+      axisValues.map((v) => [v.id, v]),
+    ),
+  });
+  invokeMock.mockImplementation((cmd: string) => {
+    switch (cmd) {
+      case "list_alignment_axis_values":
+        return Promise.resolve(axisValues);
+      case "list_alignment_phrases":
+        return Promise.resolve(phrases);
+      default:
+        return Promise.resolve({ ok: true });
+    }
+  });
+}
+
+describe("AlignmentPhrases — coordinates on the chip (ADR-029)", () => {
+  it("renders no coordinate element at all when all three axes are NULL", () => {
+    seedWithAxes(twoPhrases);
+    render(<AlignmentPhrases />);
+    // Pixel-identical to v0.25: the chip holds the dot, the name and the
+    // (hidden) action cluster, and nothing else.
+    const chip = screen.getByRole("button", { name: "默认协议" });
+    expect(chip.textContent).toBe("默认协议");
+  });
+
+  it("shows the resolved names in 层 · 域 · 模式 order, after the name", () => {
+    seedWithAxes([
+      makePhrase({
+        id: "ap-1",
+        name: "架构推演",
+        layerId: "axv-layer-path",
+        modeId: "axv-mode-converge",
+      }),
+    ]);
+    render(<AlignmentPhrases />);
+    const chip = screen.getByRole("button", { name: "架构推演" });
+    expect(chip.textContent).toBe("架构推演路径 · 收敛");
+    expect(screen.getByText("路径 · 收敛")).toBeTruthy();
+  });
+
+  it("copies the coordinate prefix plus a newline plus the content", async () => {
+    const writeText = vi.mocked(navigator.clipboard.writeText);
+    writeText.mockClear();
+    seedWithAxes([
+      makePhrase({
+        id: "ap-1",
+        name: "架构推演",
+        content: "先把边界说清楚。",
+        layerId: "axv-layer-path",
+        domainId: "axv-domain-tech",
+        modeId: "axv-mode-converge",
+      }),
+    ]);
+    render(<AlignmentPhrases />);
+    await act(async () => {
+      fireEvent.click(screen.getByRole("button", { name: "架构推演" }));
+    });
+    expect(writeText).toHaveBeenCalledWith(
+      "本轮在路径层，只谈技术闭环，收敛模式。\n先把边界说清楚。",
+    );
+  });
+
+  it("copies a zero-coordinate phrase byte-identically", async () => {
+    const writeText = vi.mocked(navigator.clipboard.writeText);
+    writeText.mockClear();
+    seedWithAxes(twoPhrases);
+    render(<AlignmentPhrases />);
+    await act(async () => {
+      fireEvent.click(screen.getByRole("button", { name: "默认协议" }));
+    });
+    expect(writeText).toHaveBeenCalledWith("请遵循协议对齐。");
+  });
+});
+
+describe("AlignmentPhrases — coordinate selectors in the editor (ADR-029)", () => {
+  beforeEach(() => seedWithAxes(twoPhrases));
+
+  it("defaults all three selectors to 不限 and offers 管理… last", () => {
+    render(<AlignmentPhrases />);
+    fireEvent.click(screen.getByLabelText("编辑 默认协议"));
+    for (const label of ["层坐标", "域坐标", "模式坐标"]) {
+      const select = screen.getByLabelText(label) as HTMLSelectElement;
+      expect(select.value).toBe("__unconstrained__");
+      expect(select.options[0].textContent).toBe("不限");
+      expect(select.options[select.options.length - 1].textContent).toBe(
+        "管理…",
+      );
+    }
+    // Only that axis's values are offered: 层 has two, plus 不限 and 管理….
+    expect(
+      (screen.getByLabelText("层坐标") as HTMLSelectElement).options,
+    ).toHaveLength(4);
+    expect(
+      (screen.getByLabelText("模式坐标") as HTMLSelectElement).options,
+    ).toHaveLength(3);
+  });
+
+  it("sends the picked coordinates and preserves kind / cueAxis", async () => {
+    seedWithAxes([
+      makePhrase({ id: "ap-1", kind: "cue", cueAxis: "layer", name: "换层" }),
+    ]);
+    render(<AlignmentPhrases />);
+    fireEvent.click(screen.getByLabelText("编辑 换层"));
+    fireEvent.change(screen.getByLabelText("层坐标"), {
+      target: { value: "axv-layer-path" },
+    });
+    await act(async () => {
+      fireEvent.keyDown(screen.getByPlaceholderText("名称"), {
+        key: "Enter",
+        ctrlKey: true,
+      });
+    });
+    const call = invokeMock.mock.calls.find(
+      (c) => c[0] === "update_alignment_phrase",
+    );
+    expect(call?.[1]).toMatchObject({
+      // Content is untouched by a coordinate edit — the backend keeps
+      // contentRevisedAt where it is (06-prd §6.6).
+      content: "请遵循协议对齐。",
+      coordinates: {
+        kind: "cue",
+        cueAxis: "layer",
+        layerId: "axv-layer-path",
+        domainId: null,
+        modeId: null,
+      },
+    });
+  });
+
+  it("sends explicit nulls for the axes left at 不限", async () => {
+    render(<AlignmentPhrases />);
+    fireEvent.click(screen.getByLabelText("编辑 默认协议"));
+    fireEvent.change(screen.getByLabelText("模式坐标"), {
+      target: { value: "axv-mode-converge" },
+    });
+    await act(async () => {
+      fireEvent.keyDown(screen.getByPlaceholderText("名称"), {
+        key: "Enter",
+        ctrlKey: true,
+      });
+    });
+    const call = invokeMock.mock.calls.find(
+      (c) => c[0] === "update_alignment_phrase",
+    );
+    expect(
+      (call?.[1] as { coordinates: Record<string, unknown> }).coordinates,
+    ).toEqual({
+      kind: "opening",
+      cueAxis: null,
+      layerId: null,
+      domainId: null,
+      modeId: "axv-mode-converge",
+    });
+  });
+
+  // ADR-025 子决策 2 的规则表 branch "nothing changed → close without an IPC"
+  // reads dirty off the draft. A coordinate is part of the draft, so a change
+  // confined to a selector must not fall into that branch and be dropped after
+  // the user has already looked away.
+  it("clicking outside saves a change made only to a coordinate", async () => {
+    render(<AlignmentPhrases />);
+    fireEvent.click(screen.getByLabelText("编辑 默认协议"));
+    fireEvent.change(screen.getByLabelText("层坐标"), {
+      target: { value: "axv-layer-path" },
+    });
+    await act(async () => {
+      fireEvent.pointerDown(document.body);
+    });
+    const call = invokeMock.mock.calls.find(
+      (c) => c[0] === "update_alignment_phrase",
+    );
+    expect(
+      (call?.[1] as { coordinates: Record<string, unknown> }).coordinates,
+    ).toMatchObject({ layerId: "axv-layer-path" });
+  });
+
+  it("clicking outside with nothing changed still spends no IPC", async () => {
+    render(<AlignmentPhrases />);
+    fireEvent.click(screen.getByLabelText("编辑 默认协议"));
+    await act(async () => {
+      fireEvent.pointerDown(document.body);
+    });
+    expect(
+      invokeMock.mock.calls.find((c) => c[0] === "update_alignment_phrase"),
+    ).toBeUndefined();
+  });
+
+  it("a create form starts at 不限 on every axis", async () => {
+    render(<AlignmentPhrases />);
+    fireEvent.click(screen.getByLabelText("新增对齐话术"));
+    expect((screen.getByLabelText("层坐标") as HTMLSelectElement).value).toBe(
+      "__unconstrained__",
+    );
+    fireEvent.change(screen.getByPlaceholderText("名称"), {
+      target: { value: "新档位" },
+    });
+    fireEvent.change(screen.getByPlaceholderText("话术内容"), {
+      target: { value: "正文" },
+    });
+    fireEvent.change(screen.getByLabelText("域坐标"), {
+      target: { value: "axv-domain-tech" },
+    });
+    await act(async () => {
+      fireEvent.keyDown(screen.getByPlaceholderText("名称"), {
+        key: "Enter",
+        ctrlKey: true,
+      });
+    });
+    const call = invokeMock.mock.calls.find(
+      (c) => c[0] === "create_alignment_phrase",
+    );
+    expect(
+      (call?.[1] as { coordinates: Record<string, unknown> }).coordinates,
+    ).toEqual({
+      kind: "opening",
+      cueAxis: null,
+      layerId: null,
+      domainId: "axv-domain-tech",
+      modeId: null,
+    });
+  });
+});
+
+describe("AlignmentPhrases — 管理… axis-value editing (ADR-029)", () => {
+  beforeEach(() => seedWithAxes(twoPhrases));
+
+  function openManager() {
+    render(<AlignmentPhrases />);
+    fireEvent.click(screen.getByLabelText("编辑 默认协议"));
+    fireEvent.change(screen.getByLabelText("层坐标"), {
+      target: { value: "__manage__" },
+    });
+  }
+
+  it("opens inside the same anchored panel and leaves the coordinate alone", () => {
+    openManager();
+    const panel = screen.getByRole("group", { name: "编辑对齐话术" });
+    const manager = screen.getByRole("group", { name: "管理层取值" });
+    // No second modal: the list editor is a descendant of the phrase editor.
+    expect(panel.contains(manager)).toBe(true);
+    // 管理… is an action, not a value — the selector snaps back to 不限.
+    expect((screen.getByLabelText("层坐标") as HTMLSelectElement).value).toBe(
+      "__unconstrained__",
+    );
+  });
+
+  it("deletes through ConfirmInline, printing refCount even when it is 0", async () => {
+    openManager();
+    fireEvent.click(screen.getByLabelText("删除 路径"));
+    expect(
+      screen.getByText(
+        "删除『路径』？0 条话术的『层』坐标将被清空，删除后无法恢复",
+      ),
+    ).toBeTruthy();
+    // Nothing has been written yet — the confirm is the whole point.
+    expect(
+      invokeMock.mock.calls.find((c) => c[0] === "delete_alignment_axis_value"),
+    ).toBeUndefined();
+    await act(async () => {
+      fireEvent.click(screen.getByLabelText("确认删除"));
+    });
+    expect(
+      invokeMock.mock.calls.find((c) => c[0] === "delete_alignment_axis_value"),
+    ).toBeTruthy();
+    // The delete blanks coordinates server-side, so the phrases are re-pulled.
+    expect(
+      invokeMock.mock.calls.filter((c) => c[0] === "list_alignment_phrases")
+        .length,
+    ).toBeGreaterThan(0);
+  });
+
+  it("appends the trashed count when it is above zero", () => {
+    openManager();
+    fireEvent.click(screen.getByLabelText("删除 架构"));
+    expect(
+      screen.getByText(
+        "删除『架构』？2 条话术的『层』坐标将被清空，删除后无法恢复。废纸篓里另有 3 条",
+      ),
+    ).toBeTruthy();
+  });
+
+  it("cancelling the confirm writes nothing", () => {
+    openManager();
+    fireEvent.click(screen.getByLabelText("删除 路径"));
+    fireEvent.click(screen.getByLabelText("取消"));
+    expect(screen.getByLabelText("删除 路径")).toBeTruthy();
+    expect(
+      invokeMock.mock.calls.find((c) => c[0] === "delete_alignment_axis_value"),
+    ).toBeUndefined();
+  });
+
+  it("←/→ swap two adjacent values within the axis", async () => {
+    openManager();
+    await act(async () => {
+      fireEvent.click(screen.getByLabelText("后移 路径"));
+    });
+    const call = invokeMock.mock.calls.find(
+      (c) => c[0] === "reorder_alignment_axis_values",
+    );
+    expect(call?.[1]).toMatchObject({
+      axis: "layer",
+      orderedIds: ["axv-layer-arch", "axv-layer-path"],
+    });
+  });
+
+  it("renames a value on blur, always sending the hint alongside", async () => {
+    openManager();
+    const nameField = screen.getByLabelText("路径 名称");
+    fireEvent.change(nameField, { target: { value: "实施路径" } });
+    await act(async () => {
+      fireEvent.blur(nameField);
+    });
+    const call = invokeMock.mock.calls.find(
+      (c) => c[0] === "update_alignment_axis_value",
+    );
+    expect(call?.[1]).toMatchObject({
+      id: "axv-layer-path",
+      name: "实施路径",
+      hint: "分几期、每期做什么",
+    });
+  });
+
+  // A1-08: ⌘Enter means "save the phrase" everywhere, and that does not lapse
+  // because the caret is in the axis-value sub-panel. Claiming it here would
+  // add an axis value at the exact moment the user asked to commit the draft.
+  it("⌘Enter in the add row does not create an axis value", async () => {
+    openManager();
+    const nameField = screen.getByLabelText("新增层取值名称");
+    fireEvent.change(nameField, { target: { value: "判据" } });
+    await act(async () => {
+      fireEvent.keyDown(nameField, { key: "Enter", metaKey: true });
+    });
+    expect(
+      invokeMock.mock.calls.find((c) => c[0] === "create_alignment_axis_value"),
+    ).toBeUndefined();
+    // Plain Enter still means "add" — the modifier is the whole difference.
+    await act(async () => {
+      fireEvent.keyDown(nameField, { key: "Enter" });
+    });
+    expect(
+      invokeMock.mock.calls.find((c) => c[0] === "create_alignment_axis_value"),
+    ).toBeTruthy();
+  });
+
+  it("⌘Enter in a value row does not commit that row", async () => {
+    openManager();
+    const nameField = screen.getByLabelText("路径 名称");
+    fireEvent.change(nameField, { target: { value: "实施路径" } });
+    await act(async () => {
+      fireEvent.keyDown(nameField, { key: "Enter", metaKey: true });
+    });
+    expect(
+      invokeMock.mock.calls.find((c) => c[0] === "update_alignment_axis_value"),
+    ).toBeUndefined();
+    // Plain Enter blurs, and the blur is what commits the rename.
+    await act(async () => {
+      fireEvent.keyDown(nameField, { key: "Enter" });
+      fireEvent.blur(nameField);
+    });
+    expect(
+      invokeMock.mock.calls.find((c) => c[0] === "update_alignment_axis_value"),
+    ).toBeTruthy();
+  });
+
+  it("adds a value to the axis it was opened for", async () => {
+    openManager();
+    fireEvent.change(screen.getByLabelText("新增层取值名称"), {
+      target: { value: "判据" },
+    });
+    fireEvent.change(screen.getByLabelText("新增层取值说明"), {
+      target: { value: "怎么算做成了" },
+    });
+    await act(async () => {
+      fireEvent.click(screen.getByLabelText("添加层取值"));
+    });
+    const call = invokeMock.mock.calls.find(
+      (c) => c[0] === "create_alignment_axis_value",
+    );
+    expect(call?.[1]).toMatchObject({
+      axis: "layer",
+      name: "判据",
+      hint: "怎么算做成了",
+    });
   });
 });

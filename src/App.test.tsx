@@ -19,6 +19,7 @@ import { useAppStore } from "./stores/appStore";
 import { usePromptStore } from "./stores/promptStore";
 import { useSearchStore } from "./stores/searchStore";
 import { useSettingsStore } from "./stores/settingsStore";
+import { useToastStore } from "./stores/toastStore";
 
 const fakePhases: Phase[] = [
   "发散",
@@ -123,6 +124,8 @@ describe("Dashboard end-to-end render", () => {
       switch (cmd) {
         case "list_phases":
           return Promise.resolve(fakePhases);
+        case "list_alignment_axis_values":
+          return Promise.resolve([]);
         case "list_alignment_phrases":
           return Promise.resolve(fakeAlignments);
         case "list_macros":
@@ -294,6 +297,8 @@ describe("Dashboard end-to-end render", () => {
       switch (cmd) {
         case "list_phases":
           return Promise.resolve(fakePhases);
+        case "list_alignment_axis_values":
+          return Promise.resolve([]);
         case "list_alignment_phrases":
           return Promise.resolve(fakeAlignments);
         case "list_macros":
@@ -349,6 +354,8 @@ describe("Dashboard click → IPC flow", () => {
     switch (cmd) {
       case "list_phases":
         return Promise.resolve(fakePhases);
+      case "list_alignment_axis_values":
+        return Promise.resolve([]);
       case "list_alignment_phrases":
         return Promise.resolve(fakeAlignments);
       case "list_macros":
@@ -545,12 +552,105 @@ describe("Dashboard click → IPC flow", () => {
     });
   });
 
-  it("⌘9 does not trigger record_usage (out of range)", async () => {
+  // ⌘N addresses the Nth VISIBLE cell, so with only eight phases on screen the
+  // ninth keycap addresses nothing. The regex accepting 9 (ADR-029) does not
+  // change that — the bounds check does the refusing, exactly as it always did.
+  it("⌘9 does not trigger record_usage when only eight phases are visible", async () => {
     render(<App />);
     await screen.findByRole("button", { name: "借力最优解" });
     fireEvent.keyDown(document, { key: "9", metaKey: true });
     await new Promise((r) => setTimeout(r, 0));
     expect(findRecordUsageInputs().length).toBe(0);
+  });
+
+  // ADR-029 子决策 1/3: the seed's ninth phase is 中途, and its default phrase
+  // is the cue 「停」. ⌘9 is NOT a special case — it runs the same
+  // switch + copy + hide path as ⌘1-8, and records `live_cue` because the
+  // phrase is a cue, not because of which key was pressed.
+  it("⌘9 switches to the ninth phase, copies its default and records live_cue", async () => {
+    const writeText = vi.mocked(navigator.clipboard.writeText);
+    writeText.mockClear();
+    const livePhase: Phase = {
+      id: "phase-live",
+      name: "中途",
+      orderIndex: 8,
+      color: null,
+      description: null,
+      visible: true,
+      defaultAlignmentPhraseId: "ap-live-halt",
+    };
+    const halt: AlignmentPhrase = {
+      ...fakeAlignments[0],
+      id: "ap-live-halt",
+      phaseId: "phase-live",
+      name: "停",
+      content: "停",
+      kind: "cue",
+      cueAxis: null,
+    };
+    invokeMock.mockImplementation((cmd: string) => {
+      if (cmd === "list_phases")
+        return Promise.resolve([...fakePhases, livePhase]);
+      if (cmd === "list_alignment_phrases")
+        return Promise.resolve([...fakeAlignments, halt]);
+      return baseInvoke(cmd);
+    });
+
+    render(<App />);
+    await screen.findByRole("button", { name: "借力最优解" });
+    fireEvent.keyDown(document, { key: "9", metaKey: true });
+    await waitFor(() =>
+      expect(findRecordUsageInputs().length).toBeGreaterThan(0),
+    );
+
+    expect(useAppStore.getState().activePhaseId).toBe("phase-live");
+    // 「停」 has no coordinates, so the clipboard carries the bare content.
+    expect(writeText).toHaveBeenCalledWith("停");
+    const input = findRecordUsageInputs()[0].input as unknown as {
+      targetId: string;
+      source: string;
+    };
+    expect(input.targetId).toBe("ap-live-halt");
+    expect(input.source).toBe("live_cue");
+    // Copy-then-hide is the Rust side's job, driven by record_usage's
+    // suppressHide flag; in 调用态 it stays false, so the launcher ending is
+    // the same as ⌘1-8 — and there is no auto-switch-back to undo it.
+    expect(findRecordUsageInputs()[0]).toMatchObject({ suppressHide: false });
+  });
+
+  it("renders a ninth cell with a ⌘9 keycap when nine phases are visible", async () => {
+    // A copy flash left over from an earlier test would add classes to whichever
+    // cell it targeted, which is exactly what the last assertion inspects.
+    useToastStore.getState().clear();
+    invokeMock.mockImplementation((cmd: string) =>
+      cmd === "list_phases"
+        ? Promise.resolve([
+            ...fakePhases,
+            {
+              id: "phase-live",
+              name: "中途",
+              orderIndex: 8,
+              color: null,
+              description: null,
+              visible: true,
+              defaultAlignmentPhraseId: null,
+            } satisfies Phase,
+          ])
+        : baseInvoke(cmd),
+    );
+    const { container } = render(<App />);
+    await screen.findByRole("button", { name: "借力最优解" });
+    const bar = container.querySelector("[data-region='phase-bar']");
+    await waitFor(() =>
+      expect(bar?.querySelectorAll("button")).toHaveLength(9),
+    );
+    const ninth = bar?.querySelectorAll("button")[8];
+    expect(ninth?.textContent).toContain("中途");
+    expect(ninth?.textContent).toContain("⌘9");
+    // The ninth cell is not styled apart — same class list as the others.
+    expect(ninth?.className).toBe(
+      bar?.querySelectorAll("button")[3]?.className,
+    );
   });
 
   it("plain '1' without metaKey does not trigger phase select", async () => {
@@ -681,6 +781,8 @@ describe("Wake hygiene — clear search residue on hide (P1-4)", () => {
       switch (cmd) {
         case "list_phases":
           return Promise.resolve(fakePhases);
+        case "list_alignment_axis_values":
+          return Promise.resolve([]);
         case "list_alignment_phrases":
           return Promise.resolve(fakeAlignments);
         case "list_macros":

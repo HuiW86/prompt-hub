@@ -158,6 +158,8 @@ function mockListAll() {
     switch (cmd) {
       case "list_phases":
         return Promise.resolve(fakePhases);
+      case "list_alignment_axis_values":
+        return Promise.resolve([]);
       case "list_alignment_phrases":
         return Promise.resolve(fakeAlignments);
       case "list_macros":
@@ -322,6 +324,8 @@ describe("promptStore", () => {
           return Promise.resolve(fakeModifiers);
         case "list_scenes_with_children":
           return Promise.resolve(fakeScenes);
+        case "list_alignment_axis_values":
+          return Promise.resolve([]);
         case "list_alignment_phrases":
           return Promise.resolve(fakeAlignments);
         case "list_compositions":
@@ -501,6 +505,7 @@ describe("promptStore", () => {
       if (cmd === "list_phases") return Promise.resolve(fakePhases);
       if (cmd === "list_alignment_phrases")
         return Promise.resolve(fakeAlignments);
+      if (cmd === "list_alignment_axis_values") return Promise.resolve([]);
       if (cmd === "list_scenes_with_children")
         return Promise.resolve(fakeScenes);
       if (cmd === "list_recent_usage") return Promise.resolve(fakeRecent);
@@ -593,6 +598,8 @@ describe("promptStore", () => {
           return Promise.resolve({ ok: true });
         case "list_phases":
           return Promise.resolve(fakePhases);
+        case "list_alignment_axis_values":
+          return Promise.resolve([]);
         case "list_alignment_phrases":
           return Promise.resolve(fakeAlignments);
         case "list_compositions":
@@ -679,6 +686,8 @@ describe("promptStore", () => {
           return Promise.resolve(fakeMacros);
         case "list_phases":
           return Promise.resolve(fakePhases);
+        case "list_alignment_axis_values":
+          return Promise.resolve([]);
         case "list_alignment_phrases":
           return Promise.resolve(fakeAlignments);
         case "list_scenes_with_children":
@@ -804,6 +813,8 @@ describe("promptStore", () => {
     ];
     invokeMock.mockImplementation((cmd: string) => {
       switch (cmd) {
+        case "list_alignment_axis_values":
+          return Promise.resolve([]);
         case "list_alignment_phrases":
           return Promise.resolve(twoPhase);
         case "list_compositions":
@@ -863,6 +874,8 @@ describe("promptStore", () => {
     ];
     invokeMock.mockImplementation((cmd: string) => {
       switch (cmd) {
+        case "list_alignment_axis_values":
+          return Promise.resolve([]);
         case "list_alignment_phrases":
           return Promise.resolve(twoPhrases);
         case "list_compositions":
@@ -1002,6 +1015,8 @@ describe("promptStore", () => {
     ];
     invokeMock.mockImplementation((cmd: string) => {
       switch (cmd) {
+        case "list_alignment_axis_values":
+          return Promise.resolve([]);
         case "list_alignment_phrases":
           return Promise.resolve(fakeAlignments);
         case "list_compositions":
@@ -1326,6 +1341,7 @@ describe("promptStore", () => {
         if (cmd === "count_today_usage") return Promise.resolve(0);
         if (cmd === "list_phases") return Promise.resolve(fakePhases);
         if (cmd === "list_alignment_phrases") return Promise.resolve([]);
+        if (cmd === "list_alignment_axis_values") return Promise.resolve([]);
         if (cmd === "list_compositions") return Promise.resolve([]);
         if (cmd === "list_macros") return Promise.resolve(fakeMacros);
         if (cmd === "list_modifiers") return Promise.resolve([]);
@@ -1415,6 +1431,8 @@ describe("promptStore — restoreAsset (ADR-028)", () => {
           return Promise.resolve(fakeMacros);
         case "list_modifiers":
           return Promise.resolve(fakeModifiers);
+        case "list_alignment_axis_values":
+          return Promise.resolve([]);
         case "list_alignment_phrases":
           return Promise.resolve(fakeAlignments);
         case "list_compositions":

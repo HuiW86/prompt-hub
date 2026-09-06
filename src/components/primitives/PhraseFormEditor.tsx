@@ -47,6 +47,16 @@ interface PhraseFormEditorBaseProps {
   /** Extra fields rendered between the content textarea and the footer
    *  (e.g. ScenePanel's sub-stage select). */
   extraFields?: ReactNode;
+  /**
+   * Whether a field OUTSIDE name/content has changed — the caller owns that
+   * state, so only it can tell. It is OR-ed into the dirty verdict, which is
+   * what makes an outside click SAVE a draft whose only change lives in
+   * `extraFields` instead of taking the "nothing changed, close without an IPC"
+   * branch and dropping it (ADR-025 子决策 2 的规则表). Only meaningful in edit
+   * mode: a create form whose name and content are both filled is already
+   * dirty, and one that is not cannot be saved at all.
+   */
+  extraDirty?: boolean;
   /** Save button copy — create forms read "新增", edit forms read "保存". */
   submitLabel: string;
   className?: string;
@@ -101,6 +111,7 @@ export function PhraseFormEditor(props: PhraseFormEditorProps) {
     contentPlaceholder = "话术内容",
     ariaLabel,
     extraFields,
+    extraDirty = false,
     submitLabel,
     className,
     onSubmit,
@@ -141,7 +152,9 @@ export function PhraseFormEditor(props: PhraseFormEditorProps) {
   const baseName = mode === "edit" ? (initialName ?? "") : "";
   const baseContent = mode === "edit" ? (initialContent ?? "") : "";
   const dirty =
-    name.trim() !== baseName.trim() || content.trim() !== baseContent.trim();
+    name.trim() !== baseName.trim() ||
+    content.trim() !== baseContent.trim() ||
+    extraDirty;
 
   const handleSave = async () => {
     if (!canSave || saving) return;

@@ -1,4 +1,5 @@
 import type {
+  AlignmentAxisValueWithRefs,
   AlignmentPhrase,
   Composition,
   DraftPayload,
@@ -23,6 +24,18 @@ export function indexByPhase(
 ): Record<string, AlignmentPhrase[]> {
   return phrases.reduce<Record<string, AlignmentPhrase[]>>((acc, p) => {
     (acc[p.phaseId] ??= []).push(p);
+    return acc;
+  }, {});
+}
+
+// Kept in the store next to the list itself rather than derived in a selector:
+// a selector that rebuilt this object every call would hand Zustand a new
+// snapshot on every render (the copy path and every chip read it).
+export function indexAxisValuesById(
+  values: AlignmentAxisValueWithRefs[],
+): Record<string, AlignmentAxisValueWithRefs> {
+  return values.reduce<Record<string, AlignmentAxisValueWithRefs>>((acc, v) => {
+    acc[v.id] = v;
     return acc;
   }, {});
 }

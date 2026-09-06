@@ -7,6 +7,7 @@ import type {
 } from "../ipc/types";
 import { alignmentUsageSource, findAlignmentPhrase } from "../ipc/usageSource";
 import { usePromptStore } from "../stores/promptStore";
+import { buildAlignmentCopyText } from "../utils/alignmentCopyText";
 import { relativeTime } from "../utils/time";
 
 import { EmptyState, RegionHeader } from "./primitives";
@@ -28,6 +29,7 @@ export function RecentList() {
   const alignmentPhrasesByPhase = usePromptStore(
     (s) => s.alignmentPhrasesByPhase,
   );
+  const axisValuesById = usePromptStore((s) => s.alignmentAxisValuesById);
   const copy = useCopy();
   const onRegionKeyDown = useRegionNav();
 
@@ -39,6 +41,22 @@ export function RecentList() {
       entry.record.targetId,
     );
     return phrase ? alignmentUsageSource(phrase, "recent") : "recent";
+  }
+
+  // Re-copying an alignment phrase from here must produce the same clipboard
+  // string as the chip row (03-product-spec 「对齐坐标与漂移账契约」b), so the
+  // prefix is assembled from the live phrase rather than taken from the usage
+  // record's stored content — which is the bare `content`, coordinates and all
+  // omitted. A phrase the store cannot resolve (trashed) falls back to that
+  // stored content: one un-prefixed copy beats copying nothing.
+  function contentFor(entry: RecentUsageEntry): string {
+    const stored = entry.targetContent ?? "";
+    if (entry.record.targetType !== "alignment") return stored;
+    const phrase = findAlignmentPhrase(
+      alignmentPhrasesByPhase,
+      entry.record.targetId,
+    );
+    return phrase ? buildAlignmentCopyText(phrase, axisValuesById) : stored;
   }
 
   return (
@@ -69,7 +87,7 @@ export function RecentList() {
                   onClick={() => {
                     if (!canRecopy) return;
                     void copy(
-                      entry.targetContent ?? "",
+                      contentFor(entry),
                       {
                         targetType: entry.record.targetType,
                         targetId: entry.record.targetId,

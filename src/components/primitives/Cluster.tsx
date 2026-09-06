@@ -26,11 +26,19 @@ export function ActionCluster({
   );
 }
 
-// ADR-028 子决策 3 removed all six of this primitive's call sites: delete became
-// reversible, so「撤销优于确认」(ADR-025 `:125`) retired the confirm step. It is
-// deliberately kept, NOT dead code — 清空废纸篓 (ADR-028 P1) is the one genuinely
-// irreversible action left in the app and is specified to use it. Do not sweep
-// it up as an unused export before that lands.
+// ADR-028 子决策 3 removed all six of this primitive's original call sites:
+// delete became reversible, so「撤销优于确认」(ADR-025 `:125`) retired the confirm
+// step everywhere it applied.
+//
+// TWO consumers remain, and the rule admitting them is the same one that
+// evicted the other six — a confirmation is for actions that are genuinely
+// irreversible, and only for those:
+//   1. 清空废纸篓 (TrashSection, ADR-028 P1);
+//   2. deleting a coordinate axis value (AxisValueManager, ADR-029) —
+//      `alignment_axis_values` has no `deleted_at` and no trash (06-prd
+//      §6.6-bis), so the delete is a hard one.
+// A third consumer needs the same test: if the action can be undone, it gets a
+// toast with 撤销 instead.
 interface ConfirmInlineProps {
   text?: string;
   confirmLabel?: string;

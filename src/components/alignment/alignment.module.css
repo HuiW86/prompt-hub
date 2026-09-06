@@ -1,0 +1,102 @@
+/* Coordinate selectors + in-place axis-value manager (ADR-029, 03-product-spec
+   区域 2-bis). Both live INSIDE the anchored phrase editor, so every neutral
+   token here resolves through ProtocolBand's band-scoped remap (ADR-020) — no
+   band-specific colors are declared. */
+
+.coordinates {
+  display: flex;
+  flex-direction: column;
+  gap: var(--s-1_5);
+}
+
+.field {
+  display: flex;
+  align-items: center;
+  gap: var(--s-2);
+}
+
+.fieldLabel {
+  composes: ph-label from "../../styles/typography.module.css";
+  flex-shrink: 0;
+  width: var(--s-8);
+}
+
+.select {
+  composes: ph-card-body from "../../styles/typography.module.css";
+  flex: 1;
+  min-width: 0;
+  height: var(--h-chip);
+  padding: 0 var(--s-2);
+  border: var(--hairline) solid var(--border-1);
+  border-radius: var(--r-2);
+  background: var(--surface-1);
+  appearance: none;
+  cursor: pointer;
+}
+
+/* Native select text reads at --fg-1 (input value), not the body --fg-2.
+   Doubled selector for the cascade caveat in typography.module.css. */
+.select.select {
+  color: var(--fg-1);
+}
+
+.select:focus-visible {
+  outline: var(--border-thick) solid var(--accent);
+  outline-offset: 0;
+}
+
+/* The 「管理…」 surface — expanded in place under the selector that opened it,
+   never as a second modal (03-product-spec 区域 2-bis 「入口」). */
+.manager {
+  display: flex;
+  flex-direction: column;
+  gap: var(--s-1);
+  padding: var(--s-2);
+  border: var(--hairline) solid var(--border-1);
+  border-radius: var(--r-3);
+  background: var(--surface-2);
+}
+
+.managerHead {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--s-2);
+}
+
+.managerTitle {
+  composes: ph-label from "../../styles/typography.module.css";
+}
+
+.managerRow {
+  display: flex;
+  align-items: center;
+  gap: var(--s-1);
+}
+
+.managerInput {
+  composes: ph-note from "../../styles/typography.module.css";
+  flex: 1;
+  min-width: 0;
+  height: var(--h-chip);
+  padding: 0 var(--s-1_5);
+  border: var(--hairline) solid var(--border-1);
+  border-radius: var(--r-2);
+  background: var(--surface-1);
+  appearance: none;
+}
+
+.managerInput.managerInput {
+  color: var(--fg-1);
+}
+
+.managerInput:focus-visible {
+  outline: var(--border-thick) solid var(--accent);
+  outline-offset: 0;
+}
+
+/* The delete confirmation carries a full sentence with two counts in it, so it
+   wraps rather than pushing the confirm / cancel buttons out of the panel. */
+.managerConfirm {
+  flex-wrap: wrap;
+}

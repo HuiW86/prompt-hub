@@ -264,6 +264,43 @@ describe("SearchOverlay keyboard navigation", () => {
     expect(input.targetId).toBe("b");
   });
 
+  // 03-product-spec 「对齐坐标与漂移账契约」b: one phrase, one clipboard string,
+  // whichever entry point produced it. The search overlay is the entry point
+  // furthest from the chip row, so it is where a forked assembly would hide.
+  it("Enter on an alignment hit copies the coordinate prefix, not the bare content", async () => {
+    const writeText = vi.mocked(navigator.clipboard.writeText);
+    writeText.mockClear();
+    const axisValue = {
+      id: "axv-layer-path",
+      axis: "layer" as const,
+      name: "路径",
+      hint: null,
+      orderIndex: 0,
+      refCount: 1,
+      trashedRefCount: 0,
+    };
+    usePromptStore.setState({
+      phases: [fakePhase],
+      alignmentPhrasesByPhase: {
+        "phase-explore": [{ ...fakeAp, layerId: "axv-layer-path" }],
+      },
+      alignmentAxisValues: [axisValue],
+      alignmentAxisValuesById: { "axv-layer-path": axisValue },
+      macros: [],
+      scenes: [],
+      recentUsage: [],
+      loadState: "ready",
+    });
+    useSearchStore.setState({ query: "进入发散" });
+    render(<SearchOverlay />);
+    fireEvent.keyDown(document, { key: "Enter" });
+    await waitFor(() =>
+      expect(writeText).toHaveBeenCalledWith(
+        "本轮在路径层。\n我们做发散，铺开可能性",
+      ),
+    );
+  });
+
   it("Enter with empty results is a no-op", () => {
     useSearchStore.setState({ query: "xyz-no-match" });
     render(<SearchOverlay />);
