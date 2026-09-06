@@ -1,10 +1,10 @@
 ---
 type: prd
 project: prompt-hub
-version: v0.15
+version: v0.16
 created: 2026-05-18
-last_modified: 2026-09-04
-status: ratified  # v0.15 于 2026-09-04 经 omar 签字（人审批次 ⑨，与 [[03-product-spec]] v0.26 同批，批次内两个裁点均按推荐通过）。本版是 [[029-alignment-coordinates-and-drift-ledger]] 的图纸回流（对齐坐标四轴 + 中途口令隐式记账），属图纸类改动，按 [[CLAUDE#§5.1.2]] 需 omar 签字后才转 `ratified`。**本版描述的契约已于 2026-09-05 落地**（ADR-029 P0 `0329520` / P1 `345e37f` / P2 `3af8308`，真机门 G7 6 过 / 2 部分 / 1 缺陷已修 `4a68fa9`，见 [[11-test-spec#4.6]]）。前 v0.14 于 2026-09-03 人审批次 ⑧ 经 omar 签字（三份图纸同批过：本文件 + [[03-product-spec]] v0.25 + [[05-design-spec]] v0.22；批次内无新决策，记的都是 ADR-028 已拍板的内容）。本版内容：§6 数据模型契约变更（新增 §6.0-bis 两套删除机制 + 七张资产表加 `deleted_at` + 四处「删除策略」重写 + 导出 data schema 1.1→1.2），属图纸类改动，按 [[CLAUDE#§5.1.2]] 需签字。**v0.12 起登记的 §6.1 drift 就此销账**——旧文承诺 `deprecated = true`、实装是 hard DELETE，现两边都已改正。前 v0.13 于 2026-09-01 人审批次 ④ ratified
+last_modified: 2026-09-06
+status: ratified  # v0.16 于 2026-09-06 经 omar 签字（人审批次 ⑫，与 [[03-product-spec]] v0.29 同批，单裁点「编辑器加一行修订说明输入」按推荐通过）：§6.6 的 `notes` 补上 UI 写入方——v0.15 写「这是 `notes` 的第一个写入方」时，写入方只到 Rust 与 IPC 为止，编辑面从不发这个参数，真机上改完正文 `notes` 仍是 NULL（[[HANDOFF]] 第 53 项）。前 v0.15 于 2026-09-04 经 omar 签字（人审批次 ⑨，与 [[03-product-spec]] v0.26 同批，批次内两个裁点均按推荐通过）。本版是 [[029-alignment-coordinates-and-drift-ledger]] 的图纸回流（对齐坐标四轴 + 中途口令隐式记账），属图纸类改动，按 [[CLAUDE#§5.1.2]] 需 omar 签字后才转 `ratified`。**本版描述的契约已于 2026-09-05 落地**（ADR-029 P0 `0329520` / P1 `345e37f` / P2 `3af8308`，真机门 G7 6 过 / 2 部分 / 1 缺陷已修 `4a68fa9`，见 [[11-test-spec#4.6]]）。前 v0.14 于 2026-09-03 人审批次 ⑧ 经 omar 签字（三份图纸同批过：本文件 + [[03-product-spec]] v0.25 + [[05-design-spec]] v0.22；批次内无新决策，记的都是 ADR-028 已拍板的内容）。本版内容：§6 数据模型契约变更（新增 §6.0-bis 两套删除机制 + 七张资产表加 `deleted_at` + 四处「删除策略」重写 + 导出 data schema 1.1→1.2），属图纸类改动，按 [[CLAUDE#§5.1.2]] 需签字。**v0.12 起登记的 §6.1 drift 就此销账**——旧文承诺 `deprecated = true`、实装是 hard DELETE，现两边都已改正。前 v0.13 于 2026-09-01 人审批次 ④ ratified
 author: ai  # 🤖 AI 主笔 + 人审（CLAUDE §5.2）
 related: [[01-spec]], [[03-product-spec]], [[prompt-hub-mvp]], [[015-expose-mcp-write-pipeline]], [[027-configurable-global-hotkey]], [[028-reversible-delete]], [[029-alignment-coordinates-and-drift-ledger]], [[mcp-write-pipeline]]
 description: 手动 AI 编程仪表盘的工程契约——数据模型/状态机/NFR/Boundaries/IPC + MCP 接口契约；写后端 / 数据层时召回。版本叙事见 CHANGELOG
@@ -785,7 +785,7 @@ Scene 节包含 3 个相关模型：**Scene**（场景容器）、**Phrase**（S
 - **`cue_axis` 为什么单开一列，而不复用三列坐标来标「纠的是哪一轴」**（v0.15）：两条理由，任一条都足够。① **形态轴没有列可复用**——形态由 `phase_id` 承载，三列坐标里根本没有它，而「换挡：探讨」纠的正是形态 ② 三列坐标在复制路径上已有确定含义（拼前缀，见下文），复用会让「本轮只谈商业闭环」这条口令被复制成「只谈商业闭环。」加换行再加它自己，凭空多一行废话。单开一列既表达得了形态，又完全不碰复制路径
 - **`cue_axis` 为什么可空**（v0.15）：NULL 一次覆盖两种情况——全部开场话术（`kind='opening'`，本就不纠任何轴），以及**「停」**。「停」是中止不是漂移，它照常记 `live_cue`（§6.8），但不进任何一栏。这是本版记账里唯一一处「记了但不计入」，[[029-alignment-coordinates-and-drift-ledger]] 子决策 4 明写为一处诚实的空缺，不是遗漏
 - **`content_revised_at` 为什么不配一张历史版本表**（v0.15）：本版要的只是**一个切分点**，用来看「改完之后是不是真的少漂了」，不是完整版本史。历史表会把 [[028-reversible-delete]] 刚统一好的删除与恢复语义再复杂化一层。**代价**：改第二次之后只剩最近一次的切分点，更早的分段不可回溯
-- **`content_revised_at` 只在 `content` 真的变了时才刷新**（v0.15）：改 `name`、调坐标、设默认都不算改内容——否则调一次坐标就把归因账切成两段，切分点会被噪音冲垮。`notes`（本表自 v0.3 就有、至今**无人写入**的「迭代说明」）与它同一次写入，这是 `notes` 的第一个写入方
+- **`content_revised_at` 只在 `content` 真的变了时才刷新**（v0.15）：改 `name`、调坐标、设默认都不算改内容——否则调一次坐标就把归因账切成两段，切分点会被噪音冲垮。`notes`（本表自 v0.3 就有、至今**无人写入**的「迭代说明」）与它同一次写入，这是 `notes` 的第一个写入方。**UI 写入方**：编辑面的「这次为什么改」输入（v0.16，[[03-product-spec#13.3]] 区域 2-bis）——**`content` 真变时总是写这一列，说明留空就写空串**（`notes = COALESCE(?, notes)` 遇到 `Some("")` 落的是空串不是 NULL，**读方按「空串 = 无说明」处理**，与 NULL 同义）；`content` 没变则整个字段不发，后端保留旧值。**空也要写的理由**：说明依附于一次修订，省略会让上一次的理由被 COALESCE 钉到这一次的切分点上，指着新正文讲旧故事。v0.15 写下这句时写入方只到 Rust 与 IPC 为止——编辑器不发、本文也没指定谁发，于是真机上改完正文 `notes` 仍是 NULL（[[HANDOFF]] 第 53 项，2026-09-06 omar 裁 a 后补齐）
 
 #### 复制文本的拼装（🎯 v0.15 · [[029-alignment-coordinates-and-drift-ledger]] 子决策 2）
 
@@ -1712,6 +1712,14 @@ PRD 不复刻风险表，避免双源真理漂移；实施侧风险/缓解以 pl
 ---
 
 ## 修订记录
+
+### v0.16（2026-09-06）— 第 53 项回流：`notes` 补上 UI 写入方
+
+**触发**：[[HANDOFF]] 第 51 项真机补验发现 §6.6 的 `notes` 只有 Rust 与 IPC 两级写入方，编辑面从不发，改完正文那一列仍是 NULL；omar 2026-09-06 裁 a（编辑器加一行输入），当日落地。**本版只补一句实现归属，契约文字与字段定义一字未动。**
+
+| 章节 | 改动 |
+|------|------|
+| §6.6 `content_revised_at` 那条 | 末尾补「**UI 写入方**：编辑面的「这次为什么改」输入（[[03-product-spec#13.3]] 区域 2-bis），`content` 真变时总是写、留空即写空串（**空串 = 无说明**，与 NULL 同义），`content` 没变则不发该字段、后端保留旧值」，并注明 v0.15「第一个写入方」那句当时只到 Rust 与 IPC 为止 |
 
 ### v0.15（2026-09-04）— ADR-029 涟漪：对齐坐标四轴 + 中途口令隐式记账
 

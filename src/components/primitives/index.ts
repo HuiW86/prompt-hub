@@ -15,6 +15,7 @@ export {
 export {
   PhraseFormEditor,
   type PhraseFormValues,
+  type PhraseFormExtraState,
   type PhraseFormEditorProps,
 } from "./PhraseFormEditor";
 export { Chip } from "./Chip";

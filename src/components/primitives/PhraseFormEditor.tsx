@@ -23,6 +23,18 @@ export interface PhraseFormValues {
   content: string;
 }
 
+/** Live draft state handed to a function-form `extraFields` slot. */
+export interface PhraseFormExtraState {
+  /**
+   * The body differs from what is persisted. Computed with the SAME predicate
+   * as the form's own dirty verdict (trimmed, against the persisted baseline)
+   * so a slot can never disagree with the rule that decides whether an outside
+   * click saves — see AlignmentPhraseEditor's 「这次为什么改」 input, which is
+   * only writable once the body really moved (ADR-029 子决策 5).
+   */
+  contentDirty: boolean;
+}
+
 interface PhraseFormEditorBaseProps {
   layer: Layer;
   /**
@@ -45,8 +57,10 @@ interface PhraseFormEditorBaseProps {
   /** Localised aria-label for the panel (e.g. "编辑话术"). */
   ariaLabel: string;
   /** Extra fields rendered between the content textarea and the footer
-   *  (e.g. ScenePanel's sub-stage select). */
-  extraFields?: ReactNode;
+   *  (e.g. ScenePanel's sub-stage select). The function form is called with the
+   *  live draft state for slots that must react to it; plain nodes stay valid,
+   *  so no existing call site changes. */
+  extraFields?: ReactNode | ((state: PhraseFormExtraState) => ReactNode);
   /**
    * Whether a field OUTSIDE name/content has changed — the caller owns that
    * state, so only it can tell. It is OR-ed into the dirty verdict, which is
@@ -151,10 +165,8 @@ export function PhraseFormEditor(props: PhraseFormEditorProps) {
   // promised the user it was back.
   const baseName = mode === "edit" ? (initialName ?? "") : "";
   const baseContent = mode === "edit" ? (initialContent ?? "") : "";
-  const dirty =
-    name.trim() !== baseName.trim() ||
-    content.trim() !== baseContent.trim() ||
-    extraDirty;
+  const contentDirty = content.trim() !== baseContent.trim();
+  const dirty = name.trim() !== baseName.trim() || contentDirty || extraDirty;
 
   const handleSave = async () => {
     if (!canSave || saving) return;
@@ -262,7 +274,9 @@ export function PhraseFormEditor(props: PhraseFormEditorProps) {
         }}
         onKeyDown={onContentKeyDown}
       />
-      {extraFields}
+      {typeof extraFields === "function"
+        ? extraFields({ contentDirty })
+        : extraFields}
       {showInvalid && (
         <p role="status" className={styles.fieldHint}>
           名称与内容都不能为空，补齐后才能保存

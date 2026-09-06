@@ -100,3 +100,54 @@
 .managerConfirm {
   flex-wrap: wrap;
 }
+
+/* 「这次为什么改」 — the revision note (ADR-029 子决策 5, HANDOFF 第 53 项).
+   A column rather than the .field row above: its label is a six-character
+   question, and the 32px rail the axis labels share would clip it. */
+.revision {
+  display: flex;
+  flex-direction: column;
+  gap: var(--s-1);
+}
+
+.revisionLabel {
+  composes: ph-label from "../../styles/typography.module.css";
+}
+
+.revisionInput {
+  composes: ph-card-body from "../../styles/typography.module.css";
+  min-width: 0;
+  height: var(--h-chip);
+  padding: 0 var(--s-2);
+  border: var(--hairline) solid var(--border-1);
+  border-radius: var(--r-2);
+  background: var(--surface-1);
+  appearance: none;
+}
+
+/* Same cascade caveat as .select above — typed value reads at --fg-1. */
+.revisionInput.revisionInput {
+  color: var(--fg-1);
+}
+
+/* Inert until the body actually changes. It has to LOOK inert too: an input
+   that silently discards what you type is worse than one that visibly will
+   not take it. --surface-2 is the recessed neutral .manager already uses. */
+.revisionInput:disabled {
+  background: var(--surface-2);
+  cursor: not-allowed;
+}
+
+.revisionInput.revisionInput:disabled {
+  color: var(--fg-3);
+}
+
+.revisionInput:focus-visible {
+  outline: var(--border-thick) solid var(--accent);
+  outline-offset: 0;
+}
+
+.revisionHint {
+  composes: ph-note from "../../styles/typography.module.css";
+  margin: 0;
+}

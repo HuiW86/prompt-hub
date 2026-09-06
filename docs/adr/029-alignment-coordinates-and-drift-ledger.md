@@ -48,6 +48,8 @@ related:
 > **口径 7 — `usage_records.source` 的语义被重载**：它原是「触发入口」，`live_cue` 是话术类别——口令从最近使用区复制也记 `live_cue` 不记 `recent`。不另开一列，因为 append-only 表加列比重载一个值更贵，且归因只关心「是不是口令」。prd §6.8 显式重述这一列的定义。
 >
 > **口径 8 — 导出顶层键是 `alignment_axis_values`**（snake_case），`ExportBundle` 无 `rename_all`，十个既有顶层键全是 snake_case，只有行内字段是 camelCase。IPC 预计 56 → 62（轴取值五个 + `summarize_drift_ledger`），实测以落地时 IPC gate 为准。
+>
+> **口径 9 — 子决策 5 的 `notes` 写入方补于 2026-09-06（omar 裁，[[HANDOFF]] 第 53 项）**：P0–P2 三期只把 `notes` 落到 Rust（`update_alignment_phrase`，传 `Some` 则写、缺席则 COALESCE 保留）与 IPC 参数上，**编辑器从不发这个参数，[[03-product-spec]] 也从未画过这个框**——于是真机上改完正文 `content_revised_at` 有戳而 `notes` 恒为 NULL，明细面的「修订前 / 后」两段只有日期没有理由（第 51 项补验发现）。omar 当日在两选一里裁 **a**（编辑器加一行输入；备选 b 是改口径承认 `notes` 只由 MCP / 导入写，否决），当日落地：编辑面正文框下、坐标选择器上一行可选输入「这次为什么改」，**只在编辑态出现 / 正文未变时置灰 / 只填说明不算改动 / 正文真变时随保存写入（留空即清掉上一条，不预填旧值），正文没变则整个字段不发**——写入方总是与一次真修订同进退，否则 `notes = COALESCE(?, notes)` 会把上一次修订的理由钉到这一次的切分点上。契约见 [[03-product-spec#13.3]] 区域 2-bis 与 [[06-prd#6.6]]。
 
 ## 3. Context
 

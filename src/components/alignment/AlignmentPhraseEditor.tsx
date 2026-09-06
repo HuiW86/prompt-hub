@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useId, useState } from "react";
 
 import type {
   AlignmentPhrase,
@@ -66,6 +66,13 @@ function sameDraft(a: CoordinateDraft, b: CoordinateDraft): boolean {
 
 export interface AlignmentPhraseSubmit extends PhraseFormValues {
   coordinates: AlignmentPhraseCoordinates;
+  /**
+   * The revision note (ADR-029 子决策 5). Present whenever the body really
+   * changed — `""` included, which clears the stored note rather than letting
+   * it outlive the revision it described. Absent when the body did not change,
+   * which is what makes the backend keep the note it already has.
+   */
+  notes?: string;
 }
 
 interface AlignmentPhraseEditorProps {
@@ -93,6 +100,11 @@ interface AlignmentPhraseEditorProps {
  * cue as an opening phrase, and the backend writes all five classification
  * fields whenever `coordinates` is present, so omitting them here would silently
  * demote every cue it touched to an opening phrase.
+ *
+ * It also owns the revision note — ADR-029 子决策 5's other half. The `notes`
+ * column had a writer in Rust and in the IPC layer from P0 on but no way in
+ * from the UI, so every revision the drift ledger splits on carried a date and
+ * no reason (HANDOFF 第 53 项, omar 裁 a on 2026-09-06).
  */
 export function AlignmentPhraseEditor({
   phrase,
@@ -116,6 +128,13 @@ export function AlignmentPhraseEditor({
   );
   // Which axis's value list is expanded inside this same panel; only ever one.
   const [managingAxis, setManagingAxis] = useState<AxisKind | null>(null);
+  // The revision note. Deliberately NOT seeded from `phrase.notes`: the note
+  // answers "why this edit", not "why the last one", and prefilling the previous
+  // answer is the fastest way to get it re-saved unread against a different
+  // change. There is no history table (ADR-029 子决策 5), so each save overwrites.
+  const [notes, setNotes] = useState("");
+  const notesFieldId = useId();
+  const notesHintId = useId();
 
   // Render guard rather than an effect (same shape as AlignmentPhrases' stale
   // editingId reset): if the axis list changed under the open panel, the draft
@@ -142,9 +161,25 @@ export function AlignmentPhraseEditor({
   const coordinatesDirty = phrase != null && !sameDraft(normalized, persisted);
 
   const handleSubmit = async ({ name, content }: PhraseFormValues) => {
+    // Same predicate the form uses for its own dirty verdict — both compare the
+    // trimmed body against what is persisted, and `content` arrives trimmed —
+    // so the field the user could type into and the note that actually ships
+    // can never disagree.
+    const contentChanged =
+      phrase != null && content !== (phrase.content ?? "").trim();
     await onSubmit({
       name,
       content,
+      // A REVISION ALWAYS WRITES THE FIELD, an empty box included: the backend
+      // COALESCEs an omitted note to the stored one, so staying silent here
+      // would pin the PREVIOUS revision's reason to this revision's split point
+      // and describe the wrong edit. Sending "" clears it instead, which readers
+      // treat as "no reason given" (06-prd §6.6).
+      //
+      // Only an unchanged body omits the field, and then there is no revision
+      // for a note to belong to — the stored one still describes the last real
+      // one, so it must survive a rename or a coordinate tweak untouched.
+      notes: contentChanged ? notes.trim() : undefined,
       coordinates: {
         kind: phrase?.kind ?? "opening",
         cueAxis: phrase?.cueAxis ?? null,
@@ -211,8 +246,38 @@ export function AlignmentPhraseEditor({
       // Only a creation has nothing to fall back on; an edit's original row is
       // still in the DB (ADR-025 子决策 2 的规则表 last row).
       onDiscard={phrase ? undefined : onDiscard}
-      extraFields={
+      // A function so the note field can see the live body. Note that
+      // `contentDirty` is NOT folded into `extraDirty`: a note typed against an
+      // untouched body is not a change worth saving, and counting it would make
+      // an outside click spend an IPC round trip writing nothing, or hand a
+      // create draft an undo toast it has no use for.
+      extraFields={({ contentDirty }) => (
         <div className={styles.coordinates}>
+          {/* Edit only. A creation has no earlier body to have revised. */}
+          {phrase != null && (
+            <div className={styles.revision}>
+              <label className={styles.revisionLabel} htmlFor={notesFieldId}>
+                这次为什么改
+              </label>
+              <input
+                id={notesFieldId}
+                type="text"
+                className={styles.revisionInput}
+                value={notes}
+                disabled={!contentDirty}
+                // Points at the reason it is inert, and only while it is: a
+                // description that outlives the disabled state would be read
+                // out over a field that does take input.
+                aria-describedby={contentDirty ? undefined : notesHintId}
+                onChange={(e) => setNotes(e.target.value)}
+              />
+              {!contentDirty && (
+                <p id={notesHintId} className={styles.revisionHint}>
+                  改了正文才会记
+                </p>
+              )}
+            </div>
+          )}
           {AXIS_ORDER.map((axis) => selectFor(axis))}
           {managingAxis != null && (
             <AxisValueManager
@@ -221,7 +286,7 @@ export function AlignmentPhraseEditor({
             />
           )}
         </div>
-      }
+      )}
     />
   );
 }

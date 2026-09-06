@@ -44,17 +44,33 @@ export const createAlignmentSlice: StateCreatorSlice<
   // touched here — the backend stamps it only when `content` actually changed,
   // and guessing at that client-side would move the drift ledger's split point
   // on a rename (06-prd §6.6).
-  updateAlignmentPhrase: async ({ id, name, content, coordinates }) => {
+  updateAlignmentPhrase: async ({ id, name, content, notes, coordinates }) => {
     const snapshot = get().alignmentPhrasesByPhase;
     const next: Record<string, AlignmentPhrase[]> = {};
     for (const [phaseId, list] of Object.entries(snapshot)) {
       next[phaseId] = list.map((a) =>
-        a.id === id ? { ...a, name, content, ...(coordinates ?? {}) } : a,
+        a.id === id
+          ? {
+              ...a,
+              name,
+              content,
+              // Mirrors the backend's COALESCE: an omitted note leaves the
+              // stored one in place, here as well as in SQLite.
+              ...(notes !== undefined ? { notes } : {}),
+              ...(coordinates ?? {}),
+            }
+          : a,
       );
     }
     set({ alignmentPhrasesByPhase: next });
     try {
-      await ipc.updateAlignmentPhrase({ id, name, content, coordinates });
+      await ipc.updateAlignmentPhrase({
+        id,
+        name,
+        content,
+        notes,
+        coordinates,
+      });
     } catch (err) {
       set({ alignmentPhrasesByPhase: snapshot });
       throw err;

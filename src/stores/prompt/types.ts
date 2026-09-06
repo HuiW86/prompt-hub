@@ -125,10 +125,14 @@ export interface PromptState {
     content: string;
     coordinates?: AlignmentPhraseCoordinates;
   }) => Promise<void>;
+  // `notes` omitted leaves the stored revision note alone (the backend
+  // COALESCEs it). It is only ever sent alongside a body that really changed —
+  // see AlignmentPhraseEditor (ADR-029 子决策 5).
   updateAlignmentPhrase: (args: {
     id: string;
     name: string;
     content: string;
+    notes?: string;
     coordinates?: AlignmentPhraseCoordinates;
   }) => Promise<void>;
   deleteAlignmentPhrase: (id: string) => Promise<void>;

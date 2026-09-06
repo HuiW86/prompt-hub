@@ -505,6 +505,99 @@ describe("AlignmentPhrases — coordinate selectors in the editor (ADR-029)", ()
   });
 });
 
+describe("AlignmentPhrases — revision note in the editor (ADR-029 子决策 5)", () => {
+  beforeEach(() => seedWithAxes(twoPhrases));
+
+  it("ships the note alongside a body that really changed", async () => {
+    render(<AlignmentPhrases />);
+    fireEvent.click(screen.getByLabelText("编辑 默认协议"));
+    fireEvent.change(screen.getByPlaceholderText("话术内容"), {
+      target: { value: "改后的正文" },
+    });
+    fireEvent.change(screen.getByLabelText("这次为什么改"), {
+      target: { value: "  上一版太长，AI 只读了前半  " },
+    });
+    await act(async () => {
+      fireEvent.keyDown(screen.getByPlaceholderText("名称"), {
+        key: "Enter",
+        ctrlKey: true,
+      });
+    });
+    const call = invokeMock.mock.calls.find(
+      (c) => c[0] === "update_alignment_phrase",
+    );
+    expect(call?.[1]).toMatchObject({
+      content: "改后的正文",
+      // Trimmed, like every other field this form writes.
+      notes: "上一版太长，AI 只读了前半",
+    });
+  });
+
+  // Leaving the box empty on a real revision CLEARS the note. Omitting the field
+  // would make the backend COALESCE the previous revision's reason onto this
+  // revision's split point, which describes the wrong edit.
+  it("clears the stored note when a revision is saved with the box empty", async () => {
+    seedWithAxes([makePhrase({ id: "ap-1", notes: "上一次改的理由" })]);
+    render(<AlignmentPhrases />);
+    fireEvent.click(screen.getByLabelText("编辑 默认协议"));
+    fireEvent.change(screen.getByPlaceholderText("话术内容"), {
+      target: { value: "又改了一版" },
+    });
+    await act(async () => {
+      fireEvent.keyDown(screen.getByPlaceholderText("名称"), {
+        key: "Enter",
+        ctrlKey: true,
+      });
+    });
+    const call = invokeMock.mock.calls.find(
+      (c) => c[0] === "update_alignment_phrase",
+    );
+    expect(call?.[1]).toMatchObject({ content: "又改了一版", notes: "" });
+  });
+
+  // The note describes a revision, so it cannot exist without one: it is inert
+  // until the body moves, inert again if the body moves back, and it never
+  // makes the draft dirty on its own.
+  it("stays inert while the body is unchanged and never ships alone", async () => {
+    render(<AlignmentPhrases />);
+    fireEvent.click(screen.getByLabelText("编辑 默认协议"));
+    const closed = screen.getByLabelText("这次为什么改") as HTMLInputElement;
+    expect(closed.disabled).toBe(true);
+    expect(screen.getByText("改了正文才会记")).toBeTruthy();
+    expect(closed.getAttribute("aria-describedby")).toBe(
+      screen.getByText("改了正文才会记").id,
+    );
+
+    const body = screen.getByPlaceholderText("话术内容");
+    fireEvent.change(body, { target: { value: "改后的正文" } });
+    const open = screen.getByLabelText("这次为什么改") as HTMLInputElement;
+    expect(open.disabled).toBe(false);
+    expect(screen.queryByText("改了正文才会记")).toBeNull();
+    fireEvent.change(open, { target: { value: "口径变了" } });
+
+    // Body typed back to what is stored: the note is inert again, and the draft
+    // is not dirty, so an outside click must spend no IPC at all.
+    fireEvent.change(body, { target: { value: "请遵循协议对齐。" } });
+    expect(
+      (screen.getByLabelText("这次为什么改") as HTMLInputElement).disabled,
+    ).toBe(true);
+    await act(async () => {
+      fireEvent.pointerDown(document.body);
+    });
+    expect(
+      invokeMock.mock.calls.find((c) => c[0] === "update_alignment_phrase"),
+    ).toBeUndefined();
+  });
+
+  it("a create form has no revision note at all", () => {
+    render(<AlignmentPhrases />);
+    fireEvent.click(screen.getByLabelText("新增对齐话术"));
+    // Nothing was revised — there is no earlier body to explain away.
+    expect(screen.queryByLabelText("这次为什么改")).toBeNull();
+    expect(screen.queryByText("改了正文才会记")).toBeNull();
+  });
+});
+
 describe("AlignmentPhrases — 管理… axis-value editing (ADR-029)", () => {
   beforeEach(() => seedWithAxes(twoPhrases));
 

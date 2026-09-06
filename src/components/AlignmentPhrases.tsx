@@ -176,10 +176,10 @@ export function AlignmentPhrases() {
 
   const handleUpdate = async (
     id: string,
-    { name, content, coordinates }: AlignmentPhraseSubmit,
+    { name, content, notes, coordinates }: AlignmentPhraseSubmit,
   ) => {
     try {
-      await updateAlignmentPhrase({ id, name, content, coordinates });
+      await updateAlignmentPhrase({ id, name, content, notes, coordinates });
     } catch (err) {
       showError(toUserMessage(err, "保存失败"));
       throw err;
