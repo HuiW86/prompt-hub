@@ -528,6 +528,35 @@ describe("AlignmentPhrases — 管理… axis-value editing (ADR-029)", () => {
     );
   });
 
+  it("re-pulls axis values on open so the confirm reports the current refCount (G7 缺陷)", async () => {
+    // The store still holds the load-time list (路径 unreferenced); the
+    // database now says one phrase points at it. Opening the manager must
+    // fetch the fresh counts before anyone can read a blast radius off it.
+    invokeMock.mockImplementation((cmd: string) => {
+      switch (cmd) {
+        case "list_alignment_axis_values":
+          return Promise.resolve(
+            axisValues.map((v) =>
+              v.id === "axv-layer-path" ? { ...v, refCount: 1 } : v,
+            ),
+          );
+        case "list_alignment_phrases":
+          return Promise.resolve(twoPhrases);
+        default:
+          return Promise.resolve({ ok: true });
+      }
+    });
+    openManager();
+    // Let the mount effect's re-pull land before reading the count.
+    await act(async () => {});
+    fireEvent.click(screen.getByLabelText("删除 路径"));
+    expect(
+      await screen.findByText(
+        "删除『路径』？1 条话术的『层』坐标将被清空，删除后无法恢复",
+      ),
+    ).toBeTruthy();
+  });
+
   it("deletes through ConfirmInline, printing refCount even when it is 0", async () => {
     openManager();
     fireEvent.click(screen.getByLabelText("删除 路径"));

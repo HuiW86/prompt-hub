@@ -1,4 +1,8 @@
-import { type KeyboardEvent as ReactKeyboardEvent, useState } from "react";
+import {
+  type KeyboardEvent as ReactKeyboardEvent,
+  useEffect,
+  useState,
+} from "react";
 import { ArrowLeft, ArrowRight, Plus, Trash2, X } from "lucide-react";
 
 import type { AlignmentAxisValueWithRefs, AxisKind } from "../../ipc/types";
@@ -46,10 +50,21 @@ interface AxisValueManagerProps {
  */
 export function AxisValueManager({ axis, onClose }: AxisValueManagerProps) {
   const all = usePromptStore((s) => s.alignmentAxisValues);
+  const refreshValues = usePromptStore((s) => s.refreshAlignmentAxisValues);
   const createValue = usePromptStore((s) => s.createAlignmentAxisValue);
   const deleteValue = usePromptStore((s) => s.deleteAlignmentAxisValue);
   const reorderValues = usePromptStore((s) => s.reorderAlignmentAxisValues);
   const showError = useToastStore((s) => s.showError);
+
+  // Re-pull on open. `refCount` / `trashedRefCount` are computed per query and
+  // the store's copy dates from whenever the list was last fetched — a phrase
+  // saved with a coordinate since then is invisible to it. The delete
+  // confirmation below reports exactly that number as the blast radius
+  // (06-prd §6.6-bis), and G7 caught it reading 0 for a value that was in use.
+  // Failure is non-fatal: the stale list still renders, only the count may lag.
+  useEffect(() => {
+    void refreshValues().catch(() => {});
+  }, [refreshValues]);
 
   const [confirmingId, setConfirmingId] = useState<string | null>(null);
   const [draftName, setDraftName] = useState("");

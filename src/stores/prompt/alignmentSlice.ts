@@ -29,6 +29,13 @@ export const createAlignmentSlice: StateCreatorSlice<
         ],
       },
     }));
+    // A phrase pointing at an axis value changes that value's refCount; the
+    // store's axis list carries those counts, so keep it current (fire-and-
+    // forget: the phrase write already succeeded).
+    if (coordinates)
+      void get()
+        .refreshAlignmentAxisValues()
+        .catch(() => {});
   },
 
   // The optimistic patch mirrors exactly what the backend writes: with
@@ -52,6 +59,10 @@ export const createAlignmentSlice: StateCreatorSlice<
       set({ alignmentPhrasesByPhase: snapshot });
       throw err;
     }
+    if (coordinates)
+      void get()
+        .refreshAlignmentAxisValues()
+        .catch(() => {});
   },
 
   deleteAlignmentPhrase: async (id) => {
