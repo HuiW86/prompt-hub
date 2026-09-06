@@ -49,6 +49,12 @@ G7 首跑明说的「不在覆盖内」三项（第 47 项已补 Dock 路径）�
 
 **涟漪**：[[03-product-spec]] **v0.29** + [[06-prd]] **v0.16**（人审批次 ⑫，单裁点，同批签字）/ [[07-features]] **v1.30** / [[11-test-spec]] **v0.15** / [[029-alignment-coordinates-and-drift-ledger]] §2 实施期口径新增第 9 条。
 
+### 附：第 55 项装机 — 正式版追上 `main`，修订说明框进正式版
+
+`main@d93723b`（代码同 `4c6299c`）照第 47 项流程再装一次（02:20 PDT）：`--bundles app` + 关闭 updater 产物出包（Developer ID 签名、未公证、Info.plist 仍 0.2.0），内嵌 chunk `index-CCdGVSkT.js` 与 `dist/assets/` 及第 53 项真机所用一致。装前手工拍 `manual-pre-install-1788686413.db`（schema 14 / `integrity_check` ok / 43 行 `usage_records`），退出正式版、旧包 `a2763aa` 经 Finder 移入废纸篓、`ditto` 装入。首启日志一行 `user_version=14 quick_check=ok`——schema 相同，**无迁移、无新 `pre-migrate` 快照**，真实库 43 行未动。第 47 项写下的「正式版落后 `main` 一笔功能」自此收掉。
+
+**没做的半步**：HANDOFF 第 55 项末尾「在真实库上改一次话术正文填说明、`sqlite3` 反查 `notes`」**留给 omar**——那是在真实资产库上真改一条话术，会落 `content_revised_at` 并在漂移账上记一笔修订，不该由 AI 替他挑话术来做。[[07-features]] §3.15「修订切分点」在 v1.30 已凭隔离 HOME 上的真机回查升 `verified`，这半步不改状态，只是把「正式版上也能写进去」这一句从推论变成观测。
+
 ---
 
 ## 2026-09-05（六）· 第二段 — ADR-029 三期落地：漂移第一次被记下来，而界面一个新按钮都没加
