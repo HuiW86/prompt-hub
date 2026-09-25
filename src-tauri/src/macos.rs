@@ -77,10 +77,22 @@ fn layout_mismatch(from: &AnyClass, to: &AnyClass) -> Option<String> {
             to.instance_size()
         ));
     }
-    let own_ivars: Vec<_> = from.instance_variables().iter().map(|i| i.name()).collect();
-    if own_ivars != [TAO_FOCUSABLE_IVAR] {
+    // The live window is usually not a bare TaoWindow: AppKit KVO swaps in a
+    // dynamic NSKVONotifying_TaoWindow subclass with no ivars of its own. So
+    // collect every ivar declared between `from` and NSWindow, not just on
+    // `from` itself.
+    let mut added_ivars = Vec::new();
+    let mut cls = Some(from);
+    while let Some(c) = cls.filter(|c| !std::ptr::eq(*c, NSWindow::class())) {
+        added_ivars.extend(c.instance_variables().iter().map(|i| i.name()));
+        cls = c.superclass();
+    }
+    if cls.is_none() {
+        return Some(format!("{:?} is not an NSWindow subclass", from.name()));
+    }
+    if added_ivars != [TAO_FOCUSABLE_IVAR] {
         return Some(format!(
-            "unexpected ivars on {:?}: {own_ivars:?}",
+            "unexpected ivars between {:?} and NSWindow: {added_ivars:?}",
             from.name()
         ));
     }
