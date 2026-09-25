@@ -16,39 +16,99 @@
 // the main thread; in worker-thread contexts wrap with
 // app.run_on_main_thread().
 
-use objc2::runtime::AnyObject;
-use objc2::{define_class, ClassType};
+use std::sync::LazyLock;
+
+use objc2::runtime::{AnyClass, AnyObject, Bool, ClassBuilder, Sel};
+use objc2::{sel, ClassType};
 use objc2_app_kit::{
     NSPanel, NSStatusWindowLevel, NSView, NSWindow, NSWindowCollectionBehavior, NSWindowStyleMask,
 };
 use tauri::WebviewWindow;
 
-define_class!(
-    // Subclass of NSPanel that force-allows key/main status. A borderless
-    // window (no Titled style bit) returns NO from the default
-    // canBecomeKeyWindow even as an NSPanel, so makeKeyWindow is a no-op and
-    // no keyboard input ever reaches the WebKit view. Overriding these two is
-    // the only reliable fix (same approach as Raycast / tauri-nspanel).
-    //
-    // SAFETY: adds no instance variables, so instance_size stays equal to
-    // NSPanel's — required because apply_nonactivating_panel isa-swizzles a
-    // live TaoWindow into this class instead of allocating it normally.
-    #[unsafe(super(NSPanel))]
-    #[name = "PromptHubKeyablePanel"]
-    struct KeyablePanel;
+// The one instance variable tao 0.35's TaoWindow declares on top of NSWindow
+// (tao src/platform_impl/macos/window.rs, WINDOW_CLASS). tao reads it back by
+// name in set_focusable, so the swizzled class must still resolve it.
+const TAO_FOCUSABLE_IVAR: &std::ffi::CStr = c"focusable";
 
-    impl KeyablePanel {
-        #[unsafe(method(canBecomeKeyWindow))]
-        fn can_become_key_window(&self) -> bool {
-            true
-        }
-
-        #[unsafe(method(canBecomeMainWindow))]
-        fn can_become_main_window(&self) -> bool {
-            true
-        }
+// Subclass of NSPanel that force-allows key/main status. A borderless window
+// (no Titled style bit) returns NO from the default canBecomeKeyWindow even as
+// an NSPanel, so makeKeyWindow is a no-op and no keyboard input ever reaches
+// the WebKit view. Overriding these two is the only reliable fix (same approach
+// as Raycast / tauri-nspanel).
+//
+// Built at runtime rather than with define_class! because the class must
+// mirror TaoWindow's instance layout: apply_nonactivating_panel isa-swizzles a
+// live TaoWindow into it, which is only sound when both classes have the same
+// instance size and ivar offsets. An ivar-less NSPanel subclass only matched
+// by accident — TaoWindow's 1-byte `focusable` ivar used to fit in NSWindow's
+// trailing alignment padding. On macOS 27 that padding is gone (field report:
+// TaoWindow 536 bytes vs NSPanel 528), so the old size assert aborted launch.
+// Declaring the same ivar on the same-sized superclass reproduces TaoWindow's
+// layout on every macOS version by construction.
+static KEYABLE_PANEL: LazyLock<&'static AnyClass> = LazyLock::new(|| {
+    extern "C-unwind" fn yes(_this: &AnyObject, _sel: Sel) -> Bool {
+        Bool::YES
     }
-);
+
+    let mut builder = ClassBuilder::new(c"PromptHubKeyablePanel", NSPanel::class())
+        .expect("PromptHubKeyablePanel registered twice");
+    builder.add_ivar::<Bool>(TAO_FOCUSABLE_IVAR);
+    // SAFETY: signatures match the NSWindow selectors (BOOL, no arguments).
+    unsafe {
+        builder.add_method(
+            sel!(canBecomeKeyWindow),
+            yes as extern "C-unwind" fn(_, _) -> _,
+        );
+        builder.add_method(
+            sel!(canBecomeMainWindow),
+            yes as extern "C-unwind" fn(_, _) -> _,
+        );
+    }
+    builder.register()
+});
+
+// Why an isa-swizzle from `from` into `to` would be unsound, or None if the
+// two instance layouts are identical.
+fn layout_mismatch(from: &AnyClass, to: &AnyClass) -> Option<String> {
+    if from.instance_size() != to.instance_size() {
+        return Some(format!(
+            "instance size {} != {}",
+            from.instance_size(),
+            to.instance_size()
+        ));
+    }
+    // The live window is usually not a bare TaoWindow: AppKit KVO swaps in a
+    // dynamic NSKVONotifying_TaoWindow subclass with no ivars of its own. So
+    // collect every ivar declared between `from` and NSWindow, not just on
+    // `from` itself.
+    let mut added_ivars = Vec::new();
+    let mut cls = Some(from);
+    while let Some(c) = cls.filter(|c| !std::ptr::eq(*c, NSWindow::class())) {
+        added_ivars.extend(c.instance_variables().iter().map(|i| i.name()));
+        cls = c.superclass();
+    }
+    if cls.is_none() {
+        return Some(format!("{:?} is not an NSWindow subclass", from.name()));
+    }
+    if added_ivars != [TAO_FOCUSABLE_IVAR] {
+        return Some(format!(
+            "unexpected ivars between {:?} and NSWindow: {added_ivars:?}",
+            from.name()
+        ));
+    }
+    let offset = |cls: &AnyClass| {
+        cls.instance_variable(TAO_FOCUSABLE_IVAR)
+            .map(|i| i.offset())
+    };
+    if offset(from) != offset(to) {
+        return Some(format!(
+            "focusable ivar offset {:?} != {:?}",
+            offset(from),
+            offset(to)
+        ));
+    }
+    None
+}
 
 pub fn apply_nonactivating_panel(window: &WebviewWindow) {
     let Ok(ns_window_ptr) = window.ns_window() else {
@@ -56,17 +116,24 @@ pub fn apply_nonactivating_panel(window: &WebviewWindow) {
     };
     let ns_object = ns_window_ptr.cast::<AnyObject>();
     let ns_object_ref = unsafe { &*ns_object };
-    let panel_cls = KeyablePanel::class();
+    let panel_cls = *KEYABLE_PANEL;
     let old_cls = ns_object_ref.class();
     if !std::ptr::eq(old_cls, panel_cls) {
-        // Release-build assert: AnyObject::set_class only debug_asserts the
-        // size match. Keep our own check so a future macOS that grows NSPanel
-        // fail-fasts in production rather than corrupting memory.
-        assert_eq!(
-            old_cls.instance_size(),
-            panel_cls.instance_size(),
-            "TaoWindow -> KeyablePanel isa-swizzle: instance size mismatch"
-        );
+        // AnyObject::set_class only debug_asserts the size match. Check the
+        // full layout ourselves, and on mismatch degrade to a plain floating
+        // window instead of panicking: this runs inside
+        // applicationDidFinishLaunching, where a panic cannot unwind and
+        // aborts the whole app at launch.
+        if let Some(reason) = layout_mismatch(old_cls, panel_cls) {
+            eprintln!(
+                "{:?} -> {:?} isa-swizzle skipped ({reason}); window will not be a non-activating panel",
+                old_cls.name(),
+                panel_cls.name()
+            );
+            apply_window_behavior(unsafe { &*(ns_window_ptr as *const NSWindow) });
+            focus_view(window);
+            return;
+        }
         unsafe {
             AnyObject::set_class(ns_object_ref, panel_cls);
         }
@@ -86,12 +153,17 @@ pub fn apply_nonactivating_panel(window: &WebviewWindow) {
     let style_mask = ns_window.styleMask();
     ns_window.setStyleMask(style_mask | NSWindowStyleMask::NonactivatingPanel);
 
+    apply_window_behavior(ns_window);
+
+    focus_view(window);
+}
+
+// The parts of the overlay setup that work on any NSWindow, panel or not.
+fn apply_window_behavior(ns_window: &NSWindow) {
     let behavior = NSWindowCollectionBehavior::CanJoinAllSpaces
         | NSWindowCollectionBehavior::FullScreenAuxiliary;
     ns_window.setCollectionBehavior(behavior);
     ns_window.setLevel(NSStatusWindowLevel);
-
-    focus_view(window);
 }
 
 pub fn order_front(window: &WebviewWindow) {
