@@ -14,6 +14,33 @@ description: prompt-hub 设计文档体系变更日志——记录文档结构�
 
 ---
 
+## 2026-09-25（五）— 发布 v0.2.1：修复 macOS 27 启动即闪退
+
+### 变更内容
+
+仅代码与发版，**无设计文档契约变更**（不走八步）。
+
+| 项 | 内容 |
+|---|---|
+| 修复 | HuiW86/prompt-hub#1（merge `36e0e4e`）：`src-tauri/src/macos.rs` isa-swizzle 改为布局镜像 + 校验 + 降级 |
+| 发版 | HuiW86/prompt-hub#2（merge `6f1b63b`）：0.2.0 → **0.2.1**，tag `v0.2.1`，run `36159126062`，已 publish |
+
+### 变更原因
+
+macOS 27 上 v0.2.0 启动约 2 秒即 SIGABRT：`TaoWindow -> KeyablePanel isa-swizzle: instance size mismatch`（`536` vs `528`）。tao 的 `TaoWindow` 比 `NSWindow` 多一个 1 字节 ivar `focusable`，旧版 macOS 上它落在对齐 padding 里，与不带 ivar 的 `KeyablePanel` 等大**只是巧合**；macOS 27 padding 消失后断言失败，而 panic 发生在 `applicationDidFinishLaunching` 内无法 unwind。
+
+修法：`KeyablePanel` 在运行时继承 `NSPanel` 并声明同名 ivar，布局按构造一致；换类前校验大小 / ivar 集合 / 偏移，不通过则降级为普通置顶窗口而非 panic。**没有删断言硬换**——大小不等时硬换 isa 会把「启动即崩」变成随机内存损坏。
+
+### 值得记的一处
+
+**第一版修复 CI 全绿，但实际没生效。** `bench-c1` 日志里有一行 `isa-swizzle skipped`：运行时的类是 KVO 动态子类 `NSKVONotifying_TaoWindow`，自身无 ivar，只查叶子类必然误判，于是每次启动都走了降级分支。降级分支本是为「别闪退」设计的，却恰好让「修复没生效」在 CI 里显示为绿。第二个提交改为沿父类链收集后复跑，日志干净。**凡有 fallback，就需要一个 CI 看得到的信号区分主路径与 fallback**——已记入 [[HANDOFF]] Next Actions。
+
+### 验收
+
+runbook §1 / §3 全过；omar 在 macOS 27 真机确认启动、不抢焦点、可输入、日志无 `skipped` 后 publish。publish 后 `releases/latest` → v0.2.1、`latest.json` → `0.2.1`。
+
+---
+
 ## 2026-08-20（四）· 第七段 — 发布 v0.2.0，并借它销掉 ADR-017 最后一项
 
 ### 发布
