@@ -4,6 +4,8 @@
 
 > 上一版（2026-09-06 02:05）的第 47 / 48 / 51 / 53 项明细已归入 `docs/design/CHANGELOG.md`（2026-09-06 条目及三个「附」），本文件只留「本轮做了什么 + 仍开着的账」。
 
+> **2026-09-25 云端会话（已于 2026-09-26 合入本地 `main`）**：发布 **v0.2.1**，修复 macOS 27 启动即闪退——`TaoWindow` 多出的 1 字节 ivar `focusable` 在 macOS 27 不再落进对齐 padding，`KeyablePanel` isa-swizzle 大小断言失败（536 vs 528）而 SIGABRT。修法（PR #1 `d6659e0` + `cc2bf9c`）：`KeyablePanel` 改运行时 `ClassBuilder` 镜像 `focusable` ivar，换类前沿父类链校验大小 / ivar / 偏移（须越过 KVO 子类 `NSKVONotifying_TaoWindow`），不通过降级为普通置顶窗口而非 panic。发版 PR #2，tag `v0.2.1` 已 publish。明细见 CHANGELOG 2026-09-25。⚠️ runbook §4「0.2.0 客户端检查更新 → 升到 0.2.1」未单独确认。
+
 ## Objective
 
 把上一版 HANDOFF 建议起手的第 55 项收掉：正式版 `a2763aa` 缺第 53 项的「这次为什么改」输入框，照第 47 项流程把 `main@d93723b`（代码同 `4c6299c`）重装到 `/Applications`。装机本体完成；末尾「真实库上改一次正文填说明反查」那半步**留给 omar**，见 Next Actions 第 55 项。
@@ -54,6 +56,8 @@
 52. （低优先）`src/components/alignment/DriftLedgerView.tsx`「按开场话术」表在只有「停」时为空表头——锚点全零时不列行是实现选择；若 omar 想看到「默认 · 发散 0 0 0 0」再改 (carried from 2026-09-05)
 54. **明细面回显修订说明**（carried from 2026-09-06）：`notes` 有 UI 写入方但没有任何界面显示——`src/components/alignment/DriftLedgerView.tsx` 的「修订前 / 修订后」只带日期。改法：`src-tauri/crates/repo-core/src/repo.rs` `summarize_drift_ledger` 返回值带 `notes`（Rust + `src/ipc/types.ts`）→ 明细面「修订后」那行旁显示说明（空串 = 不显示）。走 product-spec 区域 7 明细段八步；命令数不变、载荷变。**先出一句话方案给 omar**
 55. **正式版上反查一次 `notes`**（carried from 2026-09-06，装机本体已完成）：omar 下一次真要改某条话术正文时填一句说明保存，然后跑 `sqlite3 "$HOME/Library/Application Support/dev.prompt-hub/prompt-hub.db" "SELECT id, name, notes, content_revised_at FROM alignment_phrases WHERE content_revised_at IS NOT NULL ORDER BY content_revised_at DESC LIMIT 3;"`。AI 不替他挑话术改真实库。通过后本项销账，不改任何状态表
+56. **给 swizzle 降级加 CI 闸门**（new 2026-09-25，原云端第 19 项）：`bench-c1` 只看退出码和 p95，降级分支照样绿——v0.2.1 第一版修复就是这样混过去的。建议在 `bench/hotkey-wake.bench.mjs` 里捕获 stderr，出现 `isa-swizzle skipped` 即退出码 1
+57. **tao 升级须复核 `macos.rs` 的 ivar 镜像**（new 2026-09-25，原云端第 20 项）：`layout_mismatch` 硬编码 tao 0.35 `TaoWindow` 只有 `focusable` 一个 ivar。tao 若增删 ivar，不会崩但会**静默降级为抢焦点的普通窗口**。第 56 项落地前，升 tao 后须人工看一次启动日志
 
 ## Dropped
 
@@ -63,6 +67,9 @@
 
 > 长期风险在 [[learnings]] 附录 B；此处只留仍会影响下一次改动的。
 
+- **降级路径会让 CI 失明**（new 2026-09-25）：为「不闪退」设计的降级分支，恰好让「修复没生效」在 CI 里全绿。凡有 fallback，要有 CI 看得到的信号区分主路径与 fallback（第 56 项）
+- **isa-swizzle 的前提是布局相等，而「相等」可能只是对齐 padding 的巧合**（new 2026-09-25）：要比 ivar 集合与偏移，且看**运行时实际类**（KVO 会插入 `NSKVONotifying_*` 子类）
+- **云端会话推不了 tag**（new 2026-09-25）：`git push origin v*` 被代理 403，发版打 tag 须在本地做
 - **正式版 = `main@d93723b` = 真实库 schema 14**；不再落后 `main`。下一条 migration 落地时错位会再现，届时照第 47 / 55 项流程装机。`manual-pre-install-1788686413.db`（v14）是本次装前兜底，`pre-migrate-1788663553.db` / `manual-pre-install-1788663353.db` 是 13→14 的两份
 - **装机口径**：`--bundles app` + 关 updater 产物；`strings` 只能核 chunk 名，内嵌资产是压缩的，`grep -a` 核不到 UI 字串——chunk 名与 `dist/assets/` 一致即算核过；`spctl` 报 `Unnotarized Developer ID` 属正常（未公证），本地 `ditto` 无 quarantine 属性不被拦
 - **`notes` 留空 = 清空，不是保留**：`AlignmentPhraseEditor.handleSubmit` 在正文真变时总是发 `notes`（可为空串），正文没变才省略。Rust `COALESCE(?, notes)` 遇 `Some("")` 写空串不写 NULL，**读方按空串 = 无说明**（prd §6.6）。别把谓词改回「非空才发」——那会把上一次修订的理由钉到这一次的切分点上
