@@ -1,0 +1,30 @@
+{
+  "start": "2026-09-22T09:46:58.306249+00:00",
+  "end": "2026-09-22T09:47:04.652415+00:00",
+  "results": [
+    {
+      "probe": "core-boundary",
+      "command": [
+        "cargo",
+        "run",
+        "--offline",
+        "--manifest-path",
+        "/var/folders/vj/lnjpkml13kdg2x895jhg45k00000gn/T/prompt-hub-architecture-probes-yt2tf1ro/core-boundary/Cargo.toml"
+      ],
+      "exit_code": 0,
+      "observation": "CONFIRMED: repo-core-only consumer can insert an asset through open_write_checked().execute(); dependency isolation is not a table-level permission boundary."
+    },
+    {
+      "probe": "draft-reentry",
+      "command": [
+        "cargo",
+        "run",
+        "--offline",
+        "--manifest-path",
+        "/var/folders/vj/lnjpkml13kdg2x895jhg45k00000gn/T/prompt-hub-architecture-probes-yt2tf1ro/draft-reentry/Cargo.toml"
+      ],
+      "exit_code": 0,
+      "observation": "CONFIRMED: immediate repeat promote is rejected; promote -> restore -> promote creates two distinct assets. Not lifetime exactly-once. UI reachability of this sequence was not tested."
+    }
+  ]
+}

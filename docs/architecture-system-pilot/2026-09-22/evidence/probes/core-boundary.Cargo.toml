@@ -1,0 +1,8 @@
+[package]
+name = "core-boundary"
+version = "0.0.0"
+edition = "2021"
+[workspace]
+[dependencies]
+repo-core = { path = "/Users/apple/WeChatProjects/prompt-hub/src-tauri/crates/repo-core" }
+tempfile = "3"

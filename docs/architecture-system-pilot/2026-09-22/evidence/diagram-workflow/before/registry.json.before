@@ -1,0 +1,721 @@
+{
+  "schema_version": "1",
+  "description": "当前源码逆向与候选复用；结构检查不代表目标验收",
+  "objects": [
+    {
+      "id": "ph:CASE-reverse",
+      "type": "CASE",
+      "version": "0.1.0",
+      "name": "prompt-hub 逆向及能力实作",
+      "location": "README.md"
+    },
+    {
+      "id": "ph:OBJ-manual-assets",
+      "type": "OBJ",
+      "version": "0.1.0",
+      "name": "支持人的本地提示词调用与沉淀",
+      "state": "current"
+    },
+    {
+      "id": "ph:REQ-human-adoption",
+      "type": "REQ",
+      "version": "0.1.0",
+      "name": "正式资产采纳经使用者决定",
+      "state": "current",
+      "location": "../../../docs/design/01-spec.md"
+    },
+    {
+      "id": "ph:SYS-hub",
+      "type": "SYS",
+      "version": "0.1.0",
+      "name": "prompt-hub 本机应用及伴随 MCP",
+      "state": "current"
+    },
+    {
+      "id": "ph:MOD-ui",
+      "type": "MOD",
+      "version": "0.1.0",
+      "name": "React 交互与状态",
+      "state": "current"
+    },
+    {
+      "id": "ph:MOD-host",
+      "type": "MOD",
+      "version": "0.1.0",
+      "name": "Tauri 命令与原生窗口",
+      "state": "current"
+    },
+    {
+      "id": "ph:MOD-core",
+      "type": "MOD",
+      "version": "0.1.0",
+      "name": "repo-core 读取、草稿与存储",
+      "state": "current"
+    },
+    {
+      "id": "ph:MOD-write",
+      "type": "MOD",
+      "version": "0.1.0",
+      "name": "repo-write 资产变更",
+      "state": "current"
+    },
+    {
+      "id": "ph:MOD-mcp",
+      "type": "MOD",
+      "version": "0.1.0",
+      "name": "rmcp 工具路由",
+      "state": "current"
+    },
+    {
+      "id": "ph:MOD-gates",
+      "type": "MOD",
+      "version": "0.1.0",
+      "name": "源码与接口护栏",
+      "state": "current"
+    },
+    {
+      "id": "ph:IF-tauri",
+      "type": "IF",
+      "version": "0.1.0",
+      "name": "Tauri IPC 命令",
+      "state": "current",
+      "location": "evidence/interface-inventory.json"
+    },
+    {
+      "id": "ph:IF-mcp",
+      "type": "IF",
+      "version": "0.1.0",
+      "name": "MCP stdio 工具",
+      "state": "current",
+      "location": "evidence/interface-inventory.json"
+    },
+    {
+      "id": "ph:DAT-store",
+      "type": "DAT",
+      "version": "0.1.0",
+      "name": "本机 SQLite",
+      "state": "current"
+    },
+    {
+      "id": "ph:DAT-drafts",
+      "type": "DAT",
+      "version": "0.1.0",
+      "name": "待处理与已弃用草稿",
+      "state": "current"
+    },
+    {
+      "id": "ph:CAP-drafts",
+      "type": "CAP",
+      "version": "0.1.0",
+      "name": "源项目草稿暂存及人工采纳",
+      "state": "current"
+    },
+    {
+      "id": "ph:CAP-trash",
+      "type": "CAP",
+      "version": "0.1.0",
+      "name": "源项目软删除与恢复",
+      "state": "current"
+    },
+    {
+      "id": "ph:CAP-replacement",
+      "type": "CAP",
+      "version": "0.1.0",
+      "name": "源项目备份后替换",
+      "state": "current"
+    },
+    {
+      "id": "ph:SRC-code",
+      "type": "SRC",
+      "version": "0.1.0",
+      "name": "源码与基线",
+      "location": "evidence/baseline.json"
+    },
+    {
+      "id": "ph:SRC-doc",
+      "type": "SRC",
+      "version": "0.1.0",
+      "name": "有效文档及索引",
+      "location": "evidence/document-versions.json"
+    },
+    {
+      "id": "ph:SRC-test",
+      "type": "SRC",
+      "version": "0.1.0",
+      "name": "本轮仓库测试",
+      "location": "verification.md"
+    },
+    {
+      "id": "ph:SRC-probe",
+      "type": "SRC",
+      "version": "0.1.0",
+      "name": "本轮临时数据库实验",
+      "location": "evidence/probes/run.py"
+    },
+    {
+      "id": "ph:EVD-source",
+      "type": "EVD",
+      "version": "0.1.0",
+      "name": "当前源码定位",
+      "kind": "source",
+      "location": "evidence/source-index.json"
+    },
+    {
+      "id": "ph:EVD-doc",
+      "type": "EVD",
+      "version": "0.1.0",
+      "name": "文档版本摘录",
+      "kind": "source",
+      "location": "evidence/document-versions.json"
+    },
+    {
+      "id": "ph:EVD-fe",
+      "type": "EVD",
+      "version": "0.1.0",
+      "name": "前端原始测试结果",
+      "kind": "engineering",
+      "location": "evidence/frontend-tests.json"
+    },
+    {
+      "id": "ph:EVD-rust",
+      "type": "EVD",
+      "version": "0.1.0",
+      "name": "Rust原始测试结果",
+      "kind": "engineering",
+      "location": "evidence/rust-tests.log"
+    },
+    {
+      "id": "ph:EVD-probe",
+      "type": "EVD",
+      "version": "0.1.0",
+      "name": "两个边界反例结果",
+      "kind": "engineering",
+      "location": "evidence/probes/results.json"
+    },
+    {
+      "id": "ph:CLM-c01",
+      "type": "CLM",
+      "version": "0.1.0",
+      "name": "当前进程与迁移职责",
+      "status": "confirmed",
+      "scope": "源码静态结构",
+      "evidence": [
+        "ph:EVD-source@0.1.0"
+      ],
+      "product_version": "317106deaef72b5edc83a74bd63402bd1b4ac6c2 / app 0.2.0",
+      "conditions": "macOS本机源码；只覆盖命题声明的路径与测试阶段",
+      "location": "evidence-map.md"
+    },
+    {
+      "id": "ph:CLM-c02",
+      "type": "CLM",
+      "version": "0.1.0",
+      "name": "复制成功与记账结果分离",
+      "status": "confirmed",
+      "scope": "源码与jsdom组件",
+      "evidence": [
+        "ph:EVD-source@0.1.0",
+        "ph:EVD-fe@0.1.0"
+      ],
+      "product_version": "317106deaef72b5edc83a74bd63402bd1b4ac6c2 / app 0.2.0",
+      "conditions": "macOS本机源码；只覆盖命题声明的路径与测试阶段",
+      "location": "evidence-map.md"
+    },
+    {
+      "id": "ph:CLM-c03",
+      "type": "CLM",
+      "version": "0.1.0",
+      "name": "依赖分离不等于表级写入权限",
+      "status": "confirmed",
+      "scope": "现有MCP路由、trybuild与临时连接实验",
+      "evidence": [
+        "ph:EVD-source@0.1.0",
+        "ph:EVD-rust@0.1.0",
+        "ph:EVD-probe@0.1.0"
+      ],
+      "product_version": "317106deaef72b5edc83a74bd63402bd1b4ac6c2 / app 0.2.0",
+      "conditions": "macOS本机源码；只覆盖命题声明的路径与测试阶段",
+      "location": "evidence-map.md"
+    },
+    {
+      "id": "ph:CLM-c04",
+      "type": "CLM",
+      "version": "0.1.0",
+      "name": "采纳事务与状态重入边界",
+      "status": "confirmed",
+      "scope": "源crate临时SQLite，不含UI可达性",
+      "evidence": [
+        "ph:EVD-source@0.1.0",
+        "ph:EVD-rust@0.1.0",
+        "ph:EVD-probe@0.1.0"
+      ],
+      "product_version": "317106deaef72b5edc83a74bd63402bd1b4ac6c2 / app 0.2.0",
+      "conditions": "macOS本机源码；只覆盖命题声明的路径与测试阶段",
+      "location": "evidence-map.md"
+    },
+    {
+      "id": "ph:CLM-c05",
+      "type": "CLM",
+      "version": "0.1.0",
+      "name": "七类资产恢复身份与约束",
+      "status": "confirmed",
+      "scope": "源数据库实现和测试",
+      "evidence": [
+        "ph:EVD-source@0.1.0",
+        "ph:EVD-rust@0.1.0"
+      ],
+      "product_version": "317106deaef72b5edc83a74bd63402bd1b4ac6c2 / app 0.2.0",
+      "conditions": "macOS本机源码；只覆盖命题声明的路径与测试阶段",
+      "location": "evidence-map.md"
+    },
+    {
+      "id": "ph:CLM-c06",
+      "type": "CLM",
+      "version": "0.1.0",
+      "name": "危险操作前快照及不同失败策略",
+      "status": "confirmed",
+      "scope": "宿主包裹路径和组件测试",
+      "evidence": [
+        "ph:EVD-source@0.1.0",
+        "ph:EVD-rust@0.1.0"
+      ],
+      "product_version": "317106deaef72b5edc83a74bd63402bd1b4ac6c2 / app 0.2.0",
+      "conditions": "macOS本机源码；只覆盖命题声明的路径与测试阶段",
+      "location": "evidence-map.md"
+    },
+    {
+      "id": "ph:CLM-c07",
+      "type": "CLM",
+      "version": "0.1.0",
+      "name": "资产包的数据域和缺失空值语义",
+      "status": "confirmed",
+      "scope": "源导入导出实现和测试",
+      "evidence": [
+        "ph:EVD-source@0.1.0",
+        "ph:EVD-rust@0.1.0"
+      ],
+      "product_version": "317106deaef72b5edc83a74bd63402bd1b4ac6c2 / app 0.2.0",
+      "conditions": "macOS本机源码；只覆盖命题声明的路径与测试阶段",
+      "location": "evidence-map.md"
+    },
+    {
+      "id": "ph:CLM-c08",
+      "type": "CLM",
+      "version": "0.1.0",
+      "name": "接口名称护栏及断言范围",
+      "status": "confirmed",
+      "scope": "静态源提取和测试断言",
+      "evidence": [
+        "ph:EVD-source@0.1.0",
+        "ph:EVD-fe@0.1.0",
+        "ph:EVD-rust@0.1.0"
+      ],
+      "product_version": "317106deaef72b5edc83a74bd63402bd1b4ac6c2 / app 0.2.0",
+      "conditions": "macOS本机源码；只覆盖命题声明的路径与测试阶段",
+      "location": "evidence-map.md"
+    },
+    {
+      "id": "ph:CLM-c09",
+      "type": "CLM",
+      "version": "0.1.0",
+      "name": "口令归因是本地会话统计",
+      "status": "confirmed",
+      "scope": "源码和合成测试",
+      "evidence": [
+        "ph:EVD-source@0.1.0",
+        "ph:EVD-fe@0.1.0",
+        "ph:EVD-rust@0.1.0"
+      ],
+      "product_version": "317106deaef72b5edc83a74bd63402bd1b4ac6c2 / app 0.2.0",
+      "conditions": "macOS本机源码；只覆盖命题声明的路径与测试阶段",
+      "location": "evidence-map.md"
+    },
+    {
+      "id": "ph:CLM-c10",
+      "type": "CLM",
+      "version": "0.1.0",
+      "name": "本地数据仍有opt-in更新路径",
+      "status": "confirmed",
+      "scope": "静态调用与配置，不含网络实测",
+      "evidence": [
+        "ph:EVD-source@0.1.0"
+      ],
+      "product_version": "317106deaef72b5edc83a74bd63402bd1b4ac6c2 / app 0.2.0",
+      "conditions": "macOS本机源码；只覆盖命题声明的路径与测试阶段",
+      "location": "evidence-map.md"
+    },
+    {
+      "id": "ph:CLM-c11",
+      "type": "CLM",
+      "version": "0.1.0",
+      "name": "职责可分离为候选共享契约",
+      "status": "inferred",
+      "scope": "三项CAP和一项PAT，迁移未执行",
+      "evidence": [
+        "ph:EVD-source@0.1.0",
+        "ph:EVD-probe@0.1.0"
+      ],
+      "location": "capabilities.md",
+      "reasoning": "事务与生命周期具稳定职责，领域字段和策略需适配；下一场景可反驳可迁移性"
+    },
+    {
+      "id": "ph:CLM-c12",
+      "type": "CLM",
+      "version": "0.1.0",
+      "name": "全部原生及发布验收条件已满足",
+      "status": "unknown",
+      "scope": "C1/原生UI/真实库恢复/发布",
+      "location": "verification.md"
+    },
+    {
+      "id": "ph:TEST-frontend",
+      "type": "TEST",
+      "version": "0.1.0",
+      "name": "前端组件及静态门"
+    },
+    {
+      "id": "ph:TEST-rust",
+      "type": "TEST",
+      "version": "0.1.0",
+      "name": "workspace组件和stdio集成"
+    },
+    {
+      "id": "ph:TEST-probes",
+      "type": "TEST",
+      "version": "0.1.0",
+      "name": "隔离与状态重入反例"
+    },
+    {
+      "id": "ph:TEST-target",
+      "type": "TEST",
+      "version": "0.1.0",
+      "name": "原生端到端与性能"
+    },
+    {
+      "id": "ph:TEST-migration",
+      "type": "TEST",
+      "version": "0.1.0",
+      "name": "独立采用场景"
+    }
+  ],
+  "external_refs": [
+    {
+      "id": "common:CAP-staged-adoption",
+      "type": "CAP",
+      "version": "0.1.0",
+      "name": "暂存提案与显式采纳",
+      "location": "/Users/apple/WeChatProjects/架构图体系/capabilities/staged-adoption/0.1.0.md"
+    },
+    {
+      "id": "common:CAP-recoverable-delete",
+      "type": "CAP",
+      "version": "0.1.0",
+      "name": "保持身份的可恢复删除",
+      "location": "/Users/apple/WeChatProjects/架构图体系/capabilities/recoverable-delete/0.1.0.md"
+    },
+    {
+      "id": "common:CAP-guarded-local-replacement",
+      "type": "CAP",
+      "version": "0.1.0",
+      "name": "本地数据替换前恢复点",
+      "location": "/Users/apple/WeChatProjects/架构图体系/capabilities/guarded-local-replacement/0.1.0.md"
+    },
+    {
+      "id": "common:PAT-cross-boundary-contract-check",
+      "type": "PAT",
+      "version": "0.1.0",
+      "name": "跨边界契约护栏",
+      "location": "/Users/apple/WeChatProjects/架构图体系/capabilities/cross-boundary-contract-check/0.1.0.md"
+    }
+  ],
+  "relations": [
+    {
+      "from": "ph:REQ-human-adoption@0.1.0",
+      "type": "supports",
+      "to": "ph:OBJ-manual-assets@0.1.0"
+    },
+    {
+      "from": "ph:SYS-hub@0.1.0",
+      "type": "contains",
+      "to": "ph:MOD-ui@0.1.0"
+    },
+    {
+      "from": "ph:SYS-hub@0.1.0",
+      "type": "contains",
+      "to": "ph:MOD-host@0.1.0"
+    },
+    {
+      "from": "ph:SYS-hub@0.1.0",
+      "type": "contains",
+      "to": "ph:MOD-core@0.1.0"
+    },
+    {
+      "from": "ph:SYS-hub@0.1.0",
+      "type": "contains",
+      "to": "ph:MOD-write@0.1.0"
+    },
+    {
+      "from": "ph:SYS-hub@0.1.0",
+      "type": "contains",
+      "to": "ph:MOD-mcp@0.1.0"
+    },
+    {
+      "from": "ph:SYS-hub@0.1.0",
+      "type": "contains",
+      "to": "ph:MOD-gates@0.1.0"
+    },
+    {
+      "from": "ph:MOD-ui@0.1.0",
+      "type": "calls",
+      "to": "ph:IF-tauri@0.1.0"
+    },
+    {
+      "from": "ph:MOD-host@0.1.0",
+      "type": "calls",
+      "to": "ph:IF-tauri@0.1.0"
+    },
+    {
+      "from": "ph:MOD-mcp@0.1.0",
+      "type": "calls",
+      "to": "ph:IF-mcp@0.1.0"
+    },
+    {
+      "from": "ph:IF-tauri@0.1.0",
+      "type": "carries",
+      "to": "ph:DAT-store@0.1.0"
+    },
+    {
+      "from": "ph:IF-mcp@0.1.0",
+      "type": "carries",
+      "to": "ph:DAT-drafts@0.1.0"
+    },
+    {
+      "from": "ph:MOD-write@0.1.0",
+      "type": "realizes",
+      "to": "ph:CAP-drafts@0.1.0"
+    },
+    {
+      "from": "ph:MOD-write@0.1.0",
+      "type": "realizes",
+      "to": "ph:CAP-trash@0.1.0"
+    },
+    {
+      "from": "ph:MOD-write@0.1.0",
+      "type": "realizes",
+      "to": "ph:CAP-replacement@0.1.0"
+    },
+    {
+      "from": "ph:CAP-drafts@0.1.0",
+      "type": "supports",
+      "to": "ph:REQ-human-adoption@0.1.0"
+    },
+    {
+      "from": "ph:EVD-source@0.1.0",
+      "type": "from_source",
+      "to": "ph:SRC-code@0.1.0"
+    },
+    {
+      "from": "ph:EVD-doc@0.1.0",
+      "type": "from_source",
+      "to": "ph:SRC-doc@0.1.0"
+    },
+    {
+      "from": "ph:EVD-fe@0.1.0",
+      "type": "from_source",
+      "to": "ph:SRC-test@0.1.0"
+    },
+    {
+      "from": "ph:EVD-rust@0.1.0",
+      "type": "from_source",
+      "to": "ph:SRC-test@0.1.0"
+    },
+    {
+      "from": "ph:EVD-probe@0.1.0",
+      "type": "from_source",
+      "to": "ph:SRC-probe@0.1.0"
+    },
+    {
+      "from": "ph:CLM-c01@0.1.0",
+      "type": "describes",
+      "to": "ph:SYS-hub@0.1.0"
+    },
+    {
+      "from": "ph:CLM-c02@0.1.0",
+      "type": "describes",
+      "to": "ph:MOD-ui@0.1.0"
+    },
+    {
+      "from": "ph:CLM-c03@0.1.0",
+      "type": "describes",
+      "to": "ph:MOD-mcp@0.1.0"
+    },
+    {
+      "from": "ph:CLM-c04@0.1.0",
+      "type": "describes",
+      "to": "ph:MOD-write@0.1.0"
+    },
+    {
+      "from": "ph:CLM-c05@0.1.0",
+      "type": "describes",
+      "to": "ph:MOD-write@0.1.0"
+    },
+    {
+      "from": "ph:CLM-c06@0.1.0",
+      "type": "describes",
+      "to": "ph:MOD-host@0.1.0"
+    },
+    {
+      "from": "ph:CLM-c07@0.1.0",
+      "type": "describes",
+      "to": "ph:MOD-write@0.1.0"
+    },
+    {
+      "from": "ph:CLM-c08@0.1.0",
+      "type": "describes",
+      "to": "ph:MOD-gates@0.1.0"
+    },
+    {
+      "from": "ph:CLM-c09@0.1.0",
+      "type": "describes",
+      "to": "ph:MOD-core@0.1.0"
+    },
+    {
+      "from": "ph:CLM-c10@0.1.0",
+      "type": "describes",
+      "to": "ph:MOD-ui@0.1.0"
+    },
+    {
+      "from": "ph:TEST-frontend@0.1.0",
+      "type": "verifies",
+      "to": "ph:MOD-ui@0.1.0"
+    },
+    {
+      "from": "ph:TEST-rust@0.1.0",
+      "type": "verifies",
+      "to": "ph:MOD-core@0.1.0"
+    },
+    {
+      "from": "ph:TEST-probes@0.1.0",
+      "type": "verifies",
+      "to": "ph:MOD-write@0.1.0"
+    },
+    {
+      "from": "ph:TEST-target@0.1.0",
+      "type": "verifies",
+      "to": "ph:REQ-human-adoption@0.1.0"
+    },
+    {
+      "from": "ph:TEST-migration@0.1.0",
+      "type": "verifies",
+      "to": "ph:CAP-drafts@0.1.0"
+    },
+    {
+      "from": "ph:EVD-fe@0.1.0",
+      "type": "records",
+      "to": "ph:TEST-frontend@0.1.0"
+    },
+    {
+      "from": "ph:EVD-rust@0.1.0",
+      "type": "records",
+      "to": "ph:TEST-rust@0.1.0"
+    },
+    {
+      "from": "ph:EVD-probe@0.1.0",
+      "type": "records",
+      "to": "ph:TEST-probes@0.1.0"
+    },
+    {
+      "from": "common:CAP-staged-adoption@0.1.0",
+      "type": "abstracts_from",
+      "to": "ph:CASE-reverse@0.1.0"
+    },
+    {
+      "from": "common:CAP-recoverable-delete@0.1.0",
+      "type": "abstracts_from",
+      "to": "ph:CASE-reverse@0.1.0"
+    },
+    {
+      "from": "common:CAP-guarded-local-replacement@0.1.0",
+      "type": "abstracts_from",
+      "to": "ph:CASE-reverse@0.1.0"
+    },
+    {
+      "from": "common:PAT-cross-boundary-contract-check@0.1.0",
+      "type": "abstracts_from",
+      "to": "ph:CASE-reverse@0.1.0"
+    }
+  ],
+  "runs": [
+    {
+      "id": "PH-FRONTEND",
+      "test": "ph:TEST-frontend@0.1.0",
+      "status": "passed",
+      "stage": "component",
+      "baseline": "evidence/baseline.json",
+      "environment": "macOS-26.3.1-arm64-arm-64bit",
+      "configuration": "仓库现有配置；未修改业务源码",
+      "input": "仓库已有测试夹具；临时数据库",
+      "steps": "pnpm test --reporter=json --outputFile=docs/architecture-system-pilot/2026-09-22/evidence/frontend-tests.json",
+      "expected": "现有选定配置全套测试退出0",
+      "actual": "536/536通过，45文件",
+      "time": "2026-09-22T09:44:27.655891+00:00",
+      "executor": "Codex local tool",
+      "evidence": [
+        "ph:EVD-fe@0.1.0"
+      ]
+    },
+    {
+      "id": "PH-RUST",
+      "test": "ph:TEST-rust@0.1.0",
+      "status": "passed",
+      "stage": "integration",
+      "baseline": "evidence/baseline.json",
+      "environment": "macOS-26.3.1-arm64-arm-64bit",
+      "configuration": "仓库现有配置；未修改业务源码",
+      "input": "仓库已有测试夹具；临时数据库",
+      "steps": "cargo test --workspace --manifest-path src-tauri/Cargo.toml",
+      "expected": "workspace全套测试退出0",
+      "actual": "227通过，0失败；含stdio和trybuild",
+      "time": "2026-09-22T09:44:50.357484+00:00",
+      "executor": "Codex local tool",
+      "evidence": [
+        "ph:EVD-rust@0.1.0"
+      ]
+    },
+    {
+      "id": "PH-PROBES",
+      "test": "ph:TEST-probes@0.1.0",
+      "status": "passed",
+      "stage": "component",
+      "baseline": "evidence/baseline.json + evidence/probes/*Cargo.lock",
+      "environment": "macOS-26.3.1-arm64-arm-64bit",
+      "configuration": "temporary crates; core-boundary has no repo-write dependency; offline cargo",
+      "input": "synthetic temporary SQLite only",
+      "steps": "python3 evidence/probes/run.py",
+      "expected": "determine whether table permission and lifetime once-only follow from current mechanisms",
+      "actual": [
+        "CONFIRMED: repo-core-only consumer can insert an asset through open_write_checked().execute(); dependency isolation is not a table-level permission boundary.",
+        "CONFIRMED: immediate repeat promote is rejected; promote -> restore -> promote creates two distinct assets. Not lifetime exactly-once. UI reachability of this sequence was not tested."
+      ],
+      "time": "2026-09-22T09:47:04.652415+00:00",
+      "executor": "Codex local tool",
+      "evidence": [
+        "ph:EVD-probe@0.1.0"
+      ]
+    },
+    {
+      "id": "PH-TARGET",
+      "test": "ph:TEST-target@0.1.0",
+      "status": "not_run",
+      "stage": "target",
+      "reason": "本轮未做原生端到端/性能/真实库恢复验收"
+    },
+    {
+      "id": "PH-MIGRATION",
+      "test": "ph:TEST-migration@0.1.0",
+      "status": "not_run",
+      "stage": "migration",
+      "reason": "本轮只有源实现分析与候选契约，没有独立采用项目"
+    }
+  ]
+}

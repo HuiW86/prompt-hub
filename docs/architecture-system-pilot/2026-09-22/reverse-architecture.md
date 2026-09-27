@@ -1,0 +1,118 @@
+# prompt-hub 当前架构逆向
+
+案例 `ph:CASE-reverse@0.1.0`。基线、范围和证据入口见 [README](README.md) 与 [来源与命题](evidence-map.md)。图均为源码支持的局部还原，`Cxx` 是静态事实命题；运行通过仅以单独的工程证据为准。负责人：本轮 Codex 执行，长期维护人待指定。
+
+先看 [架构地图](diagrams/architecture-map.md)；图的来源、复跑方法及检查限制见 [绘图说明](diagrams/README.md)。四图由统一清单生成，旧图源保存在本轮绘图证据的 before 快照中。
+
+## 1. 产品与既有文档如何承接
+
+prompt-hub 是单人、本机、手动复制提示词的桌面仪表盘。人的资产调用与整理、认知相位的对齐话术、外部 AI 提案的人工采纳构成主要价值流。项目没有内嵌 LLM 生成链路；复制之后由人自行决定是否粘贴到外部 AI。**复制记录只能证明本机复制及记账，不能证明外部 AI 已收到或理解内容。**
+
+| 需要的文档职责 | 已有权威或主要入口 | 本次处理 |
+|---|---|---|
+| 目标、范围与禁区 | [spec](../../../docs/design/01-spec.md)、[constitution](../../../docs/design/02-constitution.md) | 引用，不重写人主笔内容 |
+| 场景、交互与产品规则 | [product-spec](../../../docs/design/03-product-spec.md)、[user-flows](../../../docs/design/04-user-flows.md) | 还原当前五条链路；user-flows 的旧状态不作当前事实 |
+| 数据和工程契约 | [PRD](../../../docs/design/06-prd.md)、[IPC 类型](../../../src/ipc/types.ts)、数据库迁移 | 补职责图、接口与数据所有权表，不复制全量字段规格 |
+| 架构取舍 | [ADR 目录](../../../docs/adr) | 引用原决定，与本次分析解释分开 |
+| 实装进展 | [features](../../../docs/design/07-features.md)、[HANDOFF](../../../HANDOFF.md) | 作为历史/待办线索，按源码和本次测试确认局部事实 |
+| 运维与验收 | [ops-spec](../../../docs/design/10-ops-spec.md)、[test-spec](../../../docs/design/11-test-spec.md) | 当前文件优先于索引摘要；本次运行独立留证 |
+| 跨项目复用 | 本项目此前未发现对应分析包 | 新增 [能力映射](capabilities.md)，共享契约单独版本化 |
+
+## 2. 系统边界（图 D1）
+
+问题：谁能发起动作、数据向哪里流动？视角：系统/AI；层级：L0；边界：本机 prompt-hub；当前态；源码基线 `317106d`。对象 `ph:SYS-hub`、`ph:MOD-mcp`；关系依据 C01、C02、C03、C10。外部客户端实际部署配置本轮未核查。
+
+![D1 架构视图](diagrams/D1.svg)
+
+[图卡与阅读提示](diagrams/architecture-map.md) · [可编辑图源](diagrams/D1.mmd) · [统一视图清单](diagrams/views.json)
+
+这里“本地优先”指业务数据归属本机。它不意味着完全没有网络出口：自动更新是单独的 opt-in 路径；外部 AI 客户端可经 MCP 读取资产。图不声称该外部客户端不会再向其模型服务发送读取结果。
+
+## 3. 职责和实现（图 D2）
+
+问题：业务交互如何到达存储，哪些边界由谁执行？视角：技术；层级：L2；边界：`ph:SYS-hub` 的前端、桌面宿主及伴随 MCP；当前态；基线同上。C01/C03/C05/C06/C08 支持各边，模块名称表示职责而非已拆分部署的服务。
+
+![D2 架构视图](diagrams/D2.svg)
+
+[图卡与阅读提示](diagrams/architecture-map.md) · [可编辑图源](diagrams/D2.mmd) · [统一视图清单](diagrams/views.json)
+
+宿主与 MCP 是独立进程，分别拥有连接及进程内锁；跨进程写入依靠 SQLite WAL、事务、唯一索引和 busy timeout 协调。单一进程内 `Mutex` 不等于跨进程互斥。
+
+MCP 不依赖 `repo-write`，其现有工具路由未暴露采纳正式资产接口。这个组织方式约束正常工具路径及模块依赖。`open_write_checked` 返回原始可写 `Connection`，故它**不是数据库权限隔离，也不能阻止同权限本地代码直接执行 SQL**；反例实验 E-PROBE 已实际确认。
+
+前端静态 IPC 护栏比较定义、注册、调用的命令名集合，当前为 62 个；不等价于请求/响应字段、序列化、权限及运行时语义完全一致。MCP 源码声明 15 个工具（含 echo）；名为 `server_advertises_all_fourteen_tools` 的测试只检查 14 个业务名称存在，不排除额外工具。
+
+## 4. 数据所有权与生命周期
+
+| 数据组 | 当前存储与写入方 | 生命周期与边界 |
+|---|---|---|
+| Modifier / Macro / Composition | SQLite；宿主 repo-write | 稳定 ID、排序、使用计数；七类资产之一，可软删除。三层资产是逻辑模型，不是数据库只能有三张表 |
+| Scene / SubStage / Phrase | SQLite；宿主 repo-write | 场景组织与话术；非空场景删除有约束，子阶段隐藏时话术可转入未分组视图 |
+| Phase / AlignmentPhrase / AxisValue | SQLite；宿主 | 协议层独立于任务层；AxisValue 不是第八类软删除资产，删除会将引用置空 |
+| drafts | SQLite；MCP 与宿主 DraftRepo | `pending ↔ discarded`；采纳同样落为 discarded；pending payload hash 去重 |
+| usage_records | SQLite；宿主 record_usage | 成功复制后尝试写入；归因使用 source、目标和会话时间戳；不存在“外部 AI 收到”事件 |
+| 机器配置 | SQLite settings | 唤起快捷键由 Rust 启动前读取；不随资产 JSON 迁移 |
+| 界面偏好与更新选择 | localStorage，settingsStore/updaterStore | 主题、布局、交互偏好和 opt-in；与数据库的机器设置不是同一存储 |
+| 当前会话与刷新 ticket | 前端内存 / Rust 原子序号 | 会话唤起重置、刷新乱序防护、过期隐藏计时取消；不构成持久事件总线 |
+| SQLite 快照 / 资产 JSON | 本地文件 | 快照用于整库恢复；资产导入是替换指定表，usage_records 被清空，settings/drafts 保留 |
+
+SQLite schema 版本为 **14**；资产 JSON schema 为 **1.3**；DraftPayload schema 为 **1**。三者作用域不同，不应合为“数据版本”。SQL 表和约束的权威仍在 [migrations](../../../src-tauri/crates/repo-core/migrations)，TypeScript 消费结构见 [types.ts](../../../src/ipc/types.ts)。
+
+## 5. 关键链路
+
+### S1：唤起、复制与副作用（C02/C09）
+
+Rust 全局快捷键处理器在主线程调整当前屏幕几何、显示窗口并发出 wake；sessionStore 以 wake 时间界定会话。UI 的 `useCopy` 先等待剪贴板写入，再发成功反馈，最后调用 recordUsage。剪贴板失败则终止；数据库记录失败不会撤销已经完成的复制。
+
+记录成功后，调用态安排约 200 ms 的隐藏，整理态保窗；序号使旧计时任务失效。隐藏失败不回滚记录。前端随后刷新最近使用与今日次数，这些步骤不在同一个事务中。因此不能用“复制成功”同时证明统计刷新成功或窗口已经隐藏。
+
+唤起预算 C1（≤200 ms P95）与复制后的 200 ms 展示延迟是不同指标。本轮未跑 benchmark，且项目 bench 测量窗口唤起调用段，不自动覆盖 OS 快捷键分发至完全可交互的全部路径。
+
+### S2：外部草稿到人工采纳（图 D3，C03/C04）
+
+问题：何时写入正式资产、失败如何收口？视角：行为；层级：L3；边界：MCP/宿主/SQLite；当前态；基线同上。对象 `ph:IF-mcp`、`ph:MOD-core`、`ph:MOD-write`、`ph:DAT-drafts`。
+
+![D3 架构视图](diagrams/D3.svg)
+
+[图卡与阅读提示](diagrams/architecture-map.md) · [可编辑图源](diagrams/D3.mmd) · [统一视图清单](diagrams/views.json)
+
+DraftPayload 的四种 target_type 不等于用户当前都可采纳：Composition 的底层 Rust 路径和测试存在，DraftInbox 按类型禁用编辑与采纳（“该类型暂无 UI 承载”）。Modifier 必须由人在采纳时补四象限分类。Macro/Modifier payload 中的 phase 字段不能直接推断最终表也保留相同字段，须核查 promote 映射。
+
+去重只覆盖序列化 payload 的 hash 在 pending 集合内唯一，不含语义相似、历史资产去重或永久幂等。直接连续第二次 promote 会被拒绝；**promote → restore → promote 能产生两个不同正式资产**，本轮临时数据库已复现。现有 UI 是否可直接构造此序列未验证；这是候选契约的边界，不能据此宣称用户路径已有缺陷。
+
+### S3：删除、恢复与清空（图 D4，C05）
+
+问题：恢复意味着哪些状态回到可用？视角：数据/行为；层级：L3；边界：七类资产；当前态；基线同上。对象 `ph:MOD-write`、`ph:DAT-store`。
+
+![D4 架构视图](diagrams/D4.svg)
+
+[图卡与阅读提示](diagrams/architecture-map.md) · [可编辑图源](diagrams/D4.mmd) · [统一视图清单](diagrams/views.json)
+
+软删除保留 ID、创建时间、排序和历史使用记录。读取端过滤 deleted_at；废纸篓和导出是有意例外。恢复 Phrase 时同时恢复其已删除的 Scene/SubStage，避免“行已活、界面不可达”；恢复旧默认对齐话术遇到新默认时降为普通话术。它是语义恢复，不保证所有字段完全恢复旧值。
+
+清空废纸篓按外键顺序硬删除并清理无主 usage；有存活子项的场景存在保留分支。`deprecated` 是另一种策展状态；草稿 discarded、七表 deleted_at、AxisValue 删除不是同一生命周期。UI 的撤销 toast 只是恢复入口，不能单独证明底层可逆。
+
+### S4：数据替换、快照和失败策略（C06/C07）
+
+宿主启动：busy timeout → quick_check → WAL/FK 配置 → 必要迁移前快照 → 迁移。MCP 只检查 schema 精确匹配，不迁移，也不创建缺失数据库。
+
+导入：读文件 → 持有宿主连接锁 → pre-import 快照 → schema guard → repo-write 事务替换资产。快照失败阻止危险操作；每日备份失败只记日志并继续服务。备份先 `VACUUM INTO` 临时文件，完成后哈希比对、原子重命名及按前缀独立清理。`Unchanged` 表示已有相同快照，可继续危险操作；不是“没有备份”。
+
+资产 JSON 替换并非整库镜像：usage 清空；drafts、机器 settings 保留；废纸篓状态随资产走。1.3 坐标数组字段缺失时保留现有表，存在但为空时清空。恢复验收必须检查这些语义，不能只看导入退出码为零。
+
+### S5：会话口令归因（C09）
+
+按 session_started_at 分组，按 timestamp/rowid 排序；live_cue 关联同一会话中之前最近的 phase_bar 对齐话术记录。没有会话时间的旧记录不参与；无锚点、已删除话术和无轴口令分别影响 unattributed/总数/分栏。归因是账本统计，不是因果证明、质量评分或模型效果评测。
+
+修订说明 notes 已有写入路径，但汇总只带修订时间、名字和计数；明细回显仍为 [HANDOFF 第54项](../../../HANDOFF.md)。本轮不重复新建同一产品任务。
+
+## 6. 原决定与分析判断
+
+| 原项目决定 | 当前实现与本轮解释 |
+|---|---|
+| ADR-015：stdio MCP、草稿暂存、人工采纳 | 源工具路径成立；编译依赖护栏提供维护约束，其权限保证须限于实际执行层 |
+| ADR-028：原地软删除与显式清空 | 保留身份与引用使恢复可行；恢复依赖闭包和默认冲突是可复用变化点 |
+| ADR-029：坐标与偏移账本 | 来源、会话和修订时间支撑本地统计；不外推为 AI 已收到话术或发生因果改善 |
+| ADR-017：选择启用的更新流程 | 从本地数据边界分离分发控制流；本轮未连接发布端或重装应用 |
+
+以上解释不是替原团队补写新的 ADR。下一步核查与验证限制见 [verification.md](verification.md)。

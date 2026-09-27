@@ -1,0 +1,6 @@
+{
+  "start": "2026-09-22T09:44:16.898383+00:00",
+  "end": "2026-09-22T09:44:27.655891+00:00",
+  "command": "pnpm test --reporter=json --outputFile=docs/architecture-system-pilot/2026-09-22/evidence/frontend-tests.json",
+  "exit_code": 0
+}

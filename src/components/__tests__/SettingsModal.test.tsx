@@ -112,7 +112,20 @@ describe("SettingsModal — data page export/import", () => {
     );
     expect(refreshAllMock).toHaveBeenCalledTimes(1);
     // 1 + 2 + 1 + 0 + 3 + 0 + 0 + 0 = 7
-    expect(await screen.findByText("已导入 7 条记录")).toBeInTheDocument();
+    expect(await screen.findByText(/已导入 7 条记录/)).toBeInTheDocument();
+  });
+
+  it("reports restored website and group rows in the import total", async () => {
+    openMock.mockResolvedValue("/tmp/with-websites.json");
+    confirmMock.mockResolvedValue(true);
+    scriptInvoke({
+      import_data: { ...SUMMARY, websites: 2, websiteGroups: 1 },
+    });
+    openDataTab();
+    fireEvent.click(screen.getByRole("button", { name: /导入备份/ }));
+    expect(
+      await screen.findByText("已导入 10 条记录（含 2 个网站）"),
+    ).toBeInTheDocument();
   });
 
   it("import aborts when the confirm gate is declined", async () => {
@@ -340,7 +353,7 @@ describe("SettingsModal — dismissal while the data page is busy", () => {
     const dialog = screen.getByRole("dialog");
 
     release(SUMMARY);
-    expect(await screen.findByText("已导入 7 条记录")).toBeInTheDocument();
+    expect(await screen.findByText(/已导入 7 条记录/)).toBeInTheDocument();
     expect(refreshAllMock).toHaveBeenCalledTimes(1);
     expect(screen.getByRole("button", { name: "关闭" })).toBeEnabled();
 

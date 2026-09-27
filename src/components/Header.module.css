@@ -74,3 +74,37 @@
   outline: var(--border-thick) solid var(--accent);
   outline-offset: var(--hairline);
 }
+
+.workspaces {
+  display: flex;
+  gap: var(--s-1);
+  padding: var(--s-0_5);
+  border: var(--hairline) solid var(--border-2);
+  border-radius: var(--r-4);
+  background: var(--surface-2);
+}
+.workspace,
+.current {
+  border: 0;
+  border-radius: var(--r-3);
+  padding: var(--s-1_5) var(--s-2_5);
+  background: transparent;
+  color: var(--fg-3);
+  cursor: pointer;
+  font: inherit;
+  white-space: nowrap;
+}
+.current {
+  color: var(--fg-1);
+  background: var(--surface-3);
+}
+.workspace:hover {
+  color: var(--fg-1);
+}
+.workspace:focus-visible,
+.current:focus-visible {
+  outline: var(--border-thick) solid var(--accent);
+}
+.spacer {
+  flex: 1;
+}

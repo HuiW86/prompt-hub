@@ -1,0 +1,31 @@
+{
+  "tool_version": "0.1.0",
+  "checked_at": "2026-09-23T03:51:10.682476+00:00",
+  "scope": "Declared files/globs and referenced registry objects only; no semantic or runtime proof.",
+  "views": {
+    "D1": {
+      "freshness": "current",
+      "changed": [],
+      "artifacts": "current",
+      "artifact_issues": []
+    },
+    "D2": {
+      "freshness": "current",
+      "changed": [],
+      "artifacts": "current",
+      "artifact_issues": []
+    },
+    "D3": {
+      "freshness": "current",
+      "changed": [],
+      "artifacts": "current",
+      "artifact_issues": []
+    },
+    "D4": {
+      "freshness": "current",
+      "changed": [],
+      "artifacts": "current",
+      "artifact_issues": []
+    }
+  }
+}

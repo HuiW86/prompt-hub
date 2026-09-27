@@ -1,0 +1,125 @@
+{
+  "captured_at": "2026-09-23T03:54:11.236042+00:00",
+  "platform": "macOS-26.3.1-arm64-arm-64bit",
+  "runs": [
+    {
+      "command": [
+        "python3",
+        "/Users/apple/.codex/skills/architecture-system/scripts/diagram_views.py",
+        "check",
+        "/Users/apple/WeChatProjects/prompt-hub/docs/architecture-system-pilot/2026-09-22/diagrams/views.json",
+        "--report"
+      ],
+      "returncode": 0,
+      "stdout": "{\n  \"tool_version\": \"0.1.0\",\n  \"checked_at\": \"2026-09-23T03:54:10.433513+00:00\",\n  \"scope\": \"Declared files/globs and referenced registry objects only; no semantic or runtime proof.\",\n  \"views\": {\n    \"D1\": {\n      \"freshness\": \"current\",\n      \"changed\": [],\n      \"artifacts\": \"current\",\n      \"artifact_issues\": []\n    },\n    \"D2\": {\n      \"freshness\": \"current\",\n      \"changed\": [],\n      \"artifacts\": \"current\",\n      \"artifact_issues\": []\n    },\n    \"D3\": {\n      \"freshness\": \"current\",\n      \"changed\": [],\n      \"artifacts\": \"current\",\n      \"artifact_issues\": []\n    },\n    \"D4\": {\n      \"freshness\": \"current\",\n      \"changed\": [],\n      \"artifacts\": \"current\",\n      \"artifact_issues\": []\n    }\n  }\n}\n",
+      "stderr": ""
+    },
+    {
+      "command": [
+        "python3",
+        "/Users/apple/.codex/skills/architecture-system/scripts/validate.py",
+        "/Users/apple/WeChatProjects/prompt-hub/docs/architecture-system-pilot/2026-09-22/registry.json"
+      ],
+      "returncode": 0,
+      "stdout": "WARNING: External declarations are indexed; their content/existence is not verified.\nPASS: structural checks only; no source or engineering verification performed.\n",
+      "stderr": ""
+    },
+    {
+      "command": [
+        "python3",
+        "/Users/apple/.codex/skills/architecture-system/scripts/validate.py",
+        "/Users/apple/.codex/skills/architecture-system/assets/templates/registry.example.json"
+      ],
+      "returncode": 0,
+      "stdout": "PASS: structural checks only; no source or engineering verification performed.\n",
+      "stderr": ""
+    },
+    {
+      "command": [
+        "python3",
+        "/Users/apple/.codex/skills/.system/skill-creator/scripts/quick_validate.py",
+        "/Users/apple/.codex/skills/architecture-system"
+      ],
+      "returncode": 0,
+      "stdout": "Skill is valid!\n",
+      "stderr": ""
+    },
+    {
+      "command": [
+        "node",
+        "scripts/doc-governance/index.mjs",
+        "--config",
+        "doc-governance.config.mjs"
+      ],
+      "returncode": 0,
+      "stdout": "doc-governance v0.1 · root: /Users/apple/WeChatProjects/prompt-hub\nscanned 82 markdown files (frozen skipped: 11, whitelisted refs: 3)\n\nHANDOFF.md\n  ⚠ warn  [refs] L14 code-path `docs/mockups/prompt-hub.html` not found on disk\n  ⚠ warn  [refs] L14 code-path `docs/methodology-gaps.md` not found on disk\ndocs/architecture-system-pilot/2026-09-22/evidence/diagram-workflow/verification.md\n  ⚠ warn  [refs] L8 md-link `checks.json` → `docs/architecture-system-pilot/2026-09-22/evidence/diagram-workflow/checks.json` not found\ndocs/design/CHANGELOG.md\n  ⚠ warn  [refs] L1554 md-link `../mockups/prompt-hub.html` → `docs/mockups/prompt-hub.html` not found\n  ⚠ warn  [refs] L1394 code-path `src-tauri/migrations/` not found on disk\n  ⚠ warn  [refs] L1394 code-path `scripts/update-features.sh` not found on disk\ndocs/plans/asset-editing-and-adaptive-layout.md\n  ⚠ warn  [refs] L81 code-path `src-tauri/migrations/` not found on disk\ndocs/workflows/claude-design-prompts.md\n  ⚠ warn  [refs] L53 code-path `docs/mockups/prompt-hub.html` not found on disk\n  ⚠ warn  [refs] L64 code-path `docs/mockups/prompt-hub.html` not found on disk\n\nresult: 0 error(s), 9 warning(s)\n",
+      "stderr": ""
+    },
+    {
+      "command": [
+        "node",
+        "--version"
+      ],
+      "returncode": 0,
+      "stdout": "v24.16.0\n",
+      "stderr": ""
+    },
+    {
+      "command": [
+        "python3",
+        "--version"
+      ],
+      "returncode": 0,
+      "stdout": "Python 3.9.6\n",
+      "stderr": ""
+    },
+    {
+      "command": [
+        "/Applications/Google Chrome.app/Contents/MacOS/Google Chrome",
+        "--version"
+      ],
+      "returncode": 0,
+      "stdout": "Google Chrome 153.0.8010.53 \n",
+      "stderr": ""
+    },
+    {
+      "command": [
+        "git",
+        "status",
+        "--short"
+      ],
+      "returncode": 0,
+      "stdout": " M docs/design/README.md\n?? .codex/\n?? AGENTS.md\n?? docs/architecture-system-pilot/\n?? dsh-plugin-ziwuliuzhu/\n",
+      "stderr": ""
+    }
+  ],
+  "local_links_checked": 184,
+  "broken_links": [],
+  "baseline_comparison": {
+    "selected_files": 305,
+    "changed": [
+      "docs/design/README.md"
+    ],
+    "note": "docs/design/README.md was already changed in the earlier reverse-analysis turn; business code unchanged"
+  },
+  "drawio_xml": "parsed; editor and wiring not tested",
+  "tool_sha256": {
+    "SKILL.md": "6b8cc58136cf203d5f92d1238e486ab18b302757720296918f1f6e6d193c5a34",
+    "scripts/diagram_views.py": "b33f82576e4fa0987f7021627a4e1f3e2b59b3f646c6d0fd8d51cc152532455f",
+    "scripts/tests/test_diagram_views.py": "1fd4ce7b378945f1f5770bdc4433a004dd899d3382610ed0cc7121a294112251",
+    "scripts/diagram-renderer/package.json": "17ae32d75765b06052eb4148c322db0aac39ff248ec409f3386c8e336183467e",
+    "scripts/diagram-renderer/pnpm-lock.yaml": "52ed18b3d8aa8343be613f2c8b46bd13257f36f1cb4844c81ad07c6f3b7ec9c6",
+    "references/forward-build.md": "0e0d68d51a9f75c793e8e0ce83cbdb71bf152b19e27ca5732551f8ecb6197e18",
+    "references/diagram-workflow.md": "83b2e8863fbe0e3c4d43876b2482c75d37c8d7a19e31e05792b85153d304d3c1",
+    "references/consistency-iteration.md": "42c7bcb215c7d025d0559af929801b5cc24706c18252a371c356a2bef9882dd8",
+    "references/capability-reuse.md": "26ce2dd7dc2ed9135220eb69f63cafa931aa202aac931ff1fd8d8fc20506bc5d",
+    "references/prototype-alignment.md": "3dd2e0dcebdb60026d7beb5e47396eb1d42b492789fc0b477f9e53fa1e978df5",
+    "references/practice-feedback.md": "52c4633b0e3272c3aef7b6429cd2b77ee77fa8bdd97068d53e38a647186b5e4d",
+    "references/reverse-analysis.md": "27ad6e82f30d9087d4ed192834b3cef426132440740ee7ef2a689a2e4a9ec637",
+    "references/metamodel.md": "9cafa6a1a8d0d845984682fb23fdc75d63e21f8c9ef85a4549ea99e6deaf43a4",
+    "assets/templates/diagrams/views.json": "8c579b92e707b777beb0947d9ce850715cc3edfff9ac4bc79648367db42f9132",
+    "assets/templates/diagrams/registry.json": "17c01293d7e1c8682c8d6702e88cc8275b36f757c481335657e6eee842c62cca",
+    "assets/templates/diagrams/hardware.drawio": "3e9e3524a4a74905c8d8942e9b4b0f4f64be130242fa58e5d2c1410228602e1f",
+    "assets/templates/diagrams/example-source.txt": "2f7ca55ff2f4f9232aa7621bbe1178af86fe59a9ce0f30ce41d3978677ac9cce"
+  }
+}

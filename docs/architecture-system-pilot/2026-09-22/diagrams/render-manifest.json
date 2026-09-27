@@ -1,0 +1,55 @@
+{
+  "renderer": "mermaid-cli",
+  "version": "11.17.0",
+  "tool_version": "0.1.0",
+  "config": {
+    "theme": "base",
+    "securityLevel": "strict",
+    "themeVariables": {
+      "fontFamily": "PingFang SC, Noto Sans CJK SC, sans-serif",
+      "fontSize": "17px",
+      "primaryColor": "#eef7f8",
+      "primaryTextColor": "#18323d",
+      "lineColor": "#527780"
+    },
+    "flowchart": {
+      "htmlLabels": true,
+      "curve": "linear",
+      "nodeSpacing": 45,
+      "rankSpacing": 60
+    },
+    "sequence": {
+      "useMaxWidth": false,
+      "wrap": false,
+      "actorMargin": 40,
+      "width": 190,
+      "height": 110,
+      "messageMargin": 35
+    },
+    "state": {
+      "useMaxWidth": false
+    }
+  },
+  "views": {
+    "D1": {
+      "source_hash": "6bcd2b8ac9cbfaa47d7b1372e80e51b305da6792d59b5b5d2e22072e93eed374",
+      "svg": "8af5d6f6415c0cf2eed99df97df03360d0e7b7ce2cab03c603787db8015e6e0d",
+      "png": "319d9a167c7cdf7442e00528ea5207c3a60a9c01c650fed2202df38a49f17e15"
+    },
+    "D2": {
+      "source_hash": "c689a2885714451dc1462bafb970a707f759aab44a6b53de8a7627eaf8ac9283",
+      "svg": "f96a0aef8958da434af04db6e2d89cbe22ab04a5932bc85248106db0a0943314",
+      "png": "6277b2125a5b70b781ab290cd0b437970501bbbc22ab93d3dc83177ac3757e40"
+    },
+    "D3": {
+      "source_hash": "6fb2c8eb9ccbdb590108ad367bfe57e534526a6fcb552d1c91164f9104ccfaa8",
+      "svg": "1f8b5b31d18b85abd54b385f05b0ee6db90dfc02de0964af4e04edc4a13b0ffd",
+      "png": "360e80ba960bf5385ae617501c5e60981ff140e539d5f0516d9bc0d26155a8fe"
+    },
+    "D4": {
+      "source_hash": "cd31e2eace21d41b2782958ef6d6b42930a4293a32a46444bec85af317156008",
+      "svg": "c1f85648ec6e4513b454bcdcf50e895369f1481d38e9c0bc3b385e17e83d3852",
+      "png": "72cc6d16b138c757c51c485abcf2a4f3d2a27ca1826657f784662840f96a719a"
+    }
+  }
+}

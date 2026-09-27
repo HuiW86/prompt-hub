@@ -31,6 +31,8 @@ import type {
   SubStage,
   UpdateAck,
   UsageRecord,
+  WebsiteLibrary,
+  WebsiteInput,
 } from "./types";
 
 // ── Trash types (ADR-028) ─────────────────────────────────────────────────────
@@ -429,6 +431,20 @@ export const ipc = {
   // full-replace (wipe-and-restore); usage_records are not exported (D2).
   exportData: (path: string) => invoke<void>("export_data", { path }),
   importData: (path: string) => invoke<ImportSummary>("import_data", { path }),
+
+  listWebsites: () => invoke<WebsiteLibrary>("list_websites"),
+  saveWebsite: (input: WebsiteInput) => invoke<void>("save_website", { input }),
+  deleteWebsite: (id: string) => invoke<void>("delete_website", { id }),
+  restoreWebsite: (id: string) => invoke<void>("restore_website", { id }),
+  saveWebsiteGroup: (id: string | null, name: string) =>
+    invoke<void>("save_website_group", { id, name }),
+  deleteWebsiteGroup: (id: string) =>
+    invoke<void>("delete_website_group", { id }),
+  reorderWebsites: (groupId: string | null, orderedIds: string[]) =>
+    invoke<void>("reorder_websites", { groupId, orderedIds }),
+  reorderWebsiteGroups: (orderedIds: string[]) =>
+    invoke<void>("reorder_website_groups", { orderedIds }),
+  openWebsite: (id: string) => invoke<void>("open_website", { id }),
 };
 
 export type Ipc = typeof ipc;

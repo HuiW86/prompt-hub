@@ -1,0 +1,957 @@
+{
+  "schema_version": "architecture-views/1",
+  "title": "prompt-hub 架构地图",
+  "project_root": "../../../..",
+  "registry": "../registry.json",
+  "facts": [
+    {
+      "id": "copy",
+      "from": "ph:CMP-desktop@0.1.0",
+      "to": "ph:IF-clipboard@0.1.0",
+      "label": "使用者触发复制；不代表外部收到",
+      "status": "confirmed",
+      "claims": [
+        "ph:CLM-c02@0.1.0"
+      ]
+    },
+    {
+      "id": "paste",
+      "from": "ph:IF-clipboard@0.1.0",
+      "to": "ph:SYS-ai-client@0.1.0",
+      "label": "使用者是否粘贴、客户端是否收到",
+      "status": "unknown",
+      "claims": [],
+      "reason": "本轮只观察本机源码，未观测外部粘贴和接收"
+    },
+    {
+      "id": "tools",
+      "from": "ph:SYS-ai-client@0.1.0",
+      "to": "ph:MOD-mcp@0.1.0",
+      "label": "配置后可经 stdio 调用工具",
+      "status": "confirmed",
+      "claims": [
+        "ph:CLM-c03@0.1.0"
+      ]
+    },
+    {
+      "id": "staging",
+      "from": "ph:MOD-mcp@0.1.0",
+      "to": "ph:DAT-store@0.1.0",
+      "label": "查询资产、暂存草稿",
+      "status": "confirmed",
+      "claims": [
+        "ph:CLM-c03@0.1.0"
+      ]
+    },
+    {
+      "id": "desktop-store",
+      "from": "ph:CMP-desktop@0.1.0",
+      "to": "ph:DAT-store@0.1.0",
+      "label": "迁移、整理、人工采纳",
+      "status": "confirmed",
+      "claims": [
+        "ph:CLM-c01@0.1.0",
+        "ph:CLM-c04@0.1.0"
+      ]
+    },
+    {
+      "id": "files",
+      "from": "ph:CMP-desktop@0.1.0",
+      "to": "ph:DAT-files@0.1.0",
+      "label": "使用者选择导入导出；本机快照",
+      "status": "confirmed",
+      "claims": [
+        "ph:CLM-c06@0.1.0",
+        "ph:CLM-c07@0.1.0"
+      ]
+    },
+    {
+      "id": "update",
+      "from": "ph:CMP-desktop@0.1.0",
+      "to": "ph:SYS-releases@0.1.0",
+      "label": "选择启用后检查与安装更新",
+      "status": "confirmed",
+      "claims": [
+        "ph:CLM-c10@0.1.0"
+      ]
+    },
+    {
+      "id": "ui-ipc",
+      "from": "ph:MOD-ui@0.1.0",
+      "to": "ph:IF-tauri@0.1.0",
+      "label": "经 IPC facade 发起命令",
+      "status": "confirmed",
+      "claims": [
+        "ph:CLM-c01@0.1.0",
+        "ph:CLM-c08@0.1.0"
+      ]
+    },
+    {
+      "id": "ipc-host",
+      "from": "ph:IF-tauri@0.1.0",
+      "to": "ph:MOD-host@0.1.0",
+      "label": "Tauri invoke 与命令注册",
+      "status": "confirmed",
+      "claims": [
+        "ph:CLM-c01@0.1.0",
+        "ph:CLM-c08@0.1.0"
+      ]
+    },
+    {
+      "id": "host-core",
+      "from": "ph:MOD-host@0.1.0",
+      "to": "ph:MOD-core@0.1.0",
+      "label": "查询、使用记录、草稿",
+      "status": "confirmed",
+      "claims": [
+        "ph:CLM-c01@0.1.0",
+        "ph:CLM-c09@0.1.0"
+      ]
+    },
+    {
+      "id": "host-write",
+      "from": "ph:MOD-host@0.1.0",
+      "to": "ph:MOD-write@0.1.0",
+      "label": "采纳、编辑、恢复、导入",
+      "status": "confirmed",
+      "claims": [
+        "ph:CLM-c04@0.1.0",
+        "ph:CLM-c05@0.1.0",
+        "ph:CLM-c07@0.1.0"
+      ]
+    },
+    {
+      "id": "write-core",
+      "from": "ph:MOD-write@0.1.0",
+      "to": "ph:MOD-core@0.1.0",
+      "label": "复用存储模型及数据库操作",
+      "status": "confirmed",
+      "claims": [
+        "ph:CLM-c03@0.1.0",
+        "ph:CLM-c04@0.1.0"
+      ]
+    },
+    {
+      "id": "mcp-core",
+      "from": "ph:MOD-mcp@0.1.0",
+      "to": "ph:MOD-core@0.1.0",
+      "label": "工具路径使用查询及 DraftRepo",
+      "status": "confirmed",
+      "claims": [
+        "ph:CLM-c03@0.1.0"
+      ]
+    },
+    {
+      "id": "core-store",
+      "from": "ph:MOD-core@0.1.0",
+      "to": "ph:DAT-store@0.1.0",
+      "label": "连接、WAL、外键与迁移入口",
+      "status": "confirmed",
+      "claims": [
+        "ph:CLM-c01@0.1.0",
+        "ph:CLM-c06@0.1.0"
+      ]
+    },
+    {
+      "id": "gate-ipc",
+      "from": "ph:MOD-gates@0.1.0",
+      "to": "ph:IF-tauri@0.1.0",
+      "label": "静态检查命令名称集合",
+      "status": "confirmed",
+      "claims": [
+        "ph:CLM-c08@0.1.0"
+      ]
+    },
+    {
+      "id": "gate-mcp",
+      "from": "ph:MOD-gates@0.1.0",
+      "to": "ph:MOD-mcp@0.1.0",
+      "label": "依赖和工具注册护栏",
+      "status": "confirmed",
+      "claims": [
+        "ph:CLM-c03@0.1.0",
+        "ph:CLM-c08@0.1.0"
+      ]
+    }
+  ],
+  "views": [
+    {
+      "id": "D1",
+      "title": "系统全景：本地资产与外部边界",
+      "kind": "flowchart",
+      "question": "本机系统包含什么，数据在哪些边界流动？",
+      "viewpoint": "系统／技术",
+      "level": "L0",
+      "boundary": "prompt-hub 本机应用及伴随 MCP；外部客户端部署未核查",
+      "state": "current",
+      "baseline": "317106deaef72b5edc83a74bd63402bd1b4ac6c2 / app 0.2.0",
+      "owner": "本轮 Codex 制作与检查；长期维护人待指定",
+      "review": "AI 按来源复核；不代表人审需求或目标验收通过",
+      "depends": [
+        "src-tauri/src/lib.rs",
+        "src-tauri/src/commands.rs",
+        "src-tauri/crates/prompt-hub-mcp/src/*.rs",
+        "src/hooks/useCopy.ts",
+        "src/stores/updaterStore.ts",
+        "src-tauri/tauri.conf.json"
+      ],
+      "nodes": [
+        {
+          "id": "App",
+          "ref": "ph:CMP-desktop@0.1.0",
+          "status": "confirmed",
+          "claims": [
+            "ph:CLM-c01@0.1.0"
+          ]
+        },
+        {
+          "id": "MCP",
+          "ref": "ph:MOD-mcp@0.1.0",
+          "status": "confirmed",
+          "claims": [
+            "ph:CLM-c03@0.1.0"
+          ]
+        },
+        {
+          "id": "DB",
+          "ref": "ph:DAT-store@0.1.0",
+          "status": "confirmed",
+          "claims": [
+            "ph:CLM-c01@0.1.0"
+          ]
+        },
+        {
+          "id": "Clipboard",
+          "ref": "ph:IF-clipboard@0.1.0",
+          "status": "confirmed",
+          "claims": [
+            "ph:CLM-c02@0.1.0"
+          ]
+        },
+        {
+          "id": "Files",
+          "ref": "ph:DAT-files@0.1.0",
+          "status": "confirmed",
+          "claims": [
+            "ph:CLM-c06@0.1.0",
+            "ph:CLM-c07@0.1.0"
+          ]
+        },
+        {
+          "id": "AI",
+          "ref": "ph:SYS-ai-client@0.1.0",
+          "status": "unknown",
+          "claims": [],
+          "reason": "客户端实际部署和外发行为未核查"
+        },
+        {
+          "id": "Release",
+          "ref": "ph:SYS-releases@0.1.0",
+          "status": "confirmed",
+          "claims": [
+            "ph:CLM-c10@0.1.0"
+          ]
+        }
+      ],
+      "edges": [
+        {
+          "id": "e1",
+          "fact": "copy"
+        },
+        {
+          "id": "e2",
+          "fact": "paste"
+        },
+        {
+          "id": "e3",
+          "fact": "tools"
+        },
+        {
+          "id": "e4",
+          "fact": "staging"
+        },
+        {
+          "id": "e5",
+          "fact": "desktop-store"
+        },
+        {
+          "id": "e6",
+          "fact": "files"
+        },
+        {
+          "id": "e7",
+          "fact": "update"
+        }
+      ],
+      "direction": "TB",
+      "groups": [
+        {
+          "id": "Local",
+          "nodes": [
+            "App",
+            "MCP",
+            "DB"
+          ],
+          "status": "confirmed",
+          "claims": [
+            "ph:CLM-c01@0.1.0"
+          ],
+          "ref": "ph:SYS-hub@0.1.0"
+        }
+      ],
+      "notes": [
+        "使用者通过桌面应用操作资产并决定采纳；是否粘贴到外部 AI 未观测。",
+        "有据仅表示当前代码支持该路径，客户端配置和实际调用不在本图验证范围。",
+        "SQLite 是共享存储；桌面宿主与 MCP 为独立进程。"
+      ]
+    },
+    {
+      "id": "D2",
+      "title": "模块分工：调用与存储职责",
+      "kind": "flowchart",
+      "question": "前端动作经过哪些边界，谁执行写入与检查？",
+      "viewpoint": "系统／技术",
+      "level": "L2–L3",
+      "boundary": "桌面前端、Rust 宿主、独立 MCP 和共享 SQLite",
+      "state": "current",
+      "baseline": "317106deaef72b5edc83a74bd63402bd1b4ac6c2 / app 0.2.0",
+      "owner": "本轮 Codex 制作与检查；长期维护人待指定",
+      "review": "AI 按来源复核；不代表人审需求或目标验收通过",
+      "depends": [
+        "src/ipc/*.ts",
+        "src-tauri/src/*.rs",
+        "src-tauri/crates/*/Cargo.toml",
+        "src-tauri/crates/repo-core/src/lib.rs",
+        "src-tauri/crates/repo-write/src/lib.rs",
+        "src-tauri/crates/prompt-hub-mcp/src/*.rs"
+      ],
+      "nodes": [
+        {
+          "id": "UI",
+          "ref": "ph:MOD-ui@0.1.0",
+          "status": "confirmed",
+          "claims": [
+            "ph:CLM-c01@0.1.0"
+          ]
+        },
+        {
+          "id": "IPC",
+          "ref": "ph:IF-tauri@0.1.0",
+          "status": "confirmed",
+          "claims": [
+            "ph:CLM-c08@0.1.0"
+          ]
+        },
+        {
+          "id": "Host",
+          "ref": "ph:MOD-host@0.1.0",
+          "status": "confirmed",
+          "claims": [
+            "ph:CLM-c01@0.1.0"
+          ]
+        },
+        {
+          "id": "Core",
+          "ref": "ph:MOD-core@0.1.0",
+          "status": "confirmed",
+          "claims": [
+            "ph:CLM-c01@0.1.0",
+            "ph:CLM-c03@0.1.0"
+          ]
+        },
+        {
+          "id": "Write",
+          "ref": "ph:MOD-write@0.1.0",
+          "status": "confirmed",
+          "claims": [
+            "ph:CLM-c04@0.1.0",
+            "ph:CLM-c05@0.1.0"
+          ]
+        },
+        {
+          "id": "MCP",
+          "ref": "ph:MOD-mcp@0.1.0",
+          "status": "confirmed",
+          "claims": [
+            "ph:CLM-c03@0.1.0"
+          ]
+        },
+        {
+          "id": "DB",
+          "ref": "ph:DAT-store@0.1.0",
+          "status": "confirmed",
+          "claims": [
+            "ph:CLM-c01@0.1.0"
+          ]
+        },
+        {
+          "id": "Gate",
+          "ref": "ph:MOD-gates@0.1.0",
+          "status": "confirmed",
+          "claims": [
+            "ph:CLM-c08@0.1.0"
+          ]
+        }
+      ],
+      "edges": [
+        {
+          "id": "e1",
+          "fact": "ui-ipc"
+        },
+        {
+          "id": "e2",
+          "fact": "ipc-host"
+        },
+        {
+          "id": "e3",
+          "fact": "host-core"
+        },
+        {
+          "id": "e4",
+          "fact": "host-write"
+        },
+        {
+          "id": "e5",
+          "fact": "write-core"
+        },
+        {
+          "id": "e6",
+          "fact": "mcp-core"
+        },
+        {
+          "id": "e7",
+          "fact": "core-store"
+        },
+        {
+          "id": "e8",
+          "fact": "gate-ipc"
+        },
+        {
+          "id": "e9",
+          "fact": "gate-mcp"
+        }
+      ],
+      "direction": "TB",
+      "groups": [
+        {
+          "id": "Frontend",
+          "label": "桌面 WebView",
+          "nodes": [
+            "UI",
+            "IPC"
+          ],
+          "status": "confirmed",
+          "claims": [
+            "ph:CLM-c01@0.1.0"
+          ]
+        },
+        {
+          "id": "Backend",
+          "label": "桌面 Rust 宿主",
+          "nodes": [
+            "Host",
+            "Write"
+          ],
+          "status": "confirmed",
+          "claims": [
+            "ph:CLM-c01@0.1.0"
+          ]
+        },
+        {
+          "id": "Companion",
+          "label": "独立 MCP 进程",
+          "nodes": [
+            "MCP"
+          ],
+          "status": "confirmed",
+          "claims": [
+            "ph:CLM-c01@0.1.0"
+          ]
+        }
+      ],
+      "notes": [
+        "repo-core 表示共享库职责；两进程分别创建连接，不是同一个服务或同一个 Mutex。",
+        "repo-write 可经共享数据库连接写入；本图不是全部 SQL 调用的调用图。",
+        "MCP 无 repo-write 依赖是工具路径约束，不是 SQLite 表级权限隔离。"
+      ]
+    },
+    {
+      "id": "D3",
+      "title": "关键时序：草稿暂存到人工采纳",
+      "kind": "sequence",
+      "question": "何时产生正式资产，事务失败如何返回？",
+      "viewpoint": "行为",
+      "level": "L3",
+      "boundary": "外部客户端、MCP、宿主、仓储与 SQLite；展示选定正常链及事务失败",
+      "state": "current",
+      "baseline": "317106deaef72b5edc83a74bd63402bd1b4ac6c2 / app 0.2.0",
+      "owner": "本轮 Codex 制作与检查；长期维护人待指定",
+      "review": "AI 按来源复核；不代表人审需求或目标验收通过",
+      "depends": [
+        "src/components/DraftInbox.tsx",
+        "src/stores/prompt/draftsSlice.ts",
+        "src/ipc/index.ts",
+        "src-tauri/src/commands.rs",
+        "src-tauri/crates/prompt-hub-mcp/src/server.rs",
+        "src-tauri/crates/repo-core/src/draft_repo.rs",
+        "src-tauri/crates/repo-write/src/promote.rs"
+      ],
+      "nodes": [
+        {
+          "id": "AI",
+          "ref": "ph:SYS-ai-client@0.1.0",
+          "status": "unknown",
+          "claims": [],
+          "reason": "具体外部客户端与部署未核查"
+        },
+        {
+          "id": "MCP",
+          "ref": "ph:MOD-mcp@0.1.0",
+          "status": "confirmed",
+          "claims": [
+            "ph:CLM-c03@0.1.0"
+          ]
+        },
+        {
+          "id": "Core",
+          "ref": "ph:MOD-core@0.1.0",
+          "status": "confirmed",
+          "claims": [
+            "ph:CLM-c03@0.1.0"
+          ]
+        },
+        {
+          "id": "UI",
+          "ref": "ph:MOD-ui@0.1.0",
+          "status": "confirmed",
+          "claims": [
+            "ph:CLM-c04@0.1.0"
+          ]
+        },
+        {
+          "id": "Host",
+          "ref": "ph:MOD-host@0.1.0",
+          "status": "confirmed",
+          "claims": [
+            "ph:CLM-c01@0.1.0",
+            "ph:CLM-c04@0.1.0"
+          ]
+        },
+        {
+          "id": "Write",
+          "ref": "ph:MOD-write@0.1.0",
+          "status": "confirmed",
+          "claims": [
+            "ph:CLM-c04@0.1.0"
+          ]
+        },
+        {
+          "id": "DB",
+          "ref": "ph:DAT-store@0.1.0",
+          "status": "confirmed",
+          "claims": [
+            "ph:CLM-c01@0.1.0",
+            "ph:CLM-c04@0.1.0"
+          ]
+        }
+      ],
+      "edges": [
+        {
+          "id": "e1",
+          "from": "AI",
+          "to": "MCP",
+          "label": "create_draft：提案与来源",
+          "arrow": "call",
+          "status": "confirmed",
+          "claims": [
+            "ph:CLM-c03@0.1.0"
+          ]
+        },
+        {
+          "id": "e2",
+          "from": "MCP",
+          "to": "Core",
+          "label": "校验载荷后调用 DraftRepo",
+          "arrow": "call",
+          "status": "confirmed",
+          "claims": [
+            "ph:CLM-c03@0.1.0"
+          ]
+        },
+        {
+          "id": "e3",
+          "from": "Core",
+          "to": "DB",
+          "label": "写入 pending；检查重复",
+          "arrow": "call",
+          "status": "confirmed",
+          "claims": [
+            "ph:CLM-c03@0.1.0"
+          ]
+        },
+        {
+          "id": "e4",
+          "from": "DB",
+          "to": "Core",
+          "label": "草稿 ID 或重复错误",
+          "arrow": "return",
+          "status": "confirmed",
+          "claims": [
+            "ph:CLM-c03@0.1.0"
+          ]
+        },
+        {
+          "id": "e5",
+          "from": "Core",
+          "to": "MCP",
+          "label": "暂存结果",
+          "arrow": "return",
+          "status": "confirmed",
+          "claims": [
+            "ph:CLM-c03@0.1.0"
+          ]
+        },
+        {
+          "id": "e6",
+          "from": "MCP",
+          "to": "AI",
+          "label": "工具结果；尚未采纳正式资产",
+          "arrow": "return",
+          "status": "confirmed",
+          "claims": [
+            "ph:CLM-c03@0.1.0"
+          ]
+        },
+        {
+          "id": "e7",
+          "from": "UI",
+          "to": "Host",
+          "label": "人选择采纳，经 IPC 提交命令",
+          "arrow": "call",
+          "status": "confirmed",
+          "claims": [
+            "ph:CLM-c04@0.1.0"
+          ]
+        },
+        {
+          "id": "e8",
+          "from": "Host",
+          "to": "Write",
+          "label": "持连接锁并传递采纳选项",
+          "arrow": "call",
+          "status": "confirmed",
+          "claims": [
+            "ph:CLM-c04@0.1.0"
+          ]
+        },
+        {
+          "id": "e9",
+          "from": "Write",
+          "to": "DB",
+          "label": "读取草稿并检查 pending",
+          "arrow": "call",
+          "status": "confirmed",
+          "claims": [
+            "ph:CLM-c04@0.1.0"
+          ]
+        },
+        {
+          "id": "e10",
+          "from": "DB",
+          "to": "Write",
+          "label": "当前草稿与状态",
+          "arrow": "return",
+          "status": "confirmed",
+          "claims": [
+            "ph:CLM-c04@0.1.0"
+          ]
+        },
+        {
+          "id": "e11",
+          "from": "Write",
+          "to": "DB",
+          "label": "事务：插入资产并标记草稿弃用",
+          "arrow": "call",
+          "status": "confirmed",
+          "claims": [
+            "ph:CLM-c04@0.1.0"
+          ]
+        },
+        {
+          "id": "e12",
+          "from": "DB",
+          "to": "Write",
+          "label": "commit 成功",
+          "arrow": "return",
+          "status": "confirmed",
+          "claims": [
+            "ph:CLM-c04@0.1.0"
+          ]
+        },
+        {
+          "id": "e13",
+          "from": "Write",
+          "to": "Host",
+          "label": "资产 ID 与类型",
+          "arrow": "return",
+          "status": "confirmed",
+          "claims": [
+            "ph:CLM-c04@0.1.0"
+          ]
+        },
+        {
+          "id": "e14",
+          "from": "Host",
+          "to": "UI",
+          "label": "采纳结果；随后刷新列表",
+          "arrow": "return",
+          "status": "confirmed",
+          "claims": [
+            "ph:CLM-c04@0.1.0"
+          ]
+        },
+        {
+          "id": "e15",
+          "from": "DB",
+          "to": "Write",
+          "label": "事务失败；回滚写入",
+          "arrow": "return",
+          "status": "confirmed",
+          "claims": [
+            "ph:CLM-c04@0.1.0"
+          ]
+        },
+        {
+          "id": "e16",
+          "from": "Write",
+          "to": "Host",
+          "label": "错误结果",
+          "arrow": "return",
+          "status": "confirmed",
+          "claims": [
+            "ph:CLM-c04@0.1.0"
+          ]
+        },
+        {
+          "id": "e17",
+          "from": "Host",
+          "to": "UI",
+          "label": "显示错误；未完成采纳",
+          "arrow": "return",
+          "status": "confirmed",
+          "claims": [
+            "ph:CLM-c04@0.1.0"
+          ]
+        }
+      ],
+      "steps": [
+        {
+          "edge": "e1"
+        },
+        {
+          "edge": "e2"
+        },
+        {
+          "edge": "e3"
+        },
+        {
+          "edge": "e4"
+        },
+        {
+          "edge": "e5"
+        },
+        {
+          "edge": "e6"
+        },
+        {
+          "note": "收件箱查询也经过 IPC、宿主与 repo-core；此处省略读取往返",
+          "over": "UI"
+        },
+        {
+          "note": "人工决定；组合类型当前禁止从 UI 采纳",
+          "over": "UI"
+        },
+        {
+          "edge": "e7"
+        },
+        {
+          "edge": "e8"
+        },
+        {
+          "edge": "e9"
+        },
+        {
+          "edge": "e10"
+        },
+        {
+          "note": "pending 前置检查失败直接返回；不进入下方事务",
+          "over": "Write"
+        },
+        {
+          "edge": "e11"
+        },
+        {
+          "control": "alt",
+          "label": "事务成功"
+        },
+        {
+          "edge": "e12"
+        },
+        {
+          "edge": "e13"
+        },
+        {
+          "edge": "e14"
+        },
+        {
+          "control": "else",
+          "label": "事务失败"
+        },
+        {
+          "edge": "e15"
+        },
+        {
+          "edge": "e16"
+        },
+        {
+          "edge": "e17"
+        },
+        {
+          "control": "end"
+        }
+      ],
+      "notes": [
+        "虚线箭头表示返回，证据状态看文字；客户端节点待确认不否定服务端接口有源码依据。",
+        "数据访问通过宿主／仓储；前端不直接连接 SQLite。",
+        "pending 去重不等于永久幂等；恢复草稿后再次采纳可生成另一个资产，见原分析 C04。",
+        "采纳命令对应 promote_draft；图中使用短标签以保持可读。"
+      ]
+    },
+    {
+      "id": "D4",
+      "title": "资产生命周期：软删除、恢复与清空",
+      "kind": "state",
+      "question": "资产删除后还保留什么，何时不可再恢复？",
+      "viewpoint": "数据／行为",
+      "level": "L3",
+      "boundary": "七类软删除资产；不包括草稿 discarded 与 AxisValue 删除",
+      "state": "current",
+      "baseline": "317106deaef72b5edc83a74bd63402bd1b4ac6c2 / app 0.2.0",
+      "owner": "本轮 Codex 制作与检查；长期维护人待指定",
+      "review": "AI 按来源复核；不代表人审需求或目标验收通过",
+      "depends": [
+        "src-tauri/crates/repo-write/src/trash.rs",
+        "src-tauri/crates/repo-write/src/soft_delete.rs",
+        "src-tauri/crates/repo-core/src/trash.rs",
+        "src-tauri/crates/repo-core/migrations/*soft_delete*.sql",
+        "src/stores/prompt/trashSlice.ts"
+      ],
+      "nodes": [
+        {
+          "id": "Live",
+          "label": "可用：正常读取可见",
+          "refs": [
+            "ph:DAT-store@0.1.0",
+            "ph:CAP-trash@0.1.0"
+          ],
+          "status": "confirmed",
+          "claims": [
+            "ph:CLM-c05@0.1.0"
+          ]
+        },
+        {
+          "id": "Trashed",
+          "label": "废纸篓：保留身份与内容",
+          "refs": [
+            "ph:DAT-store@0.1.0",
+            "ph:CAP-trash@0.1.0"
+          ],
+          "status": "confirmed",
+          "claims": [
+            "ph:CLM-c05@0.1.0"
+          ]
+        },
+        {
+          "id": "Purged",
+          "label": "已清空：记录永久删除",
+          "refs": [
+            "ph:DAT-store@0.1.0",
+            "ph:CAP-trash@0.1.0"
+          ],
+          "status": "confirmed",
+          "claims": [
+            "ph:CLM-c05@0.1.0"
+          ]
+        }
+      ],
+      "edges": [
+        {
+          "id": "e1",
+          "from": "Live",
+          "to": "Trashed",
+          "label": "软删除",
+          "arrow": "call",
+          "status": "confirmed",
+          "claims": [
+            "ph:CLM-c05@0.1.0"
+          ]
+        },
+        {
+          "id": "e2",
+          "from": "Trashed",
+          "to": "Trashed",
+          "label": "重复删除无操作",
+          "arrow": "call",
+          "status": "confirmed",
+          "claims": [
+            "ph:CLM-c05@0.1.0"
+          ]
+        },
+        {
+          "id": "e3",
+          "from": "Trashed",
+          "to": "Live",
+          "label": "恢复同一 ID",
+          "arrow": "call",
+          "status": "confirmed",
+          "claims": [
+            "ph:CLM-c05@0.1.0"
+          ]
+        },
+        {
+          "id": "e4",
+          "from": "Live",
+          "to": "Live",
+          "label": "重复恢复无操作",
+          "arrow": "call",
+          "status": "confirmed",
+          "claims": [
+            "ph:CLM-c05@0.1.0"
+          ]
+        },
+        {
+          "id": "e5",
+          "from": "Trashed",
+          "to": "Purged",
+          "label": "满足约束后清空",
+          "arrow": "call",
+          "status": "confirmed",
+          "claims": [
+            "ph:CLM-c05@0.1.0"
+          ]
+        }
+      ],
+      "initial": "Live",
+      "final": [
+        "Purged"
+      ],
+      "notes": [
+        "软删除设置 deleted_at；恢复检查依赖和唯一约束。图内使用短标签，细节保留在此图卡。",
+        "恢复 Phrase 同时处理已删除祖先，避免数据库已恢复但界面仍不可达。",
+        "默认项冲突时按源规则降为普通项；恢复不保证每个字段回到旧值。",
+        "有存活子项的场景可能保留；图中清空边是有条件转换。"
+      ],
+      "direction": "LR"
+    }
+  ]
+}

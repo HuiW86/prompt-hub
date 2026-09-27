@@ -1,0 +1,62 @@
+# 最小元模型
+
+## 信息权威
+
+先沿用项目指定的来源；没有时记录下列分工：需求记录决定验收范围；结构化记录决定对象身份和关系；指定的 OpenAPI/Proto/Schema/硬件规格决定接口；指定提交的代码和配置描述当前实现；目标架构与 ADR 描述设计；实际运行日志支撑测试结果。图是这些信息的视图，不静默改变契约。代码存在不等于运行成功。
+
+冲突时列双方位置、版本和影响，形成偏差或变更任务。代码与目标图不同可能只是尚未实施，不能自动覆盖任一方或声称已经一致。
+
+有原型时，原型表达指定版本中的可体验行为，人的明确采用决定支撑需求变化；原型的存在或自动运行成功本身不证明认可。将需求/场景、页面/状态、文档规则与验收项关联，冲突不能按文件更新时间自动裁决。原型体验证据和真实工程证据分别记录。
+
+JSON v1 无需新增原型专属类型：可用 SRC 的 location 指向锁定版本的原型入口或快照、SCN 的 refs 关联该 SRC，EVD(kind=observation) 记录实际体验或人的明确反馈出处，TEST 关联验收。原型页面/状态映射可留在场景表中。检查器只验证既有类型与引用，不检查原型行为、人的认可或文档语义一致性。
+
+ID 为 `命名空间:类型-标识`，例如 `demo:MOD-parser`。版本独立，完整引用为 `demo:MOD-parser@0.1`。允许同一身份多个版本，禁止完整引用重复。state 用 current/target；同一身份需要两态时使用不同快照版本。
+
+类型：OBJ 目标、REQ 需求、SCN 场景、CAP 能力、SYS 系统、SUB 子系统、MOD 模块、CMP 组件、ADP 适配器、RCP 组合、IF 接口、DAT 数据、MDL 模型、HW 硬件、INST 实例、NODE 节点、ADR 决策、TASK 任务、TEST 验证项、EVD 证据、CASE 案例、SRC 来源、CLM 结论、PAT 模式。
+
+能力成熟度可用候选/场景内验证/跨场景验证，并附范围；组件维护状态用 candidate/maintained/suspended/retired。验证结果另按版本、组合、环境记录，不使用一个“已验证”标签概括全部适用性。
+
+## JSON 格式 v1
+
+此格式只用于试点，不要求全部工程信息进入文件：
+
+- `schema_version`: 字符串 `"1"`。
+- `objects`: 对象列表，每个必含 id、type、version、name（非空字符串）；可附 state、location 和领域字段。
+- `external_refs`: 外部对象声明，必含 id、type、version、name、location。检查器不访问远端，也不证明这些声明真实。
+- `relations`: 每项必含 from、type、to，两端用完整版本引用。
+- `runs`: 工程验证记录列表，可为空。
+
+对象可用 refs 列表关联任意对象。CLM 用 evidence 列表引用 EVD；关系可用 claim 引用 CLM，表示该关系的证据依据。自由文本和任意扩展字段中的引用不解析。现有规格通过 location 引用，避免复制。
+
+关系方向与允许类型：
+
+| type | 起点 → 终点 |
+|---|---|
+| supports | REQ → OBJ；CAP → REQ |
+| realizes | SYS/SUB/MOD → CAP；CMP/ADP/MDL → MOD |
+| contains | SYS → SUB/MOD；SUB → MOD |
+| depends_on | 任意 → 任意 |
+| calls | SYS/SUB/MOD/CMP/ADP/INST → IF |
+| carries | IF → DAT |
+| instance_of | INST → CMP/ADP/MDL |
+| deployed_on | INST → NODE |
+| verifies | TEST → REQ/CAP/IF/MOD/CMP/ADP/RCP/HW |
+| records | EVD → TEST |
+| affects | ADR → 任意 |
+| replaces | 同类型对象 → 同类型对象，新指向旧 |
+| from_source | EVD → SRC |
+| supports_claim / refutes_claim | EVD → CLM |
+| describes | CLM → CASE 或架构对象 SYS/SUB/MOD/CAP/CMP/ADP/RCP/IF/DAT/MDL/HW/INST/NODE/PAT |
+| abstracts_from | CAP/PAT → CASE/CAP/PAT |
+| adopts / specializes | 同类型 CAP/PAT → 共享 CAP/PAT |
+| adapts | ADP → IF/CMP/HW |
+
+不要用 depends_on 规避更具体的关系约束。新增关系需显式扩展规范及检查器。
+
+CLM 必含 status（confirmed/inferred/unknown）、scope。confirmed 必含非空 evidence、product_version、conditions；conflict 为 true 时不能 confirmed。inferred 的扩展字段或正文记录依据、推理、其他解释、核查方案；review_status 可记录过期/待核查。来源可信度和命题真假分开。
+
+本地 EVD 必含 kind（source/observation/engineering/migration）和可定位 location。
+
+runs 每项必含 id、test（TEST 引用）、status（passed/failed/not_run）、stage（static/component/integration/bench/target/migration）。已执行还必含 baseline、environment、configuration、input、steps、expected、actual、time、executor、evidence（非空 EVD 引用列表）；未执行填 reason。基线记录实际相关的代码、组件、模型、硬件版本，不适用项说明原因。脚本只检查结构完整性，不证明基线可复现或测试真实。
+
+多仓/多实例时 baseline 可引用独立快照文件，分别表示本地 checkout、运行实例和历史跑次，不能用当前 SHA 回填历史未知版本。历史 run 的原 status 保留；本次审阅可在 EVD/run 的扩展字段或独立表中记录 review_status（例如 needs_revalidation）、依据、受影响命题和后续证据位置。它与 CLM.status 及架构 state 含义不同；当前 JSON v1 检查器不校验这些审阅扩展字段的值或语义。新的不利证据应影响具体 CLM 的确认状态，不能只加注释而继续 confirmed。

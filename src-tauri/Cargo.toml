@@ -21,6 +21,7 @@ crate-type = ["staticlib", "cdylib", "rlib"]
 tauri-build = { version = "2", features = [] }
 
 [dependencies]
+tauri-plugin-opener = "2"
 # Shared Tauri-free data layer (read + draft). See crates/repo-core.
 repo-core = { path = "crates/repo-core" }
 # Write/promote layer (AssetRepo + cross-table promote). Only the prompt-hub bin
@@ -81,4 +82,3 @@ tempfile = "3"
 # When set, lib.rs auto-cycles show()+focus()+hide() and emits JSON-line samples
 # to stdout instead of waiting for ⌥Space. See bench/hotkey-wake.bench.mjs.
 bench = []
-

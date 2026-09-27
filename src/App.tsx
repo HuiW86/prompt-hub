@@ -1,3 +1,5 @@
+import { useWebsiteStore } from "./stores/websiteStore";
+import { useAppStore } from "./stores/appStore";
 import { useEffect } from "react";
 
 import "./App.css";
@@ -93,6 +95,13 @@ function App() {
       // synchronous setState so the check sees the live state; React's
       // synthetic event delegation is irrelevant here.
       if (selectIsSearching(useSearchStore.getState())) return;
+      if (
+        useAppStore.getState().workspace === "websites" &&
+        useWebsiteStore.getState().query
+      ) {
+        useWebsiteStore.getState().setQuery("");
+        return;
+      }
       void ipc.hideWindow();
     }
     document.addEventListener("keydown", onKey);
@@ -122,6 +131,7 @@ function App() {
       ) {
         return;
       }
+      if (useAppStore.getState().workspace !== "prompts") return;
       // Walk the visible phase list (after hiddenPhaseIds filter) so ⌘N maps
       // 1:1 to the keycap shown in PhaseBar — otherwise ⌘1 could land on a
       // hidden phase.

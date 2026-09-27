@@ -1164,3 +1164,68 @@ mod tests {
         );
     }
 }
+
+#[tauri::command]
+pub fn list_websites(state: State<'_, AppState>) -> AppResult<repo_core::websites::WebsiteLibrary> {
+    with_conn(&state, repo_core::websites::list_websites)
+}
+#[tauri::command]
+pub fn save_website(
+    state: State<'_, AppState>,
+    input: repo_core::websites::WebsiteInput,
+) -> AppResult<()> {
+    with_write_conn(&state, |c| repo_write::websites::save_website(c, input))
+}
+#[tauri::command]
+pub fn delete_website(state: State<'_, AppState>, id: String) -> AppResult<()> {
+    with_write_conn(&state, |c| repo_write::websites::delete_website(c, &id))
+}
+#[tauri::command]
+pub fn restore_website(state: State<'_, AppState>, id: String) -> AppResult<()> {
+    with_write_conn(&state, |c| repo_write::websites::restore_website(c, &id))
+}
+#[tauri::command]
+pub fn save_website_group(
+    state: State<'_, AppState>,
+    id: Option<String>,
+    name: String,
+) -> AppResult<()> {
+    with_write_conn(&state, |c| {
+        repo_write::websites::save_website_group(c, id, &name)
+    })
+}
+#[tauri::command]
+pub fn delete_website_group(state: State<'_, AppState>, id: String) -> AppResult<()> {
+    with_write_conn(&state, |c| {
+        repo_write::websites::delete_website_group(c, &id)
+    })
+}
+#[tauri::command]
+pub fn reorder_websites(
+    state: State<'_, AppState>,
+    group_id: Option<String>,
+    ordered_ids: Vec<String>,
+) -> AppResult<()> {
+    with_write_conn(&state, |c| {
+        repo_write::websites::reorder_websites(c, group_id, &ordered_ids)
+    })
+}
+#[tauri::command]
+pub fn reorder_website_groups(
+    state: State<'_, AppState>,
+    ordered_ids: Vec<String>,
+) -> AppResult<()> {
+    with_write_conn(&state, |c| {
+        repo_write::websites::reorder_website_groups(c, &ordered_ids)
+    })
+}
+#[tauri::command]
+pub async fn open_website(state: State<'_, AppState>, id: String) -> AppResult<()> {
+    // Resolve by ID, then release the database lock before handing off to the OS.
+    let url = with_conn(&state, |c| repo_core::websites::website_url(c, &id))?;
+    tauri::async_runtime::spawn_blocking(move || tauri_plugin_opener::open_url(url, None::<&str>))
+        .await
+        .map_err(|e| RepoError::Other(format!("打开浏览器失败：{e}")))?
+        .map_err(|e| RepoError::Other(format!("打开浏览器失败：{e}")))?;
+    Ok(())
+}

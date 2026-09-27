@@ -13,6 +13,8 @@ use repo_core::models::{
 #[derive(Debug, Default, Serialize, PartialEq, Eq)]
 #[serde(rename_all = "camelCase")]
 pub struct ImportSummary {
+    pub websites: Option<usize>,
+    pub website_groups: Option<usize>,
     pub modifiers: usize,
     pub macros: usize,
     pub scenes: usize,
@@ -95,9 +97,14 @@ pub fn import_json(conn: &Connection, json: &str) -> RepoResult<ImportSummary> {
     insert_macros(&tx, &bundle.macros)?;
     insert_compositions(&tx, &bundle.compositions)?;
 
+    if let Some(library) = &bundle.website_library {
+        crate::websites::replace_library(&tx, library)?;
+    }
     tx.commit()?;
 
     Ok(ImportSummary {
+        websites: bundle.website_library.as_ref().map(|l| l.websites.len()),
+        website_groups: bundle.website_library.as_ref().map(|l| l.groups.len()),
         modifiers: bundle.modifiers.len(),
         macros: bundle.macros.len(),
         scenes: bundle.scenes.len(),

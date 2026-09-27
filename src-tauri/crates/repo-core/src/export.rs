@@ -11,7 +11,7 @@ use crate::repo::{alignment_phrase_from_row, hydrate_alignment_phrase, parse_ts,
 
 // The data-layer schema version of the export envelope (PRD §6.9 / §7.7). This is
 // the `major.minor` contract for the JSON file itself, NOT the SQLite migration
-// `user_version` (currently 13). Bump it when the export shape changes; minor for
+// `user_version` (currently 15). Bump it when the export shape changes; minor for
 // backward-compatible additions, major for breaking changes.
 //
 // 1.1 → 1.2: every asset row gained the optional `deletedAt` field (ADR-028).
@@ -26,7 +26,9 @@ use crate::repo::{alignment_phrase_from_row, hydrate_alignment_phrase, parse_ts,
 // unconstrained. This is the first new top-level key since 1.0 → 1.1, which is
 // why import.rs pins down what a MISSING key means as well as an empty one
 // (06-prd §6.9 rules ① and ②).
-pub const DATA_SCHEMA_VERSION: &str = "1.3";
+// 1.3 → 1.4 (ADR-030): optional website_library. Missing preserves the local
+// library during a legacy import; present empty replaces it; null is invalid.
+pub const DATA_SCHEMA_VERSION: &str = "1.4";
 
 // The full-fidelity backup envelope (PRD §6.9). Unlike the read paths in `repo`,
 // every list here is UNFILTERED — deprecated assets, invisible phases/scenes AND
@@ -44,6 +46,9 @@ pub const DATA_SCHEMA_VERSION: &str = "1.3";
 // bindings can overwrite another's. Do not "fix" this by adding it.
 #[derive(Debug, Serialize, Deserialize)]
 pub struct ExportBundle {
+    // ADR-030: absent preserves existing sites; explicit null is invalid.
+    #[serde(default, deserialize_with = "website_library_present")]
+    pub website_library: Option<crate::websites::WebsiteLibrary>,
     pub schema_version: String,
     pub exported_at: DateTime<Utc>,
     pub modifiers: Vec<Modifier>,
@@ -67,6 +72,7 @@ pub struct ExportBundle {
 /// Read every asset table at full fidelity and assemble the §6.9 export envelope.
 pub fn export_bundle(conn: &Connection) -> RepoResult<ExportBundle> {
     Ok(ExportBundle {
+        website_library: Some(crate::websites::list_websites(conn)?),
         schema_version: DATA_SCHEMA_VERSION.to_string(),
         exported_at: Utc::now(),
         modifiers: export_modifiers(conn)?,
@@ -476,6 +482,12 @@ fn export_phrases(conn: &Connection) -> RepoResult<Vec<Phrase>> {
         });
     }
     Ok(out)
+}
+
+fn website_library_present<'de, D: serde::Deserializer<'de>>(
+    d: D,
+) -> Result<Option<crate::websites::WebsiteLibrary>, D::Error> {
+    crate::websites::WebsiteLibrary::deserialize(d).map(Some)
 }
 
 #[cfg(test)]

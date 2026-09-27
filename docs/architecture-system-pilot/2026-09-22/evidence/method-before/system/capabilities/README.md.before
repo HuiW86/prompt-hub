@@ -1,0 +1,15 @@
+# 通用能力候选目录
+
+版本 0.1，2026-09-21。这里登记可复用契约，不代表已有共享 SDK、服务平台或部署模板。首个来源是 [xianshiqi 第二轮案例](/Users/apple/WeChatProjects/xianshiqi/docs/architecture-system-pilot/2026-09-21/README.md)，来源基线与项目私有细节保留在项目。
+
+| 版本化资产 | 稳定结果 | 排除范围 | 状态与详细契约 |
+|---|---|---|---|
+| `common:CAP-action-receipt@0.1.0` | 在明确执行方和等待边界内获得关联的接纳/拒绝/未确认结果 | 不保证物理完成、持久去重、exactly-once | 候选；[契约与投影设备迁移方案](/Users/apple/WeChatProjects/xianshiqi/docs/architecture-system-pilot/2026-09-21/capabilities.md) §2 |
+| `common:CAP-axis-adaptation@0.1.0` | 命名逻辑轴增量映射为执行器目标，回报限位后接纳量 | 不含 IK、耦合轴、视觉识别、通用安全认证 | 候选；[契约与两轴云台方案](/Users/apple/WeChatProjects/xianshiqi/docs/architecture-system-pilot/2026-09-21/capabilities.md) §3 |
+| `common:CAP-run-evidence@0.1.0` | 关联版本、条件、采集、判据和结果，保留独立审阅 | 不以日志存在证明需求已满足，不以同源一致证明无漏采 | 候选；[契约与批处理评测方案](/Users/apple/WeChatProjects/xianshiqi/docs/architecture-system-pilot/2026-09-21/capabilities.md) §4 |
+| `common:PAT-local-control-gate@0.1.0` | 远端语义与本地状态/约束门控分工 | 不规定所有设备失联后必须采取同一策略 | 模式候选；[组织与取舍](/Users/apple/WeChatProjects/xianshiqi/docs/architecture-system-pilot/2026-09-21/capabilities.md) §5 |
+| `common:RCP-voice-device@0.1.0` | 语音、回执、本地执行与证据的组合约定 | 尚无可直接部署的共享组合包 | 组合候选；[接线/健康/恢复/预算](/Users/apple/WeChatProjects/xianshiqi/docs/architecture-system-pilot/2026-09-21/capabilities.md) §5 |
+
+结构化对象的权威记录在 [项目 registry](/Users/apple/WeChatProjects/xianshiqi/docs/architecture-system-pilot/2026-09-21/registry.json)，本目录只做导航，不维护另一套成熟度。当前源组件在一个项目的本地测试通过，跨项目采用尚未执行；长期维护人待指定。
+
+采用规则：引用具体版本，确认单位/时间域、错误与重试、接纳/完成等语义，声明变化点和领域约束。先做一个具有实质差异的真实采用场景，记录适配与失败成本，再决定是否抽共享实现。换名字、换 Fake 后端或增加相同样本不提升为跨场景验证。

@@ -1,0 +1,242 @@
+{
+  "schema_version": "architecture-views-lock/1",
+  "views": {
+    "D1": {
+      "snapshot": {
+        "view": "a56924e69dfb4a79b99c0eab4404ea6d66f2445f3124cb41da466d640117c0c4",
+        "facts": "84357c4cf0af8754e5cc4f244bbf87257410a950cdacfa252e03967ae29f29ba",
+        "registry": {
+          "ph:CLM-c01@0.1.0": "fb4351fa6e915ee52aa73692a6758293c885c6108fc91ef48e10cbdf285e1f1c",
+          "ph:CLM-c02@0.1.0": "a5def12116b4e5f7770594f4b31acc9b9359130239a87b568223c92bcde29005",
+          "ph:CLM-c03@0.1.0": "d231fc98a0111d6bf86ae20a6ef43c3125c8a36f454e258c4d1b83630e73e3e8",
+          "ph:CLM-c04@0.1.0": "e2168e24b160b95d7faf93585b7715c45b981a6648956343ab630820cc00317b",
+          "ph:CLM-c06@0.1.0": "a33f1bec9f6cbc02dc0325feb41651ffeeebf93a47a6dbac003a283f81e716bf",
+          "ph:CLM-c07@0.1.0": "cfc17ea2675e11972ad4ade778865e055ebff0bb0533fb8bf13f1686f8dffcac",
+          "ph:CLM-c10@0.1.0": "8ceb402dbfa43da839df5e79991477315b202fddf98f9f855cae060c7d423edc",
+          "ph:CMP-desktop@0.1.0": "63cf32692db74b150377efbcd93d7afdbd571c24eaf29391fdc4e75427ff9351",
+          "ph:DAT-files@0.1.0": "c6fc7cae00a1a193cd23699b471e8701204c673c6d48d043ff0ca29d8427b090",
+          "ph:DAT-store@0.1.0": "1b37a87c3e134a6629a99926555c172d200eea27b3951234b85c7b3cb31cda66",
+          "ph:EVD-fe@0.1.0": "d3a99d473de1778348777175448db7e298dced14be97694237a8a23d67f993c4",
+          "ph:EVD-probe@0.1.0": "b5fca4785f69bf7d4690ec28a4d0287f77dea0b74674edf3ddd53eb163aaf830",
+          "ph:EVD-rust@0.1.0": "f3f019011f7d780bac22f446ac162db6cb5eb5cd50070611da0284c6bb4452a0",
+          "ph:EVD-source@0.1.0": "de4adc0554985bc7799645dcacb302c67adc7829a0a1238fbc4264ee527af31c",
+          "ph:IF-clipboard@0.1.0": "7d0fb08fb85b55d8fff8ecff37385c46ba97a43730bba57da3527d96a97cacc2",
+          "ph:MOD-mcp@0.1.0": "8f138caa9b94c92a986b5b5966d11a04e6ac8dc5b781dbbf4c1b2ed6937d6718",
+          "ph:SYS-ai-client@0.1.0": "4d13f364ad94b3fbb6adb731f3f9b30595c024b59b53ffb0ebbca2a50b973c9b",
+          "ph:SYS-hub@0.1.0": "61a584897f884e277f83522fe5fd3827ded9b814bfda0221b9dfb69e018d1b50",
+          "ph:SYS-releases@0.1.0": "7ccb02217916a70d030d544865efa77a4bceacb2966dfb0d869c177eac59ab71"
+        },
+        "files": {
+          "pattern:src-tauri/src/lib.rs": [
+            "src-tauri/src/lib.rs"
+          ],
+          "src-tauri/src/lib.rs": "77ac52295a05c44a990eff1d0d0f950d8b7889ca0c3ce7dcdd4cfe8795d38543",
+          "pattern:src-tauri/src/commands.rs": [
+            "src-tauri/src/commands.rs"
+          ],
+          "src-tauri/src/commands.rs": "56b2c6191484beadc51a7f87db970752abae709e586d1db24b3cb6e7982d5fad",
+          "pattern:src-tauri/crates/prompt-hub-mcp/src/*.rs": [
+            "src-tauri/crates/prompt-hub-mcp/src/errors.rs",
+            "src-tauri/crates/prompt-hub-mcp/src/main.rs",
+            "src-tauri/crates/prompt-hub-mcp/src/server.rs",
+            "src-tauri/crates/prompt-hub-mcp/src/tools.rs"
+          ],
+          "src-tauri/crates/prompt-hub-mcp/src/errors.rs": "c26ef5dda14f3486dac108b78cc64324663a65959cef83e932c0d63fe8fba173",
+          "src-tauri/crates/prompt-hub-mcp/src/main.rs": "e33243406d943edffe95c22da2c81eba2eac02b9a0fba24782b2254897304009",
+          "src-tauri/crates/prompt-hub-mcp/src/server.rs": "5a06d6976497aae350dd60b6894b7306162fd103b0ddfd709d51c42f8f3f2c5b",
+          "src-tauri/crates/prompt-hub-mcp/src/tools.rs": "6b73082c11e6ffd34aaea3f3c55d2e756e06c9b4b677e6297e2cda177ef77366",
+          "pattern:src/hooks/useCopy.ts": [
+            "src/hooks/useCopy.ts"
+          ],
+          "src/hooks/useCopy.ts": "cbee36ec9e2b539777046ca6c03acd5b8ccf0de1a6efb0bbf58d1f44503fa4f7",
+          "pattern:src/stores/updaterStore.ts": [
+            "src/stores/updaterStore.ts"
+          ],
+          "src/stores/updaterStore.ts": "3e7fabec7b19c0b6f8d93b723c1409719983c40794bff2466985dd3a9b28ab7d",
+          "pattern:src-tauri/tauri.conf.json": [
+            "src-tauri/tauri.conf.json"
+          ],
+          "src-tauri/tauri.conf.json": "0b131758341111d120f949045ca8d9e44c6279c2f07ea5ae6a99663b6f77189e"
+        }
+      },
+      "review_note": "边界框绑定既有系统身份；按当前进程及源码职责补充分组证据",
+      "captured_at": "2026-09-23T03:49:23.225890+00:00"
+    },
+    "D2": {
+      "snapshot": {
+        "view": "bfd8b57c9612dd26d299d1b9f3e6181b9d80441a1a66627e9169ae2e7fc4852f",
+        "facts": "2bc585e516ec223efd8eb20d3ee6034d1f111c6156f72a5d774c04a338ade8e1",
+        "registry": {
+          "ph:CLM-c01@0.1.0": "fb4351fa6e915ee52aa73692a6758293c885c6108fc91ef48e10cbdf285e1f1c",
+          "ph:CLM-c03@0.1.0": "d231fc98a0111d6bf86ae20a6ef43c3125c8a36f454e258c4d1b83630e73e3e8",
+          "ph:CLM-c04@0.1.0": "e2168e24b160b95d7faf93585b7715c45b981a6648956343ab630820cc00317b",
+          "ph:CLM-c05@0.1.0": "38731fb75daca66527cbae32f016aca9b4fe1551d4124a3cae0547c3891be195",
+          "ph:CLM-c06@0.1.0": "a33f1bec9f6cbc02dc0325feb41651ffeeebf93a47a6dbac003a283f81e716bf",
+          "ph:CLM-c07@0.1.0": "cfc17ea2675e11972ad4ade778865e055ebff0bb0533fb8bf13f1686f8dffcac",
+          "ph:CLM-c08@0.1.0": "6a736c6853cb8fb911847a74591ec8574ab68b988bb9ebbdee96586ee39af81d",
+          "ph:CLM-c09@0.1.0": "f4f4fd467e35808a645f2caa9bb1584900f3ea3511fadbc0fb30a54eeaa02db0",
+          "ph:DAT-store@0.1.0": "1b37a87c3e134a6629a99926555c172d200eea27b3951234b85c7b3cb31cda66",
+          "ph:EVD-fe@0.1.0": "d3a99d473de1778348777175448db7e298dced14be97694237a8a23d67f993c4",
+          "ph:EVD-probe@0.1.0": "b5fca4785f69bf7d4690ec28a4d0287f77dea0b74674edf3ddd53eb163aaf830",
+          "ph:EVD-rust@0.1.0": "f3f019011f7d780bac22f446ac162db6cb5eb5cd50070611da0284c6bb4452a0",
+          "ph:EVD-source@0.1.0": "de4adc0554985bc7799645dcacb302c67adc7829a0a1238fbc4264ee527af31c",
+          "ph:IF-tauri@0.1.0": "d287214a9e98d2e1dbc2caf6a6ac05a84c3bdf0482577015d1213ab49102188e",
+          "ph:MOD-core@0.1.0": "3ebb2f22b84280704d3dda634b0b2f0155e474139702201634d8e3106b6bf95f",
+          "ph:MOD-gates@0.1.0": "cab6f85b4f7a3f7d8fa09dc71b13245c04a949d103d5ed1a34e355173a92c43e",
+          "ph:MOD-host@0.1.0": "eb1340f1ad3a3db04f6e509da396340803161479b9034208f4c685dc43b8f72d",
+          "ph:MOD-mcp@0.1.0": "8f138caa9b94c92a986b5b5966d11a04e6ac8dc5b781dbbf4c1b2ed6937d6718",
+          "ph:MOD-ui@0.1.0": "e5a90dd01ff397b5debbe4aaf8f2b52267ac464d6a830711908603ef3d4d7884",
+          "ph:MOD-write@0.1.0": "bb9141a3fa4cd302aa161c93d80d0dc3da33eaf8fd689eaecc9ddfe214daf54e"
+        },
+        "files": {
+          "pattern:src/ipc/*.ts": [
+            "src/ipc/index.ts",
+            "src/ipc/ipc-contract.test.ts",
+            "src/ipc/soft-delete-gate.test.ts",
+            "src/ipc/types.ts",
+            "src/ipc/usageSource.test.ts",
+            "src/ipc/usageSource.ts"
+          ],
+          "src/ipc/index.ts": "282170671d6f5ad1ff21f51548bf7f8b11b4d71c8ca3113afd491e4e5180fc56",
+          "src/ipc/ipc-contract.test.ts": "88fe1aab4fa96e13171be064e857cbfc59c6482a4ae694b3d09cb17ce015899f",
+          "src/ipc/soft-delete-gate.test.ts": "a817d269033b6de33026b64f62ded2b3c270a1550be293fce9424ec7ba0ad19a",
+          "src/ipc/types.ts": "dc377ef307e9129330fd17c0080ef6a6b7d9e7796eb46083f8026da5f8a18ea3",
+          "src/ipc/usageSource.test.ts": "e50d91761c3daa1c691d58c1caae4a43e0726da0f3f531e19c67942d706c5e2d",
+          "src/ipc/usageSource.ts": "a1d7998398a9cb42cb8dd640da5d3b48eeab13fb60bbf1ef272810dee9212246",
+          "pattern:src-tauri/src/*.rs": [
+            "src-tauri/src/bench.rs",
+            "src-tauri/src/commands.rs",
+            "src-tauri/src/error.rs",
+            "src-tauri/src/lib.rs",
+            "src-tauri/src/macos.rs",
+            "src-tauri/src/main.rs"
+          ],
+          "src-tauri/src/bench.rs": "28db28c0fcf9b029868f6950ac5d07d6ef52549771fc9a8e4c156dbc04bdf3a8",
+          "src-tauri/src/commands.rs": "56b2c6191484beadc51a7f87db970752abae709e586d1db24b3cb6e7982d5fad",
+          "src-tauri/src/error.rs": "49cd2e2d4e0e1cf4fa15633b551343c1007bfb75f6e32bb836f7e1645d86a602",
+          "src-tauri/src/lib.rs": "77ac52295a05c44a990eff1d0d0f950d8b7889ca0c3ce7dcdd4cfe8795d38543",
+          "src-tauri/src/macos.rs": "66f0aeb8919ace068a4164e940cca81810b9b8a1b7fc2b624726986c73605828",
+          "src-tauri/src/main.rs": "148a40b55fa2711618607b57cd5a67446160df4748cc143ae7d88b5c02c79313",
+          "pattern:src-tauri/crates/*/Cargo.toml": [
+            "src-tauri/crates/prompt-hub-mcp/Cargo.toml",
+            "src-tauri/crates/repo-core/Cargo.toml",
+            "src-tauri/crates/repo-write/Cargo.toml"
+          ],
+          "src-tauri/crates/prompt-hub-mcp/Cargo.toml": "7274eb50422d53d443b48bc23e8b9800f5b922abaee7a0636c216237b2d7f3be",
+          "src-tauri/crates/repo-core/Cargo.toml": "c4ed604033911879aeaa8f871d25f8af7feb79c598d579c062ca5c38bccdd808",
+          "src-tauri/crates/repo-write/Cargo.toml": "fd7a44df632fb7721220728317ceaeca25325c07da7a8a6a983fb6d54e9abda2",
+          "pattern:src-tauri/crates/repo-core/src/lib.rs": [
+            "src-tauri/crates/repo-core/src/lib.rs"
+          ],
+          "src-tauri/crates/repo-core/src/lib.rs": "b48aa5e91cc39ae4f69d8404ab79cb5f76590486befb1473183a39f09274a129",
+          "pattern:src-tauri/crates/repo-write/src/lib.rs": [
+            "src-tauri/crates/repo-write/src/lib.rs"
+          ],
+          "src-tauri/crates/repo-write/src/lib.rs": "4fbf7d8a43b53b8688d3693d0c26e5e4cf0a3375721197206878c4c80cd40abb",
+          "pattern:src-tauri/crates/prompt-hub-mcp/src/*.rs": [
+            "src-tauri/crates/prompt-hub-mcp/src/errors.rs",
+            "src-tauri/crates/prompt-hub-mcp/src/main.rs",
+            "src-tauri/crates/prompt-hub-mcp/src/server.rs",
+            "src-tauri/crates/prompt-hub-mcp/src/tools.rs"
+          ],
+          "src-tauri/crates/prompt-hub-mcp/src/errors.rs": "c26ef5dda14f3486dac108b78cc64324663a65959cef83e932c0d63fe8fba173",
+          "src-tauri/crates/prompt-hub-mcp/src/main.rs": "e33243406d943edffe95c22da2c81eba2eac02b9a0fba24782b2254897304009",
+          "src-tauri/crates/prompt-hub-mcp/src/server.rs": "5a06d6976497aae350dd60b6894b7306162fd103b0ddfd709d51c42f8f3f2c5b",
+          "src-tauri/crates/prompt-hub-mcp/src/tools.rs": "6b73082c11e6ffd34aaea3f3c55d2e756e06c9b4b677e6297e2cda177ef77366"
+        }
+      },
+      "review_note": "边界框绑定既有系统身份；按当前进程及源码职责补充分组证据",
+      "captured_at": "2026-09-23T03:49:23.230331+00:00"
+    },
+    "D3": {
+      "snapshot": {
+        "view": "6e66fb0cde022b2da3f990bb0af53d99ab0d549a655ec2be2b72b8ca2109408a",
+        "facts": "e47a94b72a2f4bf81ca139ba83c5a9c0dd0d0f6fe5e215dc736d99abaf55b945",
+        "registry": {
+          "ph:CLM-c01@0.1.0": "fb4351fa6e915ee52aa73692a6758293c885c6108fc91ef48e10cbdf285e1f1c",
+          "ph:CLM-c03@0.1.0": "d231fc98a0111d6bf86ae20a6ef43c3125c8a36f454e258c4d1b83630e73e3e8",
+          "ph:CLM-c04@0.1.0": "e2168e24b160b95d7faf93585b7715c45b981a6648956343ab630820cc00317b",
+          "ph:DAT-store@0.1.0": "1b37a87c3e134a6629a99926555c172d200eea27b3951234b85c7b3cb31cda66",
+          "ph:EVD-probe@0.1.0": "b5fca4785f69bf7d4690ec28a4d0287f77dea0b74674edf3ddd53eb163aaf830",
+          "ph:EVD-rust@0.1.0": "f3f019011f7d780bac22f446ac162db6cb5eb5cd50070611da0284c6bb4452a0",
+          "ph:EVD-source@0.1.0": "de4adc0554985bc7799645dcacb302c67adc7829a0a1238fbc4264ee527af31c",
+          "ph:MOD-core@0.1.0": "3ebb2f22b84280704d3dda634b0b2f0155e474139702201634d8e3106b6bf95f",
+          "ph:MOD-host@0.1.0": "eb1340f1ad3a3db04f6e509da396340803161479b9034208f4c685dc43b8f72d",
+          "ph:MOD-mcp@0.1.0": "8f138caa9b94c92a986b5b5966d11a04e6ac8dc5b781dbbf4c1b2ed6937d6718",
+          "ph:MOD-ui@0.1.0": "e5a90dd01ff397b5debbe4aaf8f2b52267ac464d6a830711908603ef3d4d7884",
+          "ph:MOD-write@0.1.0": "bb9141a3fa4cd302aa161c93d80d0dc3da33eaf8fd689eaecc9ddfe214daf54e",
+          "ph:SYS-ai-client@0.1.0": "4d13f364ad94b3fbb6adb731f3f9b30595c024b59b53ffb0ebbca2a50b973c9b"
+        },
+        "files": {
+          "pattern:src/components/DraftInbox.tsx": [
+            "src/components/DraftInbox.tsx"
+          ],
+          "src/components/DraftInbox.tsx": "8023af03c2c319f0a0a887f104fc3e2988c5a9f52da760f89b355b016fd8de92",
+          "pattern:src/stores/prompt/draftsSlice.ts": [
+            "src/stores/prompt/draftsSlice.ts"
+          ],
+          "src/stores/prompt/draftsSlice.ts": "4d73a767c922ea079d8d678b6edb111d0cd23175c54268234d81258671118d03",
+          "pattern:src/ipc/index.ts": [
+            "src/ipc/index.ts"
+          ],
+          "src/ipc/index.ts": "282170671d6f5ad1ff21f51548bf7f8b11b4d71c8ca3113afd491e4e5180fc56",
+          "pattern:src-tauri/src/commands.rs": [
+            "src-tauri/src/commands.rs"
+          ],
+          "src-tauri/src/commands.rs": "56b2c6191484beadc51a7f87db970752abae709e586d1db24b3cb6e7982d5fad",
+          "pattern:src-tauri/crates/prompt-hub-mcp/src/server.rs": [
+            "src-tauri/crates/prompt-hub-mcp/src/server.rs"
+          ],
+          "src-tauri/crates/prompt-hub-mcp/src/server.rs": "5a06d6976497aae350dd60b6894b7306162fd103b0ddfd709d51c42f8f3f2c5b",
+          "pattern:src-tauri/crates/repo-core/src/draft_repo.rs": [
+            "src-tauri/crates/repo-core/src/draft_repo.rs"
+          ],
+          "src-tauri/crates/repo-core/src/draft_repo.rs": "a8abfa27931af533ff5596e686725a639d182ff925d86d01676eed341cf3de63",
+          "pattern:src-tauri/crates/repo-write/src/promote.rs": [
+            "src-tauri/crates/repo-write/src/promote.rs"
+          ],
+          "src-tauri/crates/repo-write/src/promote.rs": "41fa294ac0741d8fc3d3f658eb749258b756f89cfccc607f8eb922cebdc78c7a"
+        }
+      },
+      "review_note": "保持 promote_draft 调用语义，缩短图中标签并在图卡列出命令名",
+      "captured_at": "2026-09-23T03:51:04.254154+00:00"
+    },
+    "D4": {
+      "snapshot": {
+        "view": "8b2d5d17ef84dbb190263719411a40e286512ec1cdb885069bb9e841558ba6f9",
+        "facts": "37667404fe44d091a35b5d0869c7bff216ec20d67a611fb6012e6c220d0673b3",
+        "registry": {
+          "ph:CAP-trash@0.1.0": "2cfc76f0a7a346ef05180aa7c638f343f49ef459e647b2ec17b4f37ffc2028a7",
+          "ph:CLM-c05@0.1.0": "38731fb75daca66527cbae32f016aca9b4fe1551d4124a3cae0547c3891be195",
+          "ph:DAT-store@0.1.0": "1b37a87c3e134a6629a99926555c172d200eea27b3951234b85c7b3cb31cda66",
+          "ph:EVD-rust@0.1.0": "f3f019011f7d780bac22f446ac162db6cb5eb5cd50070611da0284c6bb4452a0",
+          "ph:EVD-source@0.1.0": "de4adc0554985bc7799645dcacb302c67adc7829a0a1238fbc4264ee527af31c"
+        },
+        "files": {
+          "pattern:src-tauri/crates/repo-write/src/trash.rs": [
+            "src-tauri/crates/repo-write/src/trash.rs"
+          ],
+          "src-tauri/crates/repo-write/src/trash.rs": "7ed952b735150eeb648d1859bac2f6984bdde1a6075f9061888db9398d493b8d",
+          "pattern:src-tauri/crates/repo-write/src/soft_delete.rs": [
+            "src-tauri/crates/repo-write/src/soft_delete.rs"
+          ],
+          "src-tauri/crates/repo-write/src/soft_delete.rs": "ec32102b0f3b71623904a306a0012fc7002aa1ff14b1933fda820be4c36318d4",
+          "pattern:src-tauri/crates/repo-core/src/trash.rs": [
+            "src-tauri/crates/repo-core/src/trash.rs"
+          ],
+          "src-tauri/crates/repo-core/src/trash.rs": "8f8484cfe1a80cab86f57d895e07f6600a04e0c2ec1f9d9466d7a3fa34840657",
+          "pattern:src-tauri/crates/repo-core/migrations/*soft_delete*.sql": [
+            "src-tauri/crates/repo-core/migrations/0013_soft_delete.sql"
+          ],
+          "src-tauri/crates/repo-core/migrations/0013_soft_delete.sql": "47219d3cdc44a86c3fa91f5c396b909d281a7af9b3e2a10f3c0d4f3b6b4cc4ed",
+          "pattern:src/stores/prompt/trashSlice.ts": [
+            "src/stores/prompt/trashSlice.ts"
+          ],
+          "src/stores/prompt/trashSlice.ts": "36b2ae975e6913f19b17ce6de5775f44da63dc4076db7203a5b59bfbeecedfaa"
+        }
+      },
+      "review_note": "视觉检查后缩短标签；保持事务、恢复及约束语义",
+      "captured_at": "2026-09-23T03:43:49.379006+00:00"
+    }
+  }
+}

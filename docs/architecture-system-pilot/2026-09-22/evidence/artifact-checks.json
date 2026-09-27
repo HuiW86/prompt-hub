@@ -1,0 +1,126 @@
+{
+  "time": "2026-09-22T14:18:14.713825+00:00",
+  "commands": [
+    {
+      "check": "project-registry",
+      "command": [
+        "python3",
+        "/Users/apple/.codex/skills/architecture-system/scripts/validate.py",
+        "/Users/apple/WeChatProjects/prompt-hub/docs/architecture-system-pilot/2026-09-22/registry.json"
+      ],
+      "exit_code": 0,
+      "stdout": "WARNING: External declarations are indexed; their content/existence is not verified.\nPASS: structural checks only; no source or engineering verification performed.\n",
+      "stderr": ""
+    },
+    {
+      "check": "skill-registry-example",
+      "command": [
+        "python3",
+        "/Users/apple/.codex/skills/architecture-system/scripts/validate.py",
+        "/Users/apple/.codex/skills/architecture-system/assets/templates/registry.example.json"
+      ],
+      "exit_code": 0,
+      "stdout": "PASS: structural checks only; no source or engineering verification performed.\n",
+      "stderr": ""
+    },
+    {
+      "check": "architecture-skill",
+      "command": [
+        "python3",
+        "/Users/apple/.codex/skills/.system/skill-creator/scripts/quick_validate.py",
+        "/Users/apple/.codex/skills/architecture-system"
+      ],
+      "exit_code": 0,
+      "stdout": "Skill is valid!\n",
+      "stderr": ""
+    },
+    {
+      "check": "installed-skill-sync",
+      "command": [
+        "python3",
+        "/Users/apple/WeChatProjects/架构图体系/skills/sync_skills.py",
+        "--check",
+        "--destination",
+        "/Users/apple/.codex/skills"
+      ],
+      "exit_code": 0,
+      "stdout": "{\n  \"status\": \"in_sync\",\n  \"files\": [],\n  \"written\": 0\n}\n",
+      "stderr": ""
+    },
+    {
+      "check": "project-doc-governance",
+      "command": [
+        "node",
+        "scripts/doc-governance/index.mjs",
+        "--config",
+        "doc-governance.config.mjs"
+      ],
+      "exit_code": 0,
+      "stdout": "doc-governance v0.1 · root: /Users/apple/WeChatProjects/prompt-hub\nscanned 79 markdown files (frozen skipped: 11, whitelisted refs: 3)\n\nHANDOFF.md\n  ⚠ warn  [refs] L14 code-path `docs/mockups/prompt-hub.html` not found on disk\n  ⚠ warn  [refs] L14 code-path `docs/methodology-gaps.md` not found on disk\ndocs/design/CHANGELOG.md\n  ⚠ warn  [refs] L1554 md-link `../mockups/prompt-hub.html` → `docs/mockups/prompt-hub.html` not found\n  ⚠ warn  [refs] L1394 code-path `src-tauri/migrations/` not found on disk\n  ⚠ warn  [refs] L1394 code-path `scripts/update-features.sh` not found on disk\ndocs/plans/asset-editing-and-adaptive-layout.md\n  ⚠ warn  [refs] L81 code-path `src-tauri/migrations/` not found on disk\ndocs/workflows/claude-design-prompts.md\n  ⚠ warn  [refs] L53 code-path `docs/mockups/prompt-hub.html` not found on disk\n  ⚠ warn  [refs] L64 code-path `docs/mockups/prompt-hub.html` not found on disk\n\nresult: 0 error(s), 8 warning(s)\n",
+      "stderr": ""
+    },
+    {
+      "check": "cross-boundary-contracts",
+      "command": [
+        "python3",
+        "/Users/apple/.codex/skills/.system/skill-creator/scripts/quick_validate.py",
+        "/Users/apple/.codex/skills/cross-boundary-contracts"
+      ],
+      "exit_code": 0,
+      "stdout": "Skill is valid!\n",
+      "stderr": ""
+    },
+    {
+      "check": "recoverable-local-data",
+      "command": [
+        "python3",
+        "/Users/apple/.codex/skills/.system/skill-creator/scripts/quick_validate.py",
+        "/Users/apple/.codex/skills/recoverable-local-data"
+      ],
+      "exit_code": 0,
+      "stdout": "Skill is valid!\n",
+      "stderr": ""
+    },
+    {
+      "check": "engineering-evidence",
+      "command": [
+        "python3",
+        "/Users/apple/.codex/skills/.system/skill-creator/scripts/quick_validate.py",
+        "/Users/apple/.codex/skills/engineering-evidence"
+      ],
+      "exit_code": 0,
+      "stdout": "Skill is valid!\n",
+      "stderr": ""
+    },
+    {
+      "check": "staged-change-pipeline",
+      "command": [
+        "python3",
+        "/Users/apple/.codex/skills/.system/skill-creator/scripts/quick_validate.py",
+        "/Users/apple/.codex/skills/staged-change-pipeline"
+      ],
+      "exit_code": 0,
+      "stdout": "Skill is valid!\n",
+      "stderr": ""
+    }
+  ],
+  "local_links": {
+    "documents": 33,
+    "checked": 198,
+    "broken": [],
+    "scope": "本轮产物、体系入口、相关Skill与模板；不检查远程可达性/anchor语义"
+  },
+  "source_baseline": {
+    "changed": [
+      "docs/design/README.md"
+    ],
+    "allowed_document_changes": [
+      "docs/design/README.md"
+    ],
+    "unexpected_changes": []
+  },
+  "limits": [
+    "Static checks do not verify architectural truth, Mermaid semantics, target acceptance or independent skill behavior.",
+    "Business source files remained unchanged; tools in the architecture workspace were added and behavior-tested separately."
+  ]
+}

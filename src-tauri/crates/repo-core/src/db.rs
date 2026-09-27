@@ -83,6 +83,7 @@ const MIGRATIONS: &[Migration] = &[
         name: "0014_alignment_coordinates",
         sql: include_str!("../migrations/0014_alignment_coordinates.sql"),
     },
+    Migration { target_version: 15, name: "0015_websites", sql: include_str!("../migrations/0015_websites.sql") },
 ];
 
 struct Migration {

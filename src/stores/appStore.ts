@@ -6,6 +6,8 @@ import { create } from "zustand";
 // the renderer process.
 interface AppState {
   isVisible: boolean;
+  workspace: "prompts" | "websites";
+  setWorkspace: (workspace: "prompts" | "websites") => void;
   activePhaseId: string | null;
   // Monotonic ping: bumped when the 待审 badge is clicked so ScenePanel jumps to
   // the 📥 草稿 tab. A counter (not a boolean) so repeated clicks re-fire even if
@@ -18,6 +20,8 @@ interface AppState {
 
 export const useAppStore = create<AppState>()((set) => ({
   isVisible: true,
+  workspace: "prompts",
+  setWorkspace: (workspace) => set({ workspace }),
   activePhaseId: null,
   draftsViewRequestId: 0,
   setVisible: (isVisible) => set({ isVisible }),

@@ -1,0 +1,311 @@
+[
+  {
+    "path": "src-tauri/src/lib.rs",
+    "sha256": "77ac52295a05c44a990eff1d0d0f950d8b7889ca0c3ce7dcdd4cfe8795d38543",
+    "symbols": [
+      {
+        "symbol": "fn wake_on_main_thread",
+        "lines": [
+          71
+        ]
+      },
+      {
+        "symbol": "fn run_daily_backup_if_due",
+        "lines": [
+          166
+        ]
+      },
+      {
+        "symbol": "pub fn run",
+        "lines": [
+          204
+        ]
+      }
+    ]
+  },
+  {
+    "path": "src-tauri/src/commands.rs",
+    "sha256": "56b2c6191484beadc51a7f87db970752abae709e586d1db24b3cb6e7982d5fad",
+    "symbols": [
+      {
+        "symbol": "pub fn record_usage",
+        "lines": [
+          159
+        ]
+      },
+      {
+        "symbol": "pub fn promote_draft",
+        "lines": [
+          391
+        ]
+      },
+      {
+        "symbol": "pub fn restore_draft",
+        "lines": [
+          444
+        ]
+      },
+      {
+        "symbol": "fn import_with_backup",
+        "lines": [
+          986
+        ]
+      }
+    ]
+  },
+  {
+    "path": "src/hooks/useCopy.ts",
+    "sha256": "cbee36ec9e2b539777046ca6c03acd5b8ccf0de1a6efb0bbf58d1f44503fa4f7",
+    "symbols": [
+      {
+        "symbol": "export function useCopy",
+        "lines": [
+          21
+        ]
+      }
+    ]
+  },
+  {
+    "path": "src/components/DraftInbox.tsx",
+    "sha256": "8023af03c2c319f0a0a887f104fc3e2988c5a9f52da760f89b355b016fd8de92",
+    "symbols": [
+      {
+        "symbol": "const PROMOTE_BLOCKED_HINT",
+        "lines": [
+          48
+        ]
+      },
+      {
+        "symbol": "const promoteBlocked",
+        "lines": [
+          90
+        ]
+      }
+    ]
+  },
+  {
+    "path": "src-tauri/crates/prompt-hub-mcp/src/main.rs",
+    "sha256": "e33243406d943edffe95c22da2c81eba2eac02b9a0fba24782b2254897304009",
+    "symbols": [
+      {
+        "symbol": "async fn serve",
+        "lines": [
+          62
+        ]
+      }
+    ]
+  },
+  {
+    "path": "src-tauri/crates/prompt-hub-mcp/src/server.rs",
+    "sha256": "5a06d6976497aae350dd60b6894b7306162fd103b0ddfd709d51c42f8f3f2c5b",
+    "symbols": [
+      {
+        "symbol": "async fn create_draft",
+        "lines": [
+          262
+        ]
+      },
+      {
+        "symbol": "async fn import_json",
+        "lines": [
+          496
+        ]
+      }
+    ]
+  },
+  {
+    "path": "src-tauri/crates/repo-core/src/draft_repo.rs",
+    "sha256": "a8abfa27931af533ff5596e686725a639d182ff925d86d01676eed341cf3de63",
+    "symbols": [
+      {
+        "symbol": "fn create_draft",
+        "lines": [
+          15,
+          77
+        ]
+      },
+      {
+        "symbol": "fn mark_discarded",
+        "lines": [
+          24,
+          285
+        ]
+      },
+      {
+        "symbol": "fn mark_restored",
+        "lines": [
+          29,
+          298
+        ]
+      }
+    ]
+  },
+  {
+    "path": "src-tauri/crates/repo-write/src/promote.rs",
+    "sha256": "41fa294ac0741d8fc3d3f658eb749258b756f89cfccc607f8eb922cebdc78c7a",
+    "symbols": [
+      {
+        "symbol": "pub fn promote_draft",
+        "lines": [
+          40
+        ]
+      }
+    ]
+  },
+  {
+    "path": "src-tauri/crates/repo-write/src/trash.rs",
+    "sha256": "7ed952b735150eeb648d1859bac2f6984bdde1a6075f9061888db9398d493b8d",
+    "symbols": [
+      {
+        "symbol": "pub fn restore_asset",
+        "lines": [
+          36
+        ]
+      },
+      {
+        "symbol": "fn revive_trashed_ancestors",
+        "lines": [
+          95
+        ]
+      },
+      {
+        "symbol": "pub fn purge_trash",
+        "lines": [
+          185
+        ]
+      }
+    ]
+  },
+  {
+    "path": "src-tauri/crates/repo-write/src/soft_delete.rs",
+    "sha256": "ec32102b0f3b71623904a306a0012fc7002aa1ff14b1933fda820be4c36318d4",
+    "symbols": [
+      {
+        "symbol": "pub(crate) fn soft_delete_row",
+        "lines": [
+          28
+        ]
+      }
+    ]
+  },
+  {
+    "path": "src-tauri/crates/repo-core/src/db.rs",
+    "sha256": "65173993bbcc6b828c4d6ce72d016350a8d30fdb058dea14cec621ffcc848d2a",
+    "symbols": [
+      {
+        "symbol": "pub fn open_and_migrate",
+        "lines": [
+          105
+        ]
+      },
+      {
+        "symbol": "pub fn open_write_checked",
+        "lines": [
+          218
+        ]
+      },
+      {
+        "symbol": "fn run_migrations_with_backup",
+        "lines": [
+          263
+        ]
+      }
+    ]
+  },
+  {
+    "path": "src-tauri/crates/repo-core/src/backup.rs",
+    "sha256": "c085a4fd595bff1d07fb0189aa026670fb3e567592852b84a8d2ac6acd488dd8",
+    "symbols": [
+      {
+        "symbol": "pub fn snapshot",
+        "lines": [
+          104
+        ]
+      },
+      {
+        "symbol": "fn promote_temp_snapshot",
+        "lines": [
+          148
+        ]
+      }
+    ]
+  },
+  {
+    "path": "src-tauri/crates/repo-write/src/import.rs",
+    "sha256": "863a79f02f3c83ee31b5649476019b683bf22c18e36915f25a0a16b77f726883",
+    "symbols": [
+      {
+        "symbol": "const WIPE_ORDER",
+        "lines": [
+          39
+        ]
+      },
+      {
+        "symbol": "pub fn import_json",
+        "lines": [
+          67
+        ]
+      }
+    ]
+  },
+  {
+    "path": "src-tauri/crates/repo-core/src/repo.rs",
+    "sha256": "95d8738fe8fd9173d46c60bbc5f56be4cb4cf60c1a6c5eb29ea63af11d9a5868",
+    "symbols": [
+      {
+        "symbol": "pub fn record_usage",
+        "lines": [
+          489
+        ]
+      },
+      {
+        "symbol": "pub fn summarize_drift_ledger",
+        "lines": [
+          747
+        ]
+      }
+    ]
+  },
+  {
+    "path": "src/ipc/ipc-contract.test.ts",
+    "sha256": "88fe1aab4fa96e13171be064e857cbfc59c6482a4ae694b3d09cb17ce015899f",
+    "symbols": [
+      {
+        "symbol": "const EXPECTED_COMMAND_COUNT",
+        "lines": [
+          109
+        ]
+      },
+      {
+        "symbol": "function parseDefinedCommands",
+        "lines": [
+          43
+        ]
+      }
+    ]
+  },
+  {
+    "path": "src-tauri/crates/prompt-hub-mcp/tests/e2e.rs",
+    "sha256": "1a019277d8edc4eeec60f0fd2c7e7a62a1b2985d230870bae1fc484be50a6770",
+    "symbols": [
+      {
+        "symbol": "async fn server_advertises_all_fourteen_tools",
+        "lines": [
+          74
+        ]
+      }
+    ]
+  },
+  {
+    "path": "src-tauri/crates/prompt-hub-mcp/tests/trybuild_negative.rs",
+    "sha256": "411f63ade8cc095f3d80f8eca35cbeaeee1cb198f97a308c04f94bcab0e89ac5",
+    "symbols": [
+      {
+        "symbol": "fn mcp_cannot_import_repo_write",
+        "lines": [
+          13
+        ]
+      }
+    ]
+  }
+]

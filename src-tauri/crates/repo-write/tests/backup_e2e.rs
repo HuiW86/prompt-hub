@@ -44,7 +44,7 @@ fn exported_json_shape_matches_data_contract() {
     // 1.2 → 1.3 with ADR-029: a new top-level `alignment_axis_values` key plus
     // six new fields on every alignment phrase. Still a minor bump, still
     // gated on MAJOR, so 1.1 and 1.2 files continue to import.
-    assert_eq!(obj["schema_version"], "1.3");
+    assert_eq!(obj["schema_version"], "1.4");
 
     // D2 + SOP-not-shipped: these keys must be ABSENT from the envelope.
     assert!(!obj.contains_key("usage_records"), "usage_records must not export");

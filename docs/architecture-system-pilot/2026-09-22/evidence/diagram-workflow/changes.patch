@@ -1,0 +1,204 @@
+--- before/reverse-architecture.md
++++ after/reverse-architecture.md
+@@ -1,6 +1,8 @@
+ # prompt-hub 当前架构逆向
+ 
+ 案例 `ph:CASE-reverse@0.1.0`。基线、范围和证据入口见 [README](README.md) 与 [来源与命题](evidence-map.md)。图均为源码支持的局部还原，`Cxx` 是静态事实命题；运行通过仅以单独的工程证据为准。负责人：本轮 Codex 执行，长期维护人待指定。
++
++先看 [架构地图](diagrams/architecture-map.md)；图的来源、复跑方法及检查限制见 [绘图说明](diagrams/README.md)。四图由统一清单生成，旧图源保存在本轮绘图证据的 before 快照中。
+ 
+ ## 1. 产品与既有文档如何承接
+ 
+@@ -20,17 +22,9 @@
+ 
+ 问题：谁能发起动作、数据向哪里流动？视角：系统/AI；层级：L0；边界：本机 prompt-hub；当前态；源码基线 `317106d`。对象 `ph:SYS-hub`、`ph:MOD-mcp`；关系依据 C01、C02、C03、C10。外部客户端实际部署配置本轮未核查。
+ 
+-```mermaid
+-flowchart LR
+-    U[使用者] -->|调用、整理、人工采纳| H[ph:SYS-hub 桌面仪表盘]
+-    H -->|写入文本 C02| CB[系统剪贴板]
+-    U -->|自行决定是否粘贴，未观测| AI[外部 AI 客户端]
+-    AI -->|stdio 工具调用 C03| M[ph:MOD-mcp 本地 MCP 进程]
+-    M -->|读取资产、暂存草稿 C03| DB[(本机 SQLite)]
+-    H -->|读写资产、迁移、采纳 C01/C03| DB
+-    H -->|显式选择文件、导入导出 C07| F[本机文件与备份]
+-    H -->|选择启用后检查及安装 C10| R[GitHub Releases 更新源]
+-```
++![D1 架构视图](diagrams/D1.svg)
++
++[图卡与阅读提示](diagrams/architecture-map.md) · [可编辑图源](diagrams/D1.mmd) · [统一视图清单](diagrams/views.json)
+ 
+ 这里“本地优先”指业务数据归属本机。它不意味着完全没有网络出口：自动更新是单独的 opt-in 路径；外部 AI 客户端可经 MCP 读取资产。图不声称该外部客户端不会再向其模型服务发送读取结果。
+ 
+@@ -38,20 +32,9 @@
+ 
+ 问题：业务交互如何到达存储，哪些边界由谁执行？视角：技术；层级：L2；边界：`ph:SYS-hub` 的前端、桌面宿主及伴随 MCP；当前态；基线同上。C01/C03/C05/C06/C08 支持各边，模块名称表示职责而非已拆分部署的服务。
+ 
+-```mermaid
+-flowchart TB
+-    UI[ph:MOD-ui React Dashboard 与交互组件] -->|用户动作| S[Zustand slices / useCopy / sessionStore]
+-    S -->|62 个命令字面量| I[ph:IF-tauri TypeScript IPC facade]
+-    I -->|Tauri invoke| H[ph:MOD-host commands / AppState / Mutex]
+-    H -->|窗口及快捷键| OS[macOS NSPanel 与全局快捷键]
+-    H -->|查询、使用记录、草稿| C[ph:MOD-core repo-core]
+-    H -->|采纳、编辑、恢复、导入| W[ph:MOD-write repo-write]
+-    W -->|共用模型与数据库操作| C
+-    M[ph:MOD-mcp rmcp stdio] -->|查询与 DraftRepo| C
+-    C -->|Connection / WAL / FK| D[(ph:DAT-store SQLite)]
+-    G[ph:MOD-gates 静态护栏] -.->|核查命令名称和受限结构| I
+-    G -.->|核查注册、查询与依赖| H
+-```
++![D2 架构视图](diagrams/D2.svg)
++
++[图卡与阅读提示](diagrams/architecture-map.md) · [可编辑图源](diagrams/D2.mmd) · [统一视图清单](diagrams/views.json)
+ 
+ 宿主与 MCP 是独立进程，分别拥有连接及进程内锁；跨进程写入依靠 SQLite WAL、事务、唯一索引和 busy timeout 协调。单一进程内 `Mutex` 不等于跨进程互斥。
+ 
+@@ -89,30 +72,9 @@
+ 
+ 问题：何时写入正式资产、失败如何收口？视角：行为；层级：L3；边界：MCP/宿主/SQLite；当前态；基线同上。对象 `ph:IF-mcp`、`ph:MOD-core`、`ph:MOD-write`、`ph:DAT-drafts`。
+ 
+-```mermaid
+-sequenceDiagram
+-    participant AI as 外部客户端
+-    participant MCP as ph:MOD-mcp
+-    participant DB as ph:DAT-drafts / SQLite
+-    participant UI as ph:MOD-ui
+-    participant W as ph:MOD-write
+-    AI->>MCP: create_draft(payload, provenance)
+-    MCP->>DB: 校验输入与大小，写 pending
+-    DB-->>MCP: draft_id 或 DuplicateDraft(existing_id)
+-    MCP-->>AI: 工具结果，尚无正式资产
+-    UI->>DB: 读取草稿
+-    Note over UI: 人工决定；Composition 当前 UI 禁止采纳
+-    UI->>W: promote_draft(id, groupKind?)
+-    W->>DB: 读取 pending；事务内插入资产并 mark_discarded
+-    alt 事务成功
+-      DB-->>W: commit，asset_id
+-      W-->>UI: 资产 ID 与类型
+-      UI->>DB: 刷新资产列表、草稿与 badge
+-    else 校验、约束或状态失败
+-      DB-->>W: 回滚资产和状态变化
+-      W-->>UI: 错误，未完成采纳
+-    end
+-```
++![D3 架构视图](diagrams/D3.svg)
++
++[图卡与阅读提示](diagrams/architecture-map.md) · [可编辑图源](diagrams/D3.mmd) · [统一视图清单](diagrams/views.json)
+ 
+ DraftPayload 的四种 target_type 不等于用户当前都可采纳：Composition 的底层 Rust 路径和测试存在，DraftInbox 按类型禁用编辑与采纳（“该类型暂无 UI 承载”）。Modifier 必须由人在采纳时补四象限分类。Macro/Modifier payload 中的 phase 字段不能直接推断最终表也保留相同字段，须核查 promote 映射。
+ 
+@@ -122,16 +84,9 @@
+ 
+ 问题：恢复意味着哪些状态回到可用？视角：数据/行为；层级：L3；边界：七类资产；当前态；基线同上。对象 `ph:MOD-write`、`ph:DAT-store`。
+ 
+-```mermaid
+-stateDiagram-v2
+-    [*] --> Live: 创建
+-    Live --> Trashed: deleted_at 置时间
+-    Trashed --> Trashed: 重复删除，无操作
+-    Trashed --> Live: 恢复同一 ID，处理依赖和唯一约束
+-    Live --> Live: 重复恢复，无操作
+-    Trashed --> Purged: 显式清空，永久删除合格行
+-    Purged --> [*]
+-```
++![D4 架构视图](diagrams/D4.svg)
++
++[图卡与阅读提示](diagrams/architecture-map.md) · [可编辑图源](diagrams/D4.mmd) · [统一视图清单](diagrams/views.json)
+ 
+ 软删除保留 ID、创建时间、排序和历史使用记录。读取端过滤 deleted_at；废纸篓和导出是有意例外。恢复 Phrase 时同时恢复其已删除的 Scene/SubStage，避免“行已活、界面不可达”；恢复旧默认对齐话术遇到新默认时降为普通话术。它是语义恢复，不保证所有字段完全恢复旧值。
+ 
+--- before/registry.json
++++ after/registry.json
+@@ -396,6 +396,41 @@
+       "type": "TEST",
+       "version": "0.1.0",
+       "name": "独立采用场景"
++    },
++    {
++      "id": "ph:CMP-desktop",
++      "type": "CMP",
++      "version": "0.1.0",
++      "name": "桌面应用（React + Tauri）",
++      "state": "current"
++    },
++    {
++      "id": "ph:SYS-ai-client",
++      "type": "SYS",
++      "version": "0.1.0",
++      "name": "外部 AI 客户端",
++      "state": "current"
++    },
++    {
++      "id": "ph:IF-clipboard",
++      "type": "IF",
++      "version": "0.1.0",
++      "name": "系统剪贴板",
++      "state": "current"
++    },
++    {
++      "id": "ph:DAT-files",
++      "type": "DAT",
++      "version": "0.1.0",
++      "name": "资产文件与数据库快照",
++      "state": "current"
++    },
++    {
++      "id": "ph:SYS-releases",
++      "type": "SYS",
++      "version": "0.1.0",
++      "name": "GitHub Releases 更新源",
++      "state": "current"
+     }
+   ],
+   "external_refs": [
+--- before/references/metamodel.md
++++ after/references/metamodel.md
+@@ -60,3 +60,5 @@
+ runs 每项必含 id、test（TEST 引用）、status（passed/failed/not_run）、stage（static/component/integration/bench/target/migration）。已执行还必含 baseline、environment、configuration、input、steps、expected、actual、time、executor、evidence（非空 EVD 引用列表）；未执行填 reason。基线记录实际相关的代码、组件、模型、硬件版本，不适用项说明原因。脚本只检查结构完整性，不证明基线可复现或测试真实。
+ 
+ 多仓/多实例时 baseline 可引用独立快照文件，分别表示本地 checkout、运行实例和历史跑次，不能用当前 SHA 回填历史未知版本。历史 run 的原 status 保留；本次审阅可在 EVD/run 的扩展字段或独立表中记录 review_status（例如 needs_revalidation）、依据、受影响命题和后续证据位置。它与 CLM.status 及架构 state 含义不同；当前 JSON v1 检查器不校验这些审阅扩展字段的值或语义。新的不利证据应影响具体 CLM 的确认状态，不能只加注释而继续 confirmed。
++
++绘图采用独立的 `architecture-views/1` 伴随格式，详见 [绘图与维护](diagram-workflow.md)。现有 registry v1 与 validate.py 保持兼容；结构视图从绘图关系清单选择事实，行为局部状态／步骤关联已有对象，不自动新增全局对象类型。
+--- before/SKILL.md
++++ after/SKILL.md
+@@ -17,6 +17,7 @@
+ |---|---|---|
+ | 新建或修改系统、梳理架构与接口 | [正向构建](references/forward-build.md) | 目标与验收、必要视图、接口、执行包 |
+ | 用原型澄清需求、体验流程或将人的原型调整反馈到文档 | [原型对齐与反馈](references/prototype-alignment.md) | 场景原型、反馈与变更记录、文档/原型对齐基线 |
++| 实际出图、建立架构地图、检查或维护图与代码的一致性 | [绘图与维护](references/diagram-workflow.md) | 按问题选图、可编辑图源、渲染图、地图及依赖复核 |
+ | 理解产品或已有系统 | [逆向分析](references/reverse-analysis.md) | 来源与结论、局部架构、未知项 |
+ | 比较项目、提炼复用能力 | [能力复用](references/capability-reuse.md) | 共性与差异、契约、适用边界、迁移方案 |
+ | 文档与原型驱动开发验收、检查实现偏差或评估变更影响并迭代 | [一致性验证与迭代](references/consistency-iteration.md) | 基线、偏差与影响清单、修正任务、复验结果 |
+@@ -35,7 +36,7 @@
+ 
+ 1. 先查目标、范围、当前实现和验收依据。可自行选择的细节用明确假设推进；只对影响关键决定且无法推知的信息提问。缺少验收阈值时标记待定，不编造通过标准。
+ 2. 按主问题选视角与层级。视角包括业务、产品、系统、技术、AI、数据、硬件、部署、交互、行为；L0 环境边界、L1 主要系统、L2 子系统、L3 模块、L4 实现规格。层级相对项目边界，不强制跨领域一一对应，也不填满矩阵。
+-3. 图标注问题、边界、视角、层级、当前态/目标态、基线及对象引用，连线说明语义。沿用已有图格式，否则简单关系可用 Mermaid。ID 不编码层级；复杂性需要时才增加视图或独立图卡。
++3. 图标注问题、边界、视角、层级、当前态/目标态、基线及对象引用，连线说明语义。实际出图按绘图参考选模板、从同一清单生成并渲染检查；沿用已有图格式，否则简单关系用 Mermaid。ID 不编码层级；复杂性需要时才增加视图或独立图卡。
+ 4. 区分逻辑职责、组件实现、运行实例，以及 CAP 能力、PAT 模式、CMP 实现和 RCP 组合。复用引用具体版本，派生修改不得冒充原资产。
+ 5. 事实、推断、未知贯穿结论、图和执行包。观察不能证明未暴露的内部结构；迁移成功不证明原产品采用相同架构。
+ 6. 当前实现与目标设计分开记录。接口、代码、图或对象记录冲突时说明偏差、权威来源及影响，不静默覆盖。权威划分见元模型。
+@@ -51,5 +52,6 @@
+ - 一致性检查与迭代用 [偏差与复验模板](assets/templates/consistency-review.md)，限定此次需求和变更范围；已有缺陷/任务台账时沿用它，避免维护两套状态。
+ - 需要机器检查时采用 [结构化样例](assets/templates/registry.example.json)，示例只有目标设计，测试未执行。格式与限制见元模型。项目私有资料保存在用户项目，不写回 Skill。
+ - 对本 Skill 的 JSON 格式运行 `python3 <skill-dir>/scripts/validate.py <registry.json>`。已有其他格式时沿用项目工具，不为检查而迁移整个仓库。
++- 出图工具与八种模板见 [绘图与维护](references/diagram-workflow.md)。来源基线与渲染分开；代码变更后比较每张图的已声明依赖并复核，不靠全仓 SHA 一刀切判过期。
+ - 静态检查不证明来源真实、架构合理或工程可运行。实际测试只报告真实结果，保留失败、限制和未验证范围。
+ - 最终说明产物位置、主要决策、验证阶段、遗留项与下一步最小动作。评价收益时同时考虑闭环时间、返工、适配和维护工时。
+--- before/references/consistency-iteration.md
++++ after/references/consistency-iteration.md
+@@ -68,3 +68,5 @@
+ - 文档要求 5 s 监听而代码默认 8 s：查有效决定和运行配置；没有变更依据时保留实现偏差，不能直接把文档改为 8 s。
+ - 交接待办要求显示识别文本，本地提交已实现：核对软件行为并更新本地完成状态；远端版本未查时仍保留部署核查。
+ - 历史报告标记通过，后续发现漏记异常：保留原跑次结果，补审阅说明和修正后的验证，不能从旧 pass 推出系统没有异常。
++
++涉及图的更新时使用 [绘图与维护](diagram-workflow.md)，运行声明依赖检查；变化先标需要复核，按语义修改后才记录新基线，渲染成功不能清除来源漂移。
+--- before/references/reverse-analysis.md
++++ after/references/reverse-analysis.md
+@@ -21,3 +21,5 @@
+ 历史报告的原始结果与本次审阅分开。发现漏采、判据缺陷或版本不匹配时，保留原结果，记录受影响命题、审阅依据及复验动作；对冲突命题撤销 confirmed。同一采集链的多份派生产物一致，不构成采集完整性的独立证明。
+ 
+ 使用 [案例模板](../assets/templates/case.md)。最小产物为范围、来源/命题表、必要视图、关键行为、取舍与未知、候选复用内容；未迁移时只给验证建议。
++
++实际交付架构图时使用 [绘图与维护](diagram-workflow.md)：从对象与关系清单选取视图，渲染后检查边界和调用层；在项目提供架构地图入口，不只留下嵌在长文的图源。

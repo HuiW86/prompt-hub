@@ -1,0 +1,26 @@
+{
+  "frontend": {
+    "tests": 536,
+    "passed": 536,
+    "files": 45,
+    "success": true
+  },
+  "rust": {
+    "passed": 227,
+    "groups": [
+      10,
+      0,
+      8,
+      7,
+      1,
+      74,
+      117,
+      3,
+      7,
+      0,
+      0,
+      0
+    ],
+    "failed": 0
+  }
+}

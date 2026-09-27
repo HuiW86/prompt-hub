@@ -19,6 +19,8 @@ import { StatusBar } from "../components/StatusBar";
 import { Toast } from "../components/Toast";
 import { UpdaterBanner } from "../components/UpdaterBanner";
 import { Button } from "../components/primitives";
+import { useAppStore } from "../stores/appStore";
+import { lazy, Suspense } from "react";
 import { usePromptStore } from "../stores/promptStore";
 
 import styles from "./Dashboard.module.css";
@@ -37,7 +39,14 @@ import styles from "./Dashboard.module.css";
 // 200px strip (2026-08-10 hit-probability evidence) — survives as a draggable
 // split rather than a second layout: a binary mode cannot carry a continuous
 // spatial preference, so the preference goes to a continuous control.
+const WebsitePanel = lazy(() =>
+  import("../components/WebsitePanel").then((module) => ({
+    default: module.WebsitePanel,
+  })),
+);
+
 export function Dashboard() {
+  const workspace = useAppStore((s) => s.workspace);
   const loadState = usePromptStore((s) => s.loadState);
   const loadError = usePromptStore((s) => s.loadError);
   const refreshAll = usePromptStore((s) => s.refreshAll);
@@ -89,35 +98,37 @@ export function Dashboard() {
       <HotkeyBanner />
       <UpdaterBanner />
       <Header />
-      <ProtocolBand />
-      <div className={styles.panorama}>
-        <Group
-          id="dashboard-2col"
-          className={styles.panoramaGroup}
-          defaultLayout={columnLayout.defaultLayout}
-          onLayoutChanged={columnLayout.onLayoutChanged}
-        >
-          <Panel
-            id="task"
-            className={styles.panel}
-            defaultSize="68%"
-            minSize="42%"
-          >
-            {/* Task column: the Macro / Scene split.
+      {workspace === "prompts" ? (
+        <>
+          <ProtocolBand />
+          <div className={styles.panorama}>
+            <Group
+              id="dashboard-2col"
+              className={styles.panoramaGroup}
+              defaultLayout={columnLayout.defaultLayout}
+              onLayoutChanged={columnLayout.onLayoutChanged}
+            >
+              <Panel
+                id="task"
+                className={styles.panel}
+                defaultSize="68%"
+                minSize="42%"
+              >
+                {/* Task column: the Macro / Scene split.
                 The 任务层 marker pill was removed 2026-08-20 (omar) together
                 with ProtocolBand's 协议层 pill — position already says which
                 layer this column is, so the label was the interface explaining
                 its own architecture. ModifierGrid keeps its pill because that
                 panel has no such positional cue. */}
-            <div className={styles.taskCol}>
-              <Group
-                id="task-2row"
-                orientation="vertical"
-                className={styles.taskGroup}
-                defaultLayout={taskLayout.defaultLayout}
-                onLayoutChanged={taskLayout.onLayoutChanged}
-              >
-                {/* Default leans to Macro (0-step reach, heat-sorted). Both
+                <div className={styles.taskCol}>
+                  <Group
+                    id="task-2row"
+                    orientation="vertical"
+                    className={styles.taskGroup}
+                    defaultLayout={taskLayout.defaultLayout}
+                    onLayoutChanged={taskLayout.onLayoutChanged}
+                  >
+                    {/* Default leans to Macro (0-step reach, heat-sorted). Both
                     minimums are PIXELS, not percentages: a percentage floor
                     keeps shrinking with the window, so the region thins out
                     exactly when space is scarcest — that is how the old
@@ -129,49 +140,57 @@ export function Dashboard() {
                     needs a scroll shadow or arrow. Measured on device
                     (2026-08-19), not derived from tokens — region chrome
                     stacks in ways the token values alone don't predict. */}
-                <Panel
-                  id="macro"
-                  className={styles.panel}
-                  defaultSize="46%"
-                  minSize="132px"
-                >
-                  <MacroGrid />
-                </Panel>
-                <Separator className={styles.separatorRow} />
-                {/* 288px = region header + tab row + card head (224) + first
+                    <Panel
+                      id="macro"
+                      className={styles.panel}
+                      defaultSize="46%"
+                      minSize="132px"
+                    >
+                      <MacroGrid />
+                    </Panel>
+                    <Separator className={styles.separatorRow} />
+                    {/* 288px = region header + tab row + card head (224) + first
                     phrase card in full (→265) + the next card's edge (→288).
                     The earlier 196px cleared the chrome but left ZERO phrases
                     visible, and ScenePanel hides its scrollbar, so the region
                     read as empty rather than scrollable — it failed ADR-026
                     子决策 2's own wording ("下限保证 Scene 至少完整显示一个子阶段列"). */}
-                <Panel
-                  id="scene"
-                  className={styles.panel}
-                  defaultSize="54%"
-                  minSize="288px"
-                >
-                  <ScenePanel />
-                </Panel>
-              </Group>
-            </div>
-          </Panel>
-          <Separator className={styles.separator} />
-          <Panel
-            id="aside"
-            className={styles.panel}
-            defaultSize="32%"
-            minSize="20%"
-          >
-            <div className={styles.aside}>
-              <ModifierGrid />
-              <RecentList />
-              <SopProgress />
-            </div>
-          </Panel>
-        </Group>
-        <SearchOverlay />
-      </div>
-      <StatusBar />
+                    <Panel
+                      id="scene"
+                      className={styles.panel}
+                      defaultSize="54%"
+                      minSize="288px"
+                    >
+                      <ScenePanel />
+                    </Panel>
+                  </Group>
+                </div>
+              </Panel>
+              <Separator className={styles.separator} />
+              <Panel
+                id="aside"
+                className={styles.panel}
+                defaultSize="32%"
+                minSize="20%"
+              >
+                <div className={styles.aside}>
+                  <ModifierGrid />
+                  <RecentList />
+                  <SopProgress />
+                </div>
+              </Panel>
+            </Group>
+            <SearchOverlay />
+          </div>
+        </>
+      ) : (
+        <Suspense
+          fallback={<div className={styles.loading}>加载常用网站…</div>}
+        >
+          <WebsitePanel />
+        </Suspense>
+      )}
+      {workspace === "prompts" && <StatusBar />}
       <Toast />
       <SettingsModal />
     </div>

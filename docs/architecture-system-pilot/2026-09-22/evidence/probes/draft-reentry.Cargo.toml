@@ -1,0 +1,9 @@
+[package]
+name = "draft-reentry"
+version = "0.0.0"
+edition = "2021"
+[workspace]
+[dependencies]
+repo-core = { path = "/Users/apple/WeChatProjects/prompt-hub/src-tauri/crates/repo-core" }
+tempfile = "3"
+repo-write = { path = "/Users/apple/WeChatProjects/prompt-hub/src-tauri/crates/repo-write" }

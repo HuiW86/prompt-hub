@@ -106,7 +106,7 @@ const invoked = new Set(
 // reference counts deliberately did NOT get a command of their own — they ride
 // on the list read, because the moment you need them is the moment you already
 // needed the list (06-prd §6.6-bis).
-const EXPECTED_COMMAND_COUNT = 62;
+const EXPECTED_COMMAND_COUNT = 71;
 
 describe("IPC contract — commands.rs / lib.rs / ipc/index.ts stay in sync", () => {
   it("exposes exactly the expected number of commands", () => {

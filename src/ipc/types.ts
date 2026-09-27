@@ -391,6 +391,8 @@ export interface OkAck {
 
 // Per-table row counts restored by a wipe-and-restore import (PRD §7.5).
 export interface ImportSummary {
+  websites?: number | null;
+  websiteGroups?: number | null;
   modifiers: number;
   macros: number;
   scenes: number;
@@ -403,4 +405,32 @@ export interface ImportSummary {
   // 1.2 file): the table did not take part in the restore, which is not the
   // same statement as "restored zero rows".
   alignmentAxisValues: number | null;
+}
+
+// Independent quick-link resource; outside the three prompt composition layers.
+export interface WebsiteGroup {
+  id: string;
+  name: string;
+  orderIndex: number;
+}
+export interface Website {
+  id: string;
+  name: string;
+  url: string;
+  description: string;
+  groupId: string | null;
+  orderIndex: number;
+  createdAt: string;
+  deletedAt: string | null;
+}
+export interface WebsiteLibrary {
+  groups: WebsiteGroup[];
+  websites: Website[];
+}
+export interface WebsiteInput {
+  id?: string;
+  name: string;
+  url: string;
+  description: string;
+  groupId: string | null;
 }

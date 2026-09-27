@@ -1,3 +1,4 @@
+import { useWebsiteStore } from "../stores/websiteStore";
 // Alias open/confirm: their bare names collide with the window.open / window.confirm
 // globals, which shadows the plugin imports in some bundler/test transforms.
 import {
@@ -182,9 +183,14 @@ export function SettingsModal() {
         summary.phrases +
         summary.phases +
         summary.alignmentPhrases +
-        summary.compositions;
+        summary.compositions +
+        (summary.websites ?? 0) +
+        (summary.websiteGroups ?? 0);
       await refreshAll();
-      setDataStatus(`已导入 ${total} 条记录`);
+      await useWebsiteStore.getState().refreshIfLoaded();
+      setDataStatus(
+        `已导入 ${total} 条记录${summary.websites == null ? "；旧备份未包含常用网站，现有网站已保留" : `（含 ${summary.websites} 个网站）`}`,
+      );
       showToast("已导入备份");
     } catch (err) {
       setDataStatus(

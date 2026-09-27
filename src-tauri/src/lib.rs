@@ -413,6 +413,15 @@ pub fn run() {
             Ok(())
         })
         .invoke_handler(tauri::generate_handler![
+            commands::list_websites,
+            commands::save_website,
+            commands::delete_website,
+            commands::restore_website,
+            commands::save_website_group,
+            commands::delete_website_group,
+            commands::reorder_websites,
+            commands::reorder_website_groups,
+            commands::open_website,
             commands::list_phases,
             commands::list_alignment_phrases,
             commands::list_macros,

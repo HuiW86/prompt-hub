@@ -45,3 +45,12 @@ prompt-hub 的项目文档体系——主文档分三类：契约层（spec / co
 - `../../dist/prompt-hub.html` — 全文档单文件阅读型合订（⚠️ 见下方说明）
 
 > **`dist/prompt-hub.html` 已过期**：该合订 HTML 构建于本次目录迁移之前，源文件路径与命名已变更，需重新生成后才与当前文档一致。详见 [ADR-010](../adr/010-doc-directory-restructure.md)。
+
+## 当前架构的派生分析
+
+[2026-09-22 架构体系实作](../architecture-system-pilot/2026-09-22/README.md)：逆向架构、来源与命题、能力提炼、验证与方法反馈。分析基于 `317106d`，不替代以上产品契约或功能状态表；本索引中的历史阶段和数量摘要仍需按文件本体核查。
+
+
+## 2026-09-23 常用网站功能草案
+
+[常用网站设计增量](../website-tab/design-delta.md)、[ADR-030](../adr/030-website-library.md)和[执行证据](../website-tab/README.md)记录本轮正向实作。此增量尚未人审，不改变上列 ratified 文档的权威状态。

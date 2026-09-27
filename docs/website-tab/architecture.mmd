@@ -1,0 +1,12 @@
+flowchart TB
+  U[用户] -->|切到网站页 / 搜索 / 编辑| UI[WebsitePanel]
+  subgraph PH["prompt-hub · 本机单用户 · SQLite 15 / JSON 1.4"]
+    UI -->|状态与本地筛选| Store[websiteStore]
+    Store -->|list / save / reorder / delete / restore| IPC[Tauri IPC]
+    UI -->|open_website + 网站 ID| IPC
+    IPC -->|读写与迁移| DB[(SQLite)]
+    IPC -->|读取未删除 URL、复验 HTTP/S| Open[Tauri opener]
+    DB -->|website_library| Export[JSON 导出 / 导入事务]
+  end
+  Open -->|交给系统默认浏览器| Browser[浏览器]
+  Legacy[JSON 1.3 旧备份] -.->|缺网站键：保留现有网站| Export
