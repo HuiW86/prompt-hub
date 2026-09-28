@@ -46,3 +46,7 @@ pnpm-debug.log*
 # AI session cache (codex session ids, etc.)
 .context/
 .gstack/
+
+# Local Codex mirror (not a source of truth; CLAUDE.md is)
+AGENTS.md
+.codex/

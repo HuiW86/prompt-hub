@@ -72,13 +72,13 @@
 
 > 长期风险在 [[learnings]] 附录 B；此处只留仍会影响下一次改动的。
 
-- **两个 0.2.1 同号不同内容**（new 2026-09-27）：GitHub 公开 v0.2.1 = 闪退修复、schema 14；本机 `/Applications` 的 0.2.1 = 当时未提交工作区 + 网站 Tab、schema 15（2026-09-24 自建，未公证）。本机更新器看到公开 v0.2.1 不会提示升级（同号），这是好事；但**下一次公开发版必须 ≥ 0.2.2 且从含 `0015` 的 `main` 出包**，否则会把 schema 15 的真实库交给不认识它的二进制
+- **两个 0.2.1 同号不同内容**（new 2026-09-27）：GitHub 公开 v0.2.1 = 闪退修复、schema 14；本机 `/Applications` 的 0.2.1 = 当时未提交工作区 + 网站 Tab、schema 15（2026-09-24 自建，未公证）。本机更新器看到公开 v0.2.1 不会提示升级（同号），这是好事；但**下一次公开发版必须 ≥ 0.2.2 且从含 `0015` 的 `main` 出包**，否则会把 schema 15 的真实库交给不认识它的二进制。**2026-09-27 已把 `main` 版本号提到 0.2.2**（未发版、未打 tag），此后从 `main` 出的包不会再冒充 0.2.1
 - **本 shell 跑在 Rosetta 下**（new 2026-09-27）：`uname -m` = `x86_64`，`/usr/local/bin/node` 通用二进制会以 x64 运行，`pnpm test` 报找不到 `@rollup/rollup-darwin-x64`。**不是依赖坏了**——前端命令一律包 `arch -arm64 /bin/zsh -lc '…'`；别为此重装 `node_modules`（lockfile 政策）
 - **ADR-030 代码先于决策进了 `main`**（new 2026-09-27）：omar 在 2026-09-26 同意提交推送，但 ADR 仍 Proposed。若裁决改动数据形态，`0015` 已在真实库上跑过，反悔须新开 migration 16，不能降版本（同 ADR-027 先例）
 - **降级路径会让 CI 失明**（new 2026-09-25）：为「不闪退」设计的降级分支，恰好让「修复没生效」在 CI 里全绿。凡有 fallback，要有 CI 看得到的信号区分主路径与 fallback（第 56 项）
 - **isa-swizzle 的前提是布局相等，而「相等」可能只是对齐 padding 的巧合**（new 2026-09-25）：要比 ivar 集合与偏移，且看**运行时实际类**（KVO 会插入 `NSKVONotifying_*` 子类）
 - **云端会话推不了 tag**（new 2026-09-25）：`git push origin v*` 被代理 403，发版打 tag 须在本地做
-- **正式版 = `main@d93723b` = 真实库 schema 14**；不再落后 `main`。下一条 migration 落地时错位会再现，届时照第 47 / 55 项流程装机。`manual-pre-install-1788686413.db`（v14）是本次装前兜底，`pre-migrate-1788663553.db` / `manual-pre-install-1788663353.db` 是 13→14 的两份
+- **本机正式版 = 0.2.1（网站 Tab）= 真实库 schema 15**（2026-09-27 反查：`/Applications` 二进制内嵌的 4 个前端 chunk 名与 `main@5d161da` 现场 `vite build` 逐一相同，`PRAGMA user_version` = 15；Rust 侧无 chunk 可比，只能以 schema 相符佐证）。此前「正式版 = `main@d93723b` = schema 14」已被 2026-09-24 装机取代。`manual-pre-install-1788686413.db`（v14）是 14 时代的装前兜底，`pre-migrate-1788663553.db` / `manual-pre-install-1788663353.db` 是 13→14 的两份
 - **装机口径**：`--bundles app` + 关 updater 产物；`strings` 只能核 chunk 名，内嵌资产是压缩的，`grep -a` 核不到 UI 字串——chunk 名与 `dist/assets/` 一致即算核过；`spctl` 报 `Unnotarized Developer ID` 属正常（未公证），本地 `ditto` 无 quarantine 属性不被拦
 - **`notes` 留空 = 清空，不是保留**：`AlignmentPhraseEditor.handleSubmit` 在正文真变时总是发 `notes`（可为空串），正文没变才省略。Rust `COALESCE(?, notes)` 遇 `Some("")` 写空串不写 NULL，**读方按空串 = 无说明**（prd §6.6）。别把谓词改回「非空才发」——那会把上一次修订的理由钉到这一次的切分点上
 - **`extraFields` 的函数形态只暴露 `contentDirty`**，不暴露 `handleSave`；修订说明输入因此不认领 ⌘Enter。要给它 ⌘Enter 得把提交函数也透过槽传出去
