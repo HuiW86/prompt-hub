@@ -75,8 +75,11 @@
 }
 
 /* P3-6 minimal management entry: chip + hover/focus-revealed cluster (move
-   quadrant / delete) flow together inside the wrapping chips row. */
+   quadrant / delete). The cluster floats beside its chip instead of taking
+   inline width: an invisible-but-present cluster reserved a gap after every
+   chip, so the wrapping row read as two ragged columns with holes. */
 .atom {
+  position: relative;
   display: inline-flex;
   align-items: center;
   gap: var(--s-1);
@@ -84,15 +87,26 @@
 }
 
 /* Revealed on pointer hover OR keyboard focus anywhere inside the atom (the
-   buttons stay in the tab order — opacity does not remove focusability). */
+   buttons stay in the tab order — opacity does not remove focusability).
+   Hidden, it ignores the pointer so it cannot swallow clicks meant for the
+   neighbouring chip it overlaps. */
 .manage {
+  position: absolute;
+  top: 50%;
+  left: 100%;
+  z-index: 1;
+  padding-left: var(--s-1);
+  background: var(--surface-1);
   opacity: 0;
+  pointer-events: none;
+  transform: translateY(-50%);
   transition: opacity var(--d-fast) var(--ease);
 }
 
 .atom:hover .manage,
 .atom:focus-within .manage {
   opacity: 1;
+  pointer-events: auto;
 }
 
 /* Quadrant-move menu — same neutral chip language as DraftInbox's promote-time
