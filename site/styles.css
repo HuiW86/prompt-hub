@@ -17,6 +17,7 @@
 }
 
 :root {
+  color-scheme: dark;
   /* Color — the app's cockpit ramp (tokens.css §1) */
   --canvas: #0b0b0d;
   --surface-1: #151518;
@@ -48,7 +49,7 @@
     "Microsoft YaHei", system-ui, sans-serif;
   --font-mono: "Geist Mono", "SF Mono", ui-monospace, "PingFang SC", monospace;
   --fs-mega: clamp(52px, 10vw, 164px);
-  --fs-h2-pin: clamp(32px, 3.6vw, 56px);
+  --fs-h2-pin: clamp(30px, 3.4vw, 52px);
   --fs-h2: clamp(36px, 5.6vw, 84px);
   --fs-h3: clamp(20px, 1.8vw, 26px);
   --fs-lede: clamp(17px, 1.5vw, 21px);
@@ -134,6 +135,7 @@ body {
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
   overflow-x: clip;
+  line-break: strict;
 }
 ::selection {
   background: var(--selection);
@@ -1076,7 +1078,7 @@ main > section + section {
 }
 .gears__grid {
   display: grid;
-  grid-template-columns: 1fr 1fr 1fr;
+  grid-template-columns: 1.4fr 0.8fr 1fr;
   gap: var(--space-8);
   align-items: center;
 }
@@ -1178,7 +1180,7 @@ main > section + section {
   background: var(--surface-1);
 }
 .gearlist li.is-now p {
-  max-height: 6em;
+  max-height: 12em;
 }
 .gearlist li.is-home.is-now {
   background: var(--brand-dim);
@@ -1209,6 +1211,23 @@ main > section + section {
 .gears[data-gear-now="home"] .gears__verdict {
   opacity: 1;
   transform: none;
+}
+@media (min-width: 901px) and (max-width: 1180px) {
+  .gears__grid {
+    grid-template-columns: 1fr 1fr;
+    gap: var(--space-6) var(--space-8);
+  }
+  .gears__intro {
+    grid-column: 1 / -1;
+    grid-template-columns: 1fr 1fr;
+    align-items: end;
+  }
+  .gears__intro .kicker {
+    grid-column: 1 / -1;
+  }
+  .shifter__svg {
+    max-height: 44vh;
+  }
 }
 @media (max-width: 900px) {
   .gears {

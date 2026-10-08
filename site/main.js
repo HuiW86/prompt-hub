@@ -413,7 +413,15 @@ function cockpit() {
     scrim?.remove();
     scrim = null;
     stage.style.minHeight = "";
-    returnFocus?.focus?.({ preventScroll: true });
+    // Give focus back to whatever summoned us; if that was the overlay
+    // itself (or nothing), the key cap is the natural place to land.
+    const back =
+      returnFocus &&
+      returnFocus !== document.body &&
+      !root.contains(returnFocus)
+        ? returnFocus
+        : keyBtn;
+    back.focus({ preventScroll: true });
   }
 
   const keyBtn = $("[data-summon]");
