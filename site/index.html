@@ -1,0 +1,613 @@
+<!doctype html>
+<html lang="zh-CN">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>prompt-hub · 手动挡阶段的驾驶舱</title>
+    <meta
+      name="description"
+      content="prompt-hub 是 AI 编程手动挡阶段的桌面仪表盘：⌥Space 唤起，相位、场景、话术同屏可见，复制即走，下一句由你来说。数据只在本机。"
+    />
+    <meta name="theme-color" content="#0b0b0d" />
+    <meta name="color-scheme" content="dark" />
+    <meta property="og:type" content="website" />
+    <meta property="og:title" content="prompt-hub · 方向盘，留在手里。" />
+    <meta
+      property="og:description"
+      content="AI 编程手动挡阶段的桌面仪表盘。⌥Space 唤起，一眼看全，复制即走。"
+    />
+    <meta property="og:image" content="og.png" />
+    <meta name="twitter:card" content="summary_large_image" />
+    <link rel="icon" href="favicon.svg" type="image/svg+xml" />
+    <link
+      rel="preload"
+      href="fonts/Geist-Variable.woff2"
+      as="font"
+      type="font/woff2"
+      crossorigin
+    />
+    <link
+      rel="preload"
+      href="fonts/GeistMono-Variable.woff2"
+      as="font"
+      type="font/woff2"
+      crossorigin
+    />
+    <link rel="stylesheet" href="styles.css" />
+    <script>
+      document.documentElement.classList.add("js");
+    </script>
+    <script type="module" src="main.js"></script>
+  </head>
+  <body>
+    <a class="skip" href="#main">跳到正文</a>
+
+    <header class="nav" data-nav>
+      <a class="nav__brand" href="#top" aria-label="prompt-hub 首页">
+        <svg class="mark" viewBox="0 0 64 64" aria-hidden="true">
+          <use href="#mark" />
+        </svg>
+        <span>prompt-hub</span>
+      </a>
+      <nav class="nav__links" aria-label="章节">
+        <a href="#gears">五档</a>
+        <a href="#layers">三层</a>
+        <a href="#midway">中途</a>
+        <a href="#bounds">边界</a>
+      </nav>
+      <a
+        class="btn btn--small"
+        href="https://github.com/HuiW86/prompt-hub/releases/latest"
+        >下载 macOS 版</a
+      >
+    </header>
+
+    <main id="main">
+      <!-- ── 01 Hero ─────────────────────────────────────────────── -->
+      <section class="hero" id="top" aria-labelledby="hero-title">
+        <div class="hero__glow" aria-hidden="true"></div>
+        <div class="wrap hero__copy">
+          <p class="eyebrow" data-reveal>
+            <span class="eyebrow__dot"></span>AI 编程 · 手动挡阶段的驾驶舱
+          </p>
+          <h1 class="hero__title" id="hero-title">
+            <span class="line" data-split>方向盘，</span>
+            <span class="line" data-split>留在手里。</span>
+          </h1>
+          <p class="hero__lede" data-reveal>
+            prompt-hub
+            是一块快捷键唤起的全屏仪表盘。相位、场景、话术、最近使用同屏可见——一眼看全，复制即走，下一句由你来说。
+          </p>
+          <div class="hero__try" data-reveal>
+            <button
+              class="keys"
+              type="button"
+              data-summon
+              aria-describedby="try-hint"
+            >
+              <kbd>⌥</kbd><kbd class="keys__space">Space</kbd>
+            </button>
+            <p class="hero__hint" id="try-hint">
+              <span class="hide-touch">按下 ⌥ Space，或点这里，</span
+              ><span class="show-touch">点一下，</span>唤起仪表盘。<br />
+              <span class="mono muted">Esc 收起</span>
+            </p>
+          </div>
+        </div>
+
+        <!-- Live replica of the cockpit. Same element is shown inline and
+             summoned full-screen, so what you see is what ⌥Space brings up. -->
+        <div class="stage" data-stage>
+          <div
+            class="cockpit"
+            data-cockpit
+            role="region"
+            aria-label="prompt-hub 仪表盘演示"
+          >
+            <div class="ck-header">
+              <span class="ck-brand">
+                <svg class="mark" viewBox="0 0 64 64" aria-hidden="true">
+                  <use href="#mark" />
+                </svg>
+                prompt-hub
+              </span>
+              <span class="ck-search"><span>搜索话术</span><kbd>⌘K</kbd></span>
+              <span class="ck-tabs" aria-hidden="true"
+                ><b>提示词</b><span>常用网站</span></span
+              >
+            </div>
+
+            <div class="ck-band">
+              <ol class="ck-phases" data-phases aria-label="相位"></ol>
+              <div class="ck-align">
+                <span class="ck-label">对齐</span>
+                <p class="ck-align__text" data-align-text></p>
+              </div>
+            </div>
+
+            <div class="ck-body">
+              <section class="ck-col ck-col--macro" aria-label="Macro">
+                <h3 class="ck-h">Macro <span class="ck-count">6</span></h3>
+                <div class="ck-macros" data-macros></div>
+                <h3 class="ck-h ck-h--sop">
+                  SOP · 方案设计型 <span class="ck-count">3/5</span>
+                </h3>
+                <ol class="ck-sop">
+                  <li class="is-done">借力最优解</li>
+                  <li class="is-done">全局视角出方案</li>
+                  <li class="is-now">多 agent 评价方案</li>
+                  <li>根据 codex 意见修改</li>
+                  <li>更新方案</li>
+                </ol>
+              </section>
+              <section class="ck-col ck-col--scene" aria-label="场景">
+                <h3 class="ck-h">场景 <span class="ck-count">3</span></h3>
+                <div class="ck-scenes" data-scenes></div>
+              </section>
+              <aside class="ck-col ck-col--aux" aria-label="辅助">
+                <h3 class="ck-h">Modifier</h3>
+                <div class="ck-mods">
+                  <span>第一性原理</span><span>信息不足先提问</span
+                  ><span>主动调研推进</span><span>启动子代理并行</span
+                  ><span>输出对比表格</span><span>用中文回答</span>
+                </div>
+                <h3 class="ck-h">最近使用</h3>
+                <ul class="ck-recent" data-recent></ul>
+              </aside>
+            </div>
+
+            <div class="ck-status">
+              <span><i class="dot dot--ok"></i>本机 SQLite</span>
+              <span data-status-phase>相位 · 规划</span>
+              <span>今日复制 <b data-copies>12</b></span>
+              <span class="ck-status__right" data-latency>唤起上限 200ms</span>
+            </div>
+            <div
+              class="ck-toast"
+              data-toast
+              role="status"
+              aria-live="polite"
+            ></div>
+          </div>
+        </div>
+      </section>
+
+      <!-- ── 02 Five gears ───────────────────────────────────────── -->
+      <section
+        class="gears"
+        id="gears"
+        aria-labelledby="gears-title"
+        data-gears
+      >
+        <div class="gears__pin">
+          <div class="wrap gears__grid">
+            <div class="gears__intro">
+              <p class="kicker"><span class="mono">01</span> 五档演进</p>
+              <h2 class="h2" id="gears-title">
+                AI 编程分五档。<br />这里只做第二档。
+              </h2>
+              <p class="body muted">
+                不用“初级、高级”分级，是因为驾驶比喻自带两个前提：方向盘永远在人手里；每一档都要前一档的积累。
+              </p>
+              <p class="gears__verdict" data-verdict>
+                过早自动化，会把不稳定的 SOP 固化成错误。<br />
+                <strong>边界守住了，才能做深。</strong>
+              </p>
+            </div>
+
+            <figure class="shifter" aria-hidden="true">
+              <svg viewBox="0 0 320 260" class="shifter__svg">
+                <g class="shifter__gate">
+                  <path d="M60 40V220M160 40V220M260 40V130M60 130H260" />
+                </g>
+                <path class="shifter__dead" d="M260 130V220" />
+                <g class="shifter__nums">
+                  <text x="60" y="22">1</text>
+                  <text x="60" y="250">2</text>
+                  <text x="160" y="22">3</text>
+                  <text x="160" y="250">4</text>
+                  <text x="260" y="22">5</text>
+                </g>
+                <circle class="shifter__slot" cx="60" cy="220" r="18" />
+                <g class="shifter__knob" data-knob>
+                  <circle r="15" />
+                  <circle r="5" class="shifter__core" />
+                </g>
+              </svg>
+            </figure>
+
+            <ol class="gearlist" data-gearlist>
+              <li data-gear="1">
+                <span class="gearlist__n">1</span>
+                <div>
+                  <h3>SOP 化</h3>
+                  <p>把隐性的工作方法写成话术和模板。笔记本和文档就够了。</p>
+                </div>
+              </li>
+              <li data-gear="2" class="is-home">
+                <span class="gearlist__n">2</span>
+                <div>
+                  <h3>手动挡 <span class="tag">prompt-hub</span></h3>
+                  <p>
+                    人完整驱动，工具只负责展示和调用。看清楚“我在做什么、可以怎么做、下一步通常做什么”。
+                  </p>
+                </div>
+              </li>
+              <li data-gear="3">
+                <span class="gearlist__n">3</span>
+                <div>
+                  <h3>自动挡</h3>
+                  <p>
+                    工具自动跑一段，人设定起点和终点。属于 slash command
+                    的地盘。
+                  </p>
+                </div>
+              </li>
+              <li data-gear="4">
+                <span class="gearlist__n">4</span>
+                <div>
+                  <h3>辅助驾驶</h3>
+                  <p>人机实时协同决策。plan mode 加子代理。</p>
+                </div>
+              </li>
+              <li data-gear="5" class="is-out">
+                <span class="gearlist__n">5</span>
+                <div>
+                  <h3>自主驾驶</h3>
+                  <p>AI 端到端交付。目前不可达：决策点越多，累积偏差越大。</p>
+                </div>
+              </li>
+            </ol>
+          </div>
+        </div>
+      </section>
+
+      <!-- ── 03 Three layers ─────────────────────────────────────── -->
+      <section class="layers wrap" id="layers" aria-labelledby="layers-title">
+        <div class="section-head">
+          <p class="kicker" data-reveal>
+            <span class="mono">02</span> 三层资产
+          </p>
+          <h2 class="h2" id="layers-title" data-reveal>
+            半句话，拼成一句话，<br />一句话，固化成一个键。
+          </h2>
+          <p class="body muted" data-reveal>
+            Modifier 是方法论原子，末尾带逗号，生来就是要被拼接的。Composition
+            按固定顺序拼出完整指令：先定认知，再选动作，再定产出，最后加约束。反复出现的组合，升级为
+            Macro。三层，不设第四层。
+          </p>
+        </div>
+
+        <div class="composer" data-composer>
+          <div class="composer__mods">
+            <div class="modgroup" data-group="think">
+              <h3 class="modgroup__h"><span class="mono">认知前置</span></h3>
+              <button
+                type="button"
+                class="mod"
+                aria-pressed="true"
+                data-mod="第一性原理思考，"
+              >
+                第一性原理思考，
+              </button>
+              <button
+                type="button"
+                class="mod"
+                aria-pressed="false"
+                data-mod="系统层面思考，"
+              >
+                系统层面思考，
+              </button>
+              <button
+                type="button"
+                class="mod"
+                aria-pressed="false"
+                data-mod="信息不足先提问，"
+              >
+                信息不足先提问，
+              </button>
+            </div>
+            <div class="modgroup" data-group="act">
+              <h3 class="modgroup__h"><span class="mono">动作策略</span></h3>
+              <button
+                type="button"
+                class="mod"
+                aria-pressed="true"
+                data-mod="主动调研、推进，"
+              >
+                主动调研、推进，
+              </button>
+              <button
+                type="button"
+                class="mod"
+                aria-pressed="false"
+                data-mod="启动子代理并行，"
+              >
+                启动子代理并行，
+              </button>
+              <button
+                type="button"
+                class="mod"
+                aria-pressed="false"
+                data-mod="先调研对比方案，"
+              >
+                先调研对比方案，
+              </button>
+            </div>
+            <div class="modgroup" data-group="out">
+              <h3 class="modgroup__h"><span class="mono">产出形态</span></h3>
+              <button
+                type="button"
+                class="mod"
+                aria-pressed="true"
+                data-mod="先出方案我拍板，"
+              >
+                先出方案我拍板，
+              </button>
+              <button
+                type="button"
+                class="mod"
+                aria-pressed="false"
+                data-mod="输出对比表格，"
+              >
+                输出对比表格，
+              </button>
+              <button
+                type="button"
+                class="mod"
+                aria-pressed="false"
+                data-mod="制定实施计划，"
+              >
+                制定实施计划，
+              </button>
+            </div>
+            <div class="modgroup" data-group="limit">
+              <h3 class="modgroup__h"><span class="mono">通用约束</span></h3>
+              <button
+                type="button"
+                class="mod"
+                aria-pressed="false"
+                data-mod="确保不影响现有功能。"
+              >
+                确保不影响现有功能。
+              </button>
+              <button
+                type="button"
+                class="mod"
+                aria-pressed="true"
+                data-mod="用中文回答。"
+              >
+                用中文回答。
+              </button>
+            </div>
+          </div>
+
+          <div class="composer__out">
+            <p class="composer__label mono">
+              <span>Composition</span><span data-mod-count>4 个 Modifier</span>
+            </p>
+            <p class="composer__sentence" data-sentence aria-live="polite"></p>
+            <div class="composer__actions">
+              <button type="button" class="btn" data-freeze>
+                固化为 Macro
+              </button>
+              <span class="muted small"
+                >原文可追溯：每个 Macro 都记得自己由哪些 Modifier 拼成。</span
+              >
+            </div>
+            <div class="macro-slot" data-macro-slot aria-live="polite"></div>
+          </div>
+        </div>
+      </section>
+
+      <!-- ── 04 Midway ───────────────────────────────────────────── -->
+      <section class="midway" id="midway" aria-labelledby="midway-title">
+        <div class="wrap">
+          <div class="section-head">
+            <p class="kicker" data-reveal>
+              <span class="mono">03</span> 协议层
+            </p>
+            <h2 class="h2" id="midway-title" data-reveal>
+              对齐不只发生在开场。<br /><span class="accent"
+                >漂移，发生在中途。</span
+              >
+            </h2>
+            <p class="body muted" data-reveal>
+              开场先定框，再发任务：八个相位各有一句默认对齐话术，⌘1 到 ⌘8
+              直达。对话跑偏时，⌘9 是“中途”——六条一句话的口令，复制即换挡。
+            </p>
+          </div>
+
+          <div class="cues" data-cues>
+            <div class="cues__pad" role="group" aria-label="中途口令，点击复制">
+              <button
+                type="button"
+                class="cue"
+                data-cue="换挡：探讨"
+                data-axis="形态"
+              >
+                换挡：探讨
+              </button>
+              <button
+                type="button"
+                class="cue"
+                data-cue="换层：路径层"
+                data-axis="层级"
+              >
+                换层：路径层
+              </button>
+              <button
+                type="button"
+                class="cue"
+                data-cue="回到定位层"
+                data-axis="层级"
+              >
+                回到定位层
+              </button>
+              <button
+                type="button"
+                class="cue"
+                data-cue="本轮只谈商业闭环"
+                data-axis="领域"
+              >
+                本轮只谈商业闭环
+              </button>
+              <button
+                type="button"
+                class="cue"
+                data-cue="切收敛"
+                data-axis="模式"
+              >
+                切收敛
+              </button>
+              <button
+                type="button"
+                class="cue cue--stop"
+                data-cue="停"
+                data-axis="停"
+              >
+                停
+              </button>
+            </div>
+            <div class="ledger" aria-live="polite">
+              <p class="ledger__h mono">
+                <span>漂移账 · 本次会话</span
+                ><span data-ledger-total>0 笔</span>
+              </p>
+              <dl class="ledger__rows" data-ledger>
+                <div>
+                  <dt>形态</dt>
+                  <dd><i></i><b>0</b></dd>
+                </div>
+                <div>
+                  <dt>层级</dt>
+                  <dd><i></i><b>0</b></dd>
+                </div>
+                <div>
+                  <dt>领域</dt>
+                  <dd><i></i><b>0</b></dd>
+                </div>
+                <div>
+                  <dt>模式</dt>
+                  <dd><i></i><b>0</b></dd>
+                </div>
+                <div>
+                  <dt>停</dt>
+                  <dd><i></i><b>0</b></dd>
+                </div>
+              </dl>
+              <p class="ledger__note small muted">
+                每一次复制本身就是一笔漂移账。没有新按钮，没有“记录”这个动作。
+              </p>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- ── 05 Bounds ───────────────────────────────────────────── -->
+      <section class="bounds wrap" id="bounds" aria-labelledby="bounds-title">
+        <div class="section-head">
+          <p class="kicker" data-reveal><span class="mono">04</span> 边界</p>
+          <h2 class="h2" id="bounds-title" data-reveal>
+            明确不做什么，<br />比描述做什么更重要。
+          </h2>
+        </div>
+
+        <ul class="nots">
+          <li data-reveal>
+            <s>更漂亮的提示词管理器</s
+            ><span>市面上已经很多，不和它们竞争。</span>
+          </li>
+          <li data-reveal>
+            <s>更快的调用工具</s><span>调用速度上，文本替换永远更快。</span>
+          </li>
+          <li data-reveal>
+            <s>AI 自动驾驶平台</s><span>不编排、不执行、不跑 agent loop。</span>
+          </li>
+          <li data-reveal>
+            <s>团队知识库</s><span>单人单机，没有账号，没有分享链接。</span>
+          </li>
+        </ul>
+
+        <div class="laws">
+          <article class="law" data-reveal>
+            <p class="law__n mono">200<small>ms</small></p>
+            <h3>召之即来</h3>
+            <p>
+              快捷键按下到完整可交互，P95 不超过
+              200ms。超过它，主形态就会被放弃。实测唤起调用 P95 约
+              14ms，不含系统快捷键分发。
+            </p>
+          </article>
+          <article class="law" data-reveal>
+            <p class="law__n mono">0<small>字节</small></p>
+            <h3>不出本机</h3>
+            <p>
+              所有资产存在本机
+              SQLite，不调用任何服务端，不依赖云同步。话术里有你的工作指纹。
+            </p>
+          </article>
+          <article class="law" data-reveal>
+            <p class="law__n mono">0<small>次</small></p>
+            <h3>不替你生成</h3>
+            <p>
+              工具里不嵌任何大模型，不生成、不改写、不推荐话术。复制之后，粘贴与发送都由你决定——这一下停顿，是思考的缓冲。
+            </p>
+          </article>
+        </div>
+      </section>
+
+      <!-- ── 06 Close ────────────────────────────────────────────── -->
+      <section class="close" aria-labelledby="close-title">
+        <div class="wrap close__inner">
+          <h2 class="close__title" id="close-title" data-reveal>
+            下一句，<br />由你来说。
+          </h2>
+          <div class="close__cta" data-reveal>
+            <a
+              class="btn btn--large"
+              href="https://github.com/HuiW86/prompt-hub/releases/latest"
+              >下载 macOS 版</a
+            >
+            <p class="small muted">
+              仅 macOS · Developer ID 签名公证 · 应用内自动更新
+            </p>
+          </div>
+        </div>
+      </section>
+    </main>
+
+    <footer class="foot wrap">
+      <span class="nav__brand">
+        <svg class="mark" viewBox="0 0 64 64" aria-hidden="true">
+          <use href="#mark" />
+        </svg>
+        prompt-hub
+      </span>
+      <span class="muted small">本站不加载任何统计或第三方脚本。</span>
+      <a class="small" href="https://github.com/HuiW86/prompt-hub">GitHub</a>
+    </footer>
+
+    <svg width="0" height="0" style="position: absolute" aria-hidden="true">
+      <symbol id="mark" viewBox="0 0 64 64">
+        <g
+          stroke="currentColor"
+          stroke-width="3"
+          stroke-linecap="round"
+          fill="none"
+        >
+          <path d="M32 32 44 14M32 32h17M32 32 17 42M32 32 41 45M32 32 18 25" />
+          <circle cx="32" cy="32" r="8.5" />
+          <circle cx="18" cy="25" r="2.8" />
+          <circle cx="41" cy="45" r="2.8" />
+        </g>
+        <g fill="currentColor">
+          <circle cx="32" cy="32" r="3.8" />
+          <circle cx="44" cy="14" r="4" />
+          <circle cx="51" cy="32" r="5" />
+          <circle cx="17" cy="42" r="4" />
+        </g>
+      </symbol>
+    </svg>
+  </body>
+</html>
