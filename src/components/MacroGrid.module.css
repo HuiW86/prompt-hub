@@ -24,10 +24,16 @@
  * persisted drag (ADR-026 子决策 2), so the component needs no cap and no
  * per-mode injection — the earlier --macro-strip-cap variable, set by the
  * parent in one mode and left unset in the other, is retired. */
+/* Equal tracks on every row (auto-fill, not flex-grow): with flex-wrap the
+ * last row's tiles grew to fill the line, so 8 macros in 3 columns ended on
+ * two tiles half again as wide as the rest. */
 .grid {
-  display: flex;
-  flex-wrap: wrap;
-  align-content: flex-start;
+  display: grid;
+  grid-template-columns: repeat(
+    auto-fill,
+    minmax(min(var(--col-min-macro), 100%), 1fr)
+  );
+  align-content: start;
   gap: var(--s-2_5);
   padding: var(--s-3_5);
   flex: 1;
@@ -75,7 +81,7 @@
    gets the largest interactive type below page titles, a brand icon chip and
    real presence. 0-step reach should LOOK like the main event. */
 .macroCard {
-  flex: 1 1 var(--col-min-macro);
+  min-width: 0;
   flex-direction: row;
   align-items: center;
   gap: var(--s-3);
