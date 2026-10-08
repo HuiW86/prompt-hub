@@ -657,6 +657,7 @@ cues();
 const onScroll = [nav(), cockpit(), gears()];
 const boot = initialLang();
 if (boot === "en") setLang("en", { boot: true });
+document.documentElement.classList.remove("pre-en");
 $("[data-lang]").addEventListener("click", () =>
   setLang(lang === "en" ? "zh" : "en", { persist: true }),
 );

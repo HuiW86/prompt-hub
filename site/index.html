@@ -17,6 +17,8 @@
       content="AI 编程手动挡阶段的桌面仪表盘。⌥Space 唤起，一眼看全，复制即走。"
     />
     <meta property="og:image" content="og.png" />
+    <meta property="og:image:width" content="1200" />
+    <meta property="og:image:height" content="630" />
     <meta name="twitter:card" content="summary_large_image" />
     <link rel="icon" href="favicon.svg" type="image/svg+xml" />
     <link
@@ -26,16 +28,27 @@
       type="font/woff2"
       crossorigin
     />
-    <link
-      rel="preload"
-      href="fonts/GeistMono-Variable.woff2"
-      as="font"
-      type="font/woff2"
-      crossorigin
-    />
     <link rel="stylesheet" href="styles.css" />
     <script>
-      document.documentElement.classList.add("js");
+      // Decide the language before first paint so English visitors never see
+      // the Chinese copy reflow; main.js lifts .pre-en once it has swapped.
+      (function () {
+        var d = document.documentElement;
+        d.classList.add("js");
+        try {
+          var l =
+            new URLSearchParams(location.search).get("lang") ||
+            localStorage.getItem("ph-lang");
+          if (!l) {
+            l = (navigator.languages || []).some(function (x) {
+              return /^zh/i.test(x);
+            })
+              ? "zh"
+              : "en";
+          }
+          if (l === "en") d.classList.add("pre-en");
+        } catch (e) {}
+      })();
     </script>
     <script type="module" src="main.js"></script>
   </head>
@@ -139,11 +152,11 @@
 
             <div class="ck-body">
               <section class="ck-col ck-col--macro" aria-label="Macro">
-                <h3 class="ck-h">Macro <span class="ck-count">6</span></h3>
+                <p class="ck-h">Macro <span class="ck-count">6</span></p>
                 <div class="ck-macros" data-macros></div>
-                <h3 class="ck-h ck-h--sop">
+                <p class="ck-h ck-h--sop">
                   SOP · 方案设计型 <span class="ck-count">3/5</span>
-                </h3>
+                </p>
                 <ol class="ck-sop">
                   <li class="is-done">借力最优解</li>
                   <li class="is-done">全局视角出方案</li>
@@ -153,17 +166,17 @@
                 </ol>
               </section>
               <section class="ck-col ck-col--scene" aria-label="场景">
-                <h3 class="ck-h">场景 <span class="ck-count">3</span></h3>
+                <p class="ck-h">场景 <span class="ck-count">3</span></p>
                 <div class="ck-scenes" data-scenes></div>
               </section>
               <aside class="ck-col ck-col--aux" aria-label="辅助">
-                <h3 class="ck-h">Modifier</h3>
+                <p class="ck-h">Modifier</p>
                 <div class="ck-mods">
                   <span>第一性原理</span><span>信息不足先提问</span
                   ><span>主动调研推进</span><span>启动子代理并行</span
                   ><span>输出对比表格</span><span>用中文回答</span>
                 </div>
-                <h3 class="ck-h">最近使用</h3>
+                <p class="ck-h">最近使用</p>
                 <ul class="ck-recent" data-recent></ul>
               </aside>
             </div>

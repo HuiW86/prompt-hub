@@ -99,6 +99,18 @@
   --stagger: 70ms;
 }
 
+/* Hidden only until main.js applies English; the animation is a failsafe
+   so the page still appears if the script never runs. */
+.pre-en body {
+  visibility: hidden;
+  animation: unhide 0s 1.5s forwards;
+}
+@keyframes unhide {
+  to {
+    visibility: visible;
+  }
+}
+
 /* ── Base ─────────────────────────────────────────────────────── */
 *,
 *::before,
@@ -1040,6 +1052,15 @@ main > section + section {
   letter-spacing: 0;
 }
 
+/* Below-the-fold sections skip rendering until near the viewport. */
+.layers,
+.midway,
+.bounds,
+.close {
+  content-visibility: auto;
+  contain-intrinsic-size: auto 1000px;
+}
+
 /* ── Gears ────────────────────────────────────────────────────── */
 .gears {
   position: relative;
@@ -1282,7 +1303,7 @@ main > section + section {
   color: var(--fg-2);
 }
 .composer__sentence .frag {
-  color: var(--fg-4);
+  color: var(--fg-3);
 }
 .composer__sentence .m {
   color: var(--fg-1);
