@@ -14,6 +14,25 @@ description: prompt-hub 设计文档体系变更日志——记录文档结构�
 
 ---
 
+## 2026-10-08（四）— 主界面三处实现缺陷修复 + 减法设计 pass 送审
+
+### 变更内容
+
+代码修复**无设计文档契约变更**（不走八步）；另起一份送审稿，未签字前不动契约。
+
+| 项 | 内容 |
+|---|---|
+| 修复 | Modifier 原子库 hover 管理簇隐藏时仍占行内宽度，chip 行留洞 → 浮于 chip 旁（`src/components/ModifierGrid.module.css`），hover / `:focus-within` 显隐契约不变 |
+| 修复 | 最近使用类型徽标统一宽度，名称起点对齐（`src/components/RecentList.module.css`） |
+| 修复 | Macro 网格末行卡片被拉宽 → auto-fill 等宽网格（`src/components/MacroGrid.module.css`，[[HANDOFF]] 第 12 项销一部分） |
+| 送审 | `docs/plans/2026-10-08-ui-subtraction-pass.md`：删区域与 Header 副标题、相位条去重复 `⌘N`、`aligned` 改「对齐」、Toast 挪到底部居中 |
+
+### 变更原因
+
+Rosa 要求把应用界面打磨到 Awwwards / Webby / FWA 获奖品质。浏览器 + IPC mock 逐屏走查后，规范范围内的缺陷直接修，涉及契约的四项合为一个决定送审。
+
+---
+
 ## 2026-09-25（五）— 发布 v0.2.1：修复 macOS 27 启动即闪退
 
 ### 变更内容
