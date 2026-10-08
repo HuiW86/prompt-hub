@@ -24,3 +24,8 @@ export function isPrimaryModifier(e: KeyboardEvent): boolean {
 export function primaryModifierLabel(): string {
   return isMacLike() ? "⌘" : "Ctrl+";
 }
+
+// Key name for the primary modifier in the aria-keyshortcuts syntax.
+export function primaryModifierKey(): "Meta" | "Control" {
+  return isMacLike() ? "Meta" : "Control";
+}

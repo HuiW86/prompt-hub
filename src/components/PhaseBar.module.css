@@ -114,13 +114,5 @@
   letter-spacing: var(--tr-tight);
 }
 
-.shortcut {
-  composes: ph-num from "../styles/typography.module.css";
-}
-
-.phase.active .shortcut {
-  color: var(--fg-2);
-}
-
 /* Copy flash uses the single shared ph-flash keyframe (§11); injected by
    composing primitives .protocol + .flash on the active phase in PhaseBar.tsx. */

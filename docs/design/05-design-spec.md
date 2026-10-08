@@ -1,10 +1,10 @@
 ---
 type: design-spec
 project: prompt-hub
-version: v0.22
+version: v0.23
 created: 2026-05-18
-last_modified: 2026-09-03
-status: ratified  # v0.22 于 2026-09-03 人审批次 ⑧ 经 omar 签字（与 [[06-prd]] v0.14 / [[03-product-spec]] v0.25 同批）。本版内容：§10.2.2 `ConfirmInline` 用量由六处收缩至一处（清空废纸篓）+ §11 新增「Toast 让位规则」（撤销 toast 不被普通 toast 顶掉，error 例外），两项都是**行为契约**不是施工细节，按 [[CLAUDE#§5.1.2]] 需签字。前 v0.21 于 2026-09-03 人审批次 ⑦ ratified（§10.2.2 接口契约第 6 条随 product-spec「锚点再按一次 = 无事发生」签字，第 5 条 `initialFocus` 必填属施工规范随批通过）；更前 v0.20 于 2026-09-01 人审批次 ⑥ ratified
+last_modified: 2026-10-08
+status: ratified  # v0.23 于 2026-10-08 经 Rosa 在项目线程签字（人审批次 ⑬，单裁点「主界面减法 pass 四项」按推荐通过）：Toast 由右上角挪到底部居中（状态栏上方）+ Header 副标 / 相位格快捷键标签退场（与 [[03-product-spec]] v0.30 同批），明细见文末修订记录 v0.23。前 v0.22 于 2026-09-03 人审批次 ⑧ 经 omar 签字（与 [[06-prd]] v0.14 / [[03-product-spec]] v0.25 同批）。本版内容：§10.2.2 `ConfirmInline` 用量由六处收缩至一处（清空废纸篓）+ §11 新增「Toast 让位规则」（撤销 toast 不被普通 toast 顶掉，error 例外），两项都是**行为契约**不是施工细节，按 [[CLAUDE#§5.1.2]] 需签字。前 v0.21 于 2026-09-03 人审批次 ⑦ ratified（§10.2.2 接口契约第 6 条随 product-spec「锚点再按一次 = 无事发生」签字，第 5 条 `initialFocus` 必填属施工规范随批通过）；更前 v0.20 于 2026-09-01 人审批次 ⑥ ratified
 author: co  # 🤝 人机共创（CLAUDE §5.2）
 related: [[01-spec]], [[02-constitution]], [[03-product-spec]], [[012-lock-visual-quality-anchor]], [[023-ui-reshape-before-release]], [[024-dark-cockpit-identity]], [[019-supersede-flat-visual-anchor]], [[020-restore-protocol-dark-band]], [[021-scene-layered-editing]], [[025-unified-anchored-editing]], [[CLAUDE-DESIGN]], [[015-expose-mcp-write-pipeline]], [[016-choose-dnd-and-resizable-layout]], [[018-absorb-promptscape-design]], [[026-fixed-spatial-layout]], [[028-reversible-delete]], [[asset-editing-and-adaptive-layout]]
 description: 手动 AI 编程仪表盘的视觉规范——tokens.css 单一真源 + 主题/elevation/组件视觉契约；写 CSS / 视觉时召回。版本叙事见 CHANGELOG
@@ -491,7 +491,7 @@ else root.classList.add('system') // v0.20：system 也落 class，@media guard 
 - 高度：`--h-phasebar` 44px（v0.6 的 80px 在 bundle 视觉密度下显冗余，已收敛到 44px）
 - **当前激活态**：`--protocol-8` 背景填充 + `--protocol` 2px 下边框（`--border-thick`）+ 字重 `--w-600`
 - **其他态**：透明背景 + `--border-1` hairline 下分隔 + 字重 `--w-400`
-- 每个 Phase 显示：Phase 名（`--t-13` / `--w-600` 激活 / `--w-400` 非激活）+ 快捷键标签（`--t-11` ⌘1-⌘8，`--font-mono`）
+- 每个 Phase 显示：序号 chip + Phase 名（`--t-13` / `--w-600` 激活 / `--w-400` 非激活）。**v0.23 起无常驻快捷键标签**——`⌘N` 走悬停 `title` + `aria-keyshortcuts`（[[03-product-spec]] v0.30）
 - 与之相对：SearchBar 视觉权重压低（`--surface-2` 背景 + `--fg-3` 占位 + 居中宽度 ~60%）— SearchBar 是兜底不是主入口
 
 ---
@@ -599,7 +599,7 @@ bundle / Claude Design 视觉锚点变更时（如 Linear 大版本视觉重做 
 > **v0.13 已落地**（P3-7；v0.15 扩为上表 12 个）：7 个 preset 全量落盘 **`src/styles/typography.module.css`（真源）**，组件经 CSS Modules `composes` 引用（longhand 写法，允许 composing class 覆盖单轴）。落地随注三条：
 > 1. **覆盖 preset 属性须加倍类名**——Vite 将 typography module 发射在 bundle 中段，等 specificity 本地覆盖不保序（dev/build 顺序不同）；现例 `primitives .emptyRow.emptyRow`
 > 2. **Input 例外**：采 `.ph-card-body` 度量但输入文本 `color` 保 `--fg-1`（preset 的 `--fg-2` 会压暗用户输入；grouped selector 不能 composes 故用 longhand）
-> 3. **登记遗留分叉**：mono 计数惯例（RegionHeader count / MacroGrid `.uses` / PhaseBar `.shortcut` / RecentList `.itemTime` / DraftInbox `.time`——mono + tabular-nums + `--aux`）与 `.ph-meta`（sans）系统性分叉，按「工作区现状优先」未强迁，待后续收编为 mono 变体或显式豁免；`.ph-code` 已落地但暂无消费者（Modifier raw text 现 UI 只显名字）
+> 3. **登记遗留分叉**：mono 计数惯例（RegionHeader count / MacroGrid `.uses` / ~~PhaseBar `.shortcut`~~（v0.23 随标签退场）/ RecentList `.itemTime` / DraftInbox `.time`——mono + tabular-nums + `--aux`）与 `.ph-meta`（sans）系统性分叉，按「工作区现状优先」未强迁，待后续收编为 mono 变体或显式豁免；`.ph-code` 已落地但暂无消费者（Modifier raw text 现 UI 只显名字）
 
 ---
 
@@ -641,7 +641,7 @@ bundle 派生的 3 个跨组件 chrome primitive：
 |-----------|------|---------|
 | `RegionHeader` | 每个区域顶部 header（图标 + 标题 + 右侧 meta count / action）| `--h-region-header` 40px / 内边距 `--s-3_5` 14px / typography `.ph-region-header` / 右侧 meta `.ph-meta` |
 | `EmptyState` | 区域无数据时的中央提示 | 中央对齐 / typography `.ph-empty` / 与 region edge 距离 `--s-6` 24px。**v0.13 富空态插槽**（P3-5，向后兼容纯文字）：`icon`（插图 glyph，如 Scene=`Folder` / Macro=`Zap`）+ `title`（标题行）+ `action`（就地 CTA，如 Scene 空态「创建第一个场景」accent Button）+ `framed`（dashed 边框卡壳）+ `row`（横条形态，Macro 空态用）|
-| `Kbd` | 快捷键 badge（⌘K / ⌥Space / ⌘1-8）| 矩形 / `--r-1` 2px 圆角 / 内边距 `--s-0_5` 2px × `--s-1_25` 5px / typography `.ph-hotkey` |
+| `Kbd` | 快捷键 badge（⌘K / ⌥Space / ⌘,）| 矩形 / `--r-1` 2px 圆角 / 内边距 `--s-0_5` 2px × `--s-1_25` 5px / typography `.ph-hotkey` |
 
 #### 10.2.2 surface / control / editor primitive（v0.10 新增）
 
@@ -700,14 +700,14 @@ bundle 派生的 3 个跨组件 chrome primitive：
 | `ScenePanel` | task | 视图态：子阶段多列全景 **auto-fit** grid `repeat(auto-fit, minmax(min(var(--col-min-substage), 100%), 1fr))`（v0.13 P3-1：窄面板自动降列不挤压、少列拉伸填满、窄于 184px 单列兜底；原 auto-fill/固定 4 列作废），每子阶段一列、phrase 堆为 border 卡；**未归组话术列头无条件渲染为「未分组」**（复用 subStage 头结构含序号，文案 muted `--fg-3`）；编辑态保留纵向行 | sceneCard resting `--shadow-1`；phrase 卡 border-only + hover `--lift-1` 抬起 + active `--surface-2` |
 | `RecentList` | aux | surface-1 卡片容器（v0.13 P3-3 升级：margin/border/`--r-4` 对齐同列 ModifierGrid 卡）+ 行列表 | 卡 resting `--shadow-1`；行 hover `--surface-2` + `--lift-1`、active `--surface-3`；meta time 右侧；**徽标中性化（v0.13 / ADR-020）**：「对齐话术」徽标撤 `--accent` 实底，与任务徽标同形中性描边、靠文字区分（§13.1）|
 | `ModifierGrid`（v0.13 回归，aside 参考面）| protocol（参考）| aside 列顶部紧凑卡（非 Tab cycle region）：四象限 groupKind 分组、每 modifier 一枚 `Chip`（click-to-copy，直写剪贴板不记 usage）| 卡 resting `--shadow-1`；chip hover `--lift-1`；RegionHeader right slot 挂「`Route` 协议层 · 参考」小型层标记 pill（ADR-020 层级编码）；**P3-6 最小管理簇**：chip hover/`:focus-within` 显隐 移象限菜单（`ArrowRightLeft`，列其余三象限）+ 删除（**v0.22：`ConfirmInline` 二次确认已拆，改一键 + 撤销 toast**，[[03-product-spec#13.3]]「删除语义统一契约」），键盘可达——是「参考 + 最小管理入口」，非 v1.3 移除的完整编辑面板 |
-| `Toast`（v0.13 契约收录）| chrome（中性）| 角落浮条 | intent 分级见 §11「Toast intent 契约」：success 中性 800ms / error 借 `--accent-swatch-amber` 4000ms + `--w-600` |
+| `Toast`（v0.13 契约收录）| chrome（中性）| 底部居中浮条，悬于状态栏上方 `--s-3`（**v0.23 由右上角挪来**：右上角盖住「调用 / 整理」切换与设置齿轮，复制后约 0.8–6 秒内点不到）| intent 分级见 §11「Toast intent 契约」：success 中性 800ms / error 借 `--accent-swatch-amber` 4000ms + `--w-600` |
 | `SopProgress` | task | 进度条 | `--skeleton` 底 + `--accent` 填充（v0.12 中性，原 `--task`）|
 | `StatusBar` | aux | `--h-statusbar` 28px | dot + meta text + 右侧 Kbd 群 |
 | `PendingBadge`（v0.8）| aux | inline，高度 `--h-chip` 24px | lucide `Inbox` + count text，仅 N>0 渲染，详见 §10.4 |
 | `DraftInbox`（v0.8）| aux | Scene tab 行最左入口 + 列表面板 | tab 入口 lucide `Inbox` + 分隔，列表挂 `DraftCard`，详见 §10.4 |
 | `DraftCard`（v0.8）| aux（中性，promote 前不染 ontology）| 卡片 | border-only neutral + target_type 文字角标 + provenance + promote/discard，详见 §10.4 |
 | `PanoramaSeparator`（v0.9 / v0.16 双向）| chrome（aux 中性）| **两个变体**：列间竖分隔条（hairline 宽）+ **task 列内 Macro/Scene 横分隔条（hairline 高，v0.16）** | `--border-1` hairline baseline + hover 加深 `--border-3` + focus outline `--accent`；分隔条属 hairline 类**不加 elevation**（§8.2.1：shadow 仅浮层类）；仍**无渐变/玻璃感**。**拖拽命中区不等于视觉宽度**：`react-resizable-panels` 按 `resizeTargetMinimumSize` 把 1px 视觉条的命中区撑至**鼠标 10px / 触控 20px**，并在 hover 态即注入 `cursor: col-resize|ns-resize`。详见 §10.5 |
-| `Header`（v0.11）| chrome（中性强调）| 顶部 slim 行，gear `--h-quickfind` 36px | logo 方块染 `--accent`/`--accent-fg`（B2 中性强调面）+ 标题/副标 + 内嵌 `SearchBar`(flex-1) + gear `IconButton`；去设计稿头像（spec §8.2 无账号），详见 §10.8 / 涟漪 [[018-absorb-promptscape-design]] |
+| `Header`（v0.11）| chrome（中性强调）| 顶部 slim 行，gear `--h-quickfind` 36px | logo 方块染 `--accent`/`--accent-fg`（B2 中性强调面）+ 标题（v0.23 起无副标）+ 内嵌 `SearchBar`(flex-1) + gear `IconButton`；去设计稿头像（spec §8.2 无账号），详见 §10.8 / 涟漪 [[018-absorb-promptscape-design]] |
 | `ProtocolBand`（v0.11 / v0.13 暗 band）| protocol | 协议层容器 band（inset，`--r-frame`）| **v0.13（[[020-restore-protocol-dark-band]]）改 `--band-bg` 暗底 + band 作用域整体重映射中性 token**（§2.4.5），双主题恒为深底浅字；`Route` icon「协议层」pill；纯布局壳，PhaseBar+AlignmentPhrases 内容/数据不变，详见 §10.8.2 |
 | `SettingsModal`（v0.11）| chrome（中性强调）| 居中 overlay 弹窗（`--scrim` 遮罩，宽 `--w-settings-modal`）| 左导航(外观/更新) + 右内容；外观=主题三态分段控件 + 5 色强调 swatch；更新=opt-in 开关 + 状态行 + 检查/安装（复用 updaterStore）；焦点环/激活态用 `--accent`（中性强调，B2 安全），详见 §10.8 |
 | `AnchoredEditor`（v0.18）| 继承内层 `EditorPanel` | 锚定在触发元素上的 top layer 浮层，宽随内容、**高受 frame 相对上限约束**后内部滚动 | 原生 `popover="manual"` 进 top layer（**不 portal 到 `body`**——DOM 祖先链不变，`ProtocolBand` 的 `--band-*` remap 照常继承，§2.4.5 用法 hard rule 得以成立）；`--shadow-2` + `--z-popover` 兜底；四个宿主共用（对齐话术 chip / Macro 卡 / Scene 话术卡 / 草稿卡「编辑」按钮），接口契约见 §10.2.2 |
@@ -873,7 +873,7 @@ bundle 派生的 3 个跨组件 chrome primitive：
 |------|---------|
 | 容器 | `--surface-1` 底 + 底部 hairline `--border-1`；padding `--s-2`/`--s-3_5`；行内 flex，gap `--s-3` |
 | logo | `--s-8` 32px 方块，圆角 `--r-4`，**染 `--accent`/`--accent-fg`**（B2 中性强调面——非 ontology）；lucide `Layers` 16px |
-| 标题 | 「prompt-hub」`--w-600` `--t-14`（**不改名 Promptscape**，spec 定位）+ 副标「提示词资产 · 全景仪表盘」`--fg-3` `--t-11` |
+| 标题 | 「prompt-hub」`--w-600` `--t-14`（**不改名 Promptscape**，spec 定位）。**v0.23 删副标**「提示词资产 · 全景仪表盘」：解释性文案，用过一次即无信息量 |
 | 搜索 | 内嵌 `SearchBar`，flex-1 占据中段（由整行 border-only 改为圆角内联字段，行 chrome 上移到 Header）|
 | gear | `IconButton` `--h-quickfind` 36px，lucide `Settings`，点击 `openSettings`（⌘,）；hover `--surface-2`/`--fg-1` |
 | 禁止 | ❌ 账号头像（spec §8.2 单用户无账号）❌ logo 染 ontology 色 |
@@ -1093,6 +1093,15 @@ bundle 派生的 3 个跨组件 chrome primitive：
 ---
 
 ## 修订记录
+
+### v0.23（2026-10-08）— 主界面减法 pass：Toast 挪位 + 两处标签退场
+
+> **状态：`ratified`——2026-10-08 经 Rosa 在项目线程签字（人审批次 ⑬，单裁点「主界面减法 pass 四项」按推荐通过）。** 送审稿 [[2026-10-08-ui-subtraction-pass]]，与 [[03-product-spec]] v0.30 同批。
+
+- **§10.3 `Toast` 行**：「角落浮条」改「底部居中浮条，悬于状态栏上方」。原位置（`top: --s-6` / `right: --s-8`）正好盖住 Header 右端的模式切换与齿轮，而 toast 面 `pointer-events: none` 只让点击穿透、不让人看见被盖的按钮。入场位移随之由向下改向上。§11 intent 分级与让位规则**一字不动**
+- **§6 相位带**：快捷键标签退场，改悬停提示；§9 遗留分叉清单划掉 `PhaseBar .shortcut`；§10.2 `Kbd` 示例去掉 `⌘1-8`
+- **§10.3 / §10.8.1 Header**：删副标
+- **不动 token**：本批没有增删 `tokens.css` 条目；Toast 底距由既有 `--h-statusbar` + `--s-3` 组成
 
 ### v0.22（2026-09-03）— ADR-028 涟漪：`ConfirmInline` 用量收缩 + Toast 让位规则
 

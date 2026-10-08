@@ -22,10 +22,7 @@ export function Header() {
         <span className={styles.logo} aria-hidden>
           <Layers size={16} strokeWidth={2} />
         </span>
-        <span className={styles.titles}>
-          <span className={styles.title}>prompt-hub</span>
-          <span className={styles.subtitle}>提示词资产 · 全景仪表盘</span>
-        </span>
+        <span className={styles.title}>prompt-hub</span>
       </div>
       <nav className={styles.workspaces} aria-label="工作区">
         <button

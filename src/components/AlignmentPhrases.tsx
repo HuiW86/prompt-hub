@@ -196,7 +196,7 @@ export function AlignmentPhrases() {
       tabIndex={0}
       onKeyDown={onRegionKeyDown}
     >
-      <span className={styles.label}>aligned</span>
+      <span className={styles.label}>对齐</span>
       {phrases.length === 0 && !adding ? (
         <span className={styles.empty}>
           {activePhaseId == null ? "未选相位" : "暂无对齐话术"}

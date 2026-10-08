@@ -618,7 +618,7 @@ describe("Dashboard click → IPC flow", () => {
     expect(findRecordUsageInputs()[0]).toMatchObject({ suppressHide: false });
   });
 
-  it("renders a ninth cell with a ⌘9 keycap when nine phases are visible", async () => {
+  it("renders a ninth cell bound to ⌘9 when nine phases are visible", async () => {
     // A copy flash left over from an earlier test would add classes to whichever
     // cell it targeted, which is exactly what the last assertion inspects.
     useToastStore.getState().clear();
@@ -646,7 +646,11 @@ describe("Dashboard click → IPC flow", () => {
     );
     const ninth = bar?.querySelectorAll("button")[8];
     expect(ninth?.textContent).toContain("中途");
-    expect(ninth?.textContent).toContain("⌘9");
+    // The ⌘N hint lives in the tooltip and aria-keyshortcuts, not as a
+    // visible keycap (2026-10-08 subtraction pass).
+    expect(ninth?.textContent).not.toContain("⌘");
+    expect(ninth?.getAttribute("title")).toBe("⌘9");
+    expect(ninth?.getAttribute("aria-keyshortcuts")).toBe("Meta+9");
     // The ninth cell is not styled apart — same class list as the others.
     expect(ninth?.className).toBe(
       bar?.querySelectorAll("button")[3]?.className,

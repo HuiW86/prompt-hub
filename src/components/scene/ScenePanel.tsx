@@ -465,7 +465,7 @@ export function ScenePanel() {
         tabIndex={0}
         onKeyDown={onRegionKeyDown}
       >
-        <RegionHeader title="Scene" subtitle="场景全景" count={0} />
+        <RegionHeader title="Scene" count={0} />
         {/* Rich empty state (Promptscape empty Scene: dashed card + folder
             icon + headline + accent CTA wired to the existing create entry). */}
         <EmptyState
@@ -505,7 +505,7 @@ export function ScenePanel() {
       tabIndex={0}
       onKeyDown={onRegionKeyDown}
     >
-      <RegionHeader title="Scene" subtitle="场景全景" count={scenes.length} />
+      <RegionHeader title="Scene" count={scenes.length} />
       <SceneTabs
         scenes={scenes}
         currentSceneId={currentSceneId}

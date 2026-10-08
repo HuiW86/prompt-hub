@@ -1,14 +1,16 @@
 ---
 type: plan
 project: prompt-hub
-version: v0.1
+version: v0.2
 created: 2026-10-08
-status: proposed
+status: accepted
 author: ai
 description: 主界面减法设计 pass 送审稿——四处删减/挪位，超出减法快车道上限，需 omar 一次签字后走八步
 ---
 
-# 主界面减法设计 pass（送审）
+# 主界面减法设计 pass
+
+> **2026-10-08 经 Rosa 在项目线程签字，四项同意**；回流 [[03-product-spec]] v0.30 / [[05-design-spec]] v0.23 后同日实施。
 
 ## 要签的决定
 
@@ -23,7 +25,7 @@ description: 主界面减法设计 pass 送审稿——四处删减/挪位，超
 | # | 改什么 | 为什么 | 落点 |
 |---|---|---|---|
 | 1 | 删区域副标题「· 高频一键入口」「· 原子方法论」「· 场景全景」及 Header 副标题「提示词资产 · 全景仪表盘」 | 解释性文案，用过一次就不再有信息量；区域名本身已足够 | `src/components/primitives/RegionHeader.tsx`（`subtitle`）、`src/components/Header.tsx` |
-| 2 | 相位条每格去掉 `⌘1`…`⌘9` 小字 | 格内已有序号方框，同一信息出现两次；状态栏另有快捷键提示 | `src/components/PhaseBar.tsx`（`.shortcut`） |
+| 2 | 相位条每格去掉 `⌘1`…`⌘9` 小字 | 格内已有序号方框，同一信息出现两次。（更正：送审时写「状态栏另有快捷键提示」不成立，状态栏不含 ⌘1–9，故实施时把 `⌘N` 挪进悬停 `title` 与 `aria-keyshortcuts`） | `src/components/PhaseBar.tsx`（`.shortcut`） |
 | 3 | 对齐行标签 `aligned` 改为「对齐」 | 全界面中文，只有这一处英文小写标签 | `src/components/AlignmentPhrases.tsx` |
 | 4 | Toast 从右上角挪到底部居中，状态栏上方 | 现位置盖住「调用 / 整理」切换与设置按钮，复制后约 0.8–4 秒内点不到 | `src/components/Toast.module.css`；[[05-design-spec]] §10.3 Toast 行「角落浮条」 |
 
@@ -34,7 +36,7 @@ description: 主界面减法设计 pass 送审稿——四处删减/挪位，超
 用浏览器 + IPC mock 渲染的同一状态（相位 3，1512×945）。「复制失败」是 mock 剪贴板的产物，真机上是「已复制」。
 
 - 现状：`docs/plans/assets/2026-10-08-ui-pass-before.png`
-- 提案：`docs/plans/assets/2026-10-08-ui-pass-after.png`（CSS 覆写模拟，未改源码）
+- 实施后：`docs/plans/assets/2026-10-08-ui-pass-after.png`（签字后按实际源码重拍）
 
 ## 同 PR 已修、无需签字的实现缺陷
 

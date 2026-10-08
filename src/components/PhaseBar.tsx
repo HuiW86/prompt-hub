@@ -3,7 +3,7 @@ import { useAppStore } from "../stores/appStore";
 import { usePromptStore } from "../stores/promptStore";
 import { useSettingsStore } from "../stores/settingsStore";
 import { useToastStore } from "../stores/toastStore";
-import { primaryModifierLabel } from "../utils/platform";
+import { primaryModifierKey, primaryModifierLabel } from "../utils/platform";
 
 import primitiveStyles from "./primitives/primitives.module.css";
 import styles from "./PhaseBar.module.css";
@@ -45,16 +45,14 @@ export function PhaseBar() {
             data-phase-id={phase.id}
             data-nav-item
             tabIndex={-1}
+            title={`${primaryModifierLabel()}${idx + 1}`}
+            aria-keyshortcuts={`${primaryModifierKey()}+${idx + 1}`}
             onClick={() => setActivePhase(phase.id)}
           >
             <span className={styles.num} aria-hidden>
               {idx + 1}
             </span>
             <span className={styles.label}>{phase.name}</span>
-            <kbd className={styles.shortcut}>
-              {primaryModifierLabel()}
-              {idx + 1}
-            </kbd>
           </button>
         );
       })}

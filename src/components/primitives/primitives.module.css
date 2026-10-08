@@ -49,16 +49,6 @@
   composes: ph-region-header from "../../styles/typography.module.css";
 }
 
-/* Region descriptor (Promptscape "主名 · 副述") — a muted suffix to the title. */
-.regionHeaderSubtitle {
-  font-family: var(--font-sans);
-  font-size: var(--t-13);
-  font-weight: var(--w-400);
-  line-height: 1;
-  color: var(--fg-3);
-  white-space: nowrap;
-}
-
 /* Count badge (reshape v2): the sediment number gets a quiet chip shape so
    usage data reads as an instrument readout, not stray text. */
 .regionHeaderCount {

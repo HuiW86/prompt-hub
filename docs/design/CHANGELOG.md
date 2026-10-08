@@ -14,6 +14,27 @@ description: prompt-hub 设计文档体系变更日志——记录文档结构�
 
 ---
 
+## 2026-10-08（四）— 主界面减法 pass 签字落地：product-spec v0.30 / design-spec v0.23
+
+### 变更内容
+
+送审稿 [[2026-10-08-ui-subtraction-pass]] 当日经 Rosa 在项目线程签字（人审批次 ⑬，单裁点按推荐通过），按八步回流后实施。
+
+| 项 | 契约 | 代码 |
+|---|---|---|
+| 删副标 | product-spec §13.3 Header / 区域 3；design-spec §10.3 / §10.8.1 | `RegionHeader` 去 `subtitle` prop 与样式；`Header.tsx` 去副标 |
+| 相位格快捷键 | product-spec §13.3 区域 2；design-spec §6 / §9 / §10.2 | `PhaseBar.tsx` 去 `.shortcut` 常驻标签，改 `title` + `aria-keyshortcuts`（新增 `primaryModifierKey()`），`⌘N` 行为不变 |
+| 对齐行标签 | product-spec §13.3 区域 2-bis（补写） | `AlignmentPhrases.tsx` `aligned` → 「对齐」，标签改 sans、去大写与字距 |
+| Toast 挪位 | design-spec §10.3 | `Toast.module.css` 右上 → 底部居中、状态栏上方 `--s-3`，入场位移向上 |
+
+无 token 增删、无 IPC / schema 变动。测试：`App.test.tsx` 第 9 格用例由「可见 `⌘9` 键帽」改断言 `title` 与 `aria-keyshortcuts`。
+
+### 变更原因
+
+送审时说明有一处写错：稿中称「状态栏另有快捷键提示」，实际状态栏只列 ⌘K / ⏎ / ⌘,，不含 ⌘1–9。因此实施时没有单纯删除，而是把 `⌘N` 挪进悬停提示与无障碍属性，保住可发现性。
+
+---
+
 ## 2026-10-08（四）— 主界面三处实现缺陷修复 + 减法设计 pass 送审
 
 ### 变更内容
