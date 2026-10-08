@@ -531,6 +531,12 @@ function gears() {
       at = [a[0] + (b[0] - a[0]) * k, a[1] + (b[1] - a[1]) * k];
       place(at);
       if (now - start < dur) anim = requestAnimationFrame(frame);
+      else {
+        // A small seat into the gate, like a lever finding its detent.
+        knob.classList.remove("is-landed");
+        void knob.getBoundingClientRect();
+        knob.classList.add("is-landed");
+      }
     };
     anim = requestAnimationFrame(frame);
   }

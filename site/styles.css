@@ -1130,6 +1130,18 @@ main > section + section {
 .shifter__knob circle:first-child {
   fill: var(--fg-1);
 }
+.shifter__knob.is-landed circle:first-child {
+  animation: clunk 260ms var(--ease-out);
+}
+@keyframes clunk {
+  40% {
+    transform: scale(1.18);
+  }
+}
+.shifter__knob circle:first-child {
+  transform-box: fill-box;
+  transform-origin: center;
+}
 .shifter__core {
   fill: var(--canvas);
   transition: fill var(--duration-ui) var(--ease-out);
@@ -1626,6 +1638,20 @@ main > section + section {
   letter-spacing: var(--track-tight);
   font-weight: 640;
 }
+.caret {
+  display: inline-block;
+  width: 0.07em;
+  height: 0.82em;
+  margin-left: 0.08em;
+  vertical-align: -0.04em;
+  background: var(--brand);
+  animation: blink 1.1s steps(1) infinite;
+}
+@keyframes blink {
+  50% {
+    opacity: 0;
+  }
+}
 .close__cta {
   display: flex;
   align-items: center;
@@ -1637,7 +1663,9 @@ main > section + section {
   align-items: center;
   gap: var(--space-5);
   padding-block: var(--space-6);
-  border-top: var(--hairline) solid var(--border-1);
+  /* Hairline aligned to the content edges, not the padded box. */
+  background: linear-gradient(var(--border-1), var(--border-1)) no-repeat center
+    top / calc(100% - 2 * var(--gutter)) var(--hairline);
 }
 .foot a {
   margin-left: auto;
@@ -1672,6 +1700,9 @@ main > section + section {
     --tilt: 0 !important;
   }
   .hero__stream ul {
+    animation: none !important;
+  }
+  .caret {
     animation: none !important;
   }
 }

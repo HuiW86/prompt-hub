@@ -154,7 +154,10 @@ export const EN = [
     "No language model inside: nothing generated, rewritten or recommended. After the copy, pasting and sending are yours. That pause is room to think.",
   ],
 
-  ["#close-title", "The next line<br />is yours."],
+  [
+    "#close-title",
+    'The next line<br />is yours.<span class="caret" aria-hidden="true"></span>',
+  ],
   [".close__cta .btn", "Download for macOS"],
   [
     ".close__cta p",
