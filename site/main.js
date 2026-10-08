@@ -1,6 +1,9 @@
 // prompt-hub site — progressive enhancement only. Every section reads fine
 // without this file; the script adds the live cockpit, the gear shifter and
-// the composer. No network calls, no storage, no third-party code.
+// the composer. No network calls and no third-party code; the only storage
+// is the visitor's language choice.
+
+import { EN, EN_META, AXIS_EN } from "./i18n.js";
 
 const $ = (sel, root = document) => root.querySelector(sel);
 const $$ = (sel, root = document) => [...root.querySelectorAll(sel)];
@@ -114,24 +117,119 @@ async function copy(text) {
   }
 }
 
+/* ── Language ─────────────────────────────────────────────────── */
+let lang = "zh";
+const t = (zh, en) => (lang === "en" ? en : zh);
+const ZH = EN.map(([sel, , attrs]) => {
+  const n = $(sel);
+  if (!n) return null;
+  const a = {};
+  for (const k of Object.keys(attrs ?? {})) a[k] = n.getAttribute(k);
+  return { n, html: n.innerHTML, attrs: a };
+});
+const ZH_META = {
+  title: document.title,
+  description: $("meta[name=description]").content,
+};
+const langListeners = [];
+
+function initialLang() {
+  const q = new URLSearchParams(location.search).get("lang");
+  if (q === "en" || q === "zh") return q;
+  try {
+    const saved = localStorage.getItem("ph-lang");
+    if (saved === "en" || saved === "zh") return saved;
+  } catch {
+    /* storage blocked: fall through to the browser language */
+  }
+  return navigator.languages?.some((l) => /^zh/i.test(l)) ? "zh" : "en";
+}
+
+function setLang(next, { persist = false, boot = false } = {}) {
+  lang = next;
+  const en = next === "en";
+  document.documentElement.lang = en ? "en" : "zh-CN";
+  EN.forEach(([, html, attrs], i) => {
+    const zh = ZH[i];
+    if (!zh) return;
+    if (html !== null) zh.n.innerHTML = en ? html : zh.html;
+    for (const [k, v] of Object.entries(attrs ?? {})) {
+      zh.n.setAttribute(k, en ? v : zh.attrs[k]);
+    }
+  });
+  const meta = en ? EN_META : ZH_META;
+  document.title = meta.title;
+  $("meta[name=description]").content = meta.description;
+  $$("[data-cue]").forEach((b) => {
+    b.dataset.label = en ? AXIS_EN[b.dataset.axis] : b.dataset.axis;
+  });
+  const toggle = $("[data-lang]");
+  toggle.textContent = en ? "中文" : "EN";
+  toggle.setAttribute("lang", en ? "zh-CN" : "en");
+  toggle.setAttribute("aria-label", en ? "切换到中文" : "Switch to English");
+  if (!boot) splitHeadlines(true);
+  langListeners.forEach((f) => f());
+  if (persist) {
+    try {
+      localStorage.setItem("ph-lang", next);
+    } catch {
+      /* not persisted; the toggle still works for this visit */
+    }
+  }
+}
+
 /* ── Split headline into glyphs ───────────────────────────────── */
-function splitHeadlines() {
+function splitHeadlines(replay) {
+  const root = document.documentElement;
+  if (replay) root.classList.remove("is-ready");
   $$("[data-split]").forEach((line, li) => {
     const text = line.textContent;
-    line.textContent = "";
-    line.setAttribute("aria-label", text);
+    const glyphs = el("span", { "aria-hidden": "true" });
     [...text].forEach((ch, i) => {
-      const s = el("span", { class: "ch", "aria-hidden": "true" }, ch);
+      const s = el("span", { class: "ch" }, ch === " " ? "\u00a0" : ch);
       s.style.setProperty("--i", i);
       s.style.setProperty("--line", li);
-      line.append(s);
+      glyphs.append(s);
     });
+    line.replaceChildren(el("span", { class: "sr" }, text), glyphs);
   });
-  const go = () => document.documentElement.classList.add("is-ready");
+  const go = () => requestAnimationFrame(() => root.classList.add("is-ready"));
+  if (replay) {
+    void root.offsetWidth;
+    go();
+    return;
+  }
   Promise.race([
     document.fonts.ready,
     new Promise((r) => setTimeout(r, 600)),
-  ]).then(() => requestAnimationFrame(go));
+  ]).then(go);
+}
+
+/* ── Hero stream: the asset library, scrolling past ──────────── */
+function stream() {
+  const list = $("[data-stream]");
+  const rows = [
+    ...MACROS.map(([n, b], i) => [`⌘${i + 1}`, n, b]),
+    ...PHASES.map(([n, b]) => ["对齐", n, b]),
+    ...SCENES.flatMap(([s, , ps]) => ps.map(([n, b]) => [s, n, b])),
+  ];
+  // Interleave so kinds alternate, then repeat once for a seamless loop.
+  const mixed = rows
+    .map((r, i) => [((i * 7) % rows.length) + i / 100, r])
+    .sort((a, b) => a[0] - b[0])
+    .map(([, r]) => r);
+  for (let pass = 0; pass < 2; pass++) {
+    mixed.forEach(([k, n, b], i) => {
+      const li = el(
+        "li",
+        {},
+        el("b", {}, k),
+        el("span", {}, el("em", {}, n), "  ", b),
+      );
+      if (i % 6 === 2) li.classList.add("is-lit");
+      list.append(li);
+    });
+  }
 }
 
 /* ── Scroll reveals ───────────────────────────────────────────── */
@@ -191,6 +289,7 @@ function cockpit() {
   let scrim = null;
   let returnFocus = null;
   let toastTimer = 0;
+  let lastMs = 0;
 
   PHASES.forEach(([name], i) => {
     const b = el(
@@ -273,7 +372,7 @@ function cockpit() {
     row.classList.add("is-new");
     recentEl.prepend(row);
     while (recentEl.children.length > 5) recentEl.lastElementChild.remove();
-    showToast(ok ? `已复制 · ${name}` : `${name}`);
+    showToast(ok ? t(`已复制 · ${name}`, `Copied · ${name}`) : name);
     if (summoned) setTimeout(dismiss, 260);
   }
 
@@ -293,7 +392,11 @@ function cockpit() {
       scrim.classList.add("is-on");
       requestAnimationFrame(() => {
         const ms = Math.max(1, Math.round(performance.now() - t0));
-        latency.textContent = `唤起 ${ms}ms · 上限 200ms`;
+        latency.textContent = t(
+          `唤起 ${ms}ms · 上限 200ms`,
+          `Summoned in ${ms}ms · budget 200ms`,
+        );
+        lastMs = ms;
         latency.classList.add("is-hot");
       });
     });
@@ -349,6 +452,15 @@ function cockpit() {
   addEventListener("keyup", () => keyBtn.classList.remove("is-down"));
 
   setPhase(phase, false);
+  const paintLatency = () => {
+    latency.textContent = lastMs
+      ? t(
+          `唤起 ${lastMs}ms · 上限 200ms`,
+          `Summoned in ${lastMs}ms · budget 200ms`,
+        )
+      : t("唤起上限 200ms", "Summon budget 200ms");
+  };
+  langListeners.push(paintLatency);
 
   // Tilt flattens as the replica scrolls into view.
   return () => {
@@ -472,7 +584,7 @@ function composer() {
       out.append(s);
     }
     const n = $$(".mod[aria-pressed='true']", root).length;
-    count.textContent = `${n} 个 Modifier`;
+    count.textContent = t(`${n} 个 Modifier`, `${n} Modifiers`);
   }
 
   $$(".mod", root).forEach((b) =>
@@ -502,6 +614,7 @@ function composer() {
     slot.replaceChildren(card);
   });
 
+  langListeners.push(render);
   render();
 }
 
@@ -511,6 +624,11 @@ function cues() {
   const total = $("[data-ledger-total]");
   const axes = rows.map((r) => $("dt", r).textContent);
   const counts = axes.map(() => 0);
+  const ledgerTotal = () => {
+    const n = counts.reduce((a, c) => a + c, 0);
+    return t(`${n} 笔`, n === 1 ? "1 entry" : `${n} entries`);
+  };
+  langListeners.push(() => (total.textContent = ledgerTotal()));
 
   $$("[data-cue]").forEach((b) =>
     b.addEventListener("click", async () => {
@@ -522,7 +640,7 @@ function cues() {
         $("b", r).textContent = String(counts[j]);
         $("i", r).style.setProperty("--v", (counts[j] / max).toFixed(3));
       });
-      total.textContent = `${counts.reduce((a, c) => a + c, 0)} 笔`;
+      total.textContent = ledgerTotal();
       b.classList.remove("is-hit");
       void b.offsetWidth;
       b.classList.add("is-hit");
@@ -532,11 +650,17 @@ function cues() {
 }
 
 /* ── Boot ─────────────────────────────────────────────────────── */
-splitHeadlines();
+stream();
 reveals();
 composer();
 cues();
 const onScroll = [nav(), cockpit(), gears()];
+const boot = initialLang();
+if (boot === "en") setLang("en", { boot: true });
+$("[data-lang]").addEventListener("click", () =>
+  setLang(lang === "en" ? "zh" : "en", { persist: true }),
+);
+splitHeadlines();
 let ticking = false;
 const tick = () => {
   ticking = false;

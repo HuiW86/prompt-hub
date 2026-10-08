@@ -55,6 +55,15 @@
         <a href="#midway">中途</a>
         <a href="#bounds">边界</a>
       </nav>
+      <button
+        type="button"
+        class="lang"
+        data-lang
+        lang="en"
+        aria-label="Switch to English"
+      >
+        EN
+      </button>
       <a
         class="btn btn--small"
         href="https://github.com/HuiW86/prompt-hub/releases/latest"
@@ -66,6 +75,9 @@
       <!-- ── 01 Hero ─────────────────────────────────────────────── -->
       <section class="hero" id="top" aria-labelledby="hero-title">
         <div class="hero__glow" aria-hidden="true"></div>
+        <div class="hero__stream" aria-hidden="true">
+          <ul data-stream></ul>
+        </div>
         <div class="wrap hero__copy">
           <p class="eyebrow" data-reveal>
             <span class="eyebrow__dot"></span>AI 编程 · 手动挡阶段的驾驶舱
