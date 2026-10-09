@@ -28,13 +28,11 @@
    (ph-meta is sans, ph-num carries --aux + tabular-nums); kept as longhand.
    preset-equivalent: none (mono 11/500 uppercase meta) */
 .label {
-  font-family: var(--font-mono);
+  font-family: var(--font-sans);
   font-size: var(--t-11);
   font-weight: var(--w-500);
   line-height: var(--lh-tight);
   color: var(--fg-3);
-  text-transform: uppercase;
-  letter-spacing: var(--tr-meta);
   margin-right: var(--s-1);
   white-space: nowrap;
 }

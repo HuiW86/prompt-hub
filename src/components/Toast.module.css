@@ -1,11 +1,15 @@
-/* Floating "已复制" indicator anchored top-right of the dashboard.
+/* Floating "已复制" indicator, bottom-centre just above the status bar so it
+ * never covers the header controls (mode toggle / settings gear).
  * Visible window is bounded by toastStore.VISIBLE_MS; CSS animates fade-in only.
  * Neutral surface + elevation (ADR-019: floating feedback, no task-green). */
 .toast {
   composes: ph-action from "../styles/typography.module.css";
   position: fixed;
-  top: var(--s-6);
-  right: var(--s-8);
+  right: 0;
+  bottom: calc(var(--h-statusbar) + var(--s-3));
+  left: 0;
+  width: max-content;
+  margin-inline: auto;
   z-index: var(--z-toast);
   display: flex;
   align-items: center;
@@ -76,7 +80,7 @@
 @keyframes fadeIn {
   from {
     opacity: 0;
-    transform: translateY(calc(-1 * var(--s-2)));
+    transform: translateY(var(--s-2));
   }
   to {
     opacity: 1;

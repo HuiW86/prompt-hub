@@ -32,19 +32,8 @@
   flex: 0 0 auto;
 }
 
-.titles {
-  display: flex;
-  flex-direction: column;
-  gap: var(--s-0_5);
-}
-
 .title {
   composes: ph-region-header from "../styles/typography.module.css";
-}
-
-.subtitle {
-  composes: ph-note from "../styles/typography.module.css";
-  color: var(--fg-3);
 }
 
 .gear {

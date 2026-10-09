@@ -14,6 +14,46 @@ description: prompt-hub 设计文档体系变更日志——记录文档结构�
 
 ---
 
+## 2026-10-08（四）— 主界面减法 pass 签字落地：product-spec v0.30 / design-spec v0.23
+
+### 变更内容
+
+送审稿 [[2026-10-08-ui-subtraction-pass]] 当日经 Rosa 在项目线程签字（人审批次 ⑬，单裁点按推荐通过），按八步回流后实施。
+
+| 项 | 契约 | 代码 |
+|---|---|---|
+| 删副标 | product-spec §13.3 Header / 区域 3；design-spec §10.3 / §10.8.1 | `RegionHeader` 去 `subtitle` prop 与样式；`Header.tsx` 去副标 |
+| 相位格快捷键 | product-spec §13.3 区域 2；design-spec §6 / §9 / §10.2 | `PhaseBar.tsx` 去 `.shortcut` 常驻标签，改 `title` + `aria-keyshortcuts`（新增 `primaryModifierKey()`），`⌘N` 行为不变 |
+| 对齐行标签 | product-spec §13.3 区域 2-bis（补写） | `AlignmentPhrases.tsx` `aligned` → 「对齐」，标签改 sans、去大写与字距 |
+| Toast 挪位 | design-spec §10.3 | `Toast.module.css` 右上 → 底部居中、状态栏上方 `--s-3`，入场位移向上 |
+
+无 token 增删、无 IPC / schema 变动。测试：`App.test.tsx` 第 9 格用例由「可见 `⌘9` 键帽」改断言 `title` 与 `aria-keyshortcuts`。
+
+### 变更原因
+
+送审时说明有一处写错：稿中称「状态栏另有快捷键提示」，实际状态栏只列 ⌘K / ⏎ / ⌘,，不含 ⌘1–9。因此实施时没有单纯删除，而是把 `⌘N` 挪进悬停提示与无障碍属性，保住可发现性。
+
+---
+
+## 2026-10-08（四）— 主界面三处实现缺陷修复 + 减法设计 pass 送审
+
+### 变更内容
+
+代码修复**无设计文档契约变更**（不走八步）；另起一份送审稿，未签字前不动契约。
+
+| 项 | 内容 |
+|---|---|
+| 修复 | Modifier 原子库 hover 管理簇隐藏时仍占行内宽度，chip 行留洞 → 浮于 chip 旁（`src/components/ModifierGrid.module.css`），hover / `:focus-within` 显隐契约不变 |
+| 修复 | 最近使用类型徽标统一宽度，名称起点对齐（`src/components/RecentList.module.css`） |
+| 修复 | Macro 网格末行卡片被拉宽 → auto-fill 等宽网格（`src/components/MacroGrid.module.css`，[[HANDOFF]] 第 12 项销一部分） |
+| 送审 | `docs/plans/2026-10-08-ui-subtraction-pass.md`：删区域与 Header 副标题、相位条去重复 `⌘N`、`aligned` 改「对齐」、Toast 挪到底部居中 |
+
+### 变更原因
+
+Rosa 要求把应用界面打磨到 Awwwards / Webby / FWA 获奖品质。浏览器 + IPC mock 逐屏走查后，规范范围内的缺陷直接修，涉及契约的四项合为一个决定送审。
+
+---
+
 ## 2026-09-25（五）— 发布 v0.2.1：修复 macOS 27 启动即闪退
 
 ### 变更内容

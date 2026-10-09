@@ -95,7 +95,6 @@ export function ModifierGrid() {
     <section className={styles.region} aria-label="Modifier 原子库">
       <RegionHeader
         title="Modifier"
-        subtitle="原子方法论"
         count={modifiers.length}
         right={
           /* Layer marker (ADR-020): the aside carries no layer marker while

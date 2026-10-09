@@ -121,6 +121,10 @@
   flex: none;
   display: inline-flex;
   align-items: center;
+  justify-content: center;
+  /* One badge width for every type so entry names start on one column
+     ("Composition" is the longest label, 11 mono glyphs). */
+  min-width: 6.6em;
   padding: var(--s-0_5) var(--s-1_5);
   border-radius: var(--r-2);
   font-family: var(--font-mono);

@@ -35,7 +35,7 @@
 9. 补 `ScenePanelFocusRestore.test.tsx` 焦点恢复负路径测试 (carried from 2026-07-21)
 10. `ci.yml` bench-c1 `continue-on-error` 处置复核——C1 铁律在 CI 上不设防 (carried from 2026-07-12)
 11. P0-2 Composition 链路 ADR（`DraftInbox.tsx` `PROMOTE_BLOCKED_HINT`）(carried from 2026-07-06)
-12. P2 余 4 评估 / P1-5 Phase 可配置性 / `MacroGrid.module.css` 网格末行 auto-fit (carried from 2026-07-06)
+12. P2 余 4 评估 / P1-5 Phase 可配置性 (carried from 2026-07-06；`MacroGrid.module.css` 网格末行已于 2026-10-08 改 auto-fill 等宽网格)
 14. `docs/design/CLAUDE-DESIGN.md` v0.2 重传 + v2 基调同步 (carried from 2026-07-02)
 15. design-spec 上游回流：ipc-contract 扩扫 / `--color-danger` / `--scrim` 语义 (carried from 2026-07-02)
 16. gstack 待升级 0.16.3 → 1.61.0 (carried from 2026-08-11)
