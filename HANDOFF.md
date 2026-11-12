@@ -4,6 +4,19 @@
 
 > 上一版（2026-09-27 00:40）做的是本地与云端合线 + 网站 Tab 进 `main`，其 Completed 保留在下方「前一轮」条目。2026-09-24 本机装 0.2.1（含网站 Tab）的明细在 [本机安装记录](docs/website-tab/evidence/local-install-2026-09-24.md)；2026-09-25 云端会话发布 v0.2.1 的明细在 CHANGELOG 2026-09-25。本文件只留「本轮做了什么 + 仍开着的账」。
 
+## 2026-11-12 对账更正（云端只读反查，未跑测试）
+
+> 本文件正文仍是 2026-09-27 的 checkpoint，其后 `main` 上有 13 个提交未回写到这里。下面只更正已被事实推翻的句子，其余待下一次 `/checkpoint` 重写。反查依据：`git log`、GitHub Releases API、`main@a7f8304` 源码。
+
+- **v0.2.2 已于 2026-10-09 公开发布**（tag `v0.2.2` = `main@a7f8304`，CI 与 release 工作流均成功）。正文「未发版、未打 tag」「GitHub 最新公开版为 v0.2.1」均已过时；Risks「下一次公开发版必须 ≥ 0.2.2 且从含 `0015` 的 `main` 出包」这一条件已满足
+- **第 58–61 项是带着未结状态发出去的**：ADR-030 仍 `Proposed`、网站 Tab 未补 C1 bench、`ccb145b` 未补审查、真机未验项未验——四项都还开着，但代码已在公开版里。裁决若改数据形态，只能新开 migration 16
+- **第 60 项的一个问题已有答案**：第七道 gate 的 `ASSET_TABLES`（`src/ipc/soft-delete-gate.test.ts`）不含 `websites`，该表的 `deleted_at` 不在闸门覆盖内；`list_websites` 有意返回已删行（页内「已删除」），`websites` 也不进设置页废纸篓、没有任何清除路径。是否纳入闸门 / 废纸篓待裁
+- **网站命令是 9 个不是 5 个**（另有 `save_website_group` / `delete_website_group` / `reorder_websites` / `reorder_website_groups`），`#[tauri::command]` 现为 **71**，正文与各文档里的「IPC 62」已过时
+- **2026-10-08 两个 PR（#4 / #5）已合入**：三处 UI 实现缺陷修复 + 主界面减法 pass（product-spec v0.30 / design-spec v0.23，人审批次 ⑬），明细在 CHANGELOG 2026-10-08 两条。第 12 项的 Macro 网格部分已销
+- **远端 5 个分支对 `main` 均无独有提交**，可删：`claude/award-quality-lw4ovg` / `claude/determined-hawking-g82fje` / `fix/release-provenance-gap` / `reshape/density-compact` / `reshape/ui-v2`
+- **ADR-005 / 011 的 `Last reviewed` 仍是 2026-07-02**，至今 **133 天**（第 17 项）
+- 本次同时删除两个无引用文件：`docs/全景提示词仪表盘-handoff.zip`（与 `docs/design-handoff/` 逐文件相同）与 `public/tauri.svg`（脚手架残留）；`CLAUDE.md` §7 压回指针形态（v1.2，待人审）
+
 ## Objective
 
 确认本地、云端、本机安装版三者没有不一致，并消掉「`main` 与公开 v0.2.1 同号不同内容」这类撞号。
