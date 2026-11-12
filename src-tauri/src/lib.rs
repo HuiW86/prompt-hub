@@ -422,6 +422,8 @@ pub fn run() {
             commands::reorder_websites,
             commands::reorder_website_groups,
             commands::open_website,
+            commands::list_panorama_placements,
+            commands::set_panorama_placement,
             commands::list_phases,
             commands::list_alignment_phrases,
             commands::list_macros,

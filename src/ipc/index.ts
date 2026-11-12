@@ -33,6 +33,7 @@ import type {
   UsageRecord,
   WebsiteLibrary,
   WebsiteInput,
+  PanoramaPlacement,
 } from "./types";
 
 // ── Trash types (ADR-028) ─────────────────────────────────────────────────────
@@ -445,6 +446,15 @@ export const ipc = {
   reorderWebsiteGroups: (orderedIds: string[]) =>
     invoke<void>("reorder_website_groups", { orderedIds }),
   openWebsite: (id: string) => invoke<void>("open_website", { id }),
+
+  // ── Panorama layout (I-02, M-01). The list hides rows whose asset is trashed.
+  // `setPanoramaPlacement` is an upsert (both fields null deletes the row);
+  // taking an occupied pin slot clears the previous holder, and the returned
+  // list is the full state after the write.
+  listPanoramaPlacements: () =>
+    invoke<PanoramaPlacement[]>("list_panorama_placements"),
+  setPanoramaPlacement: (input: PanoramaPlacement) =>
+    invoke<PanoramaPlacement[]>("set_panorama_placement", { input }),
 };
 
 export type Ipc = typeof ipc;

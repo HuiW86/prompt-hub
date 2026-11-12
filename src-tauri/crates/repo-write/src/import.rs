@@ -27,6 +27,10 @@ pub struct ImportSummary {
     // all (a 1.1 / 1.2 backup): the table was left untouched, and reporting `0`
     // would read as "restored nothing" when the truth is "did not participate".
     pub alignment_axis_values: Option<usize>,
+    // I-02. `None` when the bundle carried no `panorama_placements` key (a 1.4
+    // or older file): local layout rows that still match an asset were kept.
+    // `Some(n)` counts rows actually written; rows matching no asset are dropped.
+    pub panorama_placements: Option<usize>,
 }
 
 // The asset tables a restore wipes, in FK-safe delete order (children first).
@@ -100,6 +104,9 @@ pub fn import_json(conn: &Connection, json: &str) -> RepoResult<ImportSummary> {
     if let Some(library) = &bundle.website_library {
         crate::websites::replace_library(&tx, library)?;
     }
+    // After every asset table: placements are matched against the restored rows.
+    let panorama_placements =
+        crate::panorama::import_panorama_placements(&tx, bundle.panorama_placements.as_deref())?;
     tx.commit()?;
 
     Ok(ImportSummary {
@@ -114,6 +121,7 @@ pub fn import_json(conn: &Connection, json: &str) -> RepoResult<ImportSummary> {
         alignment_phrases: bundle.alignment_phrases.len(),
         compositions: bundle.compositions.len(),
         alignment_axis_values: bundle.alignment_axis_values.as_ref().map(Vec::len),
+        panorama_placements,
     })
 }
 
@@ -670,8 +678,132 @@ mod tests {
         assert!(matches!(err, RepoError::Sqlite(_)), "got {err:?}");
 
         let values: i64 = conn
-            .query_row("SELECT COUNT(*) FROM alignment_axis_values", [], |r| r.get(0))
+            .query_row("SELECT COUNT(*) FROM alignment_axis_values", [], |r| {
+                r.get(0)
+            })
             .expect("count");
-        assert_eq!(values, 16, "rollback must leave the seed coordinate system intact");
+        assert_eq!(
+            values, 16,
+            "rollback must leave the seed coordinate system intact"
+        );
+    }
+
+    // --- I-02: panorama_placements three-state import ----------------------
+
+    fn place(conn: &Connection, kind: &str, id: &str, group: Option<&str>, slot: Option<i64>) {
+        conn.execute(
+            "INSERT INTO panorama_placements (asset_kind, asset_id, group_id, pin_slot)
+             VALUES (?1, ?2, ?3, ?4)",
+            params![kind, id, group, slot],
+        )
+        .expect("place");
+    }
+
+    fn placements(conn: &Connection) -> Vec<(String, String, Option<String>, Option<i64>)> {
+        conn.prepare(
+            "SELECT asset_kind, asset_id, group_id, pin_slot FROM panorama_placements
+             ORDER BY asset_kind, asset_id",
+        )
+        .unwrap()
+        .query_map([], |r| Ok((r.get(0)?, r.get(1)?, r.get(2)?, r.get(3)?)))
+        .unwrap()
+        .collect::<rusqlite::Result<_>>()
+        .unwrap()
+    }
+
+    fn first_macro(conn: &Connection) -> String {
+        conn.query_row("SELECT id FROM macros ORDER BY id LIMIT 1", [], |r| {
+            r.get(0)
+        })
+        .unwrap()
+    }
+
+    #[test]
+    fn panorama_round_trip_1_5_restores_layout_including_trashed_assets() {
+        let (_dir, conn) = migrated_conn();
+        let m = first_macro(&conn);
+        let ap: String = conn
+            .query_row(
+                "SELECT id FROM alignment_phrases ORDER BY id LIMIT 1",
+                [],
+                |r| r.get(0),
+            )
+            .unwrap();
+        place(&conn, "macro", &m, Some("tool"), Some(1));
+        place(&conn, "alignment_phrase", &ap, Some("cue"), None);
+        crate::delete_macro(&conn, &m).unwrap();
+        let before = placements(&conn);
+        let json = export_json(&conn).expect("export");
+
+        conn.execute("DELETE FROM panorama_placements", []).unwrap();
+        let summary = import_json(&conn, &json).expect("import");
+        assert_eq!(summary.panorama_placements, Some(2));
+        assert_eq!(placements(&conn), before, "trashed macro keeps its row");
+    }
+
+    #[test]
+    fn panorama_importing_a_1_4_file_keeps_local_layout_that_still_matches() {
+        let (_dir, conn) = migrated_conn();
+        let m = first_macro(&conn);
+        let mut json: serde_json::Value =
+            serde_json::from_str(&export_json(&conn).unwrap()).unwrap();
+        json["schema_version"] = serde_json::json!("1.4");
+        json.as_object_mut().unwrap().remove("panorama_placements");
+
+        // Layout set after the 1.4 backup: one row matches an asset in the
+        // file, one points at an asset the file does not contain.
+        place(&conn, "macro", &m, Some("align"), Some(3));
+        place(&conn, "macro", "gone-after-restore", Some("tool"), None);
+
+        let summary = import_json(&conn, &json.to_string()).expect("1.4 imports");
+        assert_eq!(summary.panorama_placements, None);
+        assert_eq!(
+            placements(&conn),
+            vec![("macro".into(), m, Some("align".into()), Some(3))]
+        );
+    }
+
+    #[test]
+    fn panorama_import_drops_dangling_rows_without_failing() {
+        let (_dir, conn) = migrated_conn();
+        let m = first_macro(&conn);
+        let mut json: serde_json::Value =
+            serde_json::from_str(&export_json(&conn).unwrap()).unwrap();
+        json["panorama_placements"] = serde_json::json!([
+            { "assetKind": "macro", "assetId": m, "groupId": "polish", "pinSlot": 7 },
+            { "assetKind": "macro", "assetId": "no-such-macro", "groupId": null, "pinSlot": 7 },
+            { "assetKind": "phrase", "assetId": m, "groupId": "align", "pinSlot": null }
+        ]);
+        let summary = import_json(&conn, &json.to_string()).expect("import");
+        assert_eq!(summary.panorama_placements, Some(1));
+        assert_eq!(
+            placements(&conn),
+            vec![("macro".into(), m, Some("polish".into()), Some(7))]
+        );
+    }
+
+    #[test]
+    fn panorama_import_with_an_empty_array_clears_layout() {
+        let (_dir, conn) = migrated_conn();
+        let m = first_macro(&conn);
+        let mut json: serde_json::Value =
+            serde_json::from_str(&export_json(&conn).unwrap()).unwrap();
+        json["panorama_placements"] = serde_json::json!([]);
+        place(&conn, "macro", &m, Some("align"), Some(1));
+        let summary = import_json(&conn, &json.to_string()).expect("import");
+        assert_eq!(summary.panorama_placements, Some(0));
+        assert!(placements(&conn).is_empty());
+    }
+
+    #[test]
+    fn panorama_import_rejects_explicit_null_and_rolls_back() {
+        let (_dir, conn) = migrated_conn();
+        let m = first_macro(&conn);
+        let mut json: serde_json::Value =
+            serde_json::from_str(&export_json(&conn).unwrap()).unwrap();
+        json["panorama_placements"] = serde_json::Value::Null;
+        place(&conn, "macro", &m, Some("align"), Some(1));
+        assert!(import_json(&conn, &json.to_string()).is_err());
+        assert_eq!(placements(&conn).len(), 1, "nothing changed");
     }
 }

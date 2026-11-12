@@ -83,7 +83,16 @@ const MIGRATIONS: &[Migration] = &[
         name: "0014_alignment_coordinates",
         sql: include_str!("../migrations/0014_alignment_coordinates.sql"),
     },
-    Migration { target_version: 15, name: "0015_websites", sql: include_str!("../migrations/0015_websites.sql") },
+    Migration {
+        target_version: 15,
+        name: "0015_websites",
+        sql: include_str!("../migrations/0015_websites.sql"),
+    },
+    Migration {
+        target_version: 16,
+        name: "0016_panorama_placements",
+        sql: include_str!("../migrations/0016_panorama_placements.sql"),
+    },
 ];
 
 struct Migration {
@@ -1017,6 +1026,82 @@ mod tests {
         assert_eq!(
             layer, None,
             "ON DELETE SET NULL must return the phrase to unconstrained, not delete it"
+        );
+    }
+
+    // --- I-02: migration 0016 ------------------------------------------------
+
+    /// A real user's file at v15 (seeds, a website, a usage record) must come out
+    /// at v16 with the new empty table, the pin-slot index, and no FK breakage.
+    #[test]
+    fn migration_0016_panorama_lands_on_a_populated_v15_database() {
+        let dir = tempfile::tempdir().expect("tempdir");
+        let path = dir.path().join("prompt-hub.db");
+        {
+            let conn = Connection::open(&path).expect("open");
+            configure(&conn).expect("configure");
+            for m in MIGRATIONS.iter().filter(|m| m.target_version <= 15) {
+                conn.execute_batch(m.sql)
+                    .unwrap_or_else(|e| panic!("migration {} failed: {e}", m.name));
+            }
+            conn.pragma_update(None, "user_version", 15u32)
+                .expect("pin v15");
+            conn.execute(
+                "INSERT INTO websites (id, name, url, order_index, created_at)
+                 VALUES ('w1', 'Docs', 'https://example.com/', 0, '2026-01-01T00:00:00Z')",
+                [],
+            )
+            .expect("seed a website");
+        }
+
+        let conn = open_and_migrate(&path).expect("migrate v15 -> v16");
+        let v: u32 = conn
+            .pragma_query_value(None, "user_version", |row| row.get(0))
+            .expect("read user_version");
+        assert_eq!(v, 16);
+        let rows: i64 = conn
+            .query_row("SELECT COUNT(*) FROM panorama_placements", [], |r| r.get(0))
+            .expect("table exists");
+        assert_eq!(rows, 0, "0016 seeds no layout");
+        let sites: i64 = conn
+            .query_row("SELECT COUNT(*) FROM websites", [], |r| r.get(0))
+            .expect("count websites");
+        assert_eq!(sites, 1, "existing data survives");
+        let fk_problems: i64 = conn
+            .query_row("SELECT COUNT(*) FROM pragma_foreign_key_check", [], |r| {
+                r.get(0)
+            })
+            .expect("foreign_key_check");
+        assert_eq!(fk_problems, 0);
+
+        // The partial unique index: two rows cannot share a pin slot, but any
+        // number may hold none.
+        conn.execute(
+            "INSERT INTO panorama_placements VALUES ('macro', 'a', 'align', 3), ('macro', 'b', 'align', NULL), ('macro', 'c', 'tool', NULL)",
+            [],
+        )
+        .expect("one pin + two unpinned");
+        assert!(conn
+            .execute(
+                "INSERT INTO panorama_placements VALUES ('macro', 'd', NULL, 3)",
+                []
+            )
+            .is_err());
+        assert!(
+            conn.execute(
+                "INSERT INTO panorama_placements VALUES ('macro', 'e', NULL, 10)",
+                []
+            )
+            .is_err(),
+            "CHECK keeps slots in 1..9"
+        );
+        assert!(
+            conn.execute(
+                "INSERT INTO panorama_placements VALUES ('scene', 'f', 'align', NULL)",
+                []
+            )
+            .is_err(),
+            "CHECK keeps asset_kind to the five kinds"
         );
     }
 }

@@ -44,10 +44,16 @@ fn exported_json_shape_matches_data_contract() {
     // 1.2 → 1.3 with ADR-029: a new top-level `alignment_axis_values` key plus
     // six new fields on every alignment phrase. Still a minor bump, still
     // gated on MAJOR, so 1.1 and 1.2 files continue to import.
-    assert_eq!(obj["schema_version"], "1.4");
+    //
+    // 1.4 → 1.5 with I-02: a new top-level `panorama_placements` key (view
+    // layout, not an asset). Minor bump; 1.4 files import and keep local layout.
+    assert_eq!(obj["schema_version"], "1.5");
 
     // D2 + SOP-not-shipped: these keys must be ABSENT from the envelope.
-    assert!(!obj.contains_key("usage_records"), "usage_records must not export");
+    assert!(
+        !obj.contains_key("usage_records"),
+        "usage_records must not export"
+    );
     assert!(!obj.contains_key("sops"), "sops must not export");
     assert!(!obj.contains_key("sop_steps"), "sop_steps must not export");
 
@@ -64,6 +70,7 @@ fn exported_json_shape_matches_data_contract() {
         "alignment_phrases",
         "compositions",
         "alignment_axis_values",
+        "panorama_placements",
     ] {
         assert!(obj[key].is_array(), "missing asset array: {key}");
     }

@@ -405,6 +405,10 @@ export interface ImportSummary {
   // 1.2 file): the table did not take part in the restore, which is not the
   // same statement as "restored zero rows".
   alignmentAxisValues: number | null;
+  // null when the backup carried no `panorama_placements` key (a 1.4 or older
+  // file): local layout rows that still match an asset were kept. Otherwise the
+  // number of rows written; rows pointing at no asset are dropped.
+  panoramaPlacements?: number | null;
 }
 
 // Independent quick-link resource; outside the three prompt composition layers.
@@ -433,4 +437,27 @@ export interface WebsiteInput {
   url: string;
   description: string;
   groupId: string | null;
+}
+
+// ── Panorama layout (I-02, M-01) ─────────────────────────────────────────────
+export type PanoramaAssetKind =
+  | "macro"
+  | "phrase"
+  | "alignment_phrase"
+  | "modifier"
+  | "composition";
+export type PanoramaGroupId =
+  | "align"
+  | "diverge"
+  | "converge"
+  | "execute"
+  | "polish"
+  | "retain"
+  | "cue"
+  | "tool";
+export interface PanoramaPlacement {
+  assetKind: PanoramaAssetKind;
+  assetId: string;
+  groupId: PanoramaGroupId | null; // null = use the default column rule
+  pinSlot: number | null; // 1..9
 }

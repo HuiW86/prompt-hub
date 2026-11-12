@@ -1229,3 +1229,20 @@ pub async fn open_website(state: State<'_, AppState>, id: String) -> AppResult<(
         .map_err(|e| RepoError::Other(format!("打开浏览器失败：{e}")))?;
     Ok(())
 }
+// I-02 (M-01): panorama layout. The list hides rows of trashed assets; the
+// write returns the full list so the caller can show who lost a pin slot.
+#[tauri::command]
+pub fn list_panorama_placements(
+    state: State<'_, AppState>,
+) -> AppResult<Vec<repo_core::panorama::PanoramaPlacement>> {
+    with_conn(&state, repo_core::panorama::list_panorama_placements)
+}
+#[tauri::command]
+pub fn set_panorama_placement(
+    state: State<'_, AppState>,
+    input: repo_core::panorama::PanoramaPlacement,
+) -> AppResult<Vec<repo_core::panorama::PanoramaPlacement>> {
+    with_write_conn(&state, |c| {
+        repo_write::panorama::set_panorama_placement(c, input)
+    })
+}
