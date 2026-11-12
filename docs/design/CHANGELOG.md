@@ -14,6 +14,28 @@ description: prompt-hub 设计文档体系变更日志——记录文档结构�
 
 ---
 
+## 2026-11-12（四）— M-01 全景面板实现：数据层 + 全景视图 + 位置调整（I-02 / I-03 / I-04）
+
+### 变更内容
+
+| Issue | 提交 | 内容 |
+|---|---|---|
+| I-02 | `70c7339` | migration `0016_panorama_placements`（`user_version` 15→**16**）；`list_panorama_placements` / `set_panorama_placement`（IPC 71→**73**）；导出 `DATA_SCHEMA_VERSION` 1.4→**1.5**，`panorama_placements` 三态导入（缺键保留仍对得上的本地行 / 空数组清空 / 有内容整表替换，悬空行静默丢弃，`null` 拒绝） |
+| I-03 | `b284cb9` | `src/utils/panorama.ts` 纯函数分层分列；`panoramaStore`；`PanoramaView`；`workspace` 默认 `panorama`，Header「全景 / 整理 / 常用网站」；Esc 先清筛选再收起；⌘1–9 在全景仍切相位 |
+| I-04 | `5dfe22a` | `PlacementMenu`（复用 `AnchoredEditor` top layer）；整理态「位置」按钮 + `M`；`⌥1–⌥9` / `⌥0`；抢占常用位带撤销 toast |
+
+测试：Rust 231→**243**（`panorama` 12 条：迁移 1 / 写路径 6 / 导入 5）；前端 540→**603**（49 文件）。第七道源码级闸门未加豁免——列表查询五张资产表各带 `deleted_at IS NULL`，导出只读 `panorama_placements` 本表。B2 源码闸门的任务层四组件零引用不变，注释登记全景为跨层展示面。
+
+### 未验证（jsdom 验不了）
+
+唤起 C1、真实库一屏无滚动、macOS 下 `⌥数字` 的 `event.code`——见 [[HANDOFF]] 第 64 项。浏览器冒烟（Vite + Playwright + 假 IPC，1440×900 与 1280×720）通过：无纵向滚动、休眠行按列截断为「还有 N 条」、筛选变暗不移位、菜单可开可关且焦点回到条目。
+
+### 变更原因
+
+[[031-panorama-default-view]]。
+
+---
+
 ## 2026-11-12（四）— ADR-031 全景面板为默认视图 + 宪法 B2 修订 v1.2（送审）
 
 ### 变更内容
