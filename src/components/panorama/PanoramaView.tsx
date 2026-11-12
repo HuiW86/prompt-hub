@@ -6,7 +6,6 @@ import {
   useRef,
   useState,
   type CSSProperties,
-  type ReactNode,
 } from "react";
 
 import { useCopy } from "../../hooks/useCopy";
@@ -15,6 +14,7 @@ import { usePromptStore } from "../../stores/promptStore";
 import { useSessionStore } from "../../stores/sessionStore";
 import { useSettingsStore } from "../../stores/settingsStore";
 import { useToastStore } from "../../stores/toastStore";
+import { toUserMessage } from "../../utils/errorMessage";
 import {
   buildPanorama,
   itemsInReadingOrder,
@@ -23,22 +23,13 @@ import {
   type PanoramaItem,
 } from "../../utils/panorama";
 
+import { PlacementMenu, type PlacementChange } from "./PlacementMenu";
 import styles from "./PanoramaView.module.css";
 
 // The panorama workspace (I-03 / ADR-031): every item on one screen, loudness
 // by tier, position by the user. A cross-layer display surface — like the
 // search overlay it lists alignment phrases next to task-layer items without
 // creating any data relation between them (constitution B2 v1.2).
-
-export interface PanoramaViewProps {
-  /** Rendered after each item's name in organize mode (I-04's placement button). */
-  renderItemAction?: (item: PanoramaItem) => ReactNode;
-  /** Extra keys the view hands to its owner (I-04's `M` / `⌥1–9`). Return true
-   *  when handled. Only called when the view itself would otherwise react. */
-  onExtraKey?: (e: KeyboardEvent, selected: PanoramaItem | null) => boolean;
-  /** True while a popover owned by the caller is open: the view's keys pause. */
-  suspended?: boolean;
-}
 
 function keyOf(item: PanoramaItem): string {
   return panoramaKey(item.kind, item.id);
@@ -67,11 +58,7 @@ function isEditable(el: EventTarget | null): boolean {
 /** Columns as the keyboard sees them: what is on screen, in reading order. */
 type NavGrid = string[][];
 
-export function PanoramaView({
-  renderItemAction,
-  onExtraKey,
-  suspended = false,
-}: PanoramaViewProps = {}) {
+export function PanoramaView() {
   const phases = usePromptStore((s) => s.phases);
   const macros = usePromptStore((s) => s.macros);
   const modifiers = usePromptStore((s) => s.modifiers);
@@ -87,6 +74,16 @@ export function PanoramaView({
   const selectedKey = usePanoramaStore((s) => s.selectedKey);
   const select = usePanoramaStore((s) => s.select);
   const resetView = usePanoramaStore((s) => s.resetView);
+  const setPlacement = usePanoramaStore((s) => s.setPlacement);
+  // Organize mode is where layout is edited (I-04); invoke mode shows no
+  // editing affordance at all.
+  const organizing = useSettingsStore((s) => s.interactionMode === "organize");
+  const showWithAction = useToastStore((s) => s.showWithAction);
+  const showError = useToastStore((s) => s.showError);
+  // The item whose placement menu is open, and each row button by key so the
+  // menu can pin to it (and hand focus back to it on close).
+  const [menuKey, setMenuKey] = useState<string | null>(null);
+  const rowButtons = useRef(new Map<string, HTMLButtonElement>());
 
   const sessionStartedAt = useSessionStore((s) => s.sessionStartedAt);
   const flashId = useToastStore((s) => s.flashTargetId);
@@ -261,6 +258,69 @@ export function PanoramaView({
     [copy],
   );
 
+  // Apply a placement change. Taking a pin slot from someone else is not an
+  // error — the backend hands the slot over in one transaction — but it is a
+  // surprise, so it comes with an undo that restores both items as they were.
+  const place = useCallback(
+    async (item: PanoramaItem, change: PlacementChange) => {
+      const before = { groupId: item.groupId, pinSlot: item.pinSlot };
+      const after = {
+        groupId: "groupId" in change ? (change.groupId ?? null) : item.groupId,
+        pinSlot: "pinSlot" in change ? (change.pinSlot ?? null) : item.pinSlot,
+      };
+      if (
+        after.groupId === before.groupId &&
+        after.pinSlot === before.pinSlot
+      ) {
+        return;
+      }
+      const holder =
+        after.pinSlot != null && after.pinSlot !== before.pinSlot
+          ? model.bySlot[after.pinSlot]
+          : undefined;
+      const displaced =
+        holder && keyOf(holder) !== keyOf(item) ? holder : undefined;
+      try {
+        await setPlacement({
+          assetKind: item.kind,
+          assetId: item.id,
+          ...after,
+        });
+      } catch (err) {
+        showError(toUserMessage(err, "调整位置失败"));
+        return;
+      }
+      if (!displaced) return;
+      showWithAction(
+        `常用位 ${after.pinSlot} 已从「${displaced.name}」让给「${item.name}」`,
+        {
+          label: "撤销",
+          onClick: () => {
+            void (async () => {
+              try {
+                // This item first: it vacates the slot the other reclaims.
+                await setPlacement({
+                  assetKind: item.kind,
+                  assetId: item.id,
+                  ...before,
+                });
+                await setPlacement({
+                  assetKind: displaced.kind,
+                  assetId: displaced.id,
+                  groupId: displaced.groupId,
+                  pinSlot: displaced.pinSlot,
+                });
+              } catch (err) {
+                showError(toUserMessage(err, "撤销失败"));
+              }
+            })();
+          },
+        },
+      );
+    },
+    [model, setPlacement, showError, showWithAction],
+  );
+
   // Every summon starts clean: no filter, nothing selected, caret in the box.
   const firstSession = useRef(sessionStartedAt);
   useEffect(() => {
@@ -307,7 +367,8 @@ export function PanoramaView({
 
   useEffect(() => {
     function onKey(e: KeyboardEvent) {
-      if (suspended || e.defaultPrevented || e.isComposing) return;
+      // An open placement menu owns the keyboard (it handles its own Escape).
+      if (menuKey || e.defaultPrevented || e.isComposing) return;
       if (useSettingsStore.getState().settingsOpen) return;
       // ⌘/Ctrl combos belong to the app (⌘1–9 phase switch, ⌘K, ⌘,).
       if (e.metaKey || e.ctrlKey) return;
@@ -322,9 +383,22 @@ export function PanoramaView({
         (target != null && !!rootRef.current?.contains(target));
       if (!inside || (!inFilter && isEditable(e.target))) return;
 
-      if (onExtraKey?.(e, selected)) {
-        e.preventDefault();
-        return;
+      // Organize mode (I-04): M opens the selected item's placement menu;
+      // ⌥1–⌥9 pins it, ⌥0 unpins. `code`, not `key`: on macOS ⌥ turns digits
+      // into symbols (⌥1 is 「¡」).
+      if (organizing && selected) {
+        const digit = /^Digit([0-9])$/.exec(e.code);
+        if (e.altKey && !e.shiftKey && digit) {
+          e.preventDefault();
+          const n = Number(digit[1]);
+          void place(selected, { pinSlot: n === 0 ? null : n });
+          return;
+        }
+        if (!e.altKey && (e.key === "m" || e.key === "M")) {
+          e.preventDefault();
+          setMenuKey(keyOf(selected));
+          return;
+        }
       }
       if (e.altKey) return;
 
@@ -372,8 +446,9 @@ export function PanoramaView({
     document.addEventListener("keydown", onKey);
     return () => document.removeEventListener("keydown", onKey);
   }, [
-    suspended,
-    onExtraKey,
+    menuKey,
+    organizing,
+    place,
     selected,
     selectedKey,
     select,
@@ -383,6 +458,13 @@ export function PanoramaView({
     move,
     setQuery,
   ]);
+
+  // The menu only exists in organize mode, for an item that still exists.
+  const menuItem =
+    organizing && menuKey ? (itemByKey.get(menuKey) ?? null) : null;
+  useEffect(() => {
+    if (menuKey && !menuItem) setMenuKey(null);
+  }, [menuKey, menuItem]);
 
   const maxUsage = model.maxUsageCount;
   const preview = selected ?? firstMatch;
@@ -402,7 +484,12 @@ export function PanoramaView({
       .join(" ");
     const ratio = maxUsage > 0 ? item.usageCount / maxUsage : 0;
     return (
-      <li key={key} className={styles.row} data-item-key={key}>
+      <li
+        key={key}
+        className={styles.row}
+        data-item-key={key}
+        data-selected={isSelected ? "true" : undefined}
+      >
         <button
           type="button"
           className={cls}
@@ -411,6 +498,10 @@ export function PanoramaView({
           aria-current={isSelected ? "true" : undefined}
           title={item.content}
           tabIndex={-1}
+          ref={(el) => {
+            if (el) rowButtons.current.set(key, el);
+            else rowButtons.current.delete(key);
+          }}
           // Keep the caret in the filter box: a click copies, it doesn't move focus.
           onMouseDown={(e) => e.preventDefault()}
           onClick={() => {
@@ -446,7 +537,22 @@ export function PanoramaView({
             </>
           )}
         </button>
-        {renderItemAction?.(item)}
+        {organizing && (
+          <button
+            type="button"
+            className={styles.placeButton}
+            aria-label={`调整「${item.name}」的位置`}
+            title="位置（选中后按 M）"
+            tabIndex={-1}
+            onMouseDown={(e) => e.preventDefault()}
+            onClick={() => {
+              select(key);
+              setMenuKey(key);
+            }}
+          >
+            位置
+          </button>
+        )}
       </li>
     );
   };
@@ -537,6 +643,16 @@ export function PanoramaView({
           </span>
         )}
       </footer>
+      {menuItem && (
+        <PlacementMenu
+          key={menuKey}
+          item={menuItem}
+          anchor={rowButtons.current.get(menuKey ?? "") ?? null}
+          bySlot={model.bySlot}
+          onPick={(change) => void place(menuItem, change)}
+          onClose={() => setMenuKey(null)}
+        />
+      )}
     </div>
   );
 }

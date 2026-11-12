@@ -314,3 +314,31 @@
 .previewHint {
   color: var(--fg-4);
 }
+
+/* Organize mode only (I-04): opens the placement menu for this row. Shown on
+ * the hovered or selected row only — one per row at full strength would turn
+ * the panorama into a wall of identical buttons. */
+.placeButton {
+  opacity: 0;
+  flex: 0 0 auto;
+  padding: 0 var(--s-1_5);
+  border: var(--hairline) solid var(--border-1);
+  border-radius: var(--r-2);
+  background: transparent;
+  color: var(--fg-3);
+  font: inherit;
+  font-size: var(--t-11);
+  line-height: var(--lh-tight);
+  cursor: pointer;
+}
+
+.placeButton:hover {
+  color: var(--fg-1);
+  border-color: var(--border-3);
+}
+
+.row:hover .placeButton,
+.row[data-selected] .placeButton,
+.placeButton:focus-visible {
+  opacity: 1;
+}

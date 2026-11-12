@@ -438,6 +438,38 @@ describe("PanoramaView", () => {
     expect(screen.getByLabelText("筛选")).toHaveFocus();
   });
 
+  it("after a group change in organize mode the item appears in its new column", async () => {
+    useSettingsStore.setState({ interactionMode: "organize" });
+    const base = invokeMock.getMockImplementation();
+    invokeMock.mockImplementation((cmd: string, args?: unknown) => {
+      if (cmd === "set_panorama_placement") {
+        const input = (args as { input: PanoramaPlacement }).input;
+        return Promise.resolve([
+          ...placements.filter(
+            (p) =>
+              !(p.assetKind === input.assetKind && p.assetId === input.assetId),
+          ),
+          input,
+        ]);
+      }
+      return base?.(cmd, args);
+    });
+    await renderView();
+    const col = (label: string) => screen.getByRole("region", { name: label });
+    expect(within(col("未分组")).getByText("补测试")).toBeInTheDocument();
+
+    fireEvent.click(
+      screen.getByRole("button", { name: "调整「补测试」的位置" }),
+    );
+    const menu = screen.getByRole("group", { name: "「补测试」的位置" });
+    fireEvent.click(within(menu).getByRole("button", { name: "工具" }));
+
+    await waitFor(() =>
+      expect(within(col("工具")).getByText("补测试")).toBeInTheDocument(),
+    );
+    expect(within(col("未分组")).queryByText("补测试")).toBeNull();
+  });
+
   it("still renders every item in its default column when the layout fails to load", async () => {
     invokeMock.mockImplementation((cmd: string) =>
       cmd === "list_panorama_placements"

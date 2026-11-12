@@ -1,0 +1,82 @@
+/* Placement menu (I-04). Rides the AnchoredEditor top-layer panel; this file
+ * only lays out the two option sets. Tokens only (CLAUDE §4.1). */
+
+.menu {
+  display: flex;
+  flex-direction: column;
+  gap: var(--s-3);
+}
+
+.section {
+  display: flex;
+  flex-direction: column;
+  gap: var(--s-1_5);
+}
+
+.heading {
+  color: var(--fg-3);
+  font-size: var(--t-11);
+  font-weight: var(--w-600);
+}
+
+.options {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: var(--s-1);
+}
+
+.slots {
+  display: grid;
+  grid-template-columns: repeat(5, minmax(0, 1fr));
+  gap: var(--s-1);
+}
+
+.option,
+.current {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: var(--s-0_5);
+  min-width: 0;
+  padding: var(--s-1) var(--s-1_5);
+  border: var(--hairline) solid var(--border-2);
+  border-radius: var(--r-3);
+  background: transparent;
+  color: var(--fg-2);
+  font: inherit;
+  font-size: var(--t-12);
+  cursor: pointer;
+  white-space: nowrap;
+}
+
+.option:hover {
+  background: var(--surface-2);
+  color: var(--fg-1);
+}
+
+.current {
+  border-color: var(--accent);
+  background: var(--selection);
+  color: var(--fg-1);
+}
+
+.option:focus-visible,
+.current:focus-visible {
+  outline: var(--border-thick) solid var(--accent);
+  outline-offset: var(--hairline);
+}
+
+.slotNumber {
+  font-family: var(--font-mono);
+  font-weight: var(--w-600);
+}
+
+/* Who holds the slot now, so a pick is never a surprise eviction. */
+.holder {
+  max-width: 100%;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  color: var(--fg-4);
+  font-size: var(--t-10);
+}
