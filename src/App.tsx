@@ -1,4 +1,5 @@
 import { useWebsiteStore } from "./stores/websiteStore";
+import { usePanoramaStore } from "./stores/panoramaStore";
 import { useAppStore } from "./stores/appStore";
 import { useEffect } from "react";
 
@@ -95,6 +96,14 @@ function App() {
       // synchronous setState so the check sees the live state; React's
       // synthetic event delegation is irrelevant here.
       if (selectIsSearching(useSearchStore.getState())) return;
+      // Panorama: the first Esc clears the filter, the next one hides.
+      if (
+        useAppStore.getState().workspace === "panorama" &&
+        usePanoramaStore.getState().query
+      ) {
+        usePanoramaStore.getState().setQuery("");
+        return;
+      }
       if (
         useAppStore.getState().workspace === "websites" &&
         useWebsiteStore.getState().query
@@ -131,7 +140,9 @@ function App() {
       ) {
         return;
       }
-      if (useAppStore.getState().workspace !== "prompts") return;
+      // The panorama never claims ⌘ combos, so ⌘1–9 switches phase (and copies
+      // its default) there exactly as in the organize workspace.
+      if (useAppStore.getState().workspace === "websites") return;
       // Walk the visible phase list (after hiddenPhaseIds filter) so ⌘N maps
       // 1:1 to the keycap shown in PhaseBar — otherwise ⌘1 could land on a
       // hidden phase.

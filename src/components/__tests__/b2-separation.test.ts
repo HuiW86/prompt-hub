@@ -24,6 +24,11 @@ import { describe, expect, it } from "vitest";
 // - RecentList: usage-history badges label past invocations by target type
 //   (including "alignment"); shipped and B2-rechecked under ADR-018.
 // - DraftInbox: partially exempt — see the scoped assertion below.
+// - panorama/PanoramaView (+ I-04's PlacementMenu): ADR-031 / constitution B2
+//   v1.2 — the panorama is a cross-layer display surface that lists items by
+//   intent, alignment phrases included. It creates no data relation between
+//   layers (copy text is assembled per kind; no phrase joins a composition), so
+//   like SearchOverlay it is outside TASK_LAYER_COMPONENTS, which stay at zero.
 const componentsDir = resolve(dirname(fileURLToPath(import.meta.url)), "..");
 
 function read(file: string): string {

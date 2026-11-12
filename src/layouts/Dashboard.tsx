@@ -18,6 +18,7 @@ import { SopProgress } from "../components/SopProgress";
 import { StatusBar } from "../components/StatusBar";
 import { Toast } from "../components/Toast";
 import { UpdaterBanner } from "../components/UpdaterBanner";
+import { PanoramaView } from "../components/panorama/PanoramaView";
 import { Button } from "../components/primitives";
 import { useAppStore } from "../stores/appStore";
 import { lazy, Suspense } from "react";
@@ -39,6 +40,9 @@ import styles from "./Dashboard.module.css";
 // 200px strip (2026-08-10 hit-probability evidence) — survives as a draggable
 // split rather than a second layout: a binary mode cannot carry a continuous
 // spatial preference, so the preference goes to a continuous control.
+// PanoramaView is imported eagerly (above) while WebsitePanel stays lazy: the
+// panorama is the default view, on the wake path, and must paint with the
+// first frame (constitution C1).
 const WebsitePanel = lazy(() =>
   import("../components/WebsitePanel").then((module) => ({
     default: module.WebsitePanel,
@@ -98,7 +102,9 @@ export function Dashboard() {
       <HotkeyBanner />
       <UpdaterBanner />
       <Header />
-      {workspace === "prompts" ? (
+      {workspace === "panorama" ? (
+        <PanoramaView />
+      ) : workspace === "prompts" ? (
         <>
           <ProtocolBand />
           <div className={styles.panorama}>
