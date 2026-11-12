@@ -1,9 +1,9 @@
 ---
 type: constitution
 project: prompt-hub
-version: v1.1
+version: v1.2
 created: 2026-05-19
-last_modified: 2026-06-01
+last_modified: 2026-11-12
 status: ratified
 author: human  # 🧑 人主笔，AI 禁止起草（CLAUDE §5.2）
 audience: [human, ai]
@@ -53,7 +53,8 @@ related:
 
 ### B2. 协议层与任务层物理分离
 AlignmentPhrase 不参与 Modifier 拼接、不入 SOP、不与 Macro 互转、不归属 Scene。
-- **证伪**：见到 SOP 步骤含 AlignmentPhrase / Macro 区展示 AlignmentPhrase → 违反
+- **证伪**：见到 SOP 步骤含 AlignmentPhrase，或 AlignmentPhrase 被拼进 Composition → 违反
+- **界面边界（ADR-031）**：全景工作区按意图并列展示各类条目，不构成违反——分离约束落在数据关系上，不落在界面分区上
 - **依据**：哲学七「先定框、再发任务」的认知节奏依赖物理分离
 - **后果**：失去元层协议握手能力，退化为更花哨的提示词管理器
 
@@ -96,3 +97,4 @@ AlignmentPhrase 不参与 Modifier 拼接、不入 SOP、不与 Macro 互转、�
 |---|---|---|---|
 | 2026-05-19 | v1.0 | 初版 8 条：A1/A2/A3 + B1/B2 + C1 + D1 + E1（D1 原选时编号 D2，落盘时连续化） | — |
 | 2026-06-01 | v1.1 | D1 补「反向边界」note：MCP write server ≠ 内嵌 LLM SDK，promote 闸门由使用者把守（reaffirm 非改铁律） | ADR-015 |
+| 2026-11-12 | v1.2 | B2 证伪条件删去「Macro 区展示 AlignmentPhrase」，改为「SOP 步骤含 AlignmentPhrase，或 AlignmentPhrase 被拼进 Composition」；补「界面边界」：全景工作区按意图并列展示不构成违反。正文数据层约束不变（待 HuiW86 在 PR 上签字） | ADR-031 |

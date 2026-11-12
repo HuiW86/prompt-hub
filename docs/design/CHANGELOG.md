@@ -14,6 +14,26 @@ description: prompt-hub 设计文档体系变更日志——记录文档结构�
 
 ---
 
+## 2026-11-12（四）— ADR-031 全景面板为默认视图 + 宪法 B2 修订 v1.2（送审）
+
+### 变更内容
+
+| 文件 | 变更 |
+|---|---|
+| `docs/adr/031-panorama-default-view.md` | **新增**，`Proposed`。核心目的「一眼看到全局，一键贴出，每次都记数」、七条原则、六个方案（五个否决 + 选定的全景工作区）、六条子决策、反悔成本 |
+| [[02-constitution]] v1.1 → **v1.2** | B2 证伪条件删去「Macro 区展示 AlignmentPhrase」，改为「SOP 步骤含 AlignmentPhrase，或 AlignmentPhrase 被拼进 Composition」；新增「界面边界」一行：全景工作区按意图并列展示不构成违反。B2 正文（数据层四条）一字未动 |
+| `CLAUDE.md` | §1 补核心目的；§4.3 去掉「Macro 区不展示 AlignmentPhrase」，补 Composition 一条与 ADR-031 例外；§6 第 3 条改写；§7 ADR 进度与 constitution 版本 |
+
+### 变更原因
+
+2026-11-12 回看真实库使用数据：76 条、221 次使用，前 3 条占 50%，44 条从未用过，协议话术自 2026-09-25 后无使用。按资产类型分区的仪表盘要求用户先回忆「这条在哪一区」，面板起不到提示作用。用户裁决（规格 D1）：「现在拆分的太细了，过度设计了，你看着改吧」——取消界面分区，保留数据层分离。
+
+宪法是 🧑 人主笔文档（CLAUDE §5.2），修订文字由 AI 按用户裁决起草，**须 HuiW86 在 PR 上签字后生效**；ADR-031 同样在签字后改 `Accepted`。按 [[02-constitution#E1]]，PR 描述链接 ADR-031。
+
+product-spec / design-spec / prd 的契约回流不在本条，I-03 合并后另开。
+
+---
+
 ## 2026-10-08（四）— 主界面减法 pass 签字落地：product-spec v0.30 / design-spec v0.23
 
 ### 变更内容
