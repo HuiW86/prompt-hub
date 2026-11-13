@@ -22,16 +22,15 @@
 
 ## Next Actions
 
-> 编号沿用旧账，只列仍开着的。M-01 的发布门已全部通过，`main` 可以出包；下一步按需挑：第 65 项（全景契约回流）或第 58 项（ADR-030 裁决）。
+> 编号沿用旧账，只列仍开着的。M-01 的发布门已全部通过，`main` 可以出包；下一步是第 65 项（全景 + 网站 Tab 的契约回流）。
 
 ### 全景（M-01）收尾
 
 69. （低优先）全景在**紧凑密度档**下的一屏无滚动未单独看过（2026-11-13 验收用的是默认档）。切到紧凑档时顺手看一眼即可
-65. **全景契约回流**：product-spec / design-spec / prd 均未写全景与「管理」工作区，按 ADR-031「显式不裁」走八步
+65. **契约回流（全景 + 网站 Tab）**：product-spec / design-spec / prd 均未写全景与「管理」工作区（ADR-031「显式不裁」），也未写网站 Tab（ADR-030，目前只有 `docs/website-tab/design-delta.md`）。两者一起走八步；图纸类改动须人签，送审只给一句话决定 + 推荐
 67. （低优先）清空废纸篓不清 `panorama_placements` 悬空行：不显示、占的常用位被新抢占者静默让出、导入时清理。要立即干净就在 `purge_trash` 末尾调 `repo_write::panorama::delete_dangling_placements`
 ### 待裁决
 
-58. **ADR-030（网站库）仍 Proposed**：`docs/adr/030-website-library.md` 缺 `Last reviewed`，代码已在 `main`。送审只给一句话决定 + 推荐；裁后八步回流 prd / product-spec / design-spec（网站 Tab 目前只有 `docs/website-tab/design-delta.md`）
 8. 可发现性裁决 ×3：场景删除入口外露 / 整理态保窗 vs 改 D-0 契约 / title-only 后卡面无内容线索
 21. 主环：**21.4 S2 最小闭环「复制过但未归类的内容提示保存」**未做，需要自己的图纸（prd §5.7 / product-spec 区域 7 或 8）；附带待裁：隐藏期间 MCP 写入的草稿唤起不刷新 badge（G4 O1）、SOP 占位区是否收起
 26. （G4 观察）新建空场景无「添加话术」入口；UI 新建 Macro `native=0` 而种子 `native=1`
@@ -43,7 +42,6 @@
 
 ### 审查与验证欠账
 
-60. **`ccb145b`（网站 Tab）补审查**：`/review` + verifier。重点 `src-tauri/src/commands.rs` `open_website` 的 URL 校验；`src-tauri/crates/repo-write/src/import.rs` 网站库三态导入；**第七道源码级闸门的 `ASSET_TABLES` 不含 `websites`**（`src/ipc/soft-delete-gate.test.ts`），网站读路径的 `deleted_at` 过滤没有闸门保护——须判断是否该进清单
 61. 网站 Tab 真机未验：`WebsitePanel.tsx` 的 `ipc.openWebsite` 打开后默认浏览器行为与窗口焦点（non-activating panel，打开后是否应隐藏）、真实导入 1.4
 6. `a24c7c0` / `4b722c1` / `716bd4c` 三个 commit 补 verifier 对抗审查
 46. Codex 代理账户余额约 $0.3，充值到 ≥ $3 后补跑 `/codex review`（ADR-029 三期、第 53 项均无第二意见）
@@ -88,6 +86,7 @@
 
 ## Dropped
 
+- 第 58 项（ADR-030 裁决）与第 60 项（`ccb145b` 补审查）：2026-11-13 HuiW86 授权 AI 裁决，裁前对照代码逐条复核无缺陷，ADR-030 **Accepted**；补充子决策：网站表不进第七道闸门（理由见 ADR-030「裁决」节）。契约回流并入第 65 项
 - 第 64 项（全景真机门）：2026-11-13 全部通过——macOS clippy 通过；`bench:hotkey-wake` p95 **20.143ms**（低于 200ms，但比 2026-09-05 的 14.139ms 多 6.004ms / +42%，原因未查，再涨须先定位）；真实库副本 15→16 迁移正常、原库 `quick_check` 正常；真实库 76 条一屏无纵向滚动（未分组列底部「还有 29 条」）；整理态选中后 `⌥3` 出现常用位徽标 3、`⌥0` 消失。验收副本在 `/tmp/prompt-hub-acceptance-home`
 - 第 68 项（CI runner 失效）：PR #14 改钉 `macos-15` + 全 workspace `cargo fmt`，首跑 rust / frontend / bench-c1 三项全绿，2026-11-13 合并（`dee9ee6`）
 
@@ -103,7 +102,6 @@
 
 - **`0016` 落地后不可降版本**：`user_version` 16 的库不能交给 v15 的二进制。`main` 现为 **0.2.2**（未发版），高于公开 v0.2.1；下次发版须从当前 `main` 出包，版本号不得回落
 - **两个 0.2.1 同号不同内容**：公开 v0.2.1 = 闪退修复、schema 14；本机 `/Applications` 的 0.2.1 = 网站 Tab、schema 15（2026-09-24 自建，未公证）。同号让本机更新器不提示升级，这是好事；问题只在下次发版必须 ≥ 0.2.2
-- **ADR-030 代码先于决策**：`0015` 已在真实库跑过，若裁决改动数据形态，只能新开迁移，不能降版本
 - **`notes` 留空 = 清空，不是保留**：正文真变时 `AlignmentPhraseEditor.handleSubmit` 总是发 `notes`（可为空串），读方按空串 = 无说明（prd §6.6）。别把谓词改回「非空才发」
 - `live_cue` 语义已冻住（append-only）；`refCount` 是查询期现算；`update_alignment_phrase` 缺省 `coordinates` = 不动，显式 `null` 才清空
 - 第七道闸门只强制 `deleted_at`；轴取值表硬删；error toast 顶撤销 toast 是刻意的；改 `SceneNotEmpty` 或单条恢复前先读 `revive_trashed_ancestors`
