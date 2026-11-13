@@ -8,7 +8,7 @@
 
 ## Completed
 
-- **PR #12 合入 `main`**（merge `97b4e75`，2026-11-13），#7–#10 全部关闭：
+- **PR #12 合入 `main`**（merge `97b4e75`，2026-11-12 PST），#7–#10 全部关闭：
   - I-02 `70c7339`：migration `0016_panorama_placements`（`user_version` 15→**16**）、`list_panorama_placements` / `set_panorama_placement`（IPC 71→**73**）、导出 1.4→**1.5**（缺键保留仍对得上的本地行 / 空数组清空 / 有内容替换，悬空行丢弃，`null` 拒绝）
   - I-01 `30b6729` + `980a05e`：ADR-031 **Accepted**，宪法 B2 **v1.2 ratified**（HuiW86 2026-11-13 签字，`0016` 同时通过）
   - I-03 `b284cb9`：`src/components/panorama/PanoramaView.tsx` 设为默认工作区，Header「全景 / 管理 / 常用网站」

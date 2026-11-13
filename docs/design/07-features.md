@@ -334,7 +334,7 @@ related:
 
 ### 3.17 全景面板与常用网站（2026-11-13 · [[031-panorama-default-view]] / [[030-website-library]]）
 
-> 两批代码都已在 `main`：常用网站自 `ccb145b`（2026-09-27），全景自 PR #12（merge `97b4e75`，2026-11-13）。本节是 [[HANDOFF]] 第 65 项契约回流时补进矩阵的——此前两者都没有功能行。
+> 两批代码都已在 `main`：常用网站自 `ccb145b`（2026-09-27），全景自 PR #12（merge `97b4e75`，2026-11-12 PST）。本节是 [[HANDOFF]] 第 65 项契约回流时补进矩阵的——此前两者都没有功能行。
 >
 > **三行 `verified`**：留证是 **G8**（2026-11-13，[[11-test-spec#4.7]]）——真实库 76 条一屏无纵向滚动、整理态 `⌥3` / `⌥0`、真实库副本 15 → 16 迁移。**五行 `done`**：都有自动化用例，缺的是真机留证，逐行登记在 §7 缺口表。常用网站两行在本批之前的状态是「代码在 `main` 而矩阵无行」，并非从 `in-progress` 转来。
 >
@@ -343,7 +343,7 @@ related:
 | 功能 | 优先级 | 状态 | 目标版本 | 测试覆盖 | 责任人 | 引用 |
 |---|---|---|---|---|---|---|
 | 全景工作区布局（唤起后默认视图；六意图列 + 未分组 + 底部两组 + 预览行；常用位 / 活跃 / 休眠三层现算；放不下时休眠行收为「还有 N 条」）| P0 | `verified` | v1.4 | `panorama.test.ts` **28**（分层边界恰 90 / 14 天、九个相位映射、`groupId` 覆盖默认、`deprecated` 排除、`bySlot`、复制来源）+ `PanoramaView.test.tsx` S1 渲染断言 | omar | [[03-product-spec#13.6]] b · [[031-panorama-default-view]] |
-| 全景取用键位（裸 `1`–`9` 复制常用位 / 打字筛选变暗不移位 / 方向键选中 / `⏎` 复制选中或第一个匹配 / `ESC` 先清空再关闭 / `⌘` 组合放行 / 输入法组字不拦 / 唤起清空筛选）| P0 | `done` | v1.4 | `PanoramaView.test.tsx`（S2 / S3 / `⌘1` 放行 / IME / 设置弹窗打开时不拦 / wake 清空）+ `App.test.tsx` 全景组 5 条（默认工作区、`ESC` 阶梯、`⌘1` 仍切相位、裸 `1` 复制常用位）| omar | [[03-product-spec#13.6]] b |
+| 全景取用键位（裸 `1`–`9` 复制常用位 / 打字筛选变暗不移位 / 方向键选中 / `⏎` 复制选中项或（筛选时）第一个可见匹配 / `ESC` 先清空再关闭 / `⌘` 组合放行 / 输入法组字不拦 / 唤起清空筛选）| P0 | `done` | v1.4 | `PanoramaView.test.tsx`（S2 / S3 / `⌘1` 放行 / IME / 设置弹窗打开时不拦 / wake 清空）+ `App.test.tsx` 全景组 5 条（默认工作区、`ESC` 阶梯、`⌘1` 仍切相位、裸 `1` 复制常用位）| omar | [[03-product-spec#13.6]] b |
 | 整理态 `⌥1`–`⌥9` / `⌥0` 指定与取消常用位 | P1 | `verified` | v1.4 | `PlacementMenu.test.tsx`（`⌥3` 指定、`⌥0` 取消、调用态不响应）| omar | [[03-product-spec#13.6]] b |
 | 整理态位置菜单（「位置」按钮 / `M` / 分组与号位选项 / 占用者名称 / 抢占后撤销恢复两条原值 / 焦点回到条目）| P1 | `done` | v1.4 | `PlacementMenu.test.tsx` **9** + `PanoramaView.test.tsx`「改分组后条目出现在新列」| omar | [[03-product-spec#13.6]] b · [[05-design-spec#10.9]] |
 | 全景布局数据层（migration `0016` · `panorama_placements` · `list` / `set` 两条 IPC，upsert / 抢占 / 双空删行 / 存活过滤）| P0 | `verified` | v1.4 | cargo `panorama` **12**（迁移 1 · 写路径 6 · 导入 5）+ `ipc-contract` 命令数 73 | omar | [[06-prd#6.11]] |
