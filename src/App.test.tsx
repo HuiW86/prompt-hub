@@ -1,4 +1,10 @@
-import { fireEvent, render, screen, waitFor } from "@testing-library/react";
+import {
+  fireEvent,
+  render,
+  screen,
+  waitFor,
+  within,
+} from "@testing-library/react";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
 import type {
@@ -16,6 +22,7 @@ vi.mock("@tauri-apps/api/core", () => ({
 
 import App from "./App";
 import { useAppStore } from "./stores/appStore";
+import { usePanoramaStore } from "./stores/panoramaStore";
 import { usePromptStore } from "./stores/promptStore";
 import { useSearchStore } from "./stores/searchStore";
 import { useSettingsStore } from "./stores/settingsStore";
@@ -117,7 +124,9 @@ const initialAppStore = useAppStore.getState();
 describe("Dashboard end-to-end render", () => {
   beforeEach(() => {
     usePromptStore.setState(initialStore, true);
-    useAppStore.setState(initialAppStore, true);
+    // These blocks exercise the organize dashboard ("管理"); a wake lands on the
+    // panorama since ADR-031, so pin the workspace explicitly.
+    useAppStore.setState({ ...initialAppStore, workspace: "prompts" }, true);
     useSettingsStore.setState({ interactionMode: "invoke" });
     invokeMock.mockReset();
     invokeMock.mockImplementation((cmd: string) => {
@@ -343,7 +352,9 @@ describe("Dashboard end-to-end render", () => {
 describe("Dashboard click → IPC flow", () => {
   beforeEach(() => {
     usePromptStore.setState(initialStore, true);
-    useAppStore.setState(initialAppStore, true);
+    // These blocks exercise the organize dashboard ("管理"); a wake lands on the
+    // panorama since ADR-031, so pin the workspace explicitly.
+    useAppStore.setState({ ...initialAppStore, workspace: "prompts" }, true);
     invokeMock.mockReset();
     invokeMock.mockImplementation(baseInvoke);
   });
@@ -778,7 +789,9 @@ describe("Wake hygiene — clear search residue on hide (P1-4)", () => {
 
   beforeEach(() => {
     usePromptStore.setState(initialStore, true);
-    useAppStore.setState(initialAppStore, true);
+    // These blocks exercise the organize dashboard ("管理"); a wake lands on the
+    // panorama since ADR-031, so pin the workspace explicitly.
+    useAppStore.setState({ ...initialAppStore, workspace: "prompts" }, true);
     useSearchStore.setState(searchInitial, true);
     invokeMock.mockReset();
     invokeMock.mockImplementation((cmd: string) => {
@@ -859,5 +872,146 @@ describe("Wake hygiene — clear search residue on hide (P1-4)", () => {
     fireHidden();
     // A user hiding the window mid-edit keeps the caret; only the query clears.
     expect(document.activeElement).toBe(input);
+  });
+});
+
+describe("Default workspace — panorama (ADR-031)", () => {
+  beforeEach(() => {
+    usePromptStore.setState(initialStore, true);
+    useAppStore.setState(initialAppStore, true);
+    usePanoramaStore.setState({ query: "", selectedKey: null, placements: [] });
+    useSettingsStore.setState({
+      interactionMode: "invoke",
+      settingsOpen: false,
+    });
+    invokeMock.mockReset();
+    invokeMock.mockImplementation((cmd: string) => {
+      switch (cmd) {
+        case "list_phases":
+          return Promise.resolve(fakePhases);
+        case "list_alignment_axis_values":
+          return Promise.resolve([]);
+        case "list_alignment_phrases":
+          return Promise.resolve(fakeAlignments);
+        case "list_macros":
+          return Promise.resolve(fakeMacros);
+        case "list_modifiers":
+        case "list_compositions":
+        case "list_drafts":
+        case "list_recent_usage":
+          return Promise.resolve([]);
+        case "list_scenes_with_children":
+          return Promise.resolve(fakeScenes);
+        case "count_today_usage":
+        case "count_pending_drafts":
+          return Promise.resolve(0);
+        case "list_panorama_placements":
+          return Promise.resolve([
+            {
+              assetKind: "macro",
+              assetId: "macro-best-practice",
+              groupId: null,
+              pinSlot: 1,
+            },
+          ]);
+        case "record_usage":
+          return Promise.resolve({
+            id: "r",
+            timestamp: "2026-11-12T00:00:00Z",
+          });
+        case "hide_window":
+          return Promise.resolve();
+        default:
+          return Promise.reject(new Error(`unexpected ${cmd}`));
+      }
+    });
+  });
+
+  it("starts on the panorama, with 全景 first and the old dashboard renamed 管理", async () => {
+    expect(useAppStore.getState().workspace).toBe("panorama");
+    render(<App />);
+    await screen.findByLabelText("全景");
+    const nav = screen.getByRole("navigation", { name: "工作区" });
+    const labels = Array.from(nav.querySelectorAll("button")).map(
+      (b) => b.textContent,
+    );
+    expect(labels).toEqual(["全景", "管理", "常用网站"]);
+    expect(within(nav).getByRole("button", { name: "全景" })).toHaveAttribute(
+      "aria-current",
+      "page",
+    );
+    // Every item is on screen, and the organize-only regions are not mounted.
+    expect(screen.getByText("借力最优解")).toBeInTheDocument();
+    expect(screen.getByText("设计导出模块")).toBeInTheDocument();
+    expect(screen.queryByRole("search")).toBeNull();
+  });
+
+  it("switching to 管理 shows the original dashboard", async () => {
+    render(<App />);
+    await screen.findByLabelText("全景");
+    const nav = screen.getByRole("navigation", { name: "工作区" });
+    fireEvent.click(within(nav).getByRole("button", { name: "管理" }));
+    expect(useAppStore.getState().workspace).toBe("prompts");
+    expect(screen.queryByLabelText("全景")).toBeNull();
+  });
+
+  it("Esc clears a non-empty panorama filter first, and only then hides", async () => {
+    render(<App />);
+    await screen.findByLabelText("全景");
+    fireEvent.change(screen.getByLabelText("筛选"), {
+      target: { value: "借力" },
+    });
+    fireEvent.keyDown(document, { key: "Escape" });
+    expect(usePanoramaStore.getState().query).toBe("");
+    expect(invokeMock.mock.calls.some((c) => c[0] === "hide_window")).toBe(
+      false,
+    );
+    fireEvent.keyDown(document, { key: "Escape" });
+    await waitFor(() =>
+      expect(invokeMock.mock.calls.some((c) => c[0] === "hide_window")).toBe(
+        true,
+      ),
+    );
+  });
+
+  it("⌘1 on the panorama still switches phase and copies its default, not pin slot 1", async () => {
+    render(<App />);
+    await screen.findByLabelText("常用位 1");
+    fireEvent.keyDown(document, { key: "1", metaKey: true });
+    await waitFor(() => {
+      const inputs = invokeMock.mock.calls
+        .filter((c) => c[0] === "record_usage")
+        .map(
+          (c) =>
+            (c[1] as { input: { targetType: string; source: string } }).input,
+        );
+      expect(inputs).toEqual([
+        expect.objectContaining({
+          targetType: "alignment",
+          source: "phase_bar",
+        }),
+      ]);
+    });
+    expect(useAppStore.getState().activePhaseId).toBe("phase-0");
+  });
+
+  it("a bare 1 on the panorama copies pin slot 1", async () => {
+    render(<App />);
+    await screen.findByLabelText("常用位 1");
+    fireEvent.keyDown(document.body, { key: "1" });
+    await waitFor(() => {
+      const inputs = invokeMock.mock.calls
+        .filter((c) => c[0] === "record_usage")
+        .map(
+          (c) =>
+            (c[1] as { input: { targetId: string; source: string } }).input,
+        );
+      expect(inputs).toEqual([
+        expect.objectContaining({
+          targetId: "macro-best-practice",
+          source: "macro_area",
+        }),
+      ]);
+    });
   });
 });

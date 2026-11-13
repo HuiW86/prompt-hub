@@ -68,13 +68,22 @@
 61. **网站 Tab 真机未验项**（new 2026-09-27，来自本机安装记录）：`WebsitePanel.tsx:170` `ipc.openWebsite` 真实打开后默认浏览器行为与窗口焦点（主形态是 non-activating panel，打开后是否应隐藏）、真实导入 1.4
 62. **runbook §4 更新链路未单独确认**（new 2026-09-27，承自云端会话 2026-09-25 的 ⚠️）：用 0.2.0 客户端「检查更新」→ 升到公开 v0.2.1。本机已装 0.2.1，须在另一台机或隔离安装上做
 
+63. **M-01 全景面板 PR 待合并**（new 2026-11-12，Issue #7–#10，PR #12）：2026-11-13 HuiW86 已签——ADR-031 `Accepted`、宪法 B2 v1.2 ratified、`0016` 通过。剩合并与第 64 项真机门；真机门过之前不要从该分支出包
+64. **全景真机门**（new 2026-11-12）：jsdom 验不了的三项——`pnpm bench:hotkey-wake`（全景成为唤起后的默认视图，C1 路径变了；对比 2026-09-05 p95 **14.139ms**，须 `arch -arm64`）/ 真实库 76 条下一屏无纵向滚动（含紧凑档）/ `⌥1–⌥9` 在 macOS WebKit 下 `event.code` 是否为 `DigitN`。浏览器冒烟（Vite + Playwright + 假 IPC，1440×900 / 1280×720）已过，不替代真机
+65. **全景契约回流**（new 2026-11-12）：product-spec / design-spec / prd 均未写全景工作区，按 ADR-031「显式不裁」在 I-03 合并后另走八步
+67. （低优先）清空废纸篓不清 `panorama_placements` 悬空行：被永久删除的条目留下的行不显示、占着的常用位会被新抢占者静默让出、导入时清理。若想立即干净，在 `purge_trash` 末尾调 `repo_write::panorama::delete_dangling_placements`
+
 ## Dropped
 
+- 第 66 项「整理」撞名：2026-11-13 已结——工作区改名「管理」，模式名不动（CHANGELOG 2026-11-13）
 - 无。上一版 Next Actions 第 1–62 项全部原样承接（本轮未推进任何一项，只做一致性核查）。
 
 ## Risks & Decisions
 
 > 长期风险在 [[learnings]] 附录 B；此处只留仍会影响下一次改动的。
+
+- **`0016` 落地后不可降版本**（new 2026-11-12）：`user_version` 16 的库不能交给 v15 的二进制；含全景的包版本号必须高于当前公开版本。表只新增、旧二进制忽略它，反悔时表可以留着不用
+- **`cargo fmt --check` 两种跑法结果不同**（new 2026-11-12）：CI 的 `cargo fmt --manifest-path src-tauri/Cargo.toml --check`（仓库根目录）通过；在 `src-tauri/` 里直接 `cargo fmt --check` 会列出 `repo-core` / `repo-write` 约 59 处既有差异（`a7f8304` 即如此）。别在功能提交里顺手 `cargo fmt` 整个 workspace——会把几百行无关格式改动混进 diff
 
 - **两个 0.2.1 同号不同内容**（new 2026-09-27）：GitHub 公开 v0.2.1 = 闪退修复、schema 14；本机 `/Applications` 的 0.2.1 = 当时未提交工作区 + 网站 Tab、schema 15（2026-09-24 自建，未公证）。本机更新器看到公开 v0.2.1 不会提示升级（同号），这是好事；但**下一次公开发版必须 ≥ 0.2.2 且从含 `0015` 的 `main` 出包**，否则会把 schema 15 的真实库交给不认识它的二进制。**2026-09-27 已把 `main` 版本号提到 0.2.2**（未发版、未打 tag），此后从 `main` 出的包不会再冒充 0.2.1
 - **本 shell 跑在 Rosetta 下**（new 2026-09-27）：`uname -m` = `x86_64`，`/usr/local/bin/node` 通用二进制会以 x64 运行，`pnpm test` 报找不到 `@rollup/rollup-darwin-x64`。**不是依赖坏了**——前端命令一律包 `arch -arm64 /bin/zsh -lc '…'`；别为此重装 `node_modules`（lockfile 政策）

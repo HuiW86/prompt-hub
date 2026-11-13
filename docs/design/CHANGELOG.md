@@ -14,6 +14,66 @@ description: prompt-hub 设计文档体系变更日志——记录文档结构�
 
 ---
 
+## 2026-11-13（五）— ADR-031 签字 Accepted + 宪法 B2 v1.2 ratified + 工作区「整理」改名「管理」
+
+### 变更内容
+
+HuiW86 对 PR #12 三个裁点的答复：
+
+| 裁点 | 结论 | 落地 |
+|---|---|---|
+| ① 宪法 B2 v1.2 + ADR-031 | 同意 | ADR-031 `Proposed` → **`Accepted`**，补 `Last reviewed: 2026-11-13`；[[02-constitution]] v1.2 修订历史行去掉「待签字」，`last_modified` 2026-11-13 |
+| ② migration `0016` | 通过 | 无代码改动 |
+| ③ 「整理」撞名 | 交 AI 定 | 工作区名「整理」→ **「管理」**（`src/components/Header.tsx`，测试同步）；ADR-031 子决策 1 记改名理由；`CLAUDE.md` §1 / §4.3 / §6 第 3 条 / §7 同步 |
+
+### 变更原因
+
+改工作区名而不改模式名：「整理」作为交互模式（D-0 整理态）已写进 product-spec §4.0.7、prd、多处代码注释与测试，属 ratified 契约；工作区名是 I-03 新起的、尚未进任何契约，改它的影响面最小。「管理」说的正是这个工作区的用途——增删改、移动条目，而取用在全景。
+
+---
+
+## 2026-11-12（四）— M-01 全景面板实现：数据层 + 全景视图 + 位置调整（I-02 / I-03 / I-04）
+
+### 变更内容
+
+| Issue | 提交 | 内容 |
+|---|---|---|
+| I-02 | `70c7339` | migration `0016_panorama_placements`（`user_version` 15→**16**）；`list_panorama_placements` / `set_panorama_placement`（IPC 71→**73**）；导出 `DATA_SCHEMA_VERSION` 1.4→**1.5**，`panorama_placements` 三态导入（缺键保留仍对得上的本地行 / 空数组清空 / 有内容整表替换，悬空行静默丢弃，`null` 拒绝） |
+| I-03 | `b284cb9` | `src/utils/panorama.ts` 纯函数分层分列；`panoramaStore`；`PanoramaView`；`workspace` 默认 `panorama`，Header「全景 / 整理 / 常用网站」；Esc 先清筛选再收起；⌘1–9 在全景仍切相位 |
+| I-04 | `5dfe22a` | `PlacementMenu`（复用 `AnchoredEditor` top layer）；整理态「位置」按钮 + `M`；`⌥1–⌥9` / `⌥0`；抢占常用位带撤销 toast |
+
+测试：Rust 231→**243**（`panorama` 12 条：迁移 1 / 写路径 6 / 导入 5）；前端 540→**603**（49 文件）。第七道源码级闸门未加豁免——列表查询五张资产表各带 `deleted_at IS NULL`，导出只读 `panorama_placements` 本表。B2 源码闸门的任务层四组件零引用不变，注释登记全景为跨层展示面。
+
+### 未验证（jsdom 验不了）
+
+唤起 C1、真实库一屏无滚动、macOS 下 `⌥数字` 的 `event.code`——见 [[HANDOFF]] 第 64 项。浏览器冒烟（Vite + Playwright + 假 IPC，1440×900 与 1280×720）通过：无纵向滚动、休眠行按列截断为「还有 N 条」、筛选变暗不移位、菜单可开可关且焦点回到条目。
+
+### 变更原因
+
+[[031-panorama-default-view]]。
+
+---
+
+## 2026-11-12（四）— ADR-031 全景面板为默认视图 + 宪法 B2 修订 v1.2（送审）
+
+### 变更内容
+
+| 文件 | 变更 |
+|---|---|
+| `docs/adr/031-panorama-default-view.md` | **新增**，`Proposed`。核心目的「一眼看到全局，一键贴出，每次都记数」、七条原则、六个方案（五个否决 + 选定的全景工作区）、六条子决策、反悔成本 |
+| [[02-constitution]] v1.1 → **v1.2** | B2 证伪条件删去「Macro 区展示 AlignmentPhrase」，改为「SOP 步骤含 AlignmentPhrase，或 AlignmentPhrase 被拼进 Composition」；新增「界面边界」一行：全景工作区按意图并列展示不构成违反。B2 正文（数据层四条）一字未动 |
+| `CLAUDE.md` | §1 补核心目的；§4.3 去掉「Macro 区不展示 AlignmentPhrase」，补 Composition 一条与 ADR-031 例外；§6 第 3 条改写；§7 ADR 进度与 constitution 版本 |
+
+### 变更原因
+
+2026-11-12 回看真实库使用数据：76 条、221 次使用，前 3 条占 50%，44 条从未用过，协议话术自 2026-09-25 后无使用。按资产类型分区的仪表盘要求用户先回忆「这条在哪一区」，面板起不到提示作用。用户裁决（规格 D1）：「现在拆分的太细了，过度设计了，你看着改吧」——取消界面分区，保留数据层分离。
+
+宪法是 🧑 人主笔文档（CLAUDE §5.2），修订文字由 AI 按用户裁决起草，**须 HuiW86 在 PR 上签字后生效**；ADR-031 同样在签字后改 `Accepted`。按 [[02-constitution#E1]]，PR 描述链接 ADR-031。
+
+product-spec / design-spec / prd 的契约回流不在本条，I-03 合并后另开。
+
+---
+
 ## 2026-10-08（四）— 主界面减法 pass 签字落地：product-spec v0.30 / design-spec v0.23
 
 ### 变更内容

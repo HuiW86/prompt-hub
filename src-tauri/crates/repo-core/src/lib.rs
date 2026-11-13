@@ -5,6 +5,7 @@ pub mod draft_repo;
 pub mod error;
 pub mod export;
 pub mod models;
+pub mod panorama;
 pub mod repo;
 pub mod settings;
 pub mod trash;

@@ -4,10 +4,14 @@ import { create } from "zustand";
 // React can react (focus search input, dim background, etc.). Window control
 // commands land in B4 — for now `setVisible` is the single source of truth in
 // the renderer process.
+// ADR-031: the panorama is where a wake lands. "prompts" is the organize
+// workspace (the original dashboard), "websites" the site library.
+export type Workspace = "panorama" | "prompts" | "websites";
+
 interface AppState {
   isVisible: boolean;
-  workspace: "prompts" | "websites";
-  setWorkspace: (workspace: "prompts" | "websites") => void;
+  workspace: Workspace;
+  setWorkspace: (workspace: Workspace) => void;
   activePhaseId: string | null;
   // Monotonic ping: bumped when the 待审 badge is clicked so ScenePanel jumps to
   // the 📥 草稿 tab. A counter (not a boolean) so repeated clicks re-fire even if
@@ -20,7 +24,7 @@ interface AppState {
 
 export const useAppStore = create<AppState>()((set) => ({
   isVisible: true,
-  workspace: "prompts",
+  workspace: "panorama",
   setWorkspace: (workspace) => set({ workspace }),
   activePhaseId: null,
   draftsViewRequestId: 0,

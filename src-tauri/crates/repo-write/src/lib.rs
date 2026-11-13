@@ -5,6 +5,7 @@ pub mod compositions;
 pub mod import;
 pub mod macros;
 pub mod modifiers;
+pub mod panorama;
 pub mod phrases;
 pub mod promote;
 pub mod scenes;

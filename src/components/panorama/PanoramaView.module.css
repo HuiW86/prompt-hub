@@ -1,0 +1,344 @@
+/* Panorama workspace (I-03 / ADR-031). Everything on one screen: filter row,
+ * six equal intent columns (+ 未分组 when non-empty), the cue/tool strip, then
+ * the preview line. Loudness by tier — pinned card > active row > dormant row —
+ * never by hiding. Tokens only (CLAUDE §4.1). */
+
+.panorama {
+  display: flex;
+  flex-direction: column;
+  flex: 1;
+  min-height: 0;
+  gap: var(--s-2);
+  padding: var(--s-3) var(--s-3_5) var(--s-2);
+  background: var(--canvas);
+}
+
+.filterRow {
+  display: flex;
+  flex: 0 0 auto;
+}
+
+.filter {
+  flex: 1;
+  min-width: 0;
+  height: var(--h-quickfind);
+  padding: 0 var(--s-3);
+  border: var(--hairline) solid var(--border-2);
+  border-radius: var(--r-4);
+  background: var(--surface-1);
+  color: var(--fg-1);
+  font: inherit;
+}
+
+.filter::placeholder {
+  color: var(--fg-4);
+}
+
+.filter:focus-visible {
+  outline: var(--border-thick) solid var(--accent);
+  outline-offset: calc(var(--hairline) * -1);
+}
+
+/* Equal-width columns for however many there are (6, or 7 with 未分组). */
+.grid {
+  display: grid;
+  grid-auto-flow: column;
+  grid-auto-columns: minmax(0, 1fr);
+  gap: var(--s-2);
+  flex: 1;
+  min-height: 0;
+}
+
+.column,
+.stripGroup {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+  min-height: 0;
+  border: var(--hairline) solid var(--border-1);
+  border-radius: var(--r-4);
+  background: var(--surface-1);
+}
+
+.columnHeader {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: var(--s-2);
+  padding: var(--s-2) var(--s-2_5) var(--s-1);
+}
+
+.columnTitle {
+  color: var(--fg-2);
+  font-size: var(--t-12);
+  font-weight: var(--w-600);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.columnCount {
+  flex: 0 0 auto;
+  color: var(--fg-4);
+  font-size: var(--t-11);
+  font-variant-numeric: tabular-nums;
+}
+
+/* The fallback scrollbar only ever appears when pinned + active rows alone
+ * exceed the column; dormant rows are cut before that (see PanoramaView). */
+.columnBody {
+  flex: 1;
+  min-height: 0;
+  overflow-y: auto;
+  padding: 0 var(--s-1_5) var(--s-2);
+  scrollbar-width: none;
+}
+
+.list {
+  display: flex;
+  flex-direction: column;
+  gap: var(--s-0_5);
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.dormantList {
+  margin-top: var(--s-1_5);
+  padding-top: var(--s-1_5);
+  border-top: var(--hairline) solid var(--border-1);
+}
+
+.row {
+  display: flex;
+  align-items: center;
+  gap: var(--s-1);
+  min-width: 0;
+}
+
+.item {
+  position: relative;
+  display: flex;
+  align-items: center;
+  gap: var(--s-2);
+  flex: 1;
+  min-width: 0;
+  padding: var(--s-1) var(--s-2);
+  border: var(--hairline) solid transparent;
+  border-radius: var(--r-3);
+  background: transparent;
+  color: var(--fg-1);
+  font: inherit;
+  text-align: left;
+  cursor: pointer;
+  transition:
+    background-color var(--d-fast) var(--ease),
+    opacity var(--d-fast) var(--ease);
+}
+
+.item:hover {
+  background: var(--surface-2);
+}
+
+.name {
+  flex: 1;
+  min-width: 0;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.count {
+  flex: 0 0 auto;
+  color: var(--fg-3);
+  font-size: var(--t-11);
+  font-variant-numeric: tabular-nums;
+}
+
+/* ── Tiers ──────────────────────────────────────────────────────────────── */
+
+.pinned {
+  flex-wrap: wrap;
+  row-gap: var(--s-1);
+  padding: var(--s-2);
+  border-color: var(--border-2);
+  background: var(--surface-2);
+  box-shadow: var(--shadow-1);
+}
+
+.pinned .name {
+  font-weight: var(--w-600);
+}
+
+.pinned:hover {
+  background: var(--surface-3);
+}
+
+.slot {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  flex: 0 0 auto;
+  min-width: var(--s-4);
+  height: var(--s-4);
+  padding: 0 var(--s-1);
+  border-radius: var(--r-2);
+  background: var(--accent);
+  color: var(--accent-fg);
+  font-family: var(--font-mono);
+  font-size: var(--t-11);
+  font-weight: var(--w-600);
+}
+
+/* Usage bar: width = this item's count / the library's highest count. */
+.bar {
+  flex: 0 0 100%;
+  height: var(--s-0_5);
+  border-radius: var(--r-1);
+  background: linear-gradient(
+    to right,
+    var(--accent) calc(var(--usage, 0) * 100%),
+    var(--border-1) calc(var(--usage, 0) * 100%)
+  );
+}
+
+.active {
+  color: var(--fg-1);
+}
+
+.newTag {
+  flex: 0 0 auto;
+  padding: 0 var(--s-1);
+  border-radius: var(--r-2);
+  background: var(--brand-ghost);
+  color: var(--brand);
+  font-size: var(--t-11);
+}
+
+.dormant {
+  padding-top: var(--s-0_5);
+  padding-bottom: var(--s-0_5);
+  color: var(--fg-4);
+  font-size: var(--t-12);
+}
+
+.dormant:hover {
+  color: var(--fg-2);
+}
+
+/* ── States ─────────────────────────────────────────────────────────────── */
+
+/* Filtered out: still in place, just quiet (变暗不消失). */
+.dimmed {
+  opacity: var(--op-dim);
+}
+
+.selected {
+  border-color: var(--accent);
+  background: var(--selection);
+}
+
+.flash {
+  background: var(--brand-ghost);
+}
+
+.more {
+  margin: var(--s-1_5) 0 0;
+  padding: 0 var(--s-2);
+  color: var(--fg-4);
+  font-size: var(--t-11);
+}
+
+/* ── Bottom strip: 中途口令 / 工具 ─────────────────────────────────────────── */
+
+.strip {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+  gap: var(--s-2);
+  flex: 0 0 auto;
+}
+
+.stripBody {
+  padding: 0 var(--s-1_5) var(--s-2);
+}
+
+.stripBody .list {
+  flex-direction: row;
+  flex-wrap: wrap;
+  gap: var(--s-1);
+}
+
+.stripBody .row {
+  flex: 0 1 auto;
+  max-width: 100%;
+}
+
+.stripBody .dormantList {
+  margin-top: var(--s-1);
+  padding-top: var(--s-1);
+}
+
+/* ── Preview line ───────────────────────────────────────────────────────── */
+
+.preview {
+  display: flex;
+  align-items: baseline;
+  gap: var(--s-3);
+  flex: 0 0 auto;
+  min-width: 0;
+  height: var(--h-statusbar);
+  padding: 0 var(--s-1);
+  color: var(--fg-3);
+  font-size: var(--t-12);
+}
+
+.previewName {
+  flex: 0 0 auto;
+  color: var(--fg-1);
+  font-weight: var(--w-600);
+}
+
+.previewContent {
+  flex: 1;
+  min-width: 0;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.previewMeta {
+  flex: 0 0 auto;
+  font-variant-numeric: tabular-nums;
+}
+
+.previewHint {
+  color: var(--fg-4);
+}
+
+/* Organize mode only (I-04): opens the placement menu for this row. Shown on
+ * the hovered or selected row only — one per row at full strength would turn
+ * the panorama into a wall of identical buttons. */
+.placeButton {
+  opacity: 0;
+  flex: 0 0 auto;
+  padding: 0 var(--s-1_5);
+  border: var(--hairline) solid var(--border-1);
+  border-radius: var(--r-2);
+  background: transparent;
+  color: var(--fg-3);
+  font: inherit;
+  font-size: var(--t-11);
+  line-height: var(--lh-tight);
+  cursor: pointer;
+}
+
+.placeButton:hover {
+  color: var(--fg-1);
+  border-color: var(--border-3);
+}
+
+.row:hover .placeButton,
+.row[data-selected] .placeButton,
+.placeButton:focus-visible {
+  opacity: 1;
+}

@@ -11,7 +11,7 @@ use crate::repo::{alignment_phrase_from_row, hydrate_alignment_phrase, parse_ts,
 
 // The data-layer schema version of the export envelope (PRD §6.9 / §7.7). This is
 // the `major.minor` contract for the JSON file itself, NOT the SQLite migration
-// `user_version` (currently 15). Bump it when the export shape changes; minor for
+// `user_version` (currently 16). Bump it when the export shape changes; minor for
 // backward-compatible additions, major for breaking changes.
 //
 // 1.1 → 1.2: every asset row gained the optional `deletedAt` field (ADR-028).
@@ -28,7 +28,10 @@ use crate::repo::{alignment_phrase_from_row, hydrate_alignment_phrase, parse_ts,
 // (06-prd §6.9 rules ① and ②).
 // 1.3 → 1.4 (ADR-030): optional website_library. Missing preserves the local
 // library during a legacy import; present empty replaces it; null is invalid.
-pub const DATA_SCHEMA_VERSION: &str = "1.4";
+// 1.4 → 1.5 (I-02, M-01): optional panorama_placements, same three states as
+// website_library. Missing keeps the local layout rows that still match an
+// asset after the restore; present empty clears it; null is invalid.
+pub const DATA_SCHEMA_VERSION: &str = "1.5";
 
 // The full-fidelity backup envelope (PRD §6.9). Unlike the read paths in `repo`,
 // every list here is UNFILTERED — deprecated assets, invisible phases/scenes AND
@@ -49,6 +52,9 @@ pub struct ExportBundle {
     // ADR-030: absent preserves existing sites; explicit null is invalid.
     #[serde(default, deserialize_with = "website_library_present")]
     pub website_library: Option<crate::websites::WebsiteLibrary>,
+    // I-02: absent keeps matching local layout rows; explicit null is invalid.
+    #[serde(default, deserialize_with = "panorama_placements_present")]
+    pub panorama_placements: Option<Vec<crate::panorama::PanoramaPlacement>>,
     pub schema_version: String,
     pub exported_at: DateTime<Utc>,
     pub modifiers: Vec<Modifier>,
@@ -73,6 +79,7 @@ pub struct ExportBundle {
 pub fn export_bundle(conn: &Connection) -> RepoResult<ExportBundle> {
     Ok(ExportBundle {
         website_library: Some(crate::websites::list_websites(conn)?),
+        panorama_placements: Some(crate::panorama::export_panorama_placements(conn)?),
         schema_version: DATA_SCHEMA_VERSION.to_string(),
         exported_at: Utc::now(),
         modifiers: export_modifiers(conn)?,
@@ -488,6 +495,12 @@ fn website_library_present<'de, D: serde::Deserializer<'de>>(
     d: D,
 ) -> Result<Option<crate::websites::WebsiteLibrary>, D::Error> {
     crate::websites::WebsiteLibrary::deserialize(d).map(Some)
+}
+
+fn panorama_placements_present<'de, D: serde::Deserializer<'de>>(
+    d: D,
+) -> Result<Option<Vec<crate::panorama::PanoramaPlacement>>, D::Error> {
+    Vec::<crate::panorama::PanoramaPlacement>::deserialize(d).map(Some)
 }
 
 #[cfg(test)]

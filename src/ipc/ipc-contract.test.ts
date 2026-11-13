@@ -106,7 +106,11 @@ const invoked = new Set(
 // reference counts deliberately did NOT get a command of their own — they ride
 // on the list read, because the moment you need them is the moment you already
 // needed the list (06-prd §6.6-bis).
-const EXPECTED_COMMAND_COUNT = 71;
+//
+// 71 → 73 with I-02 (M-01 panorama): `list_panorama_placements` and
+// `set_panorama_placement`. One write command covers group, pin slot and
+// clearing (both null deletes the row), so the layout needs no third command.
+const EXPECTED_COMMAND_COUNT = 73;
 
 describe("IPC contract — commands.rs / lib.rs / ipc/index.ts stay in sync", () => {
   it("exposes exactly the expected number of commands", () => {
