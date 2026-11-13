@@ -8,7 +8,7 @@
 
 ## Completed
 
-- **PR #12 合入 `main`**（merge `97b4e75`，2026-11-13），#7–#10 全部关闭：
+- **PR #12 合入 `main`**（merge `97b4e75`，2026-11-12 PST），#7–#10 全部关闭：
   - I-02 `70c7339`：migration `0016_panorama_placements`（`user_version` 15→**16**）、`list_panorama_placements` / `set_panorama_placement`（IPC 71→**73**）、导出 1.4→**1.5**（缺键保留仍对得上的本地行 / 空数组清空 / 有内容替换，悬空行丢弃，`null` 拒绝）
   - I-01 `30b6729` + `980a05e`：ADR-031 **Accepted**，宪法 B2 **v1.2 ratified**（HuiW86 2026-11-13 签字，`0016` 同时通过）
   - I-03 `b284cb9`：`src/components/panorama/PanoramaView.tsx` 设为默认工作区，Header「全景 / 管理 / 常用网站」
@@ -22,12 +22,11 @@
 
 ## Next Actions
 
-> 编号沿用旧账，只列仍开着的。M-01 的发布门已全部通过，`main` 可以出包；下一步是第 65 项（全景 + 网站 Tab 的契约回流）。
+> 编号沿用旧账，只列仍开着的。M-01 的发布门已全部通过，`main` 可以出包；第 65 项已结（三份图纸签字、裁点实装）；下一步按需从「待裁决」或「审查与验证欠账」里挑。
 
 ### 全景（M-01）收尾
 
 69. （低优先）全景在**紧凑密度档**下的一屏无滚动未单独看过（2026-11-13 验收用的是默认档）。切到紧凑档时顺手看一眼即可
-65. **契约回流（全景 + 网站 Tab）**：product-spec / design-spec / prd 均未写全景与「管理」工作区（ADR-031「显式不裁」），也未写网站 Tab（ADR-030，目前只有 `docs/website-tab/design-delta.md`）。两者一起走八步；图纸类改动须人签，送审只给一句话决定 + 推荐
 67. （低优先）清空废纸篓不清 `panorama_placements` 悬空行：不显示、占的常用位被新抢占者静默让出、导入时清理。要立即干净就在 `purge_trash` 末尾调 `repo_write::panorama::delete_dangling_placements`
 ### 待裁决
 
@@ -86,6 +85,7 @@
 
 ## Dropped
 
+- 第 65 项（全景 + 网站 Tab 契约回流）：2026-11-13 product-spec v0.31 / prd v0.17 / design-spec v0.24 同批签字；裁点「每次唤起都回到全景」按推荐通过并当日实装（`src/App.tsx`，管理里有编辑面板开着时例外，防丢草稿），`App.test.tsx` +5
 - 第 58 项（ADR-030 裁决）与第 60 项（`ccb145b` 补审查）：2026-11-13 HuiW86 授权 AI 裁决，裁前对照代码逐条复核无缺陷，ADR-030 **Accepted**；补充子决策：网站表不进第七道闸门（理由见 ADR-030「裁决」节）。契约回流并入第 65 项
 - 第 64 项（全景真机门）：2026-11-13 全部通过——macOS clippy 通过；`bench:hotkey-wake` p95 **20.143ms**（低于 200ms，但比 2026-09-05 的 14.139ms 多 6.004ms / +42%，原因未查，再涨须先定位）；真实库副本 15→16 迁移正常、原库 `quick_check` 正常；真实库 76 条一屏无纵向滚动（未分组列底部「还有 29 条」）；整理态选中后 `⌥3` 出现常用位徽标 3、`⌥0` 消失。验收副本在 `/tmp/prompt-hub-acceptance-home`
 - 第 68 项（CI runner 失效）：PR #14 改钉 `macos-15` + 全 workspace `cargo fmt`，首跑 rust / frontend / bench-c1 三项全绿，2026-11-13 合并（`dee9ee6`）
@@ -129,7 +129,7 @@
 
 > 计数为 2026-11-12 云端 Linux 实测（`5dfe22a` 之后）；2026-11-13 macOS CI（`macos-15`，PR #14）三项全绿，本机 clippy 与真机门亦已通过（见 Dropped 第 64 项）。
 
-- `pnpm test` → **603** / 49 文件
+- `pnpm test` → **608** / 49 文件（2026-11-13，含唤起回全景 5 条）
 - `cargo test --workspace --manifest-path src-tauri/Cargo.toml` → **243**（Linux 上需临时替换 `RunEvent::Reopen`）
 - `cargo clippy --workspace --all-targets --manifest-path src-tauri/Cargo.toml -- -D warnings` / `cargo fmt --manifest-path src-tauri/Cargo.toml --check` → 全绿
 - `pnpm lint && pnpm build && pnpm exec prettier --check src` → 全绿

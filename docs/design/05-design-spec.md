@@ -1,10 +1,10 @@
 ---
 type: design-spec
 project: prompt-hub
-version: v0.23
+version: v0.24
 created: 2026-05-18
-last_modified: 2026-10-08
-status: ratified  # v0.23 于 2026-10-08 经 Rosa 在项目线程签字（人审批次 ⑬，单裁点「主界面减法 pass 四项」按推荐通过）：Toast 由右上角挪到底部居中（状态栏上方）+ Header 副标 / 相位格快捷键标签退场（与 [[03-product-spec]] v0.30 同批），明细见文末修订记录 v0.23。前 v0.22 于 2026-09-03 人审批次 ⑧ 经 omar 签字（与 [[06-prd]] v0.14 / [[03-product-spec]] v0.25 同批）。本版内容：§10.2.2 `ConfirmInline` 用量由六处收缩至一处（清空废纸篓）+ §11 新增「Toast 让位规则」（撤销 toast 不被普通 toast 顶掉，error 例外），两项都是**行为契约**不是施工细节，按 [[CLAUDE#§5.1.2]] 需签字。前 v0.21 于 2026-09-03 人审批次 ⑦ ratified（§10.2.2 接口契约第 6 条随 product-spec「锚点再按一次 = 无事发生」签字，第 5 条 `initialFocus` 必填属施工规范随批通过）；更前 v0.20 于 2026-09-01 人审批次 ⑥ ratified
+last_modified: 2026-11-13
+status: ratified  # v0.24 于 2026-11-13 经 HuiW86 签字（同批单裁点在 product-spec 按推荐通过）。起草说明：全景工作区与常用网站工作区的视觉契约补写（新增 §10.9 / §10.10，§10.3 与 §10.8.1 补行），照现行 CSS 写，**零新增 token**；与 [[03-product-spec]] v0.31 / [[06-prd]] v0.17 同批，明细见文末修订记录 v0.24。前 v0.23 于 2026-10-08 经 Rosa 在项目线程签字（人审批次 ⑬，单裁点「主界面减法 pass 四项」按推荐通过）：Toast 由右上角挪到底部居中（状态栏上方）+ Header 副标 / 相位格快捷键标签退场（与 [[03-product-spec]] v0.30 同批），明细见文末修订记录 v0.23。前 v0.22 于 2026-09-03 人审批次 ⑧ 经 omar 签字（与 [[06-prd]] v0.14 / [[03-product-spec]] v0.25 同批）。本版内容：§10.2.2 `ConfirmInline` 用量由六处收缩至一处（清空废纸篓）+ §11 新增「Toast 让位规则」（撤销 toast 不被普通 toast 顶掉，error 例外），两项都是**行为契约**不是施工细节，按 [[CLAUDE#§5.1.2]] 需签字。前 v0.21 于 2026-09-03 人审批次 ⑦ ratified（§10.2.2 接口契约第 6 条随 product-spec「锚点再按一次 = 无事发生」签字，第 5 条 `initialFocus` 必填属施工规范随批通过）；更前 v0.20 于 2026-09-01 人审批次 ⑥ ratified
 author: co  # 🤝 人机共创（CLAUDE §5.2）
 related: [[01-spec]], [[02-constitution]], [[03-product-spec]], [[012-lock-visual-quality-anchor]], [[023-ui-reshape-before-release]], [[024-dark-cockpit-identity]], [[019-supersede-flat-visual-anchor]], [[020-restore-protocol-dark-band]], [[021-scene-layered-editing]], [[025-unified-anchored-editing]], [[CLAUDE-DESIGN]], [[015-expose-mcp-write-pipeline]], [[016-choose-dnd-and-resizable-layout]], [[018-absorb-promptscape-design]], [[026-fixed-spatial-layout]], [[028-reversible-delete]], [[asset-editing-and-adaptive-layout]]
 description: 手动 AI 编程仪表盘的视觉规范——tokens.css 单一真源 + 主题/elevation/组件视觉契约；写 CSS / 视觉时召回。版本叙事见 CHANGELOG
@@ -710,6 +710,9 @@ bundle 派生的 3 个跨组件 chrome primitive：
 | `Header`（v0.11）| chrome（中性强调）| 顶部 slim 行，gear `--h-quickfind` 36px | logo 方块染 `--accent`/`--accent-fg`（B2 中性强调面）+ 标题（v0.23 起无副标）+ 内嵌 `SearchBar`(flex-1) + gear `IconButton`；去设计稿头像（spec §8.2 无账号），详见 §10.8 / 涟漪 [[018-absorb-promptscape-design]] |
 | `ProtocolBand`（v0.11 / v0.13 暗 band）| protocol | 协议层容器 band（inset，`--r-frame`）| **v0.13（[[020-restore-protocol-dark-band]]）改 `--band-bg` 暗底 + band 作用域整体重映射中性 token**（§2.4.5），双主题恒为深底浅字；`Route` icon「协议层」pill；纯布局壳，PhaseBar+AlignmentPhrases 内容/数据不变，详见 §10.8.2 |
 | `SettingsModal`（v0.11）| chrome（中性强调）| 居中 overlay 弹窗（`--scrim` 遮罩，宽 `--w-settings-modal`）| 左导航(外观/更新) + 右内容；外观=主题三态分段控件 + 5 色强调 swatch；更新=opt-in 开关 + 状态行 + 检查/安装（复用 updaterStore）；焦点环/激活态用 `--accent`（中性强调，B2 安全），详见 §10.8 |
+| `PanoramaView`（v0.24）| chrome（中性）| 全景工作区整页：筛选行 + 等宽意图列 grid + 底部两组 + 预览行 | 列为 `--surface-1` 卡、三层条目视觉见 §10.9 |
+| `PlacementMenu`（v0.24）| 继承 `AnchoredEditor` | 锚定在全景条目上的位置菜单 | 两组选项网格，当前项 `--accent` 边 + `--selection` 底，见 §10.9.4 |
+| `WebsitePanel`（v0.24）| chrome（中性）| 常用网站工作区整页：左侧分组栏 + 主区列表 | 见 §10.10 |
 | `AnchoredEditor`（v0.18）| 继承内层 `EditorPanel` | 锚定在触发元素上的 top layer 浮层，宽随内容、**高受 frame 相对上限约束**后内部滚动 | 原生 `popover="manual"` 进 top layer（**不 portal 到 `body`**——DOM 祖先链不变，`ProtocolBand` 的 `--band-*` remap 照常继承，§2.4.5 用法 hard rule 得以成立）；`--shadow-2` + `--z-popover` 兜底；四个宿主共用（对齐话术 chip / Macro 卡 / Scene 话术卡 / 草稿卡「编辑」按钮），接口契约见 §10.2.2 |
 
 ---
@@ -874,7 +877,8 @@ bundle 派生的 3 个跨组件 chrome primitive：
 | 容器 | `--surface-1` 底 + 底部 hairline `--border-1`；padding `--s-2`/`--s-3_5`；行内 flex，gap `--s-3` |
 | logo | `--s-8` 32px 方块，圆角 `--r-4`，**染 `--accent`/`--accent-fg`**（B2 中性强调面——非 ontology）；lucide `Layers` 16px |
 | 标题 | 「prompt-hub」`--w-600` `--t-14`（**不改名 Promptscape**，spec 定位）。**v0.23 删副标**「提示词资产 · 全景仪表盘」：解释性文案，用过一次即无信息量 |
-| 搜索 | 内嵌 `SearchBar`，flex-1 占据中段（由整行 border-only 改为圆角内联字段，行 chrome 上移到 Header）|
+| 工作区切换（v0.24）| 标题右侧分段控件「全景 / 管理 / 常用网站」：容器 `--surface-2` 底 + `--border-2` 框 + `--r-4`、内边距 `--s-0_5`；项 `--r-3`、`--fg-3`，hover `--fg-1`；当前项 `--surface-3` 底 + `--fg-1`；焦点环 `--accent` |
+| 搜索 | 内嵌 `SearchBar`，flex-1 占据中段（由整行 border-only 改为圆角内联字段，行 chrome 上移到 Header）。**v0.24：只在管理工作区出现**，全景与常用网站以等宽空白占位，Header 其余元素不位移 |
 | gear | `IconButton` `--h-quickfind` 36px，lucide `Settings`，点击 `openSettings`（⌘,）；hover `--surface-2`/`--fg-1` |
 | 禁止 | ❌ 账号头像（spec §8.2 单用户无账号）❌ logo 染 ontology 色 |
 
@@ -904,6 +908,68 @@ bundle 派生的 3 个跨组件 chrome primitive：
 | 禁止 | ❌ 强调色/焦点环染 protocol/task ❌ 更新页造 channel 概念（updaterStore 无）|
 
 > **B2 复检**：本组三处「强调」（logo / swatch / 焦点环 / 开关 on 态）全部用 `--accent` 中性强调 token，物理隔离于 ontology；ProtocolBand 标签 pill 自 v0.12 起中性（v0.13 起走 `--band-*` muted 档），层身份靠 band 位置表达，合规。
+
+---
+
+### 10.9 全景工作区视觉契约（v0.24 — 涟漪 [[031-panorama-default-view]]）
+
+> 交互契约见 [[03-product-spec#13.6]] b。本节只管「长什么样」。原则只有一条：**主次靠明暗与形态区分，不靠隐藏、不靠尺寸蛮力**（§13.3）。全景整页**不引入任何新 token**，也不使用 ontology 色——列不染层色，对齐话术与任务层条目在同一列里同形呈现（B2 v1.2：展示不是关联）。
+
+#### 10.9.1 页面骨架
+
+| 区域 | 视觉契约 |
+|------|---------|
+| 页面 | `--canvas` 底；内边距 `--s-3` / `--s-3_5` / `--s-2`；纵向 gap `--s-2` |
+| 筛选框 | 整行，高 `--h-quickfind`，`--surface-1` 底 + `--border-2` 框 + `--r-4`；占位字 `--fg-4`；聚焦时 `--accent` 焦点环 |
+| 意图列 grid | 列等宽（`grid-auto-columns: minmax(0, 1fr)`），6 列或 7 列（含「未分组」）同一规则；列间 gap `--s-2` |
+| 列 | `--surface-1` 底 + `--border-1` 框 + `--r-4`；**无阴影**（列是容器，不是浮层）|
+| 列头 | 标题 `--t-12` `--w-600` `--fg-2`，单行省略；右侧「活跃 / 总数」`--t-11` `--fg-4` 等宽数字 |
+| 列体 | 纵向溢出时滚动条隐藏（`scrollbar-width: none`）；正常情况下休眠行先被收起，滚动只在常用位与活跃行本身放不下时兜底 |
+| 底部一排 | 两组等宽（「中途口令」「工具」），与列同形；组内条目横向换行排布 |
+| 预览行 | 高 `--h-statusbar`，`--t-12` `--fg-3`；名称 `--fg-1` `--w-600`，正文单行省略，右侧「N 次 · 日期」等宽数字；无内容时提示字 `--fg-4` |
+
+#### 10.9.2 三层条目
+
+| 层 | 视觉契约 |
+|------|---------|
+| 常用位 | 卡片：`--surface-2` 底 + `--border-2` 框 + `--shadow-1`；hover `--surface-3`。号位徽标 `--accent` 底 / `--accent-fg` 字，等宽字体 `--t-11` `--w-600`，最小宽 `--s-4`。名称 `--w-600`。用量条整宽、高 `--s-0_5`，`--accent` 段占比 = 本条次数 / 全库最高次数，其余 `--border-1` |
+| 活跃 | 单行，`--fg-1`，透明底，hover `--surface-2`；右侧次数 `--t-11` `--fg-3`。新建未用的条目以「新」标替代次数：`--brand-ghost` 底 + `--brand` 字 `--t-11` |
+| 休眠 | 在 `--border-1` hairline 分隔线以下；`--t-12`、`--fg-4`，不显示次数；hover 提到 `--fg-2` |
+| 收起行 | 「还有 N 条」`--t-11` `--fg-4`，非交互 |
+
+条目之间 gap `--s-0_5`；行内 padding `--s-1` / `--s-2`；圆角 `--r-3`。
+
+#### 10.9.3 状态
+
+| 状态 | 视觉契约 |
+|------|---------|
+| 筛选不匹配 | 整条 `opacity: var(--op-dim)`，**位置与尺寸不变** |
+| 选中 | `--accent` 边框 + `--selection` 底 |
+| 刚复制 | `--brand-ghost` 底闪一次（沿用 §11 flash 契约的时序）|
+| 过渡 | 底色与透明度走 `--d-fast` `--ease`；**不做任何位移动画**（位置稳定是交互契约） |
+
+#### 10.9.4 整理态的位置入口与菜单
+
+| 元素 | 视觉契约 |
+|------|---------|
+| 「位置」按钮 | 条目右侧，`--t-11` `--fg-3`，`--border-1` 框 + `--r-2`；**默认 `opacity: 0` 但占位**，所在行 hover 或选中、或按钮自身键盘聚焦时显出——一行一个常显按钮会让全景变成整墙同形按钮，而占位不消失保证显出时不推挤布局 |
+| 位置菜单 | 复用 `AnchoredEditor`（§10.2.2）壳；两组之间 gap `--s-3`；组标题 `--t-11` `--w-600` `--fg-3` |
+| 选项 | 分组 3 列、常用位 5 列网格，gap `--s-1`；每项 `--border-2` 框 + `--r-3`、`--t-12` `--fg-2`，hover `--surface-2`；**当前项** `--accent` 边 + `--selection` 底 + `--fg-1`；被他人占用的号位在数字下方加占用者名 `--t-10` `--fg-4`，单行省略 |
+
+### 10.10 常用网站工作区视觉契约（v0.24 — 涟漪 [[030-website-library]]）
+
+> 交互契约见 [[03-product-spec#13.6]] d。网站不是资产，全页只用中性 chrome 与品牌色，不使用任何 ontology 色。
+
+| 区域 | 视觉契约 |
+|------|---------|
+| 侧栏 | 固定宽 `calc(var(--s-20) * 2.5)`，`--surface-1` 底 + 右侧 `--border-1` hairline；内边距 `--s-5` / `--s-3`。项 `--r-4`、`--fg-2`，hover `--surface-2` / `--fg-1`；当前项 `--surface-3` / `--fg-1`；「新建分组」为虚线框 `--border-2` |
+| 主区标题 | 小标签 `--brand` `--t-10` `--w-600` + 大标题 + 一行说明 |
+| 网站卡 | `--surface-1` 底 + `--border-2` 框 + `--r-4`，内边距 `--s-3`；列表最大宽 `calc(var(--s-20) * 12)`，卡间 gap `--s-2` |
+| 网站图标 | `--s-10` 方块 + `--r-4`，`--brand-dim` 底 / `--brand` 字，lucide `Globe2` |
+| 表单 | 字段纵向 gap `--s-3`；下拉 `--surface-2` 底 + `--border-2` 框 + `--r-3` |
+| 删除分组 | 分组视图底部、与列表隔开 `--s-8`，ghost 按钮 |
+
+**观察（不在本批改动）**：主区小标签目前是英文「WEBSITE LIBRARY」，与全应用中文文案不一致；它属于 [[CLAUDE#§5.1.1]] 减法快车道「删解释性文案」一类，可单独删，不必走八步。
 
 ---
 
@@ -1093,6 +1159,19 @@ bundle 派生的 3 个跨组件 chrome primitive：
 ---
 
 ## 修订记录
+
+### v0.24（2026-11-13）— 全景与常用网站工作区的视觉契约
+
+> **状态：`ratified`——2026-11-13 经 HuiW86 签字。** 与 [[03-product-spec]] v0.31 / [[06-prd]] v0.17 同批。照现行 CSS（`PanoramaView.module.css` / `PlacementMenu.module.css` / `WebsitePanel.module.css`）写成契约，**零新增 token、零视觉改动**；本批唯一裁点在 product-spec。
+
+| 章节 | 改动 |
+|------|------|
+| §10.3 | 组件清单补 `PanoramaView` / `PlacementMenu` / `WebsitePanel` 三行 |
+| §10.8.1 | Header 补「工作区切换」一行；搜索行注明只在管理工作区出现 |
+| §10.9（新增）| 全景：页面骨架 / 三层条目 / 状态 / 整理态位置入口与菜单 |
+| §10.10（新增）| 常用网站：侧栏 / 标题 / 网站卡 / 图标 / 表单 / 删除分组；附一条观察（英文小标签，可走减法快车道）|
+
+---
 
 ### v0.23（2026-10-08）— 主界面减法 pass：Toast 挪位 + 两处标签退场
 

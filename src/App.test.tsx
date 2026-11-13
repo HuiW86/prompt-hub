@@ -1,4 +1,5 @@
 import {
+  act,
   fireEvent,
   render,
   screen,
@@ -25,6 +26,7 @@ import { useAppStore } from "./stores/appStore";
 import { usePanoramaStore } from "./stores/panoramaStore";
 import { usePromptStore } from "./stores/promptStore";
 import { useSearchStore } from "./stores/searchStore";
+import { useSessionStore } from "./stores/sessionStore";
 import { useSettingsStore } from "./stores/settingsStore";
 import { useToastStore } from "./stores/toastStore";
 
@@ -1013,5 +1015,94 @@ describe("Default workspace — panorama (ADR-031)", () => {
         }),
       ]);
     });
+  });
+});
+
+describe("Wake returns to the panorama (product-spec v0.31 §13.6 a)", () => {
+  beforeEach(() => {
+    usePromptStore.setState(initialStore, true);
+    useAppStore.setState({ ...initialAppStore, workspace: "prompts" }, true);
+    usePanoramaStore.setState({ query: "", selectedKey: null, placements: [] });
+    useSettingsStore.setState({
+      interactionMode: "invoke",
+      settingsOpen: false,
+    });
+    invokeMock.mockReset();
+    invokeMock.mockImplementation((cmd: string) => {
+      switch (cmd) {
+        case "list_phases":
+          return Promise.resolve(fakePhases);
+        case "list_alignment_phrases":
+          return Promise.resolve(fakeAlignments);
+        case "list_macros":
+          return Promise.resolve(fakeMacros);
+        case "list_scenes_with_children":
+          return Promise.resolve(fakeScenes);
+        case "list_alignment_axis_values":
+        case "list_modifiers":
+        case "list_compositions":
+        case "list_drafts":
+        case "list_recent_usage":
+        case "list_panorama_placements":
+        case "list_websites":
+          return Promise.resolve(
+            cmd === "list_websites" ? { groups: [], websites: [] } : [],
+          );
+        case "count_today_usage":
+        case "count_pending_drafts":
+          return Promise.resolve(0);
+        default:
+          return Promise.reject(new Error(`unexpected ${cmd}`));
+      }
+    });
+  });
+
+  function wake(at: string) {
+    act(() => {
+      useSessionStore.getState().setSessionStartedAt(at);
+    });
+  }
+
+  it("a wake from the organize workspace switches to the panorama", async () => {
+    render(<App />);
+    await screen.findByText("借力最优解");
+    expect(useAppStore.getState().workspace).toBe("prompts");
+    wake("2026-11-13T10:00:00Z");
+    expect(useAppStore.getState().workspace).toBe("panorama");
+    expect(await screen.findByLabelText("全景")).toBeInTheDocument();
+  });
+
+  it("a wake from the websites workspace switches to the panorama", async () => {
+    useAppStore.setState({ workspace: "websites" });
+    render(<App />);
+    wake("2026-11-13T10:05:00Z");
+    expect(useAppStore.getState().workspace).toBe("panorama");
+  });
+
+  it("a wake clears a panorama filter left over from an earlier visit", async () => {
+    usePanoramaStore.setState({ query: "旧筛选", selectedKey: "macro:x" });
+    render(<App />);
+    wake("2026-11-13T10:10:00Z");
+    expect(usePanoramaStore.getState().query).toBe("");
+    expect(usePanoramaStore.getState().selectedKey).toBeNull();
+  });
+
+  it("stays in the organize workspace while an editor is open, so the draft survives", async () => {
+    render(<App />);
+    const editor = document.createElement("div");
+    editor.setAttribute("popover", "manual");
+    document.body.appendChild(editor);
+    try {
+      wake("2026-11-13T10:15:00Z");
+      expect(useAppStore.getState().workspace).toBe("prompts");
+    } finally {
+      editor.remove();
+    }
+  });
+
+  it("does nothing at mount — only an actual wake moves the workspace", async () => {
+    render(<App />);
+    await act(async () => {});
+    expect(useAppStore.getState().workspace).toBe("prompts");
   });
 });
