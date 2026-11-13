@@ -14,6 +14,19 @@ description: prompt-hub 设计文档体系变更日志——记录文档结构�
 
 ---
 
+## 2026-11-13（五）— 版本号 0.2.2 → 0.2.3 + 发布说明（纠正「0.2.2 未发版」）
+
+### 变更内容
+
+- `package.json` / `src-tauri/tauri.conf.json` / `src-tauri/Cargo.toml` / `src-tauri/Cargo.lock` 四处 0.2.2 → **0.2.3**；`scripts/check-version.sh 0.2.3` 通过，`cargo metadata --locked` 通过
+- 新增 `docs/release-notes/v0.2.3.md`（全景、位置调整、「提示词」改名「管理」、`user_version` 15 → 16、导出 1.4 → 1.5）
+
+### 变更原因
+
+用户问「为什么检查更新显示已是最新」。查 GitHub Releases：**v0.2.2 已于 2026-10-09 发布**，而 `main` 上的版本号仍是 0.2.2，全景这批改动从未发版。此前 HANDOFF Risks 与对话里写的「`main` 0.2.2 未发版、可直接用 0.2.2 出包」是错的——照做会产出与已发布 v0.2.2 同号不同内容的包，已装 0.2.2 的客户端永远收不到更新，且新包会把库升到 16。HANDOFF 与 `CLAUDE.md` §7 已改正，并新增第 70 项（按 runbook 打 tag 出包）。教训：**出包前先查 Releases 的最新 tag，不要信文档里的版本叙述**。
+
+---
+
 ## 2026-11-13（五）— 三份图纸签字 + 「唤起回到全景」实装
 
 ### 变更内容
