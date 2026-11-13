@@ -8,7 +8,7 @@ import { usePhaseSelect } from "./hooks/usePhaseSelect";
 import { ipc } from "./ipc";
 import { Dashboard } from "./layouts/Dashboard";
 import { usePromptStore } from "./stores/promptStore";
-import { startWakeListener } from "./stores/sessionStore";
+import { startWakeListener, useSessionStore } from "./stores/sessionStore";
 import { selectIsSearching, useSearchStore } from "./stores/searchStore";
 import { useSettingsStore } from "./stores/settingsStore";
 import { useUpdaterStore } from "./stores/updaterStore";
@@ -40,6 +40,26 @@ function App() {
       cancelled = true;
       unlisten?.();
     };
+  }, []);
+
+  // Every wake lands on the panorama (product-spec v0.31 §13.6 a, owner's
+  // ruling 2026-11-13): "see everything at a glance" only holds if it holds
+  // on each summon, not just at app start. The one exception is an open
+  // editor in the organize workspace — the window can be hidden by a blur
+  // while a draft is unsaved, and switching workspaces would unmount the
+  // editor and drop the draft. AnchoredEditor is the only element that
+  // renders with `popover`, and a closed editor is unmounted, so "a
+  // [popover] node exists" means "an editor is open".
+  useEffect(() => {
+    return useSessionStore.subscribe((state, prev) => {
+      if (state.sessionStartedAt === prev.sessionStartedAt) return;
+      usePanoramaStore.getState().resetView();
+      const app = useAppStore.getState();
+      if (app.workspace === "panorama") return;
+      if (document.querySelector("[popover]")) return;
+      useSearchStore.getState().clearQuery();
+      app.setWorkspace("panorama");
+    });
   }, []);
 
   // Hydrate the wake chord from Rust (ADR-027). SQLite owns it because setup()

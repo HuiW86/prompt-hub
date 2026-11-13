@@ -343,7 +343,7 @@ related:
 | 功能 | 优先级 | 状态 | 目标版本 | 测试覆盖 | 责任人 | 引用 |
 |---|---|---|---|---|---|---|
 | 全景工作区布局（唤起后默认视图；六意图列 + 未分组 + 底部两组 + 预览行；常用位 / 活跃 / 休眠三层现算；放不下时休眠行收为「还有 N 条」）| P0 | `verified` | v1.4 | `panorama.test.ts` **28**（分层边界恰 90 / 14 天、九个相位映射、`groupId` 覆盖默认、`deprecated` 排除、`bySlot`、复制来源）+ `PanoramaView.test.tsx` S1 渲染断言 | omar | [[03-product-spec#13.6]] b · [[031-panorama-default-view]] |
-| 全景取用键位（裸 `1`–`9` 复制常用位 / 打字筛选变暗不移位 / 方向键选中 / `⏎` 复制选中项或（筛选时）第一个可见匹配 / `ESC` 先清空再关闭 / `⌘` 组合放行 / 输入法组字不拦 / 唤起清空筛选）| P0 | `done` | v1.4 | `PanoramaView.test.tsx`（S2 / S3 / `⌘1` 放行 / IME / 设置弹窗打开时不拦 / wake 清空）+ `App.test.tsx` 全景组 5 条（默认工作区、`ESC` 阶梯、`⌘1` 仍切相位、裸 `1` 复制常用位）| omar | [[03-product-spec#13.6]] b |
+| 全景取用键位（裸 `1`–`9` 复制常用位 / 打字筛选变暗不移位 / 方向键选中 / `⏎` 复制选中项或（筛选时）第一个可见匹配 / `ESC` 先清空再关闭 / `⌘` 组合放行 / 输入法组字不拦 / 唤起清空筛选 / **唤起回到全景，管理里有编辑面板开着时例外**）| P0 | `done` | v1.4 | `PanoramaView.test.tsx`（S2 / S3 / `⌘1` 放行 / IME / 设置弹窗打开时不拦 / wake 清空）+ `App.test.tsx` 全景组 5 条（默认工作区、`ESC` 阶梯、`⌘1` 仍切相位、裸 `1` 复制常用位）+ 唤起组 5 条（从管理 / 常用网站唤起回全景、唤起清空旧筛选、编辑面板开着时留在管理、挂载时不动）| omar | [[03-product-spec#13.6]] b |
 | 整理态 `⌥1`–`⌥9` / `⌥0` 指定与取消常用位 | P1 | `verified` | v1.4 | `PlacementMenu.test.tsx`（`⌥3` 指定、`⌥0` 取消、调用态不响应）| omar | [[03-product-spec#13.6]] b |
 | 整理态位置菜单（「位置」按钮 / `M` / 分组与号位选项 / 占用者名称 / 抢占后撤销恢复两条原值 / 焦点回到条目）| P1 | `done` | v1.4 | `PlacementMenu.test.tsx` **9** + `PanoramaView.test.tsx`「改分组后条目出现在新列」| omar | [[03-product-spec#13.6]] b · [[05-design-spec#10.9]] |
 | 全景布局数据层（migration `0016` · `panorama_placements` · `list` / `set` 两条 IPC，upsert / 抢占 / 双空删行 / 存活过滤）| P0 | `verified` | v1.4 | cargo `panorama` **12**（迁移 1 · 写路径 6 · 导入 5）+ `ipc-contract` 命令数 73 | omar | [[06-prd#6.11]] |

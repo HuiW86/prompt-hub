@@ -4,7 +4,7 @@ project: prompt-hub
 version: v0.24
 created: 2026-05-18
 last_modified: 2026-11-13
-status: draft  # v0.24（2026-11-13）待 HuiW86 签字：全景工作区与常用网站工作区的视觉契约补写（新增 §10.9 / §10.10，§10.3 与 §10.8.1 补行），照现行 CSS 写，**零新增 token**；与 [[03-product-spec]] v0.31 / [[06-prd]] v0.17 同批，明细见文末修订记录 v0.24。前 v0.23 于 2026-10-08 经 Rosa 在项目线程签字（人审批次 ⑬，单裁点「主界面减法 pass 四项」按推荐通过）：Toast 由右上角挪到底部居中（状态栏上方）+ Header 副标 / 相位格快捷键标签退场（与 [[03-product-spec]] v0.30 同批），明细见文末修订记录 v0.23。前 v0.22 于 2026-09-03 人审批次 ⑧ 经 omar 签字（与 [[06-prd]] v0.14 / [[03-product-spec]] v0.25 同批）。本版内容：§10.2.2 `ConfirmInline` 用量由六处收缩至一处（清空废纸篓）+ §11 新增「Toast 让位规则」（撤销 toast 不被普通 toast 顶掉，error 例外），两项都是**行为契约**不是施工细节，按 [[CLAUDE#§5.1.2]] 需签字。前 v0.21 于 2026-09-03 人审批次 ⑦ ratified（§10.2.2 接口契约第 6 条随 product-spec「锚点再按一次 = 无事发生」签字，第 5 条 `initialFocus` 必填属施工规范随批通过）；更前 v0.20 于 2026-09-01 人审批次 ⑥ ratified
+status: ratified  # v0.24 于 2026-11-13 经 HuiW86 签字（同批单裁点在 product-spec 按推荐通过）。起草说明：全景工作区与常用网站工作区的视觉契约补写（新增 §10.9 / §10.10，§10.3 与 §10.8.1 补行），照现行 CSS 写，**零新增 token**；与 [[03-product-spec]] v0.31 / [[06-prd]] v0.17 同批，明细见文末修订记录 v0.24。前 v0.23 于 2026-10-08 经 Rosa 在项目线程签字（人审批次 ⑬，单裁点「主界面减法 pass 四项」按推荐通过）：Toast 由右上角挪到底部居中（状态栏上方）+ Header 副标 / 相位格快捷键标签退场（与 [[03-product-spec]] v0.30 同批），明细见文末修订记录 v0.23。前 v0.22 于 2026-09-03 人审批次 ⑧ 经 omar 签字（与 [[06-prd]] v0.14 / [[03-product-spec]] v0.25 同批）。本版内容：§10.2.2 `ConfirmInline` 用量由六处收缩至一处（清空废纸篓）+ §11 新增「Toast 让位规则」（撤销 toast 不被普通 toast 顶掉，error 例外），两项都是**行为契约**不是施工细节，按 [[CLAUDE#§5.1.2]] 需签字。前 v0.21 于 2026-09-03 人审批次 ⑦ ratified（§10.2.2 接口契约第 6 条随 product-spec「锚点再按一次 = 无事发生」签字，第 5 条 `initialFocus` 必填属施工规范随批通过）；更前 v0.20 于 2026-09-01 人审批次 ⑥ ratified
 author: co  # 🤝 人机共创（CLAUDE §5.2）
 related: [[01-spec]], [[02-constitution]], [[03-product-spec]], [[012-lock-visual-quality-anchor]], [[023-ui-reshape-before-release]], [[024-dark-cockpit-identity]], [[019-supersede-flat-visual-anchor]], [[020-restore-protocol-dark-band]], [[021-scene-layered-editing]], [[025-unified-anchored-editing]], [[CLAUDE-DESIGN]], [[015-expose-mcp-write-pipeline]], [[016-choose-dnd-and-resizable-layout]], [[018-absorb-promptscape-design]], [[026-fixed-spatial-layout]], [[028-reversible-delete]], [[asset-editing-and-adaptive-layout]]
 description: 手动 AI 编程仪表盘的视觉规范——tokens.css 单一真源 + 主题/elevation/组件视觉契约；写 CSS / 视觉时召回。版本叙事见 CHANGELOG
@@ -1162,7 +1162,7 @@ bundle 派生的 3 个跨组件 chrome primitive：
 
 ### v0.24（2026-11-13）— 全景与常用网站工作区的视觉契约
 
-> **状态：`draft`，待 HuiW86 签字。** 与 [[03-product-spec]] v0.31 / [[06-prd]] v0.17 同批。照现行 CSS（`PanoramaView.module.css` / `PlacementMenu.module.css` / `WebsitePanel.module.css`）写成契约，**零新增 token、零视觉改动**；本批唯一裁点在 product-spec。
+> **状态：`ratified`——2026-11-13 经 HuiW86 签字。** 与 [[03-product-spec]] v0.31 / [[06-prd]] v0.17 同批。照现行 CSS（`PanoramaView.module.css` / `PlacementMenu.module.css` / `WebsitePanel.module.css`）写成契约，**零新增 token、零视觉改动**；本批唯一裁点在 product-spec。
 
 | 章节 | 改动 |
 |------|------|
