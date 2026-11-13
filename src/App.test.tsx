@@ -124,7 +124,7 @@ const initialAppStore = useAppStore.getState();
 describe("Dashboard end-to-end render", () => {
   beforeEach(() => {
     usePromptStore.setState(initialStore, true);
-    // These blocks exercise the organize dashboard ("整理"); a wake lands on the
+    // These blocks exercise the organize dashboard ("管理"); a wake lands on the
     // panorama since ADR-031, so pin the workspace explicitly.
     useAppStore.setState({ ...initialAppStore, workspace: "prompts" }, true);
     useSettingsStore.setState({ interactionMode: "invoke" });
@@ -352,7 +352,7 @@ describe("Dashboard end-to-end render", () => {
 describe("Dashboard click → IPC flow", () => {
   beforeEach(() => {
     usePromptStore.setState(initialStore, true);
-    // These blocks exercise the organize dashboard ("整理"); a wake lands on the
+    // These blocks exercise the organize dashboard ("管理"); a wake lands on the
     // panorama since ADR-031, so pin the workspace explicitly.
     useAppStore.setState({ ...initialAppStore, workspace: "prompts" }, true);
     invokeMock.mockReset();
@@ -789,7 +789,7 @@ describe("Wake hygiene — clear search residue on hide (P1-4)", () => {
 
   beforeEach(() => {
     usePromptStore.setState(initialStore, true);
-    // These blocks exercise the organize dashboard ("整理"); a wake lands on the
+    // These blocks exercise the organize dashboard ("管理"); a wake lands on the
     // panorama since ADR-031, so pin the workspace explicitly.
     useAppStore.setState({ ...initialAppStore, workspace: "prompts" }, true);
     useSearchStore.setState(searchInitial, true);
@@ -927,7 +927,7 @@ describe("Default workspace — panorama (ADR-031)", () => {
     });
   });
 
-  it("starts on the panorama, with 全景 first and the old dashboard renamed 整理", async () => {
+  it("starts on the panorama, with 全景 first and the old dashboard renamed 管理", async () => {
     expect(useAppStore.getState().workspace).toBe("panorama");
     render(<App />);
     await screen.findByLabelText("全景");
@@ -935,7 +935,7 @@ describe("Default workspace — panorama (ADR-031)", () => {
     const labels = Array.from(nav.querySelectorAll("button")).map(
       (b) => b.textContent,
     );
-    expect(labels).toEqual(["全景", "整理", "常用网站"]);
+    expect(labels).toEqual(["全景", "管理", "常用网站"]);
     expect(within(nav).getByRole("button", { name: "全景" })).toHaveAttribute(
       "aria-current",
       "page",
@@ -946,11 +946,11 @@ describe("Default workspace — panorama (ADR-031)", () => {
     expect(screen.queryByRole("search")).toBeNull();
   });
 
-  it("switching to 整理 shows the original dashboard", async () => {
+  it("switching to 管理 shows the original dashboard", async () => {
     render(<App />);
     await screen.findByLabelText("全景");
     const nav = screen.getByRole("navigation", { name: "工作区" });
-    fireEvent.click(within(nav).getByRole("button", { name: "整理" }));
+    fireEvent.click(within(nav).getByRole("button", { name: "管理" }));
     expect(useAppStore.getState().workspace).toBe("prompts");
     expect(screen.queryByLabelText("全景")).toBeNull();
   });

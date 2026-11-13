@@ -9,10 +9,12 @@ import { SearchBar } from "./SearchBar";
 import styles from "./Header.module.css";
 
 // ADR-031: 全景 first — it is where every wake lands. The original dashboard is
-// renamed 整理: it is where items are edited, not where they are fetched.
+// renamed 管理: it is where items are added, edited and moved, not where they
+// are fetched. Not 整理 — that word already names the interaction mode in the
+// ModeToggle beside this nav (D-0 整理态), and the two sat side by side.
 const WORKSPACES: ReadonlyArray<{ id: Workspace; label: string }> = [
   { id: "panorama", label: "全景" },
-  { id: "prompts", label: "整理" },
+  { id: "prompts", label: "管理" },
   { id: "websites", label: "常用网站" },
 ];
 

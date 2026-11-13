@@ -1,10 +1,10 @@
 ---
 type: adr
 project: prompt-hub
-status: Proposed
+status: Accepted
 author: co
 created: 2026-11-12
-description: 新增「全景」工作区并设为唤起后的默认视图——一屏同时列出全部条目，主次由使用数据分层而非隐藏，数字键 1–9 一键贴出常用位；原仪表盘保留为「整理」工作区；布局存独立表 `panorama_placements`，不新增资产类型；宪法 B2 删去界面层的「Macro 区展示 AlignmentPhrase」证伪条件，数据层分离不动
+description: 新增「全景」工作区并设为唤起后的默认视图——一屏同时列出全部条目，主次由使用数据分层而非隐藏，数字键 1–9 一键贴出常用位；原仪表盘保留为「管理」工作区；布局存独立表 `panorama_placements`，不新增资产类型；宪法 B2 删去界面层的「Macro 区展示 AlignmentPhrase」证伪条件，数据层分离不动
 related:
   - 01-spec
   - 02-constitution
@@ -21,14 +21,14 @@ related:
 
 - **标题**：新增全景工作区，一屏列出全部条目并设为唤起后的默认视图；宪法 B2 的分离约束收窄到数据层
 - **日期**：2026-11-12
-- **决策者**：HuiW86（产品方向已于 2026-11-12 口头裁决，见下文「用户裁决」；本 ADR 与宪法修订文字待 PR 签字）
+- **决策者**：HuiW86（产品方向 2026-11-12 口头裁决，见下文「用户裁决」；2026-11-13 签字通过本 ADR、宪法 B2 v1.2 修订文字与 `0016` 迁移）
 - **影响范围**：宪法 [[02-constitution#B2]]（v1.1 → v1.2）/ `CLAUDE.md` §1、§4.3、§6 第 3 条 / 数据层 migration `0016`（I-02）/ 前端新工作区 `src/components/panorama/`（I-03、I-04）/ 后续回流 [[03-product-spec]]、[[05-design-spec]]、[[06-prd]]（I-03 合并后另开）
 
 ## 2. Status
 
-`Proposed`
+`Accepted`
 
-- Last reviewed: 2026-11-12（AI 与 HuiW86 共同起草；状态待 PR 上裁决后改 Accepted）
+- Last reviewed: 2026-11-13（HuiW86 签字：① 宪法 B2 v1.2 与本 ADR 同意 ② `0016` 迁移通过 ③ 工作区名撞名交 AI 定，改为「管理」，见子决策 1）
 
 ## 3. Context
 
@@ -114,14 +114,14 @@ B2 的正文约束是**数据层**的：AlignmentPhrase 不参与 Modifier 拼�
 
 ### Option F：新增全景工作区并设为默认视图 ✅
 
-- **描述**：新增「全景」工作区，唤起后默认进入；六个意图列加底部两组，一屏放下全部条目，按常用位 / 活跃 / 休眠三层区分主次；数字键 1–9 贴出常用位，打字即筛选。原仪表盘保留并改名为「整理」工作区，编辑类操作仍在那里。布局（分组、常用位）存独立表 `panorama_placements`。
+- **描述**：新增「全景」工作区，唤起后默认进入；六个意图列加底部两组，一屏放下全部条目，按常用位 / 活跃 / 休眠三层区分主次；数字键 1–9 贴出常用位，打字即筛选。原仪表盘保留并改名为「管理」工作区，编辑类操作仍在那里。布局（分组、常用位）存独立表 `panorama_placements`。
 - **优点**：同时满足七条原则；不新增资产类型（[[02-constitution#B1]] 不受影响）；不动现有仪表盘组件，回退路径清楚。
 - **缺点**：需要修订宪法 B2 的证伪条件；新增一张表与导出 1.5，数据层有不可回退点（见 §6）。
 - **预估成本**：数据层 I-02、全景视图 I-03、位置调整 I-04 三个实现 Issue，加本 ADR。
 
 ## 5. Decision
 
-> **一句话拍板**：选择 Option F——新增全景工作区并设为唤起后的默认视图，原仪表盘保留为「整理」工作区，布局存 `panorama_placements`，不新增资产类型；宪法 B2 的证伪条件收窄到数据层。
+> **一句话拍板**：选择 Option F——新增全景工作区并设为唤起后的默认视图，原仪表盘保留为「管理」工作区，布局存 `panorama_placements`，不新增资产类型；宪法 B2 的证伪条件收窄到数据层。
 
 **为什么不选其他**：
 - 不选 A：丢全景。
@@ -132,12 +132,12 @@ B2 的正文约束是**数据层**的：AlignmentPhrase 不参与 Modifier 拼�
 
 ### 子决策
 
-1. **默认视图**：`workspace` 初始值改为 `panorama`；Header 工作区导航「全景」排第一，原「提示词」改名「整理」。
+1. **默认视图**：`workspace` 初始值改为 `panorama`；Header 工作区导航「全景」排第一，原「提示词」改名「管理」。起草时写的是「整理」，但交互模式开关的「整理」（D-0 整理态，已写进多份 ratified 契约）就在同一行 Header 里，两者并排而含义不同（换页面 vs 换点击语义）；改动面最小的是新起的工作区名，签字时改定「管理」。
 2. **布局是视图状态，不是资产**：独立表 `panorama_placements(asset_kind, asset_id, group_id, pin_slot)`，五张资产表不加列；第七道源码级闸门的 `ASSET_TABLES` 不变。
 3. **分层现算不落库**：常用位 / 近 90 天活跃 / 14 天内新建且未用 / 休眠，均由 `usage_count`、`last_used_at`、`created_at` 在前端现算。
 4. **复制不新增 `usage_records.source` 取值**：各类型沿用现有来源（Macro 与 Modifier 用 `macro_area`、场景话术 `scene`、Composition `composition`、对齐话术经 `alignmentUsageSource`）。
 5. **宪法 B2 修订**：保留数据层分离全文；删去证伪条件中的「Macro 区展示 AlignmentPhrase」，改为「见到 SOP 步骤含 AlignmentPhrase，或 AlignmentPhrase 被拼进 Composition → 违反」；补一句「全景工作区按意图并列展示各类条目，不构成违反」。
-6. **B2 源码闸门不放宽**：`src/components/__tests__/b2-separation.test.ts` 对 `MacroGrid` / `ScenePanel` / `ModifierGrid` / `SopProgress` 的零引用断言保持不变——这四个组件仍在「整理」工作区里，它们内部继续不碰对齐话术。全景是新的跨层展示面，与全局搜索浮层同属跨层检索面。
+6. **B2 源码闸门不放宽**：`src/components/__tests__/b2-separation.test.ts` 对 `MacroGrid` / `ScenePanel` / `ModifierGrid` / `SopProgress` 的零引用断言保持不变——这四个组件仍在「管理」工作区里，它们内部继续不碰对齐话术。全景是新的跨层展示面，与全局搜索浮层同属跨层检索面。
 
 ### 显式不裁
 
@@ -156,14 +156,14 @@ B2 的正文约束是**数据层**的：AlignmentPhrase 不参与 Modifier 拼�
 
 ### 反向后果
 
-- 宪法 B2 的证伪条件不再覆盖界面分区——以后若有人在「整理」工作区的 Macro 区里混入对齐话术，宪法本身不再拦，只剩 B2 源码闸门拦（子决策 6）。
+- 宪法 B2 的证伪条件不再覆盖界面分区——以后若有人在「管理」工作区的 Macro 区里混入对齐话术，宪法本身不再拦，只剩 B2 源码闸门拦（子决策 6）。
 - 唤起路径多了一个默认渲染的视图，须重新跑 `pnpm bench:hotkey-wake` 确认 C1（≤ 200ms P95）。
 - 「一屏无滚动」依赖真实窗口尺寸，jsdom 测不了，须真机验收。
 - 同时存在两个工作区展示同一批条目，文档与心智上多一层。
 
 ### 未来反悔成本
 
-- **代码改造规模**：前端撤掉 `src/components/panorama/` 目录、`panoramaStore`、`workspace` 默认值与 Header 一项，约 10 个文件；「整理」工作区原样可用。
+- **代码改造规模**：前端撤掉 `src/components/panorama/` 目录、`panoramaStore`、`workspace` 默认值与 Header 一项，约 10 个文件；「管理」工作区原样可用。
 - **数据迁移**：`panorama_placements` 表与导出 1.5 一旦在真实库落地，**不可降版本**——`user_version` 16 的库不能交给 v15 的程序打开；撤销功能时表可以保留不用，旧版导出 1.4 仍可导入。
 - **学习成本**：低。
 - **不可逆点**：带 `user_version` 16 的版本发布到本机或公开渠道。
