@@ -1,7 +1,12 @@
 # Test + lint CI (frontend + Rust). Runs on every push to main and on all PRs.
 #
 # Style mirrors release.yml:
-#   - macos-14 runner (project targets macOS only; depends on macos-private-api).
+#   - macos-15 runner (project targets macOS only; depends on macos-private-api).
+#     Pinned to a version, not macos-latest, so the image never changes under
+#     a PR silently. GitHub retired macos-14 on 2026-11-02; every job pinned to
+#     it was cancelled before start ("configuration not supported") and CI went
+#     dark without a single red check. When this label is retired too, bump it
+#     here — release.yml builds on macos-latest and is unaffected.
 #   - Third-party actions pinned to commit SHA (not tags); shared actions reuse
 #     the exact SHAs already pinned in release.yml.
 #   - `permissions` minimized to contents:read (nothing here writes back).
@@ -26,7 +31,7 @@ concurrency:
 jobs:
   # ── Job 1: frontend — lint, format check, unit tests, production build. ─────
   frontend:
-    runs-on: macos-14
+    runs-on: macos-15
     steps:
       - uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v7.0.0
       - uses: pnpm/action-setup@0ebf47130e4866e96fce0953f49152a61190b271 # v6.0.9
@@ -43,7 +48,7 @@ jobs:
 
   # ── Job 2: rust — fmt, clippy (deny warnings), workspace tests. ─────────────
   rust:
-    runs-on: macos-14
+    runs-on: macos-15
     steps:
       - uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v7.0.0
       - uses: dtolnay/rust-toolchain@4be7066ada62dd38de10e7b70166bc74ed198c30 # stable
@@ -78,14 +83,14 @@ jobs:
   # machine, whose exit code turns red locally when P95 > 200ms.
   #
   # RISK (confirmed above): the bench spawns a real Tauri window and
-  # calls show()+set_focus(). GitHub's macos-14 runner is headless-ish (no
+  # calls show()+set_focus(). GitHub's macOS runner is headless-ish (no
   # attached display / login session); Tauri window creation or the CGWindow
   # path may fail there even though it passes on developer machines. If this
   # job fails with a window/display error rather than a P95-over-budget error,
   # that is the environment limitation, not a real C1 regression — treat it as
   # a signal to investigate the runner, not to block the PR reflexively.
   bench-c1:
-    runs-on: macos-14
+    runs-on: macos-15
     continue-on-error: true
     steps:
       - uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v7.0.0

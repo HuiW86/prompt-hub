@@ -438,17 +438,25 @@ mod tests {
         let (_dir, conn) = migrated_conn();
         // Deprecate a macro and hide a scene, then snapshot — the full backup must
         // carry both so the restore reinstates them (not just visible rows).
-        conn.execute("UPDATE macros SET deprecated = 1 WHERE id IN (SELECT id FROM macros LIMIT 1)", [])
-            .expect("deprecate");
-        conn.execute("UPDATE scenes SET visible = 0 WHERE id IN (SELECT id FROM scenes LIMIT 1)", [])
-            .expect("hide");
+        conn.execute(
+            "UPDATE macros SET deprecated = 1 WHERE id IN (SELECT id FROM macros LIMIT 1)",
+            [],
+        )
+        .expect("deprecate");
+        conn.execute(
+            "UPDATE scenes SET visible = 0 WHERE id IN (SELECT id FROM scenes LIMIT 1)",
+            [],
+        )
+        .expect("hide");
         let backup = export_json(&conn).expect("export");
 
         import_json(&conn, &backup).expect("restore");
         let deprecated: i64 = conn
-            .query_row("SELECT COUNT(*) FROM macros WHERE deprecated = 1", [], |r| {
-                r.get(0)
-            })
+            .query_row(
+                "SELECT COUNT(*) FROM macros WHERE deprecated = 1",
+                [],
+                |r| r.get(0),
+            )
             .expect("count");
         let hidden: i64 = conn
             .query_row("SELECT COUNT(*) FROM scenes WHERE visible = 0", [], |r| {
@@ -526,7 +534,9 @@ mod tests {
         )
         .expect("add a value");
         let before: i64 = conn
-            .query_row("SELECT COUNT(*) FROM alignment_axis_values", [], |r| r.get(0))
+            .query_row("SELECT COUNT(*) FROM alignment_axis_values", [], |r| {
+                r.get(0)
+            })
             .expect("count");
         assert_eq!(before, 17);
 
@@ -558,9 +568,14 @@ mod tests {
             "the table did not take part, which is not the same as restoring zero rows"
         );
         let after: i64 = conn
-            .query_row("SELECT COUNT(*) FROM alignment_axis_values", [], |r| r.get(0))
+            .query_row("SELECT COUNT(*) FROM alignment_axis_values", [], |r| {
+                r.get(0)
+            })
             .expect("count");
-        assert_eq!(after, 17, "an older backup must not clear the coordinate system");
+        assert_eq!(
+            after, 17,
+            "an older backup must not clear the coordinate system"
+        );
 
         // The phrases came back with the documented defaults for the missing
         // fields: opening, uncoordinated, never revised.
@@ -591,7 +606,9 @@ mod tests {
         let summary = import_json(&conn, &json.to_string()).expect("restore");
         assert_eq!(summary.alignment_axis_values, Some(0));
         let after: i64 = conn
-            .query_row("SELECT COUNT(*) FROM alignment_axis_values", [], |r| r.get(0))
+            .query_row("SELECT COUNT(*) FROM alignment_axis_values", [], |r| {
+                r.get(0)
+            })
             .expect("count");
         assert_eq!(after, 0);
     }

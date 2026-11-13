@@ -194,9 +194,12 @@ mod tests {
     #[test]
     fn create_appends_within_its_own_axis_only() {
         let (_dir, conn) = migrated_conn();
-        let created =
-            create_alignment_axis_value(&conn, AxisKind::Mode, "试探", Some("小步验证")).expect("create");
-        assert_eq!(created.order_index, 3, "mode seeds 0..2, so the append is 3");
+        let created = create_alignment_axis_value(&conn, AxisKind::Mode, "试探", Some("小步验证"))
+            .expect("create");
+        assert_eq!(
+            created.order_index, 3,
+            "mode seeds 0..2, so the append is 3"
+        );
         assert_eq!(axis(&conn, AxisKind::Mode).len(), 4);
         // The other two axes are untouched.
         assert_eq!(axis(&conn, AxisKind::Layer).len(), 7);
@@ -224,26 +227,35 @@ mod tests {
         assert_eq!(renamed.hint.as_deref(), Some("怎么分期"));
 
         let err = update_alignment_axis_value(&conn, "axv-nope", "x", None).expect_err("unknown");
-        assert!(matches!(err, RepoError::TargetNotFound { .. }), "got {err:?}");
+        assert!(
+            matches!(err, RepoError::TargetNotFound { .. }),
+            "got {err:?}"
+        );
     }
 
     #[test]
     fn reorder_rewrites_one_axis_and_rejects_a_foreign_id() {
         let (_dir, conn) = migrated_conn();
-        let mut ids: Vec<String> = axis(&conn, AxisKind::Mode).iter().map(|v| v.id.clone()).collect();
+        let mut ids: Vec<String> = axis(&conn, AxisKind::Mode)
+            .iter()
+            .map(|v| v.id.clone())
+            .collect();
         ids.reverse();
         reorder_alignment_axis_values(&conn, AxisKind::Mode, &ids).expect("reorder");
-        let after: Vec<String> = axis(&conn, AxisKind::Mode).iter().map(|v| v.id.clone()).collect();
+        let after: Vec<String> = axis(&conn, AxisKind::Mode)
+            .iter()
+            .map(|v| v.id.clone())
+            .collect();
         assert_eq!(after, ids);
 
         // A layer id passed as part of the mode axis must be refused outright.
-        let err = reorder_alignment_axis_values(
-            &conn,
-            AxisKind::Mode,
-            &["axv-layer-path".to_string()],
-        )
-        .expect_err("cross-axis id");
-        assert!(matches!(err, RepoError::TargetNotFound { .. }), "got {err:?}");
+        let err =
+            reorder_alignment_axis_values(&conn, AxisKind::Mode, &["axv-layer-path".to_string()])
+                .expect_err("cross-axis id");
+        assert!(
+            matches!(err, RepoError::TargetNotFound { .. }),
+            "got {err:?}"
+        );
     }
 
     /// The whole reason the delete confirmation reports two numbers. SQL's
@@ -325,6 +337,9 @@ mod tests {
         delete_alignment_axis_value(&conn, "axv-mode-recon").expect("delete");
         assert_eq!(axis(&conn, AxisKind::Mode).len(), 2);
         let err = delete_alignment_axis_value(&conn, "axv-mode-recon").expect_err("gone for good");
-        assert!(matches!(err, RepoError::TargetNotFound { .. }), "got {err:?}");
+        assert!(
+            matches!(err, RepoError::TargetNotFound { .. }),
+            "got {err:?}"
+        );
     }
 }

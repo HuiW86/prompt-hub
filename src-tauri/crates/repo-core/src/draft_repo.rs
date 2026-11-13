@@ -507,7 +507,10 @@ mod tests {
     fn restore_flips_a_discarded_draft_back_to_pending() {
         let conn = db::open_in_memory().expect("open db");
         let id = conn
-            .create_draft(&macro_payload("Undo me"), &sample_provenance("create_draft"))
+            .create_draft(
+                &macro_payload("Undo me"),
+                &sample_provenance("create_draft"),
+            )
             .expect("create");
         conn.mark_discarded(&id).expect("discard");
         assert_eq!(count_pending_drafts(&conn).expect("count"), 0);
@@ -526,13 +529,19 @@ mod tests {
     fn restore_rejects_a_pending_or_missing_draft() {
         let conn = db::open_in_memory().expect("open db");
         let id = conn
-            .create_draft(&macro_payload("Still pending"), &sample_provenance("create_draft"))
+            .create_draft(
+                &macro_payload("Still pending"),
+                &sample_provenance("create_draft"),
+            )
             .expect("create");
         // Already pending — nothing to restore.
         let err = conn
             .mark_restored(&id)
             .expect_err("restoring a pending draft must fail");
-        assert!(matches!(err, RepoError::DraftNotPending { .. }), "got {err:?}");
+        assert!(
+            matches!(err, RepoError::DraftNotPending { .. }),
+            "got {err:?}"
+        );
         // Missing id.
         let err = conn
             .mark_restored("ghost")

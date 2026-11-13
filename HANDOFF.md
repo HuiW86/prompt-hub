@@ -22,14 +22,19 @@
 
 ## Next Actions
 
-> 编号沿用旧账，只列仍开着的。**建议起手：第 68 项**（CI 不跑，后面所有改动都没有 macOS 编译保护），再第 64 项真机门。
+> 编号沿用旧账，只列仍开着的。**建议起手：第 68 项**（CI 换 runner 后看首跑结果），再第 64 项剩下的两项界面验收。
 
 ### 全景（M-01）收尾
 
-64. **全景真机门**：jsdom 验不了的三项——① `arch -arm64 /bin/zsh -lc 'pnpm bench:hotkey-wake'`，对比 2026-09-05 p95 **14.139ms**（同时兑现原第 59 项：网站 Tab 也改了 `Dashboard.tsx` / `Header.tsx`，至今没附 bench）② 真实库 76 条一屏无纵向滚动（含紧凑档）③ macOS WebKit 下 `⌥1–⌥9` 的 `event.code` 是否为 `DigitN`。**过门之前不要从 `main` 出包**
+64. **全景真机门**（2026-11-13 本机跑过一轮，**仍未全过，继续不要从 `main` 出包**）：
+    - ✅ 本地编译：`cargo clippy --workspace --all-targets --manifest-path src-tauri/Cargo.toml -- -D warnings` 通过（macOS）
+    - ✅ 唤起性能：`bench:hotkey-wake` p95 **20.143ms**，低于 200ms 门槛；但比 2026-09-05 的 14.139ms **多 6.004ms（+42%）**。这是 Rust `show()+set_focus()` 路径，不含系统快捷键派发。同时兑现原第 59 项（网站 Tab 与全景两次改动的累计）。增量原因未查，候选：唤起时全景重置筛选并聚焦输入框、全景首屏 DOM 比旧仪表盘多；若后续再涨须先定位
+    - ✅ 迁移：用 SQLite 备份做真实库副本，开发版把副本 15→16 迁移正常；原库仍 15，`quick_check` 正常。副本在 `/tmp/prompt-hub-acceptance-home`
+    - ⏳ 真实库 76 条一屏无纵向滚动（含紧凑档）——自动化接管不了隔离开发版窗口，须手动看
+    - ⏳ `⌥1–⌥9` 指定常用位、`⌥0` 取消（macOS WebKit 下 `event.code` 是否为 `DigitN`）——同上，须手动：切到「整理」态 → 方向键选中一条 → 按 `⌥3`，该条应出现常用位徽标 3；再按 `⌥0` 徽标消失
 65. **全景契约回流**：product-spec / design-spec / prd 均未写全景与「管理」工作区，按 ADR-031「显式不裁」走八步
 67. （低优先）清空废纸篓不清 `panorama_placements` 悬空行：不显示、占的常用位被新抢占者静默让出、导入时清理。要立即干净就在 `purge_trash` 末尾调 `repo_write::panorama::delete_dangling_placements`
-68. **GitHub Actions 的 macOS 任务没跑**（new 2026-11-13）：PR #12 的 rust / frontend / bench-c1 三个任务在启动约 1 秒后全部 `cancelled`，`runner_id` 为 0（从未分到机器），疑似 Actions 用量或花费上限。PR #12 是在 Linux 本地全绿后合并的，**主 crate 在 macOS 上的编译至今无人验证**。处置：查 Settings → Billing，恢复后对 `main` 重跑 `ci`；或在本机跑一次 `cargo clippy --workspace --all-targets --manifest-path src-tauri/Cargo.toml -- -D warnings`
+68. **CI runner 配置失效**（new 2026-11-13）：根因已查明——GitHub 于 **2026-11-02 退役 `macos-14` 镜像**，`ci.yml` 三个任务都钉在 `macos-14`，于是启动前即被取消（报「macos-14-arm64-us-default 配置不受支持」），账单 $0、没有任何红叉，CI 静默失明。已改钉 `macos-15`（待合并后看首跑）。首跑须确认：rust / frontend 两个任务真的跑完并转绿；bench-c1 在新镜像上是否仍因无显示环境失败（它本就 `continue-on-error`，见第 10 项）。`release.yml` 用的是 `macos-latest`，不受影响
 
 ### 待裁决
 
@@ -109,8 +114,8 @@
 
 **工具与环境**
 
-- **CI 当前不跑**（第 68 项）：合并前只能靠本地全绿；云端 Linux 编不过主 crate 里 macOS 专有的 `RunEvent::Reopen`，测试时需临时替换该行、测完还原
-- **`cargo fmt --check` 两种跑法结果不同**：CI 的 `cargo fmt --manifest-path src-tauri/Cargo.toml --check`（仓库根目录）通过；在 `src-tauri/` 里直接跑会列出 `repo-core` / `repo-write` 约 56 处既有差异。别在功能提交里顺手 `cargo fmt` 整个 workspace
+- **钉死的 runner 版本会被 GitHub 退役，且退役后任务是「取消」不是「失败」**（第 68 项）：不会出红叉，CI 看上去只是没结果。看 PR 时「cancelled」要当成没跑，不能当成没问题；云端 Linux 编不过主 crate 里 macOS 专有的 `RunEvent::Reopen`，测试时需临时替换该行、测完还原
+- **Rust workspace 已整体 `cargo fmt` 一次**（2026-11-13，PR #14）：此前 `repo-core` / `repo-write` 积了约 59 处格式差异，CI 在 macos-14 退役前后都没真正检查到；macos-15 首跑即在 `cargo fmt --check` 上失败。现在全量干净，之后 CI 会照常拦
 - **本机 shell 跑在 Rosetta 下**：前端命令一律包 `arch -arm64 /bin/zsh -lc '…'`，别为 `@rollup/rollup-darwin-x64` 报错重装 `node_modules`
 - **云端会话推不了 tag**（代理 403），发版打 tag 须在本地做
 - **本地 `AGENTS.md` 是 7 月 v1.1 旧规则**（已 gitignore），用 Codex 前先同步或改指向 `CLAUDE.md`

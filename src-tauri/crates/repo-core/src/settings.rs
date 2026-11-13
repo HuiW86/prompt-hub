@@ -26,7 +26,11 @@ pub const DEFAULT_GLOBAL_HOTKEY: &str = "Alt+Space";
 /// their own default rather than an error.
 pub fn get(conn: &Connection, key: &str) -> RepoResult<Option<String>> {
     Ok(conn
-        .query_row("SELECT value FROM settings WHERE key = ?1", params![key], |row| row.get(0))
+        .query_row(
+            "SELECT value FROM settings WHERE key = ?1",
+            params![key],
+            |row| row.get(0),
+        )
         .optional()?)
 }
 

@@ -151,12 +151,10 @@ fn quick_check(conn: &Connection) -> RepoResult<()> {
     // per broken page, and the detail string ends up in a dialog a human reads.
     const MAX_DETAIL_ROWS: usize = 5;
 
-    let rows: Vec<String> = match conn
-        .prepare("PRAGMA quick_check")
-        .and_then(|mut stmt| {
-            stmt.query_map([], |row| row.get::<_, String>(0))?
-                .collect::<rusqlite::Result<Vec<String>>>()
-        }) {
+    let rows: Vec<String> = match conn.prepare("PRAGMA quick_check").and_then(|mut stmt| {
+        stmt.query_map([], |row| row.get::<_, String>(0))?
+            .collect::<rusqlite::Result<Vec<String>>>()
+    }) {
         Ok(rows) => rows,
         Err(e) if is_corruption(&e) => {
             let detail = e.to_string();
@@ -640,11 +638,17 @@ mod tests {
         assert_eq!(v, 13, "0013 owns user_version 13");
 
         for t in tables {
-            assert!(has_column(&conn, t, "deleted_at"), "{t} must gain the column");
+            assert!(
+                has_column(&conn, t, "deleted_at"),
+                "{t} must gain the column"
+            );
             let total: i64 = conn
                 .query_row(&format!("SELECT COUNT(*) FROM {t}"), [], |r| r.get(0))
                 .expect("count rows");
-            assert!(total > 0, "{t} must already hold rows for this to prove anything");
+            assert!(
+                total > 0,
+                "{t} must already hold rows for this to prove anything"
+            );
             let stamped: i64 = conn
                 .query_row(
                     &format!("SELECT COUNT(*) FROM {t} WHERE deleted_at IS NOT NULL"),
