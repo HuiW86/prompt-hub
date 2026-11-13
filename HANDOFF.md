@@ -1,4 +1,4 @@
-# Handoff — M-01 全景面板已合入 `main`，待真机门（2026-11-13）
+# Handoff — M-01 全景面板已合入 `main`，真机门与 CI 均已通过（2026-11-13）
 
 > 本文件只留「本轮做了什么 + 仍开着的账」。历史轮次的明细在 `docs/design/CHANGELOG.md` 与 git 历史；本机装机记录见 [本机安装记录](docs/website-tab/evidence/local-install-2026-09-24.md)。
 
@@ -22,20 +22,13 @@
 
 ## Next Actions
 
-> 编号沿用旧账，只列仍开着的。**建议起手：第 68 项**（CI 换 runner 后看首跑结果），再第 64 项剩下的两项界面验收。
+> 编号沿用旧账，只列仍开着的。M-01 的发布门已全部通过，`main` 可以出包；下一步按需挑：第 65 项（全景契约回流）或第 58 项（ADR-030 裁决）。
 
 ### 全景（M-01）收尾
 
-64. **全景真机门**（2026-11-13 本机跑过一轮，**仍未全过，继续不要从 `main` 出包**）：
-    - ✅ 本地编译：`cargo clippy --workspace --all-targets --manifest-path src-tauri/Cargo.toml -- -D warnings` 通过（macOS）
-    - ✅ 唤起性能：`bench:hotkey-wake` p95 **20.143ms**，低于 200ms 门槛；但比 2026-09-05 的 14.139ms **多 6.004ms（+42%）**。这是 Rust `show()+set_focus()` 路径，不含系统快捷键派发。同时兑现原第 59 项（网站 Tab 与全景两次改动的累计）。增量原因未查，候选：唤起时全景重置筛选并聚焦输入框、全景首屏 DOM 比旧仪表盘多；若后续再涨须先定位
-    - ✅ 迁移：用 SQLite 备份做真实库副本，开发版把副本 15→16 迁移正常；原库仍 15，`quick_check` 正常。副本在 `/tmp/prompt-hub-acceptance-home`
-    - ⏳ 真实库 76 条一屏无纵向滚动（含紧凑档）——自动化接管不了隔离开发版窗口，须手动看
-    - ⏳ `⌥1–⌥9` 指定常用位、`⌥0` 取消（macOS WebKit 下 `event.code` 是否为 `DigitN`）——同上，须手动：切到「整理」态 → 方向键选中一条 → 按 `⌥3`，该条应出现常用位徽标 3；再按 `⌥0` 徽标消失
+69. （低优先）全景在**紧凑密度档**下的一屏无滚动未单独看过（2026-11-13 验收用的是默认档）。切到紧凑档时顺手看一眼即可
 65. **全景契约回流**：product-spec / design-spec / prd 均未写全景与「管理」工作区，按 ADR-031「显式不裁」走八步
 67. （低优先）清空废纸篓不清 `panorama_placements` 悬空行：不显示、占的常用位被新抢占者静默让出、导入时清理。要立即干净就在 `purge_trash` 末尾调 `repo_write::panorama::delete_dangling_placements`
-68. **CI runner 配置失效**（new 2026-11-13）：根因已查明——GitHub 于 **2026-11-02 退役 `macos-14` 镜像**，`ci.yml` 三个任务都钉在 `macos-14`，于是启动前即被取消（报「macos-14-arm64-us-default 配置不受支持」），账单 $0、没有任何红叉，CI 静默失明。已改钉 `macos-15`（待合并后看首跑）。首跑须确认：rust / frontend 两个任务真的跑完并转绿；bench-c1 在新镜像上是否仍因无显示环境失败（它本就 `continue-on-error`，见第 10 项）。`release.yml` 用的是 `macos-latest`，不受影响
-
 ### 待裁决
 
 58. **ADR-030（网站库）仍 Proposed**：`docs/adr/030-website-library.md` 缺 `Last reviewed`，代码已在 `main`。送审只给一句话决定 + 推荐；裁后八步回流 prd / product-spec / design-spec（网站 Tab 目前只有 `docs/website-tab/design-delta.md`）
@@ -95,6 +88,9 @@
 
 ## Dropped
 
+- 第 64 项（全景真机门）：2026-11-13 全部通过——macOS clippy 通过；`bench:hotkey-wake` p95 **20.143ms**（低于 200ms，但比 2026-09-05 的 14.139ms 多 6.004ms / +42%，原因未查，再涨须先定位）；真实库副本 15→16 迁移正常、原库 `quick_check` 正常；真实库 76 条一屏无纵向滚动（未分组列底部「还有 29 条」）；整理态选中后 `⌥3` 出现常用位徽标 3、`⌥0` 消失。验收副本在 `/tmp/prompt-hub-acceptance-home`
+- 第 68 项（CI runner 失效）：PR #14 改钉 `macos-15` + 全 workspace `cargo fmt`，首跑 rust / frontend / bench-c1 三项全绿，2026-11-13 合并（`dee9ee6`）
+
 - 第 63 项（PR #12 合并）：2026-11-13 已合并
 - 第 66 项（「整理」撞名）：工作区改名「管理」，模式名不动（CHANGELOG 2026-11-13）
 - 第 59 项（网站 Tab 补 C1 bench）：并入第 64 项，同一次 `bench:hotkey-wake` 一并覆盖
@@ -133,7 +129,7 @@
 
 ## Verify
 
-> 2026-11-12 在云端 Linux 上实测（`5dfe22a` 之后）；macOS 上未跑（见第 68 项）。
+> 计数为 2026-11-12 云端 Linux 实测（`5dfe22a` 之后）；2026-11-13 macOS CI（`macos-15`，PR #14）三项全绿，本机 clippy 与真机门亦已通过（见 Dropped 第 64 项）。
 
 - `pnpm test` → **603** / 49 文件
 - `cargo test --workspace --manifest-path src-tauri/Cargo.toml` → **243**（Linux 上需临时替换 `RunEvent::Reopen`）
