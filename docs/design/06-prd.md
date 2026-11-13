@@ -1,10 +1,10 @@
 ---
 type: prd
 project: prompt-hub
-version: v0.16
+version: v0.17
 created: 2026-05-18
-last_modified: 2026-09-06
-status: ratified  # v0.16 于 2026-09-06 经 omar 签字（人审批次 ⑫，与 [[03-product-spec]] v0.29 同批，单裁点「编辑器加一行修订说明输入」按推荐通过）：§6.6 的 `notes` 补上 UI 写入方——v0.15 写「这是 `notes` 的第一个写入方」时，写入方只到 Rust 与 IPC 为止，编辑面从不发这个参数，真机上改完正文 `notes` 仍是 NULL（[[HANDOFF]] 第 53 项）。前 v0.15 于 2026-09-04 经 omar 签字（人审批次 ⑨，与 [[03-product-spec]] v0.26 同批，批次内两个裁点均按推荐通过）。本版是 [[029-alignment-coordinates-and-drift-ledger]] 的图纸回流（对齐坐标四轴 + 中途口令隐式记账），属图纸类改动，按 [[CLAUDE#§5.1.2]] 需 omar 签字后才转 `ratified`。**本版描述的契约已于 2026-09-05 落地**（ADR-029 P0 `0329520` / P1 `345e37f` / P2 `3af8308`，真机门 G7 6 过 / 2 部分 / 1 缺陷已修 `4a68fa9`，见 [[11-test-spec#4.6]]）。前 v0.14 于 2026-09-03 人审批次 ⑧ 经 omar 签字（三份图纸同批过：本文件 + [[03-product-spec]] v0.25 + [[05-design-spec]] v0.22；批次内无新决策，记的都是 ADR-028 已拍板的内容）。本版内容：§6 数据模型契约变更（新增 §6.0-bis 两套删除机制 + 七张资产表加 `deleted_at` + 四处「删除策略」重写 + 导出 data schema 1.1→1.2），属图纸类改动，按 [[CLAUDE#§5.1.2]] 需签字。**v0.12 起登记的 §6.1 drift 就此销账**——旧文承诺 `deprecated = true`、实装是 hard DELETE，现两边都已改正。前 v0.13 于 2026-09-01 人审批次 ④ ratified
+last_modified: 2026-11-13
+status: draft  # v0.17（2026-11-13）待 HuiW86 签字：全景工作区（§5.9 / §6.11）与常用网站（§5.10 / §6.12）补写进契约，§6.9 导出沿革补到 1.5——照 [[031-panorama-default-view]] / [[030-website-library]] 已落地实现回流，批次内无新的数据决策（唯一裁点在 [[03-product-spec]] v0.31），明细见文末修订记录 v0.17。前 v0.16 于 2026-09-06 经 omar 签字（人审批次 ⑫，与 [[03-product-spec]] v0.29 同批，单裁点「编辑器加一行修订说明输入」按推荐通过）：§6.6 的 `notes` 补上 UI 写入方——v0.15 写「这是 `notes` 的第一个写入方」时，写入方只到 Rust 与 IPC 为止，编辑面从不发这个参数，真机上改完正文 `notes` 仍是 NULL（[[HANDOFF]] 第 53 项）。前 v0.15 于 2026-09-04 经 omar 签字（人审批次 ⑨，与 [[03-product-spec]] v0.26 同批，批次内两个裁点均按推荐通过）。本版是 [[029-alignment-coordinates-and-drift-ledger]] 的图纸回流（对齐坐标四轴 + 中途口令隐式记账），属图纸类改动，按 [[CLAUDE#§5.1.2]] 需 omar 签字后才转 `ratified`。**本版描述的契约已于 2026-09-05 落地**（ADR-029 P0 `0329520` / P1 `345e37f` / P2 `3af8308`，真机门 G7 6 过 / 2 部分 / 1 缺陷已修 `4a68fa9`，见 [[11-test-spec#4.6]]）。前 v0.14 于 2026-09-03 人审批次 ⑧ 经 omar 签字（三份图纸同批过：本文件 + [[03-product-spec]] v0.25 + [[05-design-spec]] v0.22；批次内无新决策，记的都是 ADR-028 已拍板的内容）。本版内容：§6 数据模型契约变更（新增 §6.0-bis 两套删除机制 + 七张资产表加 `deleted_at` + 四处「删除策略」重写 + 导出 data schema 1.1→1.2），属图纸类改动，按 [[CLAUDE#§5.1.2]] 需签字。**v0.12 起登记的 §6.1 drift 就此销账**——旧文承诺 `deprecated = true`、实装是 hard DELETE，现两边都已改正。前 v0.13 于 2026-09-01 人审批次 ④ ratified
 author: ai  # 🤖 AI 主笔 + 人审（CLAUDE §5.2）
 related: [[01-spec]], [[03-product-spec]], [[prompt-hub-mvp]], [[015-expose-mcp-write-pipeline]], [[027-configurable-global-hotkey]], [[028-reversible-delete]], [[029-alignment-coordinates-and-drift-ledger]], [[mcp-write-pipeline]]
 description: 手动 AI 编程仪表盘的工程契约——数据模型/状态机/NFR/Boundaries/IPC + MCP 接口契约；写后端 / 数据层时召回。版本叙事见 CHANGELOG
@@ -318,6 +318,48 @@ SOP 模板应该是**可自定义的**，初始内置是锚点，使用者会很
 
 ---
 
+### 5.9 全景工作区（v0.17 新增 · [[031-panorama-default-view]]）
+
+**定位**：唤起后的首屏。一屏同时列出全部可复制条目，按意图分列，主次由使用数据决定，取用一键完成。核心目的：**一眼看到全局，一键贴出，每次都记数**。
+
+**内容**：五类条目（Macro / 场景话术 / 对齐话术 / Modifier / Composition）全部在屏，排除 `deprecated` 与废纸篓中的行。分列、分层、筛选、键位的完整界面契约见 [[03-product-spec#13.6]] b。
+
+**关键交互**：
+- 点击或 `⏎` → 复制；裸数字 `1`–`9` → 复制对应常用位（筛选框为空时）
+- 打字即筛选（变暗不消失）
+- 整理态：调整条目所在分组与常用位，写入 §6.11
+
+**为什么这样设计**：
+- 2026-11-12 真实库数据：76 条、221 次使用，前 3 条占 50%，44 条从未用过——按资产类型分区的仪表盘要求先回忆「它在哪个区」，面板起不到「看见才想得起」的作用
+- 主次靠层级明暗而不靠隐藏，位置由用户指定、不随用量漂移——这两条是 ADR-031 七条原则里与数据层直接相关的部分
+
+**实现注意**：
+- **分层现算不落库**：常用位 / 活跃 / 休眠由 `usage_count`、`last_used_at`、`created_at` 在前端算出（90 天活跃窗、14 天新建窗），不存任何派生字段
+- **复制不新增 `usage_records.source` 取值**（§6.8）：Macro 与 Modifier 记 `macro_area`、场景话术 `scene`、Composition `composition`、对齐话术沿用 `alignmentUsageSource`（口令记 `live_cue`，开场话术记 `phase_bar`）。同一条资产从全景与从管理工作区复制，记下的来源完全相同——这让 §6.8 的漂移账锚点规则不受新入口影响
+- Composition 的复制正文 = 其 Modifier 正文按 `modifier_ids` 顺序以空行相接，缺失的 Modifier 跳过；复制时拼装，不落库（与 §6.2 一致）
+- **在唤起路径上**：全景是默认渲染的视图，受 [[02-constitution#C1]] 约束。2026-11-13 实测 `bench:hotkey-wake` p95 20.143ms（2026-09-05 为 14.139ms），仍在 200ms 内
+
+---
+
+### 5.10 常用网站（v0.17 新增 · [[030-website-library]]）
+
+**定位**：独立于提示词资产的快捷资源——把常去的网站按分组放在顺手的位置，一键交给系统默认浏览器。
+
+**内容**：分组、网站、已删除。界面契约见 [[03-product-spec#13.6]] d。
+
+**关键交互**：增删改、组内排序、搜索、打开、删除后撤销 / 恢复。
+
+**为什么这样设计**：
+- 与提示词无关的东西不进三层模型（[[02-constitution#B1]]）：网站不被复制、不产生 UsageRecord、不参与任何组合，故单独成表（§6.12）、单独成工作区
+- 打开只传编号：渲染进程不持有「可打开的网址」这一能力，由 Rust 重新读库、重新校验后再交给系统，避免被篡改的界面数据打开任意协议
+
+**实现注意**：
+- **不在唤起路径上**：进入网站工作区才读库
+- 「打开成功」的含义是**交给了系统**，不保证网页能加载
+- 不预留书签批量导入、账号、同步、网页内容抓取——需要时重新扫描并另开 ADR（[[030-website-library]]）
+
+---
+
 ## 6. 数据模型
 
 这一章定义核心数据结构。不讨论具体实现（不规定是 TypeScript 还是 JSON Schema），只讨论字段和关系。
@@ -334,6 +376,7 @@ SOP 模板应该是**可自定义的**，初始内置是锚点，使用者会很
 - **坐标轴（可空定位 · 🎯 v0.15 · [[029-alignment-coordinates-and-drift-ledger]]）**：AlignmentPhrase 的 `layer_id` / `domain_id` / `mode_id` 三列各指向一条 AlignmentAxisValue（§6.6-bis），三列全部可空，NULL 即「该轴不限」
 - **孤岛对象**：AlignmentPhrase 不和任何其他资产产生结构关联（哲学七）。**v0.15 不松动这条**——三列坐标指向的 `alignment_axis_values` 与 `phases` 同类，是配置表不是资产（不进三层模型、不被复制、不产生 UsageRecord），所以「孤岛」说的仍是同一件事：对齐话术不与 Modifier / Composition / Macro / Scene / SOP 发生任何结构关联
 - **观察对象**：UsageRecord 观察所有可复制的资产，append-only，不持有结构关系
+- **非资产表（v0.17 补记）**：Setting（§6.8-bis，机器本地配置）、PanoramaPlacement（§6.11，全景视图状态，多态引用资产但不被资产引用）、WebsiteGroup / Website（§6.12，与资产无任何关联）。四者都不进本节关系图，也都不进三层模型
 
 #### Mermaid 关系图
 
@@ -1116,7 +1159,7 @@ SOP 节包含 2 个相关模型：**SOP**（标准作业流程）、**SOPStep**�
 
 ```json
 {
-  "schema_version": "1.3",
+  "schema_version": "1.5",
   "exported_at": "2026-05-18T10:00:00Z",
   "modifiers": [/* Modifier[] */],
   "macros": [/* Macro[] */],
@@ -1126,13 +1169,15 @@ SOP 节包含 2 个相关模型：**SOP**（标准作业流程）、**SOPStep**�
   "phases": [/* Phase[] */],
   "alignment_phrases": [/* AlignmentPhrase[] */],
   "alignment_axis_values": [/* AlignmentAxisValue[]，v0.15 新增顶层键 */],
+  "website_library": { "groups": [/* WebsiteGroup[] */], "websites": [/* Website[] */] },  /* v0.17 补记，1.4 起 */
+  "panorama_placements": [/* PanoramaPlacement[]，v0.17 补记，1.5 起 */],
   "sops": [/* SOP[] */],
   "usage_records": [/* UsageRecord[]，可选，只导出最近 N 天 */]
 }
 ```
 
 **字段设计理由**：
-- `schema_version` 沿革：v1.0 → **1.1** 对应 Phase 和 AlignmentPhrase 的新增；**1.1 → 1.2**（v0.14 · [[028-reversible-delete]] 子决策 6）对应每条资产行新增可选 `deletedAt`；**1.2 → 1.3**（🎯 v0.15 · [[029-alignment-coordinates-and-drift-ledger]]）对应三处新增——顶层 `alignment_axis_values` 数组、`alignment_phrases[]` 每行多出六个字段（`kind` / `layerId` / `domainId` / `modeId` / `cueAxis` / `contentRevisedAt`）、`usage_records[]` 每行多出 `sessionStartedAt`
+- `schema_version` 沿革：v1.0 → **1.1** 对应 Phase 和 AlignmentPhrase 的新增；**1.1 → 1.2**（v0.14 · [[028-reversible-delete]] 子决策 6）对应每条资产行新增可选 `deletedAt`；**1.2 → 1.3**（🎯 v0.15 · [[029-alignment-coordinates-and-drift-ledger]]）对应三处新增——顶层 `alignment_axis_values` 数组、`alignment_phrases[]` 每行多出六个字段（`kind` / `layerId` / `domainId` / `modeId` / `cueAxis` / `contentRevisedAt`）、`usage_records[]` 每行多出 `sessionStartedAt`；**1.3 → 1.4**（[[030-website-library]]，v0.17 补记）顶层新增可选 `website_library`；**1.4 → 1.5**（[[031-panorama-default-view]]，v0.17 补记）顶层新增可选 `panorama_placements`。这两个键的「缺失 / 空 / null」三态口径见 §6.12 / §6.11 各自的「与导出的关系」
 - **兼容口径按 MAJOR 判定**：`check_schema_version` 只比对主版本号，所以 1.1 的旧备份照常导入（无 `deletedAt` 的行反序列化为存活），1.2 文件被只认 1.1 的旧构建读到时该字段被忽略——双向兼容，MINOR 递增不挡门。1.3 沿用同一口径：**1.1 / 1.2 的旧备份照常导入**，缺 `kind` 的行反序列化为 `'opening'`，缺 `layerId` / `domainId` / `modeId` / `cueAxis` / `contentRevisedAt` / `sessionStartedAt` 的行一律为 NULL
 - **顶层键与行内字段的大小写不一样，这是既有事实不是笔误**：现有**十个**顶层键全是 snake_case（8 张资产表 + `schema_version` / `exported_at`；`ExportBundle` 结构体没有 `rename_all`），v0.15 后为十一个，资产行的字段是 camelCase（模型结构体逐个声明了 `#[serde(rename_all = "camelCase")]`）。新增的 `alignment_axis_values` 按顶层键的规矩走
 - `usage_records` 可选——大数据量场景下可只导出当前资产、不导出历史使用记录
@@ -1244,6 +1289,86 @@ stateDiagram-v2
 | 历史可读性 | UsageRecord 保留对 deprecated Macro 的引用 | UsageRecord 保留对 archived SOP 的 sop_id |
 
 **核心约束**：状态机是行为流的描述视图，不引入新的存储字段（SOP.status 是已有字段）。任何实现都应通过 deprecated / status 实际值驱动 UI，而非在内存中维护额外状态。
+
+---
+
+### 6.11 PanoramaPlacement（全景布局 · v0.17 新增 · [[031-panorama-default-view]]）
+
+> **不是资产**，是视图状态：记录一条资产在全景里放在哪一列、占不占常用位。单独成表而不给五张资产表加列——资产表结构不动，第七道源码级闸门（[[11-test-spec#3]]）的七表清单不动，也不引入第四层资产（[[02-constitution#B1]]）。migration `0016`，`user_version` 15 → **16**。
+
+#### Fields
+
+| Name | Type | Nullable | Default | Constraint | Description |
+|------|------|----------|---------|------------|-------------|
+| asset_kind | enum | N | - | `macro` / `phrase` / `alignment_phrase` / `modifier` / `composition`；PK 一部分 | 资产类别 |
+| asset_id | string | N | - | PK 一部分 | 资产 id。**多态引用，无外键**——一列 id 指向五张表之一，SQLite 外键表达不了 |
+| group_id | enum | Y | NULL | `align` / `diverge` / `converge` / `execute` / `polish` / `retain` / `cue` / `tool` | 用户指定的列；NULL = 走默认规则（对齐话术按相位，其余进「未分组」，[[03-product-spec#13.6]] b）|
+| pin_slot | int | Y | NULL | 1–9；**非空时全表唯一**（部分唯一索引）| 常用位号；NULL = 不占位 |
+
+`(asset_kind, asset_id)` 为主键。**`group_id` 与 `pin_slot` 同时为 NULL 的行不存在**——写成这样即删除该行。
+
+#### 写入规则（`set_panorama_placement`）
+
+- upsert；返回写入后的**完整列表**（调用方据此判断谁让出了号位）
+- 目标资产必须存在且不在废纸篓，否则拒绝
+- **抢占**：写入一个已被占用的 `pin_slot` 不报错——同一事务里先清空原占用者的 `pin_slot`，原占用者若因此两列皆空则删行，再写入
+- 1–9 之外的号位在 Rust 侧先拒绝，表上另有 CHECK 兜底
+
+#### 读取（`list_panorama_placements`）
+
+只返回资产**仍存活**的行：按 `asset_kind` 逐类 `EXISTS` 到对应资产表并带 `deleted_at IS NULL`（第七道闸门计数到这五次读取）。进废纸篓的资产行**保留不删**，恢复后位置原样回来。
+
+#### 删除策略
+
+- 用户把一条资产的两列都清空 → 删行
+- 资产进废纸篓 → 行保留、读取时隐藏
+- 资产被永久删除（清空废纸篓）→ **当前不清理**，留下悬空行：读取时不显示；其占的号位被新条目选中时按抢占规则让出；下一次导入时清掉（[[HANDOFF]] 第 67 项）
+
+#### 与导出的关系
+
+随导出走（§6.9），键 `panorama_placements`，**全表无过滤导出**（含废纸篓中资产的行，与资产行的全保真口径一致）。导入三态：键缺失（1.4 及更早）= 保留本地仍对得上资产的行、丢弃对不上的；空数组 = 清空；有内容 = 整表替换，**引用不存在资产的行静默丢弃**；显式 `null` = 拒绝整份导入。「对得上」按导入后的库判断，废纸篓中的资产也算对得上。
+
+### 6.12 WebsiteGroup / Website（常用网站 · v0.17 新增 · [[030-website-library]]）
+
+> **不是资产**：不被复制、不产生 UsageRecord、不与任何资产关联。migration `0015`，`user_version` 14 → **15**。
+
+#### Fields · `website_groups`
+
+| Name | Type | Nullable | Default | Constraint | Description |
+|------|------|----------|---------|------------|-------------|
+| id | string | N | - | PK | |
+| name | string | N | - | 去空白后 1–120 字符；**唯一** | 分组名 |
+| order_index | int | N | - | ≥ 0 | 分组之间的显式次序 |
+
+#### Fields · `websites`
+
+| Name | Type | Nullable | Default | Constraint | Description |
+|------|------|----------|---------|------------|-------------|
+| id | string | N | - | PK | |
+| name | string | N | - | 去空白后 1–120 字符 | 名称 |
+| url | string | N | - | 见下「网址校验」| 规范化后的网址 |
+| description | string | N | `''` | ≤ 2000 字符 | 说明 |
+| group_id | string | Y | NULL | FK → `website_groups.id`，`ON DELETE SET NULL` | NULL = 未分组 |
+| order_index | int | N | - | ≥ 0；在 `group_id` 相同的分区内排序 | 组内次序 |
+| created_at | timestamp | N | now | - | |
+| deleted_at | timestamp | Y | NULL | - | 软删除标记，与 §6.0-bis 同一机制 |
+
+#### 网址校验（写入、导入、打开三处都跑）
+
+只接受 `http` / `https`，必须有主机名，**不得含账号或密码**，不得含控制字符，长度 ≤ 8192；通过后以规范化形式存储。**打开时重新校验**——库里的值即使被绕过界面改动，也打不开 `javascript:` / `file:` 等协议。
+
+#### 打开（`open_website(id)`）
+
+渲染进程只传 id；Rust 只读 `deleted_at IS NULL` 的行，重新校验网址，再交给系统默认浏览器（Tauri opener）。已删除的网站打不开。
+
+#### 删除策略
+
+- 删除网站 = 写 `deleted_at`；恢复 = 清空。读列表时**返回含已删除的全集**，供「已删除」视图使用——这是刻意的，因此本表**不进第七道闸门的七表清单**（[[030-website-library]] 裁决节）
+- 删除分组 = 硬删分组行；组内网站（**含已删除的**）追加到未分组分区末尾
+
+#### 与导出的关系
+
+随导出走（§6.9），顶层键 `website_library`（含 `groups` 与 `websites`，网站含已删除项）。导入三态：键缺失（1.3 及更早）= 保留现有网站；有内容（含空集合）= 整体替换，替换时逐行重跑名称 / 网址 / 说明校验，任一行不合格则整份导入回滚；显式 `null` = 拒绝。与其他资产同一事务。
 
 ---
 
@@ -1712,6 +1837,21 @@ PRD 不复刻风险表，避免双源真理漂移；实施侧风险/缓解以 pl
 ---
 
 ## 修订记录
+
+### v0.17（2026-11-13）— 全景布局与常用网站补写进契约
+
+> **状态：`draft`，待 HuiW86 签字。** 与 [[03-product-spec]] v0.31 / [[05-design-spec]] v0.24 同批。**本文件无新的数据决策**——两张新表与两个导出键都已随 [[031-panorama-default-view]]（I-02 `70c7339`）与 [[030-website-library]]（`ccb145b`）落地并经测试，此处只把实现写成契约。本批唯一裁点在 product-spec（唤起时进入哪个工作区），不涉及数据层。
+
+| 章节 | 改动 |
+|------|------|
+| §5.9（新增）| 全景工作区：定位、复制来源沿用规则、分层现算不落库、在唤起路径上（C1 实测 p95 20.143ms）|
+| §5.10（新增）| 常用网站：定位、只传编号打开、不在唤起路径上、不预留的范围 |
+| §6.0 | 补「非资产表」一行 |
+| §6.9 | 示例 `schema_version` 1.3 → 1.5，补两个顶层键与沿革 1.3 → 1.4 → 1.5 |
+| §6.11（新增）| PanoramaPlacement：字段、写入（upsert / 抢占 / 双空删行）、读取（存活过滤）、删除策略（含「清空废纸篓不清悬空行」的已知现状）、导出导入三态 |
+| §6.12（新增）| WebsiteGroup / Website：字段、网址校验三处都跑、打开路径、删除策略、导出导入三态 |
+
+---
 
 ### v0.16（2026-09-06）— 第 53 项回流：`notes` 补上 UI 写入方
 
