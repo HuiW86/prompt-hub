@@ -225,7 +225,9 @@ fn reserve_path(
     let mut path = backups_dir.join(format!("{stem_prefix}{secs}{stem_suffix}.{extension}"));
     let mut dedup = 1u32;
     while path.exists() {
-        path = backups_dir.join(format!("{stem_prefix}{secs}{stem_suffix}-{dedup}.{extension}"));
+        path = backups_dir.join(format!(
+            "{stem_prefix}{secs}{stem_suffix}-{dedup}.{extension}"
+        ));
         dedup += 1;
     }
     path

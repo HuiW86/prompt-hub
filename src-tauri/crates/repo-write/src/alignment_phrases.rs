@@ -352,12 +352,14 @@ mod tests {
             .max()
             .unwrap_or(-1);
 
-        let a = create_alignment_phrase(&conn, "phase-diverge", "A", "body", &Default::default()).expect("create a");
+        let a = create_alignment_phrase(&conn, "phase-diverge", "A", "body", &Default::default())
+            .expect("create a");
         assert_eq!(a.phase_id, "phase-diverge");
         assert!(!a.is_default, "user-authored phrase must be non-default");
         assert_eq!(a.order_index, before_max + 1);
 
-        let b = create_alignment_phrase(&conn, "phase-diverge", "B", "body", &Default::default()).expect("create b");
+        let b = create_alignment_phrase(&conn, "phase-diverge", "B", "body", &Default::default())
+            .expect("create b");
         assert_eq!(b.order_index, a.order_index + 1);
     }
 
@@ -375,8 +377,11 @@ mod tests {
             .max()
             .unwrap_or(-1);
 
-        let div = create_alignment_phrase(&conn, "phase-diverge", "D", "body", &Default::default()).expect("div");
-        let und = create_alignment_phrase(&conn, "phase-understand", "U", "body", &Default::default()).expect("und");
+        let div = create_alignment_phrase(&conn, "phase-diverge", "D", "body", &Default::default())
+            .expect("div");
+        let und =
+            create_alignment_phrase(&conn, "phase-understand", "U", "body", &Default::default())
+                .expect("und");
         assert_eq!(div.order_index, div_max + 1);
         assert_eq!(und.order_index, und_max + 1);
     }
@@ -384,8 +389,8 @@ mod tests {
     #[test]
     fn create_rejects_unknown_phase() {
         let (_dir, conn) = migrated_conn();
-        let err =
-            create_alignment_phrase(&conn, "phase-bogus", "X", "body", &Default::default()).expect_err("unknown phase");
+        let err = create_alignment_phrase(&conn, "phase-bogus", "X", "body", &Default::default())
+            .expect_err("unknown phase");
         // Surfaced as a rusqlite FK violation wrapped in RepoError.
         assert!(matches!(err, RepoError::Sqlite(_)), "got {err:?}");
     }
@@ -393,9 +398,23 @@ mod tests {
     #[test]
     fn update_edits_name_and_content() {
         let (_dir, conn) = migrated_conn();
-        let created =
-            create_alignment_phrase(&conn, "phase-diverge", "Old", "old body", &Default::default()).expect("create");
-        update_alignment_phrase(&conn, &created.id, "Renamed", "new body", None, Some(&Default::default())).expect("update");
+        let created = create_alignment_phrase(
+            &conn,
+            "phase-diverge",
+            "Old",
+            "old body",
+            &Default::default(),
+        )
+        .expect("create");
+        update_alignment_phrase(
+            &conn,
+            &created.id,
+            "Renamed",
+            "new body",
+            None,
+            Some(&Default::default()),
+        )
+        .expect("update");
 
         let found = repo::list_alignment_phrases(&conn)
             .expect("list")
@@ -411,7 +430,8 @@ mod tests {
     #[test]
     fn update_missing_errors() {
         let (_dir, conn) = migrated_conn();
-        let err = update_alignment_phrase(&conn, "nope", "x", "y", None, Some(&Default::default())).expect_err("missing");
+        let err = update_alignment_phrase(&conn, "nope", "x", "y", None, Some(&Default::default()))
+            .expect_err("missing");
         assert!(
             matches!(err, RepoError::TargetNotFound { .. }),
             "got {err:?}"
@@ -421,8 +441,14 @@ mod tests {
     #[test]
     fn delete_removes_non_default_row() {
         let (_dir, conn) = migrated_conn();
-        let created =
-            create_alignment_phrase(&conn, "phase-diverge", "Doomed", "body", &Default::default()).expect("create");
+        let created = create_alignment_phrase(
+            &conn,
+            "phase-diverge",
+            "Doomed",
+            "body",
+            &Default::default(),
+        )
+        .expect("create");
         delete_alignment_phrase(&conn, &created.id).expect("delete");
         assert!(
             repo::list_alignment_phrases(&conn)
@@ -472,9 +498,12 @@ mod tests {
     fn reorder_rewrites_order_index_within_phase() {
         let (_dir, conn) = migrated_conn();
         // Build a known set of user phrases in one phase for a deterministic assert.
-        let a = create_alignment_phrase(&conn, "phase-diverge", "a", "b", &Default::default()).expect("a");
-        let b = create_alignment_phrase(&conn, "phase-diverge", "b", "b", &Default::default()).expect("b");
-        let c = create_alignment_phrase(&conn, "phase-diverge", "c", "b", &Default::default()).expect("c");
+        let a = create_alignment_phrase(&conn, "phase-diverge", "a", "b", &Default::default())
+            .expect("a");
+        let b = create_alignment_phrase(&conn, "phase-diverge", "b", "b", &Default::default())
+            .expect("b");
+        let c = create_alignment_phrase(&conn, "phase-diverge", "c", "b", &Default::default())
+            .expect("c");
         let new_order = vec![c.id.clone(), a.id.clone(), b.id.clone()];
         reorder_alignment_phrases(&conn, "phase-diverge", &new_order).expect("reorder");
 
@@ -500,7 +529,8 @@ mod tests {
     #[test]
     fn reorder_rejects_id_from_other_phase() {
         let (_dir, conn) = migrated_conn();
-        let div = create_alignment_phrase(&conn, "phase-diverge", "div", "b", &Default::default()).expect("div");
+        let div = create_alignment_phrase(&conn, "phase-diverge", "div", "b", &Default::default())
+            .expect("div");
         // Reordering the understand phase must not accept a diverge id.
         let err =
             reorder_alignment_phrases(&conn, "phase-understand", std::slice::from_ref(&div.id))
@@ -527,8 +557,14 @@ mod tests {
             .into_iter()
             .find(|a| a.is_default)
             .expect("seed default present");
-        let promoted =
-            create_alignment_phrase(&conn, "phase-diverge", "New default", "body", &Default::default()).expect("create");
+        let promoted = create_alignment_phrase(
+            &conn,
+            "phase-diverge",
+            "New default",
+            "body",
+            &Default::default(),
+        )
+        .expect("create");
 
         set_default_alignment_phrase(&conn, "phase-diverge", &promoted.id).expect("set default");
 
@@ -573,8 +609,8 @@ mod tests {
     #[test]
     fn set_default_missing_id_errors() {
         let (_dir, conn) = migrated_conn();
-        let err = set_default_alignment_phrase(&conn, "phase-diverge", "ghost")
-            .expect_err("unknown id");
+        let err =
+            set_default_alignment_phrase(&conn, "phase-diverge", "ghost").expect_err("unknown id");
         assert!(
             matches!(err, RepoError::TargetNotFound { .. }),
             "got {err:?}"
@@ -584,7 +620,8 @@ mod tests {
     #[test]
     fn set_default_rejects_cross_phase_id_and_keeps_old_default() {
         let (_dir, conn) = migrated_conn();
-        let div = create_alignment_phrase(&conn, "phase-diverge", "div", "b", &Default::default()).expect("div");
+        let div = create_alignment_phrase(&conn, "phase-diverge", "div", "b", &Default::default())
+            .expect("div");
         let und_default = phase(&conn, "phase-understand")
             .into_iter()
             .find(|a| a.is_default)
@@ -608,7 +645,11 @@ mod tests {
 
     // ── ADR-029: coordinates, kind, and the revision split point ─────────────
 
-    fn coords(layer: Option<&str>, domain: Option<&str>, mode: Option<&str>) -> AlignmentPhraseCoordinates {
+    fn coords(
+        layer: Option<&str>,
+        domain: Option<&str>,
+        mode: Option<&str>,
+    ) -> AlignmentPhraseCoordinates {
         AlignmentPhraseCoordinates {
             kind: repo_core::models::PhraseKind::Opening,
             cue_axis: None,
@@ -788,7 +829,10 @@ mod tests {
             Some(&coords(Some("axv-mode-diverge"), None, None)),
         )
         .expect_err("a mode value in the layer column");
-        assert!(matches!(err, RepoError::AxisValueMismatch { .. }), "got {err:?}");
+        assert!(
+            matches!(err, RepoError::AxisValueMismatch { .. }),
+            "got {err:?}"
+        );
 
         let read = stored(&conn, &created.id);
         assert_eq!(read.name, "原名");

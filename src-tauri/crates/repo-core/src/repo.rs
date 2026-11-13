@@ -133,7 +133,9 @@ pub fn list_alignment_phrases(conn: &Connection) -> RepoResult<Vec<AlignmentPhra
 /// two read-only reference counts the delete confirmation needs (06-prd
 /// §6.6-bis "查询模式"). They are computed here rather than stored: the table is
 /// tens of rows, and a stored count is a second source of truth that drifts.
-pub fn list_alignment_axis_values(conn: &Connection) -> RepoResult<Vec<AlignmentAxisValueWithRefs>> {
+pub fn list_alignment_axis_values(
+    conn: &Connection,
+) -> RepoResult<Vec<AlignmentAxisValueWithRefs>> {
     // The `p.id IS NULL` arm below is load-bearing: a LEFT JOIN that matched
     // nothing still produces one row with every `p.*` column NULL, and
     // `NULL IS NULL` is true — without that arm an unreferenced axis value
@@ -916,7 +918,9 @@ mod tests {
         let names: Vec<&str> = phases.iter().map(|p| p.name.as_str()).collect();
         assert_eq!(
             names,
-            vec!["发散", "理解", "规划", "生成", "执行", "收敛", "沉淀", "迭代", "中途"]
+            vec![
+                "发散", "理解", "规划", "生成", "执行", "收敛", "沉淀", "迭代", "中途"
+            ]
         );
         // Every phase must have a default AlignmentPhrase pointer.
         for p in &phases {
@@ -1324,10 +1328,38 @@ mod tests {
     fn drift_ledger_attributes_cues_to_the_opening_phrase_that_preceded_them() {
         let conn = db::open_in_memory().expect("open db");
         // 发散's default is sent, then two layer cues and one domain cue follow.
-        insert_ledger_row(&conn, "u1", Some(S1), "2026-09-05T09:00:01Z", "ap-diverge-default", "phase_bar");
-        insert_ledger_row(&conn, "u2", Some(S1), "2026-09-05T09:05:00Z", "ap-live-shift-layer", "live_cue");
-        insert_ledger_row(&conn, "u3", Some(S1), "2026-09-05T09:06:00Z", "ap-live-back-to-pos", "live_cue");
-        insert_ledger_row(&conn, "u4", Some(S1), "2026-09-05T09:07:00Z", "ap-live-domain-only", "live_cue");
+        insert_ledger_row(
+            &conn,
+            "u1",
+            Some(S1),
+            "2026-09-05T09:00:01Z",
+            "ap-diverge-default",
+            "phase_bar",
+        );
+        insert_ledger_row(
+            &conn,
+            "u2",
+            Some(S1),
+            "2026-09-05T09:05:00Z",
+            "ap-live-shift-layer",
+            "live_cue",
+        );
+        insert_ledger_row(
+            &conn,
+            "u3",
+            Some(S1),
+            "2026-09-05T09:06:00Z",
+            "ap-live-back-to-pos",
+            "live_cue",
+        );
+        insert_ledger_row(
+            &conn,
+            "u4",
+            Some(S1),
+            "2026-09-05T09:07:00Z",
+            "ap-live-domain-only",
+            "live_cue",
+        );
 
         let ledger = summarize_drift_ledger(&conn).expect("summarize");
         assert_eq!(ledger.anchors.len(), 1);
@@ -1347,12 +1379,40 @@ mod tests {
     fn drift_ledger_skips_rows_with_no_session_and_never_pairs_across_sessions() {
         let conn = db::open_in_memory().expect("open db");
         // Pre-0014 history: no session, so it is not part of any group.
-        insert_ledger_row(&conn, "old1", None, "2026-08-01T09:00:00Z", "ap-diverge-default", "phase_bar");
-        insert_ledger_row(&conn, "old2", None, "2026-08-01T09:05:00Z", "ap-live-shift-layer", "live_cue");
+        insert_ledger_row(
+            &conn,
+            "old1",
+            None,
+            "2026-08-01T09:00:00Z",
+            "ap-diverge-default",
+            "phase_bar",
+        );
+        insert_ledger_row(
+            &conn,
+            "old2",
+            None,
+            "2026-08-01T09:05:00Z",
+            "ap-live-shift-layer",
+            "live_cue",
+        );
         // A later wake anchors on 规划; the cue in it must not reach back to the
         // anchor of the earlier session either.
-        insert_ledger_row(&conn, "u1", Some(S1), "2026-09-05T09:00:00Z", "ap-plan-default", "phase_bar");
-        insert_ledger_row(&conn, "u2", Some(S2), "2026-09-05T14:01:00Z", "ap-live-shift-layer", "live_cue");
+        insert_ledger_row(
+            &conn,
+            "u1",
+            Some(S1),
+            "2026-09-05T09:00:00Z",
+            "ap-plan-default",
+            "phase_bar",
+        );
+        insert_ledger_row(
+            &conn,
+            "u2",
+            Some(S2),
+            "2026-09-05T14:01:00Z",
+            "ap-live-shift-layer",
+            "live_cue",
+        );
 
         let ledger = summarize_drift_ledger(&conn).expect("summarize");
         assert_eq!(
@@ -1369,9 +1429,30 @@ mod tests {
     #[test]
     fn drift_ledger_counts_a_cue_fired_before_any_anchor_as_unattributed() {
         let conn = db::open_in_memory().expect("open db");
-        insert_ledger_row(&conn, "u1", Some(S1), "2026-09-05T09:00:00Z", "ap-live-shift-layer", "live_cue");
-        insert_ledger_row(&conn, "u2", Some(S1), "2026-09-05T09:01:00Z", "ap-diverge-default", "phase_bar");
-        insert_ledger_row(&conn, "u3", Some(S1), "2026-09-05T09:02:00Z", "ap-live-shift-form", "live_cue");
+        insert_ledger_row(
+            &conn,
+            "u1",
+            Some(S1),
+            "2026-09-05T09:00:00Z",
+            "ap-live-shift-layer",
+            "live_cue",
+        );
+        insert_ledger_row(
+            &conn,
+            "u2",
+            Some(S1),
+            "2026-09-05T09:01:00Z",
+            "ap-diverge-default",
+            "phase_bar",
+        );
+        insert_ledger_row(
+            &conn,
+            "u3",
+            Some(S1),
+            "2026-09-05T09:02:00Z",
+            "ap-live-shift-form",
+            "live_cue",
+        );
 
         let ledger = summarize_drift_ledger(&conn).expect("summarize");
         assert_eq!(ledger.live_cue_total, 2);
@@ -1387,8 +1468,22 @@ mod tests {
     #[test]
     fn drift_ledger_counts_stop_in_the_total_but_in_no_axis() {
         let conn = db::open_in_memory().expect("open db");
-        insert_ledger_row(&conn, "u1", Some(S1), "2026-09-05T09:00:00Z", "ap-diverge-default", "phase_bar");
-        insert_ledger_row(&conn, "u2", Some(S1), "2026-09-05T09:05:00Z", "ap-live-stop", "live_cue");
+        insert_ledger_row(
+            &conn,
+            "u1",
+            Some(S1),
+            "2026-09-05T09:00:00Z",
+            "ap-diverge-default",
+            "phase_bar",
+        );
+        insert_ledger_row(
+            &conn,
+            "u2",
+            Some(S1),
+            "2026-09-05T09:05:00Z",
+            "ap-live-stop",
+            "live_cue",
+        );
 
         let ledger = summarize_drift_ledger(&conn).expect("summarize");
         assert_eq!(ledger.live_cue_total, 1);
@@ -1412,11 +1507,39 @@ mod tests {
             [],
         )
         .expect("trash the anchor phrase");
-        insert_ledger_row(&conn, "u1", Some(S1), "2026-09-05T09:00:00Z", "ap-form-explore", "phase_bar");
-        insert_ledger_row(&conn, "u2", Some(S1), "2026-09-05T09:05:00Z", "ap-live-shift-layer", "live_cue");
+        insert_ledger_row(
+            &conn,
+            "u1",
+            Some(S1),
+            "2026-09-05T09:00:00Z",
+            "ap-form-explore",
+            "phase_bar",
+        );
+        insert_ledger_row(
+            &conn,
+            "u2",
+            Some(S1),
+            "2026-09-05T09:05:00Z",
+            "ap-live-shift-layer",
+            "live_cue",
+        );
         // A live anchor later in the same session still works normally.
-        insert_ledger_row(&conn, "u3", Some(S1), "2026-09-05T09:10:00Z", "ap-diverge-default", "phase_bar");
-        insert_ledger_row(&conn, "u4", Some(S1), "2026-09-05T09:11:00Z", "ap-live-converge", "live_cue");
+        insert_ledger_row(
+            &conn,
+            "u3",
+            Some(S1),
+            "2026-09-05T09:10:00Z",
+            "ap-diverge-default",
+            "phase_bar",
+        );
+        insert_ledger_row(
+            &conn,
+            "u4",
+            Some(S1),
+            "2026-09-05T09:11:00Z",
+            "ap-live-converge",
+            "live_cue",
+        );
 
         let ledger = summarize_drift_ledger(&conn).expect("summarize");
         assert_eq!(ledger.live_cue_total, 2);
@@ -1441,8 +1564,22 @@ mod tests {
             [],
         )
         .expect("trash the cue phrase");
-        insert_ledger_row(&conn, "u1", Some(S1), "2026-09-05T09:00:00Z", "ap-diverge-default", "phase_bar");
-        insert_ledger_row(&conn, "u2", Some(S1), "2026-09-05T09:05:00Z", "ap-live-shift-layer", "live_cue");
+        insert_ledger_row(
+            &conn,
+            "u1",
+            Some(S1),
+            "2026-09-05T09:00:00Z",
+            "ap-diverge-default",
+            "phase_bar",
+        );
+        insert_ledger_row(
+            &conn,
+            "u2",
+            Some(S1),
+            "2026-09-05T09:05:00Z",
+            "ap-live-shift-layer",
+            "live_cue",
+        );
 
         let ledger = summarize_drift_ledger(&conn).expect("summarize");
         assert_eq!(ledger.live_cue_total, 1);
@@ -1459,11 +1596,46 @@ mod tests {
             [],
         )
         .expect("stamp a revision");
-        insert_ledger_row(&conn, "u1", Some(S1), "2026-09-05T09:00:00Z", "ap-diverge-default", "phase_bar");
-        insert_ledger_row(&conn, "u2", Some(S1), "2026-09-05T09:05:00Z", "ap-live-shift-layer", "live_cue");
-        insert_ledger_row(&conn, "u3", Some(S1), "2026-09-05T09:06:00Z", "ap-live-converge", "live_cue");
-        insert_ledger_row(&conn, "u4", Some(S2), "2026-09-05T14:00:00Z", "ap-diverge-default", "phase_bar");
-        insert_ledger_row(&conn, "u5", Some(S2), "2026-09-05T14:05:00Z", "ap-live-shift-layer", "live_cue");
+        insert_ledger_row(
+            &conn,
+            "u1",
+            Some(S1),
+            "2026-09-05T09:00:00Z",
+            "ap-diverge-default",
+            "phase_bar",
+        );
+        insert_ledger_row(
+            &conn,
+            "u2",
+            Some(S1),
+            "2026-09-05T09:05:00Z",
+            "ap-live-shift-layer",
+            "live_cue",
+        );
+        insert_ledger_row(
+            &conn,
+            "u3",
+            Some(S1),
+            "2026-09-05T09:06:00Z",
+            "ap-live-converge",
+            "live_cue",
+        );
+        insert_ledger_row(
+            &conn,
+            "u4",
+            Some(S2),
+            "2026-09-05T14:00:00Z",
+            "ap-diverge-default",
+            "phase_bar",
+        );
+        insert_ledger_row(
+            &conn,
+            "u5",
+            Some(S2),
+            "2026-09-05T14:05:00Z",
+            "ap-live-shift-layer",
+            "live_cue",
+        );
 
         let ledger = summarize_drift_ledger(&conn).expect("summarize");
         assert_eq!(ledger.anchors.len(), 1);
@@ -1484,11 +1656,32 @@ mod tests {
     #[test]
     fn drift_ledger_separates_anchors_from_cues_by_source_not_target_type() {
         let conn = db::open_in_memory().expect("open db");
-        insert_ledger_row(&conn, "u1", Some(S1), "2026-09-05T09:00:00Z", "ap-diverge-default", "phase_bar");
+        insert_ledger_row(
+            &conn,
+            "u1",
+            Some(S1),
+            "2026-09-05T09:00:00Z",
+            "ap-diverge-default",
+            "phase_bar",
+        );
         // ⌘9 on 中途 copies 停 — and records live_cue, NOT phase_bar, which is
         // what stops 中途 from ever becoming an opening anchor (06-prd §6.8).
-        insert_ledger_row(&conn, "u2", Some(S1), "2026-09-05T09:01:00Z", "ap-live-stop", "live_cue");
-        insert_ledger_row(&conn, "u3", Some(S1), "2026-09-05T09:02:00Z", "ap-live-shift-layer", "live_cue");
+        insert_ledger_row(
+            &conn,
+            "u2",
+            Some(S1),
+            "2026-09-05T09:01:00Z",
+            "ap-live-stop",
+            "live_cue",
+        );
+        insert_ledger_row(
+            &conn,
+            "u3",
+            Some(S1),
+            "2026-09-05T09:02:00Z",
+            "ap-live-shift-layer",
+            "live_cue",
+        );
 
         let ledger = summarize_drift_ledger(&conn).expect("summarize");
         assert_eq!(ledger.anchors.len(), 1);

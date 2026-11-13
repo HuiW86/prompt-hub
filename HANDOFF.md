@@ -115,7 +115,7 @@
 **工具与环境**
 
 - **钉死的 runner 版本会被 GitHub 退役，且退役后任务是「取消」不是「失败」**（第 68 项）：不会出红叉，CI 看上去只是没结果。看 PR 时「cancelled」要当成没跑，不能当成没问题；云端 Linux 编不过主 crate 里 macOS 专有的 `RunEvent::Reopen`，测试时需临时替换该行、测完还原
-- **`cargo fmt --check` 两种跑法结果不同**：CI 的 `cargo fmt --manifest-path src-tauri/Cargo.toml --check`（仓库根目录）通过；在 `src-tauri/` 里直接跑会列出 `repo-core` / `repo-write` 约 56 处既有差异。别在功能提交里顺手 `cargo fmt` 整个 workspace
+- **Rust workspace 已整体 `cargo fmt` 一次**（2026-11-13，PR #14）：此前 `repo-core` / `repo-write` 积了约 59 处格式差异，CI 在 macos-14 退役前后都没真正检查到；macos-15 首跑即在 `cargo fmt --check` 上失败。现在全量干净，之后 CI 会照常拦
 - **本机 shell 跑在 Rosetta 下**：前端命令一律包 `arch -arm64 /bin/zsh -lc '…'`，别为 `@rollup/rollup-darwin-x64` 报错重装 `node_modules`
 - **云端会话推不了 tag**（代理 403），发版打 tag 须在本地做
 - **本地 `AGENTS.md` 是 7 月 v1.1 旧规则**（已 gitignore），用 Codex 前先同步或改指向 `CLAUDE.md`

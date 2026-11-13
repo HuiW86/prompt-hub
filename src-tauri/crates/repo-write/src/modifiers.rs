@@ -272,7 +272,10 @@ mod tests {
             .find(|m| m.id == a.id)
             .expect("present");
         assert_eq!(found.order_index, a.order_index);
-        assert!(found.order_index < b.order_index, "relative order preserved");
+        assert!(
+            found.order_index < b.order_index,
+            "relative order preserved"
+        );
     }
 
     #[test]

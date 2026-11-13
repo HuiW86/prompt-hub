@@ -533,8 +533,8 @@ mod tests {
     #[test]
     fn move_rejects_nonexistent_phrase() {
         let (_dir, conn) = migrated_conn();
-        let err = move_phrase(&conn, "ghost", "scene-research", None, None)
-            .expect_err("missing phrase");
+        let err =
+            move_phrase(&conn, "ghost", "scene-research", None, None).expect_err("missing phrase");
         assert!(
             matches!(err, RepoError::TargetNotFound { ref table, .. } if table == "phrases"),
             "got {err:?}"

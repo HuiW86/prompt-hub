@@ -227,7 +227,10 @@ mod tests {
                 |row| row.get(0),
             )
             .expect("count still bound");
-        assert_eq!(still_bound, 2, "children must stay bound to survive restore");
+        assert_eq!(
+            still_bound, 2,
+            "children must stay bound to survive restore"
+        );
     }
 
     /// The other half of sub-decision 7. `delete_leaves_child_phrases_bound...`
@@ -264,9 +267,7 @@ mod tests {
         let orphaned: Vec<&str> = during
             .phrases
             .iter()
-            .filter(|p| {
-                ["phrase-plan-export", "phrase-plan-permission"].contains(&p.id.as_str())
-            })
+            .filter(|p| ["phrase-plan-export", "phrase-plan-permission"].contains(&p.id.as_str()))
             .map(|p| {
                 assert_eq!(
                     p.sub_stage_id, None,

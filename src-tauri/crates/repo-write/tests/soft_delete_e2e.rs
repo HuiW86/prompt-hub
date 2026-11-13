@@ -23,8 +23,8 @@ use repo_core::{db, repo, AssetKind};
 use repo_write::{
     create_alignment_phrase, create_composition, create_macro, create_modifier, create_phrase,
     create_scene, create_sub_stage, delete_alignment_phrase, delete_composition, delete_macro,
-    delete_modifier, delete_phrase, delete_scene, delete_sub_stage, purge_trash,
-    reorder_modifiers, restore_asset,
+    delete_modifier, delete_phrase, delete_scene, delete_sub_stage, purge_trash, reorder_modifiers,
+    restore_asset,
 };
 use rusqlite::{params, Connection};
 use tempfile::TempDir;
@@ -80,29 +80,47 @@ fn deleted_at(conn: &Connection, kind: AssetKind, id: &str) -> Option<String> {
 
 fn create_one(conn: &Connection, kind: AssetKind) -> String {
     match kind {
-        AssetKind::Modifier => create_modifier(conn, "改造器", "body", "cognition")
-            .expect("modifier")
-            .id,
+        AssetKind::Modifier => {
+            create_modifier(conn, "改造器", "body", "cognition")
+                .expect("modifier")
+                .id
+        }
         AssetKind::Macro => create_macro(conn, "宏", "body", None).expect("macro").id,
         AssetKind::AlignmentPhrase => {
             // Non-default on purpose: the phase default is still protected from
             // deletion (D-c), which ADR-028 did not reopen.
-            create_alignment_phrase(conn, "phase-diverge", "对齐话术", "body", &Default::default())
-                .expect("alignment phrase")
+            create_alignment_phrase(
+                conn,
+                "phase-diverge",
+                "对齐话术",
+                "body",
+                &Default::default(),
+            )
+            .expect("alignment phrase")
+            .id
+        }
+        AssetKind::Composition => {
+            create_composition(conn, "phase-diverge", "组合", &[], None)
+                .expect("composition")
                 .id
         }
-        AssetKind::Composition => create_composition(conn, "phase-diverge", "组合", &[], None)
-            .expect("composition")
-            .id,
-        AssetKind::Phrase => create_phrase(conn, "scene-research", "话术", "body", None)
-            .expect("phrase")
-            .id,
+        AssetKind::Phrase => {
+            create_phrase(conn, "scene-research", "话术", "body", None)
+                .expect("phrase")
+                .id
+        }
         // A fresh, childless scene: `delete_scene` still refuses a scene with
         // live children.
-        AssetKind::Scene => create_scene(conn, "场景", None, &[], None).expect("scene").id,
-        AssetKind::SubStage => create_sub_stage(conn, "scene-research", "子阶段")
-            .expect("sub stage")
-            .id,
+        AssetKind::Scene => {
+            create_scene(conn, "场景", None, &[], None)
+                .expect("scene")
+                .id
+        }
+        AssetKind::SubStage => {
+            create_sub_stage(conn, "scene-research", "子阶段")
+                .expect("sub stage")
+                .id
+        }
     }
 }
 
@@ -263,9 +281,14 @@ fn restoring_a_trashed_default_alignment_phrase_demotes_it_instead_of_failing() 
     .expect("stamp the default as trashed");
 
     // The slot is free now, so a second phrase can take the default.
-    let successor =
-        create_alignment_phrase(&conn, "phase-diverge", "新的默认", "body", &Default::default())
-            .expect("create");
+    let successor = create_alignment_phrase(
+        &conn,
+        "phase-diverge",
+        "新的默认",
+        "body",
+        &Default::default(),
+    )
+    .expect("create");
     repo_write::set_default_alignment_phrase(&conn, "phase-diverge", &successor.id)
         .expect("appoint a new default while the old one is in the trash");
 
@@ -289,7 +312,10 @@ fn restoring_a_trashed_default_alignment_phrase_demotes_it_instead_of_failing() 
             |r| r.get(0),
         )
         .expect("read successor");
-    assert_eq!(successor_flag, 1, "the appointed default must keep the slot");
+    assert_eq!(
+        successor_flag, 1,
+        "the appointed default must keep the slot"
+    );
 
     let live_defaults: i64 = conn
         .query_row(
@@ -524,7 +550,10 @@ fn reorder_over_the_visible_list_skips_a_trashed_neighbour() {
     let first = create_modifier(&conn, "甲", "body", "delivery").expect("first");
     let hidden = create_modifier(&conn, "乙", "body", "delivery").expect("hidden");
     let last = create_modifier(&conn, "丙", "body", "delivery").expect("last");
-    assert_eq!((first.order_index, hidden.order_index, last.order_index), (0, 1, 2));
+    assert_eq!(
+        (first.order_index, hidden.order_index, last.order_index),
+        (0, 1, 2)
+    );
 
     delete_modifier(&conn, &hidden.id).expect("delete the middle one");
 

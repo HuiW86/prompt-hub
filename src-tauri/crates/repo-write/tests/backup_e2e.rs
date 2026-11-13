@@ -144,8 +144,11 @@ fn round_trip_preserves_field_level_content() {
     let backup = export_json(&conn).expect("export");
 
     // Mutate after the snapshot, then restore — the backup values must win.
-    conn.execute("UPDATE modifiers SET content = 'TAMPERED', order_index = 99 WHERE id = 'mod-x'", [])
-        .expect("tamper");
+    conn.execute(
+        "UPDATE modifiers SET content = 'TAMPERED', order_index = 99 WHERE id = 'mod-x'",
+        [],
+    )
+    .expect("tamper");
 
     import_json(&conn, &backup).expect("restore");
 
@@ -156,14 +159,24 @@ fn round_trip_preserves_field_level_content() {
             |r| Ok((r.get(0)?, r.get(1)?, r.get(2)?, r.get(3)?, r.get(4)?)),
         )
         .expect("modifier restored");
-    assert_eq!(content, "Answer in <=3 sentences.", "content restored verbatim");
+    assert_eq!(
+        content, "Answer in <=3 sentences.",
+        "content restored verbatim"
+    );
     assert_eq!(notes.as_deref(), Some("house style"));
     assert_eq!(usage, 7, "usage_count round-trips");
     assert_eq!(order, 3, "order_index restored, not the tampered 99");
     assert_eq!(deprecated, 0);
 
     let modifier_ids: String = conn
-        .query_row("SELECT modifier_ids FROM compositions WHERE id = 'comp-x'", [], |r| r.get(0))
+        .query_row(
+            "SELECT modifier_ids FROM compositions WHERE id = 'comp-x'",
+            [],
+            |r| r.get(0),
+        )
         .expect("composition restored");
-    assert_eq!(modifier_ids, "[\"mod-x\"]", "composition->modifier link survives verbatim");
+    assert_eq!(
+        modifier_ids, "[\"mod-x\"]",
+        "composition->modifier link survives verbatim"
+    );
 }
