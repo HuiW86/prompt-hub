@@ -55,21 +55,21 @@
       "scrollable": false,
       "textLen": 810
     },
-    "hover-delay-ms-warm-switch": 93,
+    "hover-delay-ms-warm-switch": 101,
     "preview-stays-open-when-pointer-inside": true,
     "preview-scrolled": 0,
     "preview-closed-after-leave": true,
     "fast-sweep": {
-      "ms": 41,
+      "ms": 44,
       "opens": 0
     },
     "sweep-across-800ms": {
-      "ms": 801,
+      "ms": 802,
       "opens": 0
     },
     "sweep-down-column": {
       "rows": 4,
-      "ms": 602,
+      "ms": 603,
       "opens": 0
     },
     "preview-closed-after-click": true,
@@ -353,6 +353,38 @@
     "preview-800-scrolled-to-end": {
       "scrollTop": 291,
       "atEnd": true
+    },
+    "manage-1440-largest-overflowX": false,
+    "macro-title-attr-1440": null,
+    "macro-hover-delay-1440": 329,
+    "macro-preview-1440": {
+      "visible": true,
+      "rect": {
+        "x": 245.703125,
+        "y": 29,
+        "w": 600,
+        "h": 851
+      },
+      "inViewport": true,
+      "fontSize": "17.5px",
+      "scrollable": false,
+      "textLen": 810
+    },
+    "manage-1024-largest-overflowX": false,
+    "macro-title-attr-1024": null,
+    "macro-hover-delay-1024": 316,
+    "macro-preview-1024": {
+      "visible": true,
+      "rect": {
+        "x": 339.96875,
+        "y": 20,
+        "w": 600,
+        "h": 660
+      },
+      "inViewport": true,
+      "fontSize": "17.5px",
+      "scrollable": true,
+      "textLen": 810
     }
   }
 }
