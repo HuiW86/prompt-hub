@@ -52,8 +52,10 @@
     background-color var(--d-fast) var(--ease);
 }
 
+/* fg-3, not fg-4: the placeholder is the only instruction on screen at wake
+ * (fg-4 is 2.7:1 on surface-1 — below what a reading hint needs). */
 .filter::placeholder {
-  color: var(--fg-4);
+  color: var(--fg-3);
 }
 
 /* The field holds focus for the whole session, so its focus state is a calm
@@ -116,23 +118,28 @@
   font-variant-numeric: tabular-nums;
 }
 
+/* The title is the column's identity (a two-character phase name) and never
+ * truncates; when a narrow window or a larger text size runs out of room, the
+ * count gives way first. Before, the count held and the title went to 「理…」. */
 .columnTitle {
-  flex: 1;
-  min-width: 0;
+  flex: 0 0 auto;
   color: var(--fg-2);
   font-size: var(--t-12);
   font-weight: var(--w-600);
   letter-spacing: var(--tr-meta);
   white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
 }
 
 .columnCount {
-  flex: 0 0 auto;
-  color: var(--fg-4);
+  flex: 0 1 auto;
+  min-width: 0;
+  margin-left: auto;
+  overflow: hidden;
+  color: var(--fg-3);
   font-size: var(--t-11);
   font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+  text-overflow: ellipsis;
 }
 
 /* The fallback scrollbar only ever appears when pinned + active rows alone
@@ -219,11 +226,28 @@
   background: var(--surface-3);
 }
 
+/* Up to two lines, then an ellipsis. Eight equal columns are narrow — at
+ * 1440px a column holds ~9 CJK characters on one line, and with a larger text
+ * size or a narrower window one-line names fell to two or three characters
+ * (「需…」), which defeats scanning. The second line is paid for out of the
+ * column's spare height; the fit-to-screen cut measures real row heights, so
+ * a column that runs out folds its dormant rows into 「还有 N 条」 as before.
+ * The full name is always in the hover preview. */
 .name {
+  display: -webkit-box;
   flex: 1;
   min-width: 0;
-  white-space: nowrap;
   overflow: hidden;
+  overflow-wrap: anywhere;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 2;
+  line-clamp: 2;
+}
+
+/* Strip chips sit in a wrapping row: one line each, or the row turns ragged. */
+.stripBody .name {
+  display: block;
+  white-space: nowrap;
   text-overflow: ellipsis;
 }
 
@@ -257,7 +281,12 @@
   background: var(--surface-2);
 }
 
+/* The card wraps (slot · name · count, then the usage bar). Without a basis the
+ * name was the one item allowed to shrink, and on a narrow column it went to
+ * zero width while slot and count kept theirs — a card with no name. A 4em
+ * basis lets the count wrap under it instead. */
 .pinned .name {
+  flex: 1 1 4em;
   font-weight: var(--w-600);
 }
 
@@ -324,12 +353,16 @@
   line-height: 1;
 }
 
+/* Quieter by colour and position (below the dashed rule), no longer by size:
+ * 12px CJK at fg-3 was the hardest text on the screen to read, and dormant
+ * rows are still items the user scans for. Same size as active rows (13, the
+ * frame's body size); fg-3 vs fg-1 carries the tier. */
 .dormant {
   min-height: 0;
   padding-top: var(--s-0_5);
   padding-bottom: var(--s-0_5);
   color: var(--fg-3);
-  font-size: var(--t-12);
+  font-size: var(--t-13);
 }
 
 .dormant:hover {
@@ -453,7 +486,7 @@
   border-top: var(--hairline) solid var(--border-1);
   background: var(--surface-1);
   color: var(--fg-3);
-  font-size: var(--t-12);
+  font-size: var(--t-13);
 }
 
 .previewName {
@@ -474,7 +507,7 @@
 
 .previewMeta {
   flex: 0 0 auto;
-  color: var(--fg-4);
+  color: var(--fg-3);
   font-size: var(--t-11);
   font-variant-numeric: tabular-nums;
 }
@@ -483,7 +516,10 @@
   display: flex;
   align-items: center;
   gap: var(--s-1_5);
-  color: var(--fg-4);
+  min-width: 0;
+  overflow: hidden;
+  color: var(--fg-3);
+  white-space: nowrap;
 }
 
 .kbd {

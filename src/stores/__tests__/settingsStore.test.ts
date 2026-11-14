@@ -126,3 +126,107 @@ describe2("applyAppearance root classes (ADR-024)", () => {
     },
   );
 });
+
+// Text size (issue: 字号偏小). One root class per non-default step, the ladder
+// clamps at both ends, and the value survives a reload via localStorage.
+describe2("fontScale (字号)", () => {
+  const root = () => document.documentElement.classList;
+
+  it2("defaults to standard with no text-size class on the root", () => {
+    store.getState().setFontScale("standard");
+    expect2(store.getState().fontScale).toBe("standard");
+    expect2(root().contains("text-large")).toBe(false);
+    expect2(root().contains("text-xlarge")).toBe(false);
+  });
+
+  it2("each step rides exactly one root class", () => {
+    store.getState().setFontScale("large");
+    expect2(root().contains("text-large")).toBe(true);
+    expect2(root().contains("text-xlarge")).toBe(false);
+    store.getState().setFontScale("xlarge");
+    expect2(root().contains("text-large")).toBe(false);
+    expect2(root().contains("text-xlarge")).toBe(true);
+    store.getState().setFontScale("standard");
+    expect2(root().contains("text-xlarge")).toBe(false);
+  });
+
+  it2("theme / accent / density switches keep the text-size class", () => {
+    store.getState().setFontScale("large");
+    store.getState().setThemeMode("light");
+    store.getState().setAccent("blue");
+    store.getState().setDensity("compact");
+    expect2(root().contains("text-large")).toBe(true);
+    store.getState().setDensity("comfortable");
+    store.getState().setAccent("neutral");
+    store.getState().setThemeMode("dark");
+    store.getState().setFontScale("standard");
+  });
+
+  it2("stepFontScale walks the ladder and clamps at both ends", () => {
+    const s = () => store.getState();
+    s().setFontScale("standard");
+    s().stepFontScale(-1);
+    expect2(s().fontScale).toBe("standard");
+    s().stepFontScale(1);
+    expect2(s().fontScale).toBe("large");
+    s().stepFontScale(1);
+    expect2(s().fontScale).toBe("xlarge");
+    s().stepFontScale(1);
+    expect2(s().fontScale).toBe("xlarge");
+    s().stepFontScale(-1);
+    expect2(s().fontScale).toBe("large");
+    s().setFontScale("standard");
+  });
+
+  it2("persists to localStorage with the other appearance prefs", () => {
+    store.getState().setFontScale("xlarge");
+    const saved = JSON.parse(
+      localStorage.getItem("prompt-hub-settings") ?? "{}",
+    );
+    expect2(saved.state.fontScale).toBe("xlarge");
+    store.getState().setFontScale("standard");
+  });
+
+  it2("rehydrates the saved step and applies its class", async () => {
+    localStorage.setItem(
+      "prompt-hub-settings",
+      JSON.stringify({
+        state: {
+          themeMode: "dark",
+          accent: "neutral",
+          density: "comfortable",
+          fontScale: "large",
+          interactionMode: "invoke",
+        },
+        version: 2,
+      }),
+    );
+    await store.persist.rehydrate();
+    expect2(store.getState().fontScale).toBe("large");
+    expect2(root().contains("text-large")).toBe(true);
+    store.getState().setFontScale("standard");
+  });
+
+  it2("an unknown stored step falls back to standard", async () => {
+    localStorage.setItem(
+      "prompt-hub-settings",
+      JSON.stringify({
+        state: { themeMode: "dark", fontScale: "huge" },
+        version: 2,
+      }),
+    );
+    await store.persist.rehydrate();
+    expect2(store.getState().fontScale).toBe("standard");
+    expect2(root().contains("text-large")).toBe(false);
+    expect2(root().contains("text-xlarge")).toBe(false);
+  });
+
+  it2("an older saved state without the key reads as standard", async () => {
+    localStorage.setItem(
+      "prompt-hub-settings",
+      JSON.stringify({ state: { themeMode: "dark" }, version: 2 }),
+    );
+    await store.persist.rehydrate();
+    expect2(store.getState().fontScale).toBe("standard");
+  });
+});

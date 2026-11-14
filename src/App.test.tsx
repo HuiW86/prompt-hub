@@ -284,10 +284,16 @@ describe("Dashboard end-to-end render", () => {
       expect(screen.getByText("借力最优解")).toBeInTheDocument(),
     );
     // The compact macro strip drops the inline body — content moves to the
-    // copy button's title tooltip (Promptscape "高频一键入口" form).
-    expect(screen.getByRole("button", { name: "借力最优解" })).toHaveAttribute(
-      "title",
-      "调研外部成熟方案。",
+    // hover preview panel (Promptscape "高频一键入口" form). Not the native
+    // title tooltip any more: that one was slow, small and could not scroll.
+    const copyButton = screen.getByRole("button", { name: "借力最优解" });
+    expect(copyButton).not.toHaveAttribute("title");
+    fireEvent.pointerEnter(copyButton);
+    const preview = await screen.findByRole("tooltip");
+    expect(preview).toHaveTextContent("调研外部成熟方案。");
+    fireEvent.pointerLeave(copyButton);
+    await waitFor(() =>
+      expect(screen.queryByRole("tooltip")).not.toBeInTheDocument(),
     );
     expect(screen.getByText("7 次")).toBeInTheDocument();
   });
@@ -725,6 +731,34 @@ describe("Dashboard click → IPC flow", () => {
     expect(document.activeElement).toBe(input);
     expect(input.selectionStart).toBe(0);
     expect(input.selectionEnd).toBe("hello".length);
+  });
+
+  // Text size shortcuts (issue: 字号偏小): ⌘= / ⌘+ larger, ⌘− smaller, ⌘0
+  // back to the default — applied live through the root class.
+  it("⌘= / ⌘− / ⌘0 step the text size and reset it", async () => {
+    useSettingsStore.getState().setFontScale("standard");
+    render(<App />);
+    await screen.findByRole("button", { name: "借力最优解" });
+    const scale = () => useSettingsStore.getState().fontScale;
+    fireEvent.keyDown(document, { key: "=", code: "Equal", metaKey: true });
+    expect(scale()).toBe("large");
+    fireEvent.keyDown(document, {
+      key: "+",
+      code: "Equal",
+      metaKey: true,
+      shiftKey: true,
+    });
+    expect(scale()).toBe("xlarge");
+    expect(document.documentElement.classList.contains("text-xlarge")).toBe(
+      true,
+    );
+    fireEvent.keyDown(document, { key: "-", code: "Minus", metaKey: true });
+    expect(scale()).toBe("large");
+    fireEvent.keyDown(document, { key: "0", code: "Digit0", metaKey: true });
+    expect(scale()).toBe("standard");
+    // Plain keys never touch it (they feed the panorama filter).
+    fireEvent.keyDown(document, { key: "=", code: "Equal" });
+    expect(scale()).toBe("standard");
   });
 
   it("shift+⌘K does not focus the search input", async () => {

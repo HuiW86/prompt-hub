@@ -26,6 +26,7 @@ import { usePromptStore } from "../../stores/promptStore";
 import { useSessionStore } from "../../stores/sessionStore";
 import { useSettingsStore } from "../../stores/settingsStore";
 import { useToastStore } from "../../stores/toastStore";
+import { HoverPreviewLayer } from "../HoverPreview";
 import { PanoramaView } from "../panorama/PanoramaView";
 
 const promptInitial = usePromptStore.getState();
@@ -214,6 +215,21 @@ describe("PanoramaView", () => {
 
   // ── S1: one screen, everything visible, loudness by tier ─────────────────
 
+  // Issue: 悬停全文预览慢且字小. The row no longer carries a native title
+  // tooltip; hovering it opens the shared preview panel with the full text.
+  it("previews the full content on hover instead of a title tooltip", async () => {
+    render(<HoverPreviewLayer />);
+    await renderView();
+    const target = row("设计导出");
+    expect(target).not.toHaveAttribute("title");
+    fireEvent.pointerEnter(target);
+    const panel = await screen.findByRole("tooltip");
+    expect(panel).toHaveTextContent("设计导出");
+    expect(panel).toHaveTextContent("为项目设计导出模块。");
+    // Clicking copies and closes the preview in the same press.
+    fireEvent.pointerDown(target);
+    expect(screen.queryByRole("tooltip")).toBeNull();
+  });
   it("S1 renders the eight stage columns in order, then 未分组, then the strip", async () => {
     await renderView();
     const titles = screen

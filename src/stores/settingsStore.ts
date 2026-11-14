@@ -13,6 +13,18 @@ export type Accent = "neutral" | "blue" | "green" | "violet" | "amber";
 // smallest screen in use. Full rationale in tokens.css §3c. Type sizes never
 // change with density.
 export type Density = "comfortable" | "compact";
+// Text size (issue: 字号偏小). Scales every type token (--t-*) through
+// --font-scale in tokens.css §2 — text only, never spacing or anchor heights,
+// so "larger text" does not silently become "fewer items per screen" the way a
+// whole-page zoom would. Three steps, capped at 125%: past that the fixed
+// 22–24px chip rows (--h-chip, compact tier) stop holding a 13px label.
+export type FontScale = "standard" | "large" | "xlarge";
+export const FONT_SCALES: readonly FontScale[] = [
+  "standard",
+  "large",
+  "xlarge",
+];
+export const DEFAULT_FONT_SCALE: FontScale = "standard";
 // D-0 interaction mode. 调用态 (invoke): the default — whole-card click copies
 // and the window hides after (T0 zero-regression). 整理态 (organize): whole-card
 // click on a Scene phrase previews instead of copying, copy is an explicit
@@ -42,6 +54,7 @@ function applyAppearance(
   themeMode: ThemeMode,
   accent: Accent,
   density: Density,
+  fontScale: FontScale = DEFAULT_FONT_SCALE,
 ) {
   if (typeof document === "undefined") return;
   const root = document.documentElement;
@@ -54,6 +67,13 @@ function applyAppearance(
   for (const a of ACCENTS) root.classList.toggle(`accent-${a}`, a === accent);
   // Bare root = comfortable; `.compact` swaps in the §3c structure tokens.
   root.classList.toggle("compact", density === "compact");
+  // Bare root = standard; `.text-large` / `.text-xlarge` set --font-scale.
+  root.classList.toggle("text-large", fontScale === "large");
+  root.classList.toggle("text-xlarge", fontScale === "xlarge");
+}
+
+function isFontScale(v: unknown): v is FontScale {
+  return (FONT_SCALES as readonly unknown[]).includes(v);
 }
 
 interface SettingsState {
@@ -66,6 +86,7 @@ interface SettingsState {
   themeMode: ThemeMode;
   accent: Accent;
   density: Density;
+  fontScale: FontScale;
   interactionMode: InteractionMode;
   settingsOpen: boolean;
   loadGlobalHotkey: () => Promise<void>;
@@ -74,6 +95,9 @@ interface SettingsState {
   setThemeMode: (mode: ThemeMode) => void;
   setAccent: (accent: Accent) => void;
   setDensity: (density: Density) => void;
+  setFontScale: (fontScale: FontScale) => void;
+  /** One step up/down the FONT_SCALES ladder; clamps at either end. */
+  stepFontScale: (delta: 1 | -1) => void;
   setInteractionMode: (mode: InteractionMode) => void;
   toggleInteractionMode: () => void;
   openSettings: () => void;
@@ -95,6 +119,7 @@ export const useSettingsStore = create<SettingsState>()(
       accent: "neutral",
       // Comfortable keeps the reshape-v2 baseline; compact is an explicit pick.
       density: "comfortable",
+      fontScale: DEFAULT_FONT_SCALE,
       // Default 调用态 so the tool opens as a launcher (D-0 / T0 zero-regression).
       interactionMode: "invoke",
       settingsOpen: false,
@@ -124,15 +149,46 @@ export const useSettingsStore = create<SettingsState>()(
         })),
       setThemeMode: (themeMode) => {
         set({ themeMode });
-        applyAppearance(themeMode, get().accent, get().density);
+        applyAppearance(
+          themeMode,
+          get().accent,
+          get().density,
+          get().fontScale,
+        );
       },
       setAccent: (accent) => {
         set({ accent });
-        applyAppearance(get().themeMode, accent, get().density);
+        applyAppearance(
+          get().themeMode,
+          accent,
+          get().density,
+          get().fontScale,
+        );
       },
       setDensity: (density) => {
         set({ density });
-        applyAppearance(get().themeMode, get().accent, density);
+        applyAppearance(
+          get().themeMode,
+          get().accent,
+          density,
+          get().fontScale,
+        );
+      },
+      setFontScale: (fontScale) => {
+        if (!isFontScale(fontScale)) return;
+        set({ fontScale });
+        applyAppearance(
+          get().themeMode,
+          get().accent,
+          get().density,
+          fontScale,
+        );
+      },
+      stepFontScale: (delta) => {
+        const i = FONT_SCALES.indexOf(get().fontScale);
+        const next =
+          FONT_SCALES[Math.max(0, Math.min(FONT_SCALES.length - 1, i + delta))];
+        if (next !== get().fontScale) get().setFontScale(next);
       },
       setInteractionMode: (interactionMode) => set({ interactionMode }),
       toggleInteractionMode: () =>
@@ -168,14 +224,34 @@ export const useSettingsStore = create<SettingsState>()(
         themeMode: s.themeMode,
         accent: s.accent,
         density: s.density,
+        fontScale: s.fontScale,
         interactionMode: s.interactionMode,
       }),
       // Persisted v2 states written before the density tier lack the key; the
       // persist default merge fills it from the initial state ("comfortable"),
       // so no version bump is needed.
+      // fontScale follows the same rule: older states lack it and pick up
+      // "standard"; an unknown stored value (hand-edited, or a future step this
+      // build does not know) falls back to standard rather than leaving a root
+      // class no stylesheet defines.
+      merge: (persisted, current) => {
+        const p = (persisted ?? {}) as Partial<SettingsState>;
+        return {
+          ...current,
+          ...p,
+          fontScale: isFontScale(p.fontScale)
+            ? p.fontScale
+            : DEFAULT_FONT_SCALE,
+        };
+      },
       onRehydrateStorage: () => (state) => {
-        if (state)
-          applyAppearance(state.themeMode, state.accent, state.density);
+        if (!state) return;
+        applyAppearance(
+          state.themeMode,
+          state.accent,
+          state.density,
+          state.fontScale,
+        );
       },
     },
   ),

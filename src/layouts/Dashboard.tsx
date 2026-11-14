@@ -7,6 +7,7 @@ import {
 
 import { Header } from "../components/Header";
 import { HotkeyBanner } from "../components/HotkeyBanner";
+import { HoverPreviewLayer } from "../components/HoverPreview";
 import { MacroGrid } from "../components/MacroGrid";
 import { ModifierGrid } from "../components/ModifierGrid";
 import { ProtocolBand } from "../components/ProtocolBand";
@@ -198,6 +199,7 @@ export function Dashboard() {
       )}
       {workspace === "prompts" && <StatusBar />}
       <Toast />
+      <HoverPreviewLayer />
       <SettingsModal />
     </div>
   );

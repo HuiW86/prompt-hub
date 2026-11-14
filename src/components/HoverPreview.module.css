@@ -1,0 +1,89 @@
+/* Full-prompt hover preview (components/HoverPreview.tsx). A reading surface,
+ * not a tooltip: body text at the primary reading size (--t-14, scales with
+ * the user's 字号 setting) and the long-form lead (--lh-read), wrapped at a
+ * ~40em measure, scrolling inside a frame-clamped height. Elevation per
+ * design-spec §8.2.1 (overlay / popover → --shadow-2). Tokens only. */
+
+.panel {
+  position: fixed;
+  top: 0;
+  left: 0;
+  z-index: var(--z-popover);
+  display: flex;
+  flex-direction: column;
+  width: var(--w-hover-preview);
+  border: var(--hairline) solid var(--border-2);
+  border-radius: var(--r-4);
+  background: var(--surface-1);
+  box-shadow: var(--shadow-2);
+  color: var(--fg-1);
+  /* The panel is never focused or typed into; keep text selectable for a
+     reader who wants to copy a fragment rather than the whole prompt. */
+  user-select: text;
+}
+
+.header {
+  display: flex;
+  align-items: baseline;
+  gap: var(--s-3);
+  flex: 0 0 auto;
+  min-width: 0;
+  padding: var(--s-2_5) var(--s-3_5) var(--s-2);
+  border-bottom: var(--hairline) solid var(--border-1);
+}
+
+/* The name wraps here: this is where a truncated row name is read in full. */
+.title {
+  flex: 1;
+  min-width: 0;
+  color: var(--fg-1);
+  font-size: var(--t-13);
+  font-weight: var(--w-600);
+  line-height: var(--lh-tight);
+  overflow-wrap: anywhere;
+}
+
+.meta {
+  flex: 0 0 auto;
+  color: var(--fg-3);
+  font-size: var(--t-11);
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+}
+
+.body {
+  flex: 1 1 auto;
+  min-height: 0;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  padding: var(--s-2_5) var(--s-3_5) var(--s-3);
+  color: var(--fg-1);
+  font-size: var(--t-14);
+  line-height: var(--lh-read);
+  /* Prompts are authored text: keep the author's line breaks and list
+     indentation, and break long unbroken runs (URLs, paths) instead of
+     letting them push the panel wider. */
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+}
+
+.footer {
+  display: flex;
+  justify-content: space-between;
+  gap: var(--s-3);
+  flex: 0 0 auto;
+  padding: var(--s-1_5) var(--s-3_5);
+  border-top: var(--hairline) solid var(--border-1);
+  color: var(--fg-3);
+  font-size: var(--t-11);
+  font-variant-numeric: tabular-nums;
+}
+
+/* Only when the body actually scrolls — a short prompt needs no instruction. */
+.scrollHint {
+  display: none;
+}
+
+.panel[data-overflowing="true"] .scrollHint {
+  display: inline;
+}

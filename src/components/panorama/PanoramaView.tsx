@@ -11,6 +11,7 @@ import {
 import { Search } from "lucide-react";
 
 import { useCopy } from "../../hooks/useCopy";
+import { hoverPreviewHandlers } from "../../stores/hoverPreviewStore";
 import { usePanoramaStore, panoramaKey } from "../../stores/panoramaStore";
 import { usePromptStore } from "../../stores/promptStore";
 import { useSessionStore } from "../../stores/sessionStore";
@@ -505,7 +506,13 @@ export function PanoramaView() {
           data-tier={item.tier}
           data-dimmed={dimmed ? "true" : undefined}
           aria-current={isSelected ? "true" : undefined}
-          title={item.content}
+          // Full prompt on hover (custom panel, not the native title tooltip:
+          // that one was slow, small and could not scroll a long prompt).
+          {...hoverPreviewHandlers({
+            title: item.name,
+            content: item.content,
+            meta: `${item.usageCount} 次 · ${formatDate(item.lastUsedAt)}`,
+          })}
           tabIndex={-1}
           ref={(el) => {
             if (el) rowButtons.current.set(key, el);
