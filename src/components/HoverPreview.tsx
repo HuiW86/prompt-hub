@@ -138,6 +138,10 @@ export function HoverPreviewLayer() {
     };
     // The anchor row can unmount under the panel (filtered away, deleted,
     // workspace switched); a panel pinned to a detached node must go too.
+    if (!target.anchor.isConnected) {
+      dismissHoverPreview();
+      return;
+    }
     const mo = new MutationObserver(() => {
       if (!target.anchor.isConnected) dismissHoverPreview();
     });
