@@ -442,9 +442,9 @@ E2E 层缺位期间，**布局 / 层叠 / 定位类改动一律由带编号的�
 
 1. **G8-3 迁移**：真实库副本 16 → 17（`0017` 重建 `panorama_placements`、映射 `align` / `polish` / `retain`）后 `quick_check` 与行数、号位逐条不变。自动化覆盖：cargo `migration_0017_carries_every_placement_onto_the_work_stage_ids`（v16 库九行布局迁移后逐行比对 + 新 CHECK 拒绝旧 id + 号位唯一索引仍在）
 2. **G8-4 一屏无纵向滚动**：八列（有未分组时九列）每列更窄，列名与条目截断需在 13 英寸屏真机看；jsdom 只验到列标题顺序
-3. **导出 1.6 往返**：本机导出 → 导入；另取一份 1.5 旧备份导入，确认旧分组落到对应阶段列。自动化覆盖：`panorama_import_drops_dangling_rows_without_failing`（以 1.5 旧 id 导入，断言落为 `iterate`）+ `backup_e2e` 版本断言 1.6
+3. **导出 1.6 往返**：本机导出 → 导入；另取一份 1.5 旧备份导入，确认旧分组落到对应阶段列。自动化覆盖：`panorama_import_drops_dangling_rows_without_failing`（在当前导出里换入 1.5 旧 group id 后导入，断言落为 `iterate`；不是真正标 1.5 版本号的文件）+ `backup_e2e` 版本断言 1.6
 
-自动化盘面增量：前端 +10（`panorama.test.ts` Composition 九个相位映射 9 条 + 「规划 / 生成各自成列」1 条），Rust +1（上述迁移用例）；既有用例只改了取值（旧 group id → 阶段 id）与列标题断言，无删除。
+自动化盘面增量：前端 +10（`panorama.test.ts` Composition 九个相位映射 9 条 + 「规划 / 生成各自成列」1 条），Rust +1（上述迁移用例）；既有用例无删除，改动三类：取值（旧 group id → 阶段 id）、列标题断言与两条用例标题（「six intent columns」→「eight stage columns」）、「falls into 未分组」一条把 Composition 输入改为不认识的相位（Composition 现按相位默认归列）。
 
 ## §5 性能基准（regression test）
 
