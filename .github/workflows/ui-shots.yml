@@ -47,8 +47,11 @@ jobs:
           git config user.name "ui-shots"
           git config user.email "ui-shots@users.noreply.github.com"
           for i in 1 2 3 4 5; do
-            git fetch origin chore/ui-shots-evidence && git checkout -B ev origin/chore/ui-shots-evidence || git checkout --orphan ev
-            git rm -rq --cached . >/dev/null 2>&1 || true
+            if git fetch origin chore/ui-shots-evidence; then
+              git checkout -f -B ev FETCH_HEAD
+            else
+              git checkout --orphan ev && git rm -rq --cached . >/dev/null 2>&1 || true
+            fi
             mkdir -p "shots/$SAFE_REF"
             rm -rf "shots/$SAFE_REF"/*
             cp ../out/* "shots/$SAFE_REF/" || true
@@ -86,8 +89,11 @@ jobs:
           git config user.name "ui-shots"
           git config user.email "ui-shots@users.noreply.github.com"
           for i in 1 2 3 4 5; do
-            git fetch origin chore/ui-shots-evidence && git checkout -B ev origin/chore/ui-shots-evidence || git checkout --orphan ev
-            git rm -rq --cached . >/dev/null 2>&1 || true
+            if git fetch origin chore/ui-shots-evidence; then
+              git checkout -f -B ev FETCH_HEAD
+            else
+              git checkout --orphan ev && git rm -rq --cached . >/dev/null 2>&1 || true
+            fi
             mkdir -p checks && cp ../out/checks.txt checks/
             git add checks
             git commit -qm "checks @ ${{ github.sha }}" || true
