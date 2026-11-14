@@ -281,7 +281,12 @@
   background: var(--surface-2);
 }
 
+/* The card wraps (slot · name · count, then the usage bar). Without a basis the
+ * name was the one item allowed to shrink, and on a narrow column it went to
+ * zero width while slot and count kept theirs — a card with no name. A 4em
+ * basis lets the count wrap under it instead. */
 .pinned .name {
+  flex: 1 1 4em;
   font-weight: var(--w-600);
 }
 
