@@ -12,7 +12,6 @@ import { useEffect, useRef, useState } from "react";
 import { ipc } from "../ipc";
 import {
   type Accent,
-  DEFAULT_FONT_SCALE,
   type Density,
   type FontScale,
   type ThemeMode,
@@ -449,6 +448,8 @@ export function SettingsModal() {
                         <span className={styles.nowrap}>{mod}0 恢复默认</span>
                       </span>
                     </div>
+                    {/* No separate 恢复默认 button (issue #29): the 标准 step is
+                        the default, and ⌘0 still returns to it. */}
                     <div className={styles.rowControl}>
                       <Segment
                         label="字号"
@@ -457,16 +458,6 @@ export function SettingsModal() {
                         onChange={setFontScale}
                         dataAttr="data-font-scale"
                       />
-                      <button
-                        type="button"
-                        className={styles.resetBtn}
-                        data-font-scale-reset
-                        aria-label="恢复默认字号"
-                        disabled={fontScale === DEFAULT_FONT_SCALE}
-                        onClick={() => setFontScale(DEFAULT_FONT_SCALE)}
-                      >
-                        恢复默认
-                      </button>
                     </div>
                   </div>
 

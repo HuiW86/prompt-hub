@@ -4,7 +4,7 @@ project: prompt-hub
 version: v0.28
 created: 2026-05-18
 last_modified: 2026-11-14
-status: draft  # v0.28 起草于 2026-11-14，待 HuiW86 签字（与 [[03-product-spec]] v0.34 同批，单裁点「设置弹窗改分组行形态」，issue #29 / PR #30）：§10.8.3 按新形态重写，`--w-settings-modal` 560→640 + 新增 `--h-settings-modal` 520，不新增颜色 token，明细见文末修订记录 v0.28。前 v0.27 于 2026-11-14 经 HuiW86 签字（与 [[03-product-spec]] v0.33 同批，单裁点「字号可调 + 悬停全文预览」按推荐写回，issue #25 / PR #26），明细见文末修订记录 v0.27。前 v0.26 于 2026-11-14 经 HuiW86 签字（与 [[032-panorama-work-stage-columns]] / [[03-product-spec]] v0.32 / [[06-prd]] v0.18 同批，单裁点「全景按工作阶段分列」），只改列数与序号，明细见文末修订记录 v0.26。前 v0.25 于 2026-11-14 经 HuiW86 签字（单裁点「全景改编号泳道 + 号位键帽 + 筛选框不常亮焦点环」按推荐通过）。起草说明：全景工作区视觉精修（V-01，issue #19）——§10.9.1–10.9.3 按实装重写、§10.9.4 与 §10.8.1 补两行，零新增 token，明细见文末修订记录 v0.25。前 v0.24 于 2026-11-13 经 HuiW86 签字（同批单裁点在 product-spec 按推荐通过）。起草说明：全景工作区与常用网站工作区的视觉契约补写（新增 §10.9 / §10.10，§10.3 与 §10.8.1 补行），照现行 CSS 写，**零新增 token**；与 [[03-product-spec]] v0.31 / [[06-prd]] v0.17 同批，明细见文末修订记录 v0.24。前 v0.23 于 2026-10-08 经 Rosa 在项目线程签字（人审批次 ⑬，单裁点「主界面减法 pass 四项」按推荐通过）：Toast 由右上角挪到底部居中（状态栏上方）+ Header 副标 / 相位格快捷键标签退场（与 [[03-product-spec]] v0.30 同批），明细见文末修订记录 v0.23。前 v0.22 于 2026-09-03 人审批次 ⑧ 经 omar 签字（与 [[06-prd]] v0.14 / [[03-product-spec]] v0.25 同批）。本版内容：§10.2.2 `ConfirmInline` 用量由六处收缩至一处（清空废纸篓）+ §11 新增「Toast 让位规则」（撤销 toast 不被普通 toast 顶掉，error 例外），两项都是**行为契约**不是施工细节，按 [[CLAUDE#§5.1.2]] 需签字。前 v0.21 于 2026-09-03 人审批次 ⑦ ratified（§10.2.2 接口契约第 6 条随 product-spec「锚点再按一次 = 无事发生」签字，第 5 条 `initialFocus` 必填属施工规范随批通过）；更前 v0.20 于 2026-09-01 人审批次 ⑥ ratified
+status: draft  # v0.28 起草于 2026-11-14，待 HuiW86 签字（与 [[03-product-spec]] v0.34 同批，单裁点「设置弹窗改分组行形态，并删掉字号旁的「恢复默认」按钮」，issue #29 / PR #30）：§10.8.3 按新形态重写，`--w-settings-modal` 560→640 + 新增 `--h-settings-modal` 520，不新增颜色 token，明细见文末修订记录 v0.28。前 v0.27 于 2026-11-14 经 HuiW86 签字（与 [[03-product-spec]] v0.33 同批，单裁点「字号可调 + 悬停全文预览」按推荐写回，issue #25 / PR #26），明细见文末修订记录 v0.27。前 v0.26 于 2026-11-14 经 HuiW86 签字（与 [[032-panorama-work-stage-columns]] / [[03-product-spec]] v0.32 / [[06-prd]] v0.18 同批，单裁点「全景按工作阶段分列」），只改列数与序号，明细见文末修订记录 v0.26。前 v0.25 于 2026-11-14 经 HuiW86 签字（单裁点「全景改编号泳道 + 号位键帽 + 筛选框不常亮焦点环」按推荐通过）。起草说明：全景工作区视觉精修（V-01，issue #19）——§10.9.1–10.9.3 按实装重写、§10.9.4 与 §10.8.1 补两行，零新增 token，明细见文末修订记录 v0.25。前 v0.24 于 2026-11-13 经 HuiW86 签字（同批单裁点在 product-spec 按推荐通过）。起草说明：全景工作区与常用网站工作区的视觉契约补写（新增 §10.9 / §10.10，§10.3 与 §10.8.1 补行），照现行 CSS 写，**零新增 token**；与 [[03-product-spec]] v0.31 / [[06-prd]] v0.17 同批，明细见文末修订记录 v0.24。前 v0.23 于 2026-10-08 经 Rosa 在项目线程签字（人审批次 ⑬，单裁点「主界面减法 pass 四项」按推荐通过）：Toast 由右上角挪到底部居中（状态栏上方）+ Header 副标 / 相位格快捷键标签退场（与 [[03-product-spec]] v0.30 同批），明细见文末修订记录 v0.23。前 v0.22 于 2026-09-03 人审批次 ⑧ 经 omar 签字（与 [[06-prd]] v0.14 / [[03-product-spec]] v0.25 同批）。本版内容：§10.2.2 `ConfirmInline` 用量由六处收缩至一处（清空废纸篓）+ §11 新增「Toast 让位规则」（撤销 toast 不被普通 toast 顶掉，error 例外），两项都是**行为契约**不是施工细节，按 [[CLAUDE#§5.1.2]] 需签字。前 v0.21 于 2026-09-03 人审批次 ⑦ ratified（§10.2.2 接口契约第 6 条随 product-spec「锚点再按一次 = 无事发生」签字，第 5 条 `initialFocus` 必填属施工规范随批通过）；更前 v0.20 于 2026-09-01 人审批次 ⑥ ratified
 author: co  # 🤝 人机共创（CLAUDE §5.2）
 related: [[01-spec]], [[02-constitution]], [[03-product-spec]], [[012-lock-visual-quality-anchor]], [[023-ui-reshape-before-release]], [[024-dark-cockpit-identity]], [[019-supersede-flat-visual-anchor]], [[020-restore-protocol-dark-band]], [[021-scene-layered-editing]], [[025-unified-anchored-editing]], [[CLAUDE-DESIGN]], [[015-expose-mcp-write-pipeline]], [[016-choose-dnd-and-resizable-layout]], [[018-absorb-promptscape-design]], [[026-fixed-spatial-layout]], [[028-reversible-delete]], [[asset-editing-and-adaptive-layout]]
 description: 手动 AI 编程仪表盘的视觉规范——tokens.css 单一真源 + 主题/elevation/组件视觉契约；写 CSS / 视觉时召回。版本叙事见 CHANGELOG
@@ -924,7 +924,7 @@ bundle 派生的 3 个跨组件 chrome primitive：
 | 说明文案 | **每条一行**（默认字号、640 宽下）。说得长的放组脚注而不是行内 |
 | 分段控件 | **一个底槽内连续排列**：底槽 `--surface-1` 底 + `--hairline` `--border-1` 框 + `--r-4`、内边距与项间距 `--s-0_5`；项高 `--h-chip`、左右内边距 `--s-2_5`、`--r-3`、无框、透明底、`--fg-3`，hover `--fg-1`；**选中项实底 `--surface-3` + `--shadow-1` + `--fg-1`**（v0.28，原为分开的描边按钮、选中只把边框换成 `--accent`）。**只有文字**：去掉每项前的图标与字号档的百分比。焦点环 `--accent` |
 | 按钮 | 行内动作按钮：高 `--h-chip`、左右 `--s-3`、`--surface-1` 底 + `--border-2` 框 + `--r-3`、`ph-action` `--fg-1`，hover `--surface-3` + `--border-3`，disabled `--op-dim`；不带图标。**危险动作只换文字色为琥珀** `--accent-swatch-amber`（「导入备份…」「清空废纸篓」），沿用 HotkeyBanner / Toast / 录键提示的琥珀警示惯例，**不新增颜色 token**；其余按钮中性 |
-| 外观页 | 组「显示」三行：主题（浅色 / 深色 / 跟随系统，无说明）· 字号（标准 / 大 / 特大；说明列出 `⌘=` 放大 · `⌘−` 缩小 · `⌘0` 恢复默认，每个「键 + 动词」不折行；段后一枚文字按钮「恢复默认」，`--fg-2`，hover 下划线，标准档时 disabled 为 `--fg-4` 而非隐藏——位置不跳）· 密度（舒适 / 紧凑）。组「颜色」一行：强调色 5 个色点；组脚注一行写明彩色同时换品牌色 |
+| 外观页 | 组「显示」三行：主题（浅色 / 深色 / 跟随系统，无说明）· 字号（标准 / 大 / 特大；说明列出 `⌘=` 放大 · `⌘−` 缩小 · `⌘0` 恢复默认，每个「键 + 动词」不折行；**v0.28 删去段后的「恢复默认」文字按钮**——「标准」档本身就是恢复默认，`⌘0` 也还在）· 密度（舒适 / 紧凑）。组「颜色」一行：强调色 5 个色点；组脚注一行写明彩色同时换品牌色 |
 | 强调色色点 | 按钮 `--h-chip` 见方、**圆形**、**`padding: 0`**（v0.28 修：UA 默认 padding 曾把 16px 色点挤成竖条，Chrome 所见，WebKit 默认 padding 较小）、透明底；色点 `--s-4` 圆形，染 `--accent-swatch-*`；**选中 = `--border-thick` `--fg-1` 外环**（环与色点之间留 `--s-0_5` 空隙），hover 未选中项外环 `--border-3`；不再叠 `Check` 图标。色点间距 `--s-1` |
 | 快捷键页 | 组「全局唤起」一行：名称「唤起快捷键」+ 说明；右栏是录键器（键帽 +「更改」+「恢复默认」）。录键器的错误 / 冲突提示（琥珀字）占行下方整行。组脚注一行：被占用时会提示 |
 | 更新页 | 组「软件更新」两行：自动检查更新（opt-in `role="switch"` 开关，on 态染 `--accent`）· 版本状态（说明位显示状态文字，error 态提到 `--fg-1`；右栏「检查更新」或「下载并安装」——后者 `--accent` 实底，复用 updaterStore，[[017-enable-auto-update]]）|
@@ -1204,11 +1204,12 @@ bundle 派生的 3 个跨组件 chrome primitive：
 
 ### v0.28（2026-11-14）— 设置弹窗改分组行形态（[issue #29](https://github.com/HuiW86/prompt-hub/issues/29)）
 
-> **状态：`draft`——待 HuiW86 签字**，与 [[03-product-spec]] v0.34 同批。一句话决定：**设置弹窗改为 macOS 式分组行（组卡片 + 左文右控 + 底槽式分段控件 + 固定 640 × 520），危险动作改琥珀字。** 推荐：同意。实现见 PR #30。
+> **状态：`draft`——待 HuiW86 签字**，与 [[03-product-spec]] v0.34 同批。一句话决定：**设置弹窗改为 macOS 式分组行（组卡片 + 左文右控 + 底槽式分段控件 + 固定 640 × 520），危险动作改琥珀字，字号旁的「恢复默认」按钮删掉。** 推荐：同意。实现见 PR #30。
 
 | 章节 | 改动 |
 |------|------|
 | §10.8.3 | 整节按新形态重写：固定尺寸、去右侧重复标题、组 / 行 / 分段控件 / 按钮 / 色点契约，四页逐页结构 |
+| §10.8.3 外观页 | 删去 v0.27 新增的字号「恢复默认」文字按钮（需签字，单独 commit，可单独回退）|
 
 **token**：`--w-settings-modal` 560px → **640px**（改值）；新增 **`--h-settings-modal` 520px**。不新增颜色 token——琥珀字复用 `--accent-swatch-amber`。
 

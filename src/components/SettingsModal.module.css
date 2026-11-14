@@ -316,36 +316,6 @@
   outline-offset: 0;
 }
 
-/* Quiet text button after the text-size segment: secondary to picking a size,
-   and disabled (not hidden) at the default so its place does not jump. */
-.resetBtn {
-  composes: ph-action from "../styles/typography.module.css";
-  height: var(--h-chip);
-  padding: 0 var(--s-1);
-  border: 0;
-  border-radius: var(--r-3);
-  background: transparent;
-  color: var(--fg-2);
-  cursor: pointer;
-  appearance: none;
-  transition: color var(--d-fast) var(--ease);
-}
-
-.resetBtn:hover:not(:disabled) {
-  color: var(--fg-1);
-  text-decoration: underline;
-}
-
-.resetBtn:disabled {
-  color: var(--fg-4);
-  cursor: default;
-}
-
-.resetBtn:focus-visible {
-  outline: var(--border-thick) solid var(--accent);
-  outline-offset: 0;
-}
-
 /* ── Accent swatches ────────────────────────────────────────────────────────
    Round dots; the picked one gets an outer ring (issue #29 V6/7). padding: 0
    is load-bearing: the UA button padding squeezed the 16px dot inside the 24px
