@@ -35,7 +35,9 @@
         "lineHeight": "17.4px",
         "color": "rgb(126, 126, 132)"
       },
-      "truncatedSpans": 16,
+      "truncatedNames": 16,
+      "nameCount": 42,
+      "columnTitlesTruncated": 0,
       "overflowX": false
     },
     "title-attr-on-rows": 27,
@@ -74,7 +76,9 @@
         "lineHeight": "17.4px",
         "color": "rgb(126, 126, 132)"
       },
-      "truncatedSpans": 22,
+      "truncatedNames": 22,
+      "nameCount": 42,
+      "columnTitlesTruncated": 0,
       "overflowX": false
     },
     "metrics-largest-1024": {
@@ -110,7 +114,9 @@
         "lineHeight": "17.4px",
         "color": "rgb(126, 126, 132)"
       },
-      "truncatedSpans": 22,
+      "truncatedNames": 22,
+      "nameCount": 42,
+      "columnTitlesTruncated": 0,
       "overflowX": false
     },
     "metrics-default-800": {
@@ -146,7 +152,9 @@
         "lineHeight": "17.4px",
         "color": "rgb(126, 126, 132)"
       },
-      "truncatedSpans": 23,
+      "truncatedNames": 23,
+      "nameCount": 42,
+      "columnTitlesTruncated": 8,
       "overflowX": false
     },
     "metrics-largest-800": {
@@ -182,7 +190,9 @@
         "lineHeight": "17.4px",
         "color": "rgb(126, 126, 132)"
       },
-      "truncatedSpans": 23,
+      "truncatedNames": 23,
+      "nameCount": 42,
+      "columnTitlesTruncated": 8,
       "overflowX": false
     }
   }
