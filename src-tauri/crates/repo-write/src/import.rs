@@ -769,19 +769,21 @@ mod tests {
 
         // Layout set after the 1.4 backup: one row matches an asset in the
         // file, one points at an asset the file does not contain.
-        place(&conn, "macro", &m, Some("align"), Some(3));
+        place(&conn, "macro", &m, Some("understand"), Some(3));
         place(&conn, "macro", "gone-after-restore", Some("tool"), None);
 
         let summary = import_json(&conn, &json.to_string()).expect("1.4 imports");
         assert_eq!(summary.panorama_placements, None);
         assert_eq!(
             placements(&conn),
-            vec![("macro".into(), m, Some("align".into()), Some(3))]
+            vec![("macro".into(), m, Some("understand".into()), Some(3))]
         );
     }
 
     #[test]
     fn panorama_import_drops_dangling_rows_without_failing() {
+        // The group ids below are the retired 1.5 intent ids: a 1.5 file
+        // still imports, and `polish` lands as its stage id `iterate`.
         let (_dir, conn) = migrated_conn();
         let m = first_macro(&conn);
         let mut json: serde_json::Value =
@@ -795,7 +797,7 @@ mod tests {
         assert_eq!(summary.panorama_placements, Some(1));
         assert_eq!(
             placements(&conn),
-            vec![("macro".into(), m, Some("polish".into()), Some(7))]
+            vec![("macro".into(), m, Some("iterate".into()), Some(7))]
         );
     }
 
@@ -806,7 +808,7 @@ mod tests {
         let mut json: serde_json::Value =
             serde_json::from_str(&export_json(&conn).unwrap()).unwrap();
         json["panorama_placements"] = serde_json::json!([]);
-        place(&conn, "macro", &m, Some("align"), Some(1));
+        place(&conn, "macro", &m, Some("understand"), Some(1));
         let summary = import_json(&conn, &json.to_string()).expect("import");
         assert_eq!(summary.panorama_placements, Some(0));
         assert!(placements(&conn).is_empty());
@@ -819,7 +821,7 @@ mod tests {
         let mut json: serde_json::Value =
             serde_json::from_str(&export_json(&conn).unwrap()).unwrap();
         json["panorama_placements"] = serde_json::Value::Null;
-        place(&conn, "macro", &m, Some("align"), Some(1));
+        place(&conn, "macro", &m, Some("understand"), Some(1));
         assert!(import_json(&conn, &json.to_string()).is_err());
         assert_eq!(placements(&conn).len(), 1, "nothing changed");
     }

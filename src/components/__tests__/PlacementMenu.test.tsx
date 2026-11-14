@@ -138,7 +138,7 @@ describe("PlacementMenu — adjusting group and pin slot in the panorama", () =>
   it("changing the group sends the full placement and closes the menu", async () => {
     await renderView();
     selectByClickingPlace("审查改动");
-    fireEvent.click(within(menu()).getByRole("button", { name: "收敛与方案" }));
+    fireEvent.click(within(menu()).getByRole("button", { name: "收敛" }));
     await waitFor(() =>
       expect(setCalls()).toEqual([
         {
@@ -193,7 +193,7 @@ describe("PlacementMenu — adjusting group and pin slot in the panorama", () =>
     table.push({
       assetKind: "macro",
       assetId: "a",
-      groupId: "align",
+      groupId: "understand",
       pinSlot: 1,
     });
     await renderView();
@@ -210,7 +210,7 @@ describe("PlacementMenu — adjusting group and pin slot in the panorama", () =>
     );
     expect(usePanoramaStore.getState().placements).toEqual(
       expect.arrayContaining([
-        { assetKind: "macro", assetId: "a", groupId: "align", pinSlot: 3 },
+        { assetKind: "macro", assetId: "a", groupId: "understand", pinSlot: 3 },
       ]),
     );
 
@@ -219,13 +219,18 @@ describe("PlacementMenu — adjusting group and pin slot in the panorama", () =>
     act(() => action?.onClick());
     await waitFor(() => expect(setCalls()).toHaveLength(3));
     expect(setCalls().slice(1)).toEqual([
-      { assetKind: "macro", assetId: "a", groupId: "align", pinSlot: 1 },
+      { assetKind: "macro", assetId: "a", groupId: "understand", pinSlot: 1 },
       { assetKind: "macro", assetId: "c", groupId: null, pinSlot: 3 },
     ]);
     await waitFor(() =>
       expect(usePanoramaStore.getState().placements).toEqual(
         expect.arrayContaining([
-          { assetKind: "macro", assetId: "a", groupId: "align", pinSlot: 1 },
+          {
+            assetKind: "macro",
+            assetId: "a",
+            groupId: "understand",
+            pinSlot: 1,
+          },
           { assetKind: "macro", assetId: "c", groupId: null, pinSlot: 3 },
         ]),
       ),

@@ -16,7 +16,8 @@ import {
   type AxisValueLookup,
 } from "./alignmentCopyText";
 
-// The panorama model (I-03 / ADR-031). Pure: no IPC, no store, `now` passed in.
+// The panorama model (I-03 / ADR-031; columns per ADR-032). Pure: no IPC, no
+// store, `now` passed in.
 //
 // Every item is always present in the model. Tiers decide how loud an item is,
 // never whether it is shown ("变暗不消失"), and position comes from the user's
@@ -53,7 +54,7 @@ export interface PanoramaColumn {
 }
 
 export interface PanoramaModel {
-  /** The six intent columns, plus `ungrouped` when it has items. */
+  /** The eight work-stage columns, plus `ungrouped` when it has items. */
   columns: PanoramaColumn[];
   /** The bottom strip: live cues, tools. */
   strip: PanoramaColumn[];
@@ -66,42 +67,50 @@ export const ACTIVE_WINDOW_DAYS = 90;
 export const NEW_WINDOW_DAYS = 14;
 const DAY_MS = 86_400_000;
 
+// Titles are the phase names, so a column reads the same as the phase bar.
 export const COLUMN_TITLES: Record<PanoramaColumnId, string> = {
-  align: "对齐与理解",
-  diverge: "发散与调研",
-  converge: "收敛与方案",
-  execute: "执行与验收",
-  polish: "打磨与表达",
-  retain: "沉淀",
+  understand: "理解",
+  diverge: "发散",
+  converge: "收敛",
+  plan: "规划",
+  generate: "生成",
+  execute: "执行",
+  iterate: "迭代",
+  distill: "沉淀",
   cue: "中途口令",
   tool: "工具",
   ungrouped: "未分组",
 };
 
-export const INTENT_COLUMN_IDS: readonly PanoramaGroupId[] = [
-  "align",
+/** The work stages, left to right in the order a piece of work moves. */
+export const STAGE_COLUMN_IDS: readonly PanoramaGroupId[] = [
+  "understand",
   "diverge",
   "converge",
+  "plan",
+  "generate",
   "execute",
-  "polish",
-  "retain",
+  "iterate",
+  "distill",
 ];
 export const STRIP_COLUMN_IDS: readonly PanoramaGroupId[] = ["cue", "tool"];
 export const ALL_GROUP_IDS: readonly PanoramaGroupId[] = [
-  ...INTENT_COLUMN_IDS,
+  ...STAGE_COLUMN_IDS,
   ...STRIP_COLUMN_IDS,
 ];
 
-/** The one default rule: alignment phrases follow their phase. */
+/** The one default rule: an item that carries a phase sits in that phase's
+ *  column. Alignment phrases and compositions carry one; macros, scene
+ *  phrases and modifiers do not, so they wait in 未分组 for the user. */
 export const PHASE_TO_GROUP: Readonly<Record<string, PanoramaGroupId>> = {
-  "phase-understand": "align",
+  "phase-understand": "understand",
   "phase-diverge": "diverge",
   "phase-converge": "converge",
-  "phase-plan": "converge",
-  "phase-generate": "execute",
+  "phase-plan": "plan",
+  "phase-generate": "generate",
   "phase-execute": "execute",
-  "phase-iterate": "polish",
-  "phase-distill": "retain",
+  "phase-iterate": "iterate",
+  "phase-distill": "distill",
   "phase-live": "cue",
 };
 
@@ -259,7 +268,7 @@ export function buildPanorama(input: BuildPanoramaInput): PanoramaModel {
       usageCount: c.usageCount,
       lastUsedAt: c.lastUsedAt,
       createdAt: c.createdAt,
-      defaultGroup: "ungrouped",
+      defaultGroup: PHASE_TO_GROUP[c.phaseId] ?? "ungrouped",
       usage: usage("composition", c.id, "composition", {
         modifierIds: c.modifierIds,
         phaseId: c.phaseId,
@@ -335,7 +344,7 @@ export function buildPanorama(input: BuildPanoramaInput): PanoramaModel {
     };
   };
 
-  const columns = INTENT_COLUMN_IDS.map(column);
+  const columns = STAGE_COLUMN_IDS.map(column);
   if ((buckets.get("ungrouped")?.length ?? 0) > 0) {
     columns.push(column("ungrouped"));
   }
