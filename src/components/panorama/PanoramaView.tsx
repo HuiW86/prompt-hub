@@ -11,6 +11,7 @@ import {
 import { Search } from "lucide-react";
 
 import { useCopy } from "../../hooks/useCopy";
+import { hoverPreviewHandlers } from "../../stores/hoverPreviewStore";
 import { usePanoramaStore, panoramaKey } from "../../stores/panoramaStore";
 import { usePromptStore } from "../../stores/promptStore";
 import { useSessionStore } from "../../stores/sessionStore";
@@ -23,7 +24,7 @@ import {
   matchesFilter,
   type PanoramaColumn,
   type PanoramaItem,
-  INTENT_COLUMN_IDS,
+  STAGE_COLUMN_IDS,
 } from "../../utils/panorama";
 
 import { PlacementMenu, type PlacementChange } from "./PlacementMenu";
@@ -47,9 +48,9 @@ function formatDate(iso: string | null): string {
   return `${d.getFullYear()}-${mm}-${dd}`;
 }
 
-/** The six intent columns read left to right as one workflow; number them. */
+/** The stage columns read left to right as one workflow; number them. */
 function ordinal(id: string): string | null {
-  const i = (INTENT_COLUMN_IDS as readonly string[]).indexOf(id);
+  const i = (STAGE_COLUMN_IDS as readonly string[]).indexOf(id);
   return i === -1 ? null : String(i + 1).padStart(2, "0");
 }
 
@@ -505,7 +506,13 @@ export function PanoramaView() {
           data-tier={item.tier}
           data-dimmed={dimmed ? "true" : undefined}
           aria-current={isSelected ? "true" : undefined}
-          title={item.content}
+          // Full prompt on hover (custom panel, not the native title tooltip:
+          // that one was slow, small and could not scroll a long prompt).
+          {...hoverPreviewHandlers({
+            title: item.name,
+            content: item.content,
+            meta: `${item.usageCount} 次 · ${formatDate(item.lastUsedAt)}`,
+          })}
           tabIndex={-1}
           ref={(el) => {
             if (el) rowButtons.current.set(key, el);

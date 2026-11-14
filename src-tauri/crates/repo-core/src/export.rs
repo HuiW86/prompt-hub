@@ -11,7 +11,7 @@ use crate::repo::{alignment_phrase_from_row, hydrate_alignment_phrase, parse_ts,
 
 // The data-layer schema version of the export envelope (PRD §6.9 / §7.7). This is
 // the `major.minor` contract for the JSON file itself, NOT the SQLite migration
-// `user_version` (currently 16). Bump it when the export shape changes; minor for
+// `user_version` (currently 17). Bump it when the export shape changes; minor for
 // backward-compatible additions, major for breaking changes.
 //
 // 1.1 → 1.2: every asset row gained the optional `deletedAt` field (ADR-028).
@@ -31,7 +31,11 @@ use crate::repo::{alignment_phrase_from_row, hydrate_alignment_phrase, parse_ts,
 // 1.4 → 1.5 (I-02, M-01): optional panorama_placements, same three states as
 // website_library. Missing keeps the local layout rows that still match an
 // asset after the restore; present empty clears it; null is invalid.
-pub const DATA_SCHEMA_VERSION: &str = "1.5";
+// 1.5 → 1.6 (ADR-032): panorama group ids are the work stages. A 1.5 file
+// still imports — the retired ids `align` / `polish` / `retain` deserialize as
+// `understand` / `iterate` / `distill` — but a 1.6 file carrying `plan` or
+// `generate` is refused by a 1.5 build rather than read half-way.
+pub const DATA_SCHEMA_VERSION: &str = "1.6";
 
 // The full-fidelity backup envelope (PRD §6.9). Unlike the read paths in `repo`,
 // every list here is UNFILTERED — deprecated assets, invisible phases/scenes AND

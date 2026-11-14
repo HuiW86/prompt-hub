@@ -39,15 +39,25 @@ impl PanoramaAssetKind {
     }
 }
 
+/// A panorama column. Eight work stages that mirror the phases one to one,
+/// plus the two strip groups (ADR-032, replacing ADR-031's six intent
+/// columns). The aliases let a 1.5 export, written with the old intent ids,
+/// import without loss: `align`, `polish` and `retain` were renamed, the rest
+/// kept their spelling. Migration 0017 applies the same mapping to the table.
 #[derive(Debug, Clone, Copy, Serialize, Deserialize, PartialEq, Eq, Hash)]
 #[serde(rename_all = "snake_case")]
 pub enum PanoramaGroupId {
-    Align,
+    #[serde(alias = "align")]
+    Understand,
     Diverge,
     Converge,
+    Plan,
+    Generate,
     Execute,
-    Polish,
-    Retain,
+    #[serde(alias = "polish")]
+    Iterate,
+    #[serde(alias = "retain")]
+    Distill,
     Cue,
     Tool,
 }
@@ -55,12 +65,14 @@ pub enum PanoramaGroupId {
 impl PanoramaGroupId {
     pub fn as_str(self) -> &'static str {
         match self {
-            Self::Align => "align",
+            Self::Understand => "understand",
             Self::Diverge => "diverge",
             Self::Converge => "converge",
+            Self::Plan => "plan",
+            Self::Generate => "generate",
             Self::Execute => "execute",
-            Self::Polish => "polish",
-            Self::Retain => "retain",
+            Self::Iterate => "iterate",
+            Self::Distill => "distill",
             Self::Cue => "cue",
             Self::Tool => "tool",
         }
@@ -68,12 +80,14 @@ impl PanoramaGroupId {
 
     pub fn parse(s: &str) -> Option<Self> {
         Some(match s {
-            "align" => Self::Align,
+            "understand" => Self::Understand,
             "diverge" => Self::Diverge,
             "converge" => Self::Converge,
+            "plan" => Self::Plan,
+            "generate" => Self::Generate,
             "execute" => Self::Execute,
-            "polish" => Self::Polish,
-            "retain" => Self::Retain,
+            "iterate" => Self::Iterate,
+            "distill" => Self::Distill,
             "cue" => Self::Cue,
             "tool" => Self::Tool,
             _ => return None,

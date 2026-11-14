@@ -93,6 +93,11 @@ const MIGRATIONS: &[Migration] = &[
         name: "0016_panorama_placements",
         sql: include_str!("../migrations/0016_panorama_placements.sql"),
     },
+    Migration {
+        target_version: 17,
+        name: "0017_panorama_work_stages",
+        sql: include_str!("../migrations/0017_panorama_work_stages.sql"),
+    },
 ];
 
 struct Migration {
@@ -1058,11 +1063,11 @@ mod tests {
             .expect("seed a website");
         }
 
-        let conn = open_and_migrate(&path).expect("migrate v15 -> v16");
+        let conn = open_and_migrate(&path).expect("migrate v15 -> latest");
         let v: u32 = conn
             .pragma_query_value(None, "user_version", |row| row.get(0))
             .expect("read user_version");
-        assert_eq!(v, 16);
+        assert_eq!(v, latest_version());
         let rows: i64 = conn
             .query_row("SELECT COUNT(*) FROM panorama_placements", [], |r| r.get(0))
             .expect("table exists");
@@ -1081,7 +1086,7 @@ mod tests {
         // The partial unique index: two rows cannot share a pin slot, but any
         // number may hold none.
         conn.execute(
-            "INSERT INTO panorama_placements VALUES ('macro', 'a', 'align', 3), ('macro', 'b', 'align', NULL), ('macro', 'c', 'tool', NULL)",
+            "INSERT INTO panorama_placements VALUES ('macro', 'a', 'understand', 3), ('macro', 'b', 'understand', NULL), ('macro', 'c', 'tool', NULL)",
             [],
         )
         .expect("one pin + two unpinned");
@@ -1101,11 +1106,91 @@ mod tests {
         );
         assert!(
             conn.execute(
-                "INSERT INTO panorama_placements VALUES ('scene', 'f', 'align', NULL)",
+                "INSERT INTO panorama_placements VALUES ('scene', 'f', 'understand', NULL)",
                 []
             )
             .is_err(),
             "CHECK keeps asset_kind to the five kinds"
         );
+    }
+
+    #[test]
+    fn migration_0017_carries_every_placement_onto_the_work_stage_ids() {
+        let dir = tempfile::tempdir().expect("tempdir");
+        let path = dir.path().join("prompt-hub.db");
+        {
+            let conn = Connection::open(&path).expect("open");
+            configure(&conn).expect("configure");
+            for m in MIGRATIONS.iter().filter(|m| m.target_version <= 16) {
+                conn.execute_batch(m.sql)
+                    .unwrap_or_else(|e| panic!("migration {} failed: {e}", m.name));
+            }
+            conn.pragma_update(None, "user_version", 16u32)
+                .expect("pin v16");
+            conn.execute_batch(
+                "INSERT INTO panorama_placements VALUES
+                   ('macro', 'm1', 'align', 1),
+                   ('macro', 'm2', 'diverge', NULL),
+                   ('macro', 'm3', 'converge', NULL),
+                   ('macro', 'm4', 'execute', 4),
+                   ('phrase', 'p1', 'polish', NULL),
+                   ('phrase', 'p2', 'retain', 9),
+                   ('alignment_phrase', 'a1', 'cue', NULL),
+                   ('modifier', 'x1', 'tool', NULL),
+                   ('composition', 'c1', NULL, 2);",
+            )
+            .expect("seed v16 layout");
+        }
+
+        let conn = open_and_migrate(&path).expect("migrate v16 -> v17");
+        let v: u32 = conn
+            .pragma_query_value(None, "user_version", |row| row.get(0))
+            .expect("read user_version");
+        assert_eq!(v, 17);
+        let rows: Vec<(String, Option<String>, Option<i64>)> = conn
+            .prepare(
+                "SELECT asset_id, group_id, pin_slot FROM panorama_placements ORDER BY asset_id",
+            )
+            .unwrap()
+            .query_map([], |r| Ok((r.get(0)?, r.get(1)?, r.get(2)?)))
+            .unwrap()
+            .collect::<rusqlite::Result<_>>()
+            .unwrap();
+        let expect =
+            |id: &str, g: Option<&str>, s: Option<i64>| (id.to_string(), g.map(str::to_string), s);
+        assert_eq!(
+            rows,
+            vec![
+                expect("a1", Some("cue"), None),
+                expect("c1", None, Some(2)),
+                expect("m1", Some("understand"), Some(1)),
+                expect("m2", Some("diverge"), None),
+                expect("m3", Some("converge"), None),
+                expect("m4", Some("execute"), Some(4)),
+                expect("p1", Some("iterate"), None),
+                expect("p2", Some("distill"), Some(9)),
+                expect("x1", Some("tool"), None),
+            ]
+        );
+
+        // The new CHECK takes the stage ids and refuses the retired ones.
+        conn.execute(
+            "INSERT INTO panorama_placements VALUES ('macro', 'n1', 'plan', NULL), ('macro', 'n2', 'generate', NULL)",
+            [],
+        )
+        .expect("new stage ids accepted");
+        assert!(conn
+            .execute(
+                "INSERT INTO panorama_placements VALUES ('macro', 'n3', 'polish', NULL)",
+                []
+            )
+            .is_err());
+        // The pin-slot index came back with the rebuilt table.
+        assert!(conn
+            .execute(
+                "INSERT INTO panorama_placements VALUES ('macro', 'n4', NULL, 1)",
+                []
+            )
+            .is_err());
     }
 }

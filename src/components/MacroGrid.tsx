@@ -11,6 +11,7 @@ import { useRegionNav } from "../hooks/useRegionNav";
 import { usePromptStore } from "../stores/promptStore";
 import { useSettingsStore } from "../stores/settingsStore";
 import { useToastStore } from "../stores/toastStore";
+import { hoverPreviewHandlers } from "../stores/hoverPreviewStore";
 import { toUserMessage } from "../utils/errorMessage";
 import type { Macro } from "../ipc/types";
 
@@ -309,7 +310,11 @@ function SortableMacroCard({
         type="button"
         className={styles.copyArea}
         aria-label={macro.name}
-        title={macro.content}
+        {...hoverPreviewHandlers({
+          title: macro.name,
+          content: macro.content,
+          meta: `${macro.usageCount} 次`,
+        })}
         data-nav-item
         tabIndex={-1}
         onClick={() =>

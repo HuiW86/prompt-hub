@@ -6,6 +6,7 @@ import { useUndoableDelete } from "../hooks/useUndoableDelete";
 import { GROUP_KINDS, type GroupKind, type Modifier } from "../ipc/types";
 import { usePromptStore } from "../stores/promptStore";
 import { useToastStore } from "../stores/toastStore";
+import { hoverPreviewHandlers } from "../stores/hoverPreviewStore";
 import { toUserMessage } from "../utils/errorMessage";
 
 import {
@@ -134,7 +135,14 @@ export function ModifierGrid() {
                           ? `${styles.atomChip} ${primitiveStyles.protocol} ${primitiveStyles.flash}`
                           : styles.atomChip
                       }
-                      title={m.content}
+                      // Empty title suppresses Chip's native name tooltip;
+                      // the hover panel shows name + full content instead.
+                      title=""
+                      {...hoverPreviewHandlers({
+                        title: m.name,
+                        content: m.content,
+                        meta: `${m.usageCount} 次`,
+                      })}
                       aria-label={m.name}
                       onClick={() =>
                         void copy(

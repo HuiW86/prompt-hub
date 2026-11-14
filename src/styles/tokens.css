@@ -341,17 +341,30 @@
     "Geist Mono", ui-monospace, SFMono-Regular, "SF Mono", Menlo, Consolas,
     monospace;
 
+  /* User text size (settings · 外观 · 字号, ⌘= / ⌘- / ⌘0). Every --t-* below
+     is its px value times this factor, so one root class rescales all text in
+     step while spacing and anchor heights (§3 / §3a) stay put — larger text,
+     same layout skeleton. Steps live on root classes (below), set by
+     settingsStore.setFontScale. Capped at 1.25: past that the fixed 22–24px
+     chip rows (--h-chip) can no longer hold a 13px label at --lh-tight. */
+  --font-scale: 1;
+
   /* Sizes */
-  --t-12: 12px;
-  --t-13: 13px;
-  --t-14: 14px;
-  --t-15: 15px; /* macro tile names — hero tier below page titles */
-  --t-16: 16px;
-  --t-20: 20px;
+  --t-12: calc(12px * var(--font-scale));
+  --t-13: calc(13px * var(--font-scale));
+  --t-14: calc(14px * var(--font-scale));
+  /* macro tile names — hero tier below page titles */
+  --t-15: calc(15px * var(--font-scale));
+  --t-16: calc(16px * var(--font-scale));
+  --t-20: calc(20px * var(--font-scale));
 
   /* Line heights */
   --lh-tight: 1.2;
   --lh-body: 1.45;
+  /* Long-form reading (full prompt preview). Body 1.45 is tuned for 1–3 line
+     card copy; a 30-line CJK/English prompt needs the extra lead to keep the
+     eye on the line. */
+  --lh-read: 1.6;
 
   /* Weights */
   --w-400: 400;
@@ -364,8 +377,17 @@
   --tr-meta: 0.08em; /* uppercase meta labels (region count, key labels) */
 
   /* Sub-grid type sizes — bundle precision tier (ADR-012) */
-  --t-10: 10px; /* num badge */
-  --t-11: 11px; /* meta key, count, kbd-sm */
+  --t-10: calc(10px * var(--font-scale)); /* num badge */
+  --t-11: calc(11px * var(--font-scale)); /* meta key, count, kbd-sm */
+}
+
+/* Text-size steps. Not density: density (§3c) is forbidden from touching
+   type tokens and still is — this tier touches ONLY --font-scale. */
+:root.text-large {
+  --font-scale: 1.125;
+}
+:root.text-xlarge {
+  --font-scale: 1.25;
 }
 
 /* ============================================================
@@ -462,6 +484,14 @@
      of a long phrase. Capped so the textarea wraps at a readable measure and
      the panel keeps clear of the frame edges it is clamped against. */
   --w-anchored-editor-max: 360px;
+
+  /* Full-prompt hover preview (HoverPreview). A ~40em reading measure: wide
+     enough that a long prompt is a few dozen lines, not a hundred; narrow
+     enough to stay a side panel next to the hovered row. Scales with text so
+     the line length in characters holds at every --font-scale step. Height is
+     not capped here: the panel takes what the frame allows (JS clamp) and
+     scrolls past that — more of a long prompt visible means less scrolling. */
+  --w-hover-preview: calc(480px * var(--font-scale));
 
   /* Toast width cap — long error strings wrap instead of stretching the toast
      across the viewport (P1-3 overflow guard). */

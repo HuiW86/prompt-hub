@@ -47,7 +47,7 @@ fn exported_json_shape_matches_data_contract() {
     //
     // 1.4 → 1.5 with I-02: a new top-level `panorama_placements` key (view
     // layout, not an asset). Minor bump; 1.4 files import and keep local layout.
-    assert_eq!(obj["schema_version"], "1.5");
+    assert_eq!(obj["schema_version"], "1.6");
 
     // D2 + SOP-not-shipped: these keys must be ABSENT from the envelope.
     assert!(

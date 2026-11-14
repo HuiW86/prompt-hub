@@ -19,6 +19,7 @@ import {
   Rows3,
   Rows4,
   Sun,
+  Type,
   Upload,
   X,
 } from "lucide-react";
@@ -27,7 +28,9 @@ import { useEffect, useRef, useState } from "react";
 import { ipc } from "../ipc";
 import {
   type Accent,
+  DEFAULT_FONT_SCALE,
   type Density,
+  type FontScale,
   type ThemeMode,
   useSettingsStore,
 } from "../stores/settingsStore";
@@ -35,6 +38,7 @@ import { usePromptStore } from "../stores/promptStore";
 import { useToastStore } from "../stores/toastStore";
 import { useUpdaterStore } from "../stores/updaterStore";
 import { toUserMessage } from "../utils/errorMessage";
+import { primaryModifierLabel } from "../utils/platform";
 
 import { HotkeyRecorder } from "./HotkeyRecorder";
 import { TrashSection } from "./TrashSection";
@@ -71,6 +75,14 @@ const DENSITY_OPTIONS: { value: Density; label: string; icon: typeof Rows3 }[] =
     { value: "compact", label: "紧凑", icon: Rows4 },
   ];
 
+// Text size steps (issue: 字号偏小). Percentages are shown so "大" is not a
+// guess; each step scales type only (tokens.css --font-scale).
+const FONT_SCALE_OPTIONS: { value: FontScale; label: string; pct: string }[] = [
+  { value: "standard", label: "标准", pct: "100%" },
+  { value: "large", label: "大", pct: "112.5%" },
+  { value: "xlarge", label: "特大", pct: "125%" },
+];
+
 const ACCENT_OPTIONS: { value: Accent; label: string; dot: string }[] = [
   { value: "neutral", label: "中性", dot: styles.dotNeutral },
   { value: "blue", label: "蓝", dot: styles.dotBlue },
@@ -100,6 +112,8 @@ export function SettingsModal() {
   const setAccent = useSettingsStore((s) => s.setAccent);
   const density = useSettingsStore((s) => s.density);
   const setDensity = useSettingsStore((s) => s.setDensity);
+  const fontScale = useSettingsStore((s) => s.fontScale);
+  const setFontScale = useSettingsStore((s) => s.setFontScale);
 
   const enabled = useUpdaterStore((s) => s.enabled);
   const status = useUpdaterStore((s) => s.status);
@@ -405,6 +419,60 @@ export function SettingsModal() {
                       {label}
                     </button>
                   ))}
+                </div>
+              </div>
+
+              <div className={styles.field}>
+                <span className={styles.fieldLabel}>字号</span>
+                <span className={styles.fieldHint}>
+                  放大界面与全文预览的文字，布局与留白不变。快捷键{" "}
+                  <span className={styles.nowrap}>
+                    {primaryModifierLabel()}= 放大
+                  </span>{" "}
+                  ·{" "}
+                  <span className={styles.nowrap}>
+                    {primaryModifierLabel()}− 缩小
+                  </span>{" "}
+                  ·{" "}
+                  <span className={styles.nowrap}>
+                    {primaryModifierLabel()}0 恢复默认
+                  </span>
+                  。
+                </span>
+                <div className={styles.segmentRow}>
+                  <div
+                    className={styles.segment}
+                    role="group"
+                    aria-label="字号"
+                  >
+                    {FONT_SCALE_OPTIONS.map(({ value, label, pct }) => (
+                      <button
+                        key={value}
+                        type="button"
+                        className={cx(
+                          styles.segItem,
+                          fontScale === value && styles.active,
+                        )}
+                        aria-pressed={fontScale === value}
+                        data-font-scale={value}
+                        onClick={() => setFontScale(value)}
+                      >
+                        <Type size={13} strokeWidth={2} aria-hidden />
+                        {label}
+                        <span className={styles.segMeta}>{pct}</span>
+                      </button>
+                    ))}
+                  </div>
+                  <button
+                    type="button"
+                    className={styles.resetBtn}
+                    data-font-scale-reset
+                    aria-label="恢复默认字号"
+                    disabled={fontScale === DEFAULT_FONT_SCALE}
+                    onClick={() => setFontScale(DEFAULT_FONT_SCALE)}
+                  >
+                    恢复默认
+                  </button>
                 </div>
               </div>
 

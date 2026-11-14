@@ -10,7 +10,7 @@ import { Dashboard } from "./layouts/Dashboard";
 import { usePromptStore } from "./stores/promptStore";
 import { startWakeListener, useSessionStore } from "./stores/sessionStore";
 import { selectIsSearching, useSearchStore } from "./stores/searchStore";
-import { useSettingsStore } from "./stores/settingsStore";
+import { DEFAULT_FONT_SCALE, useSettingsStore } from "./stores/settingsStore";
 import { useUpdaterStore } from "./stores/updaterStore";
 import { isPrimaryModifier } from "./utils/platform";
 
@@ -94,6 +94,37 @@ function App() {
       }
       e.preventDefault();
       useSettingsStore.getState().openSettings();
+    }
+    document.addEventListener("keydown", onKey);
+    return () => document.removeEventListener("keydown", onKey);
+  }, []);
+
+  // ⌘/Ctrl = (or +) / − / 0: larger text, smaller text, default text size —
+  // the convention every Mac app and browser uses, so the setting is findable
+  // without opening settings. Text only (settingsStore FontScale), not a page
+  // zoom: the panorama keeps its one-screen layout at every step. Matched on
+  // `code` as well as `key` so shifted and keypad variants all land.
+  useEffect(() => {
+    function onKey(e: KeyboardEvent) {
+      if (!isPrimaryModifier(e) || e.altKey) return;
+      const s = useSettingsStore.getState();
+      if (e.key === "=" || e.key === "+" || e.code === "NumpadAdd") {
+        e.preventDefault();
+        s.stepFontScale(1);
+      } else if (
+        e.key === "-" ||
+        e.key === "_" ||
+        e.code === "NumpadSubtract"
+      ) {
+        e.preventDefault();
+        s.stepFontScale(-1);
+      } else if (
+        !e.shiftKey &&
+        (e.key === "0" || e.code === "Digit0" || e.code === "Numpad0")
+      ) {
+        e.preventDefault();
+        s.setFontScale(DEFAULT_FONT_SCALE);
+      }
     }
     document.addEventListener("keydown", onKey);
     return () => document.removeEventListener("keydown", onKey);

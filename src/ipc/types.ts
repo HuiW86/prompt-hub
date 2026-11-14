@@ -446,13 +446,16 @@ export type PanoramaAssetKind =
   | "alignment_phrase"
   | "modifier"
   | "composition";
+// ADR-032: eight work stages (the phases, one to one) + the two strip groups.
 export type PanoramaGroupId =
-  | "align"
+  | "understand"
   | "diverge"
   | "converge"
+  | "plan"
+  | "generate"
   | "execute"
-  | "polish"
-  | "retain"
+  | "iterate"
+  | "distill"
   | "cue"
   | "tool";
 export interface PanoramaPlacement {
