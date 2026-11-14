@@ -5,7 +5,7 @@ on:
   push:
     branches: [chore/ui-shots-tmp]
 permissions:
-  contents: read
+  contents: write
 jobs:
   shots:
     runs-on: macos-15
@@ -39,8 +39,21 @@ jobs:
           sleep 2
           SAFE_REF=$(echo "${{ matrix.ref }}" | tr '/' '-')
           ENGINE=${{ matrix.engine }} node shoot.mjs http://127.0.0.1:4173 ../out "$SAFE_REF"
-      - uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a
+      - name: publish shots to evidence branch
         if: always()
-        with:
-          name: shots-${{ strategy.job-index }}
-          path: out/
+        working-directory: tools
+        run: |
+          SAFE_REF=$(echo "${{ matrix.ref }}" | tr '/' '-')
+          git config user.name "ui-shots"
+          git config user.email "ui-shots@users.noreply.github.com"
+          for i in 1 2 3 4 5; do
+            git fetch origin chore/ui-shots-evidence && git checkout -B ev origin/chore/ui-shots-evidence || git checkout --orphan ev
+            git rm -rq --cached . >/dev/null 2>&1 || true
+            mkdir -p "shots/$SAFE_REF"
+            rm -rf "shots/$SAFE_REF"/*
+            cp ../out/* "shots/$SAFE_REF/" || true
+            git add "shots/$SAFE_REF"
+            git commit -qm "shots: $SAFE_REF @ ${{ github.sha }}" || true
+            git push origin HEAD:chore/ui-shots-evidence && break
+            sleep 5
+          done
