@@ -1,4 +1,4 @@
-## sha e44a790b2dc1879312916481821ece10d91a28d2
+## sha 10da77e846fad9e2c4e6a002e4956499877ab652
 ## lint
 
 > prompt-hub@0.2.4 lint /Users/runner/work/prompt-hub/prompt-hub/app
@@ -10,6 +10,7 @@ Checking formatting...
 All matched files use Prettier code style!
 exit=0
 ## test
+    at copy [90m(/Users/runner/work/prompt-hub/prompt-hub/app/[39msrc/hooks/useCopy.ts:45:9[90m)[39m
 
 [90mstderr[2m | src/components/__tests__/SearchOverlay.test.tsx[2m > [22m[2mSearchOverlay keyboard navigation[2m > [22m[2mEnter on an alignment hit copies the coordinate prefix, not the bare content
 [22m[39mrecordCopy failed Error: unexpected count_today_usage
@@ -20,7 +21,7 @@ exit=0
     at recordCopy [90m(/Users/runner/work/prompt-hub/prompt-hub/app/[39msrc/stores/prompt/recordingSlice.ts:19:11[90m)[39m
     at copy [90m(/Users/runner/work/prompt-hub/prompt-hub/app/[39msrc/hooks/useCopy.ts:45:9[90m)[39m
 
- [32m✓[39m src/components/__tests__/SearchOverlay.test.tsx [2m([22m[2m18 tests[22m[2m)[22m[32m 295[2mms[22m[39m
+ [32m✓[39m src/components/__tests__/SearchOverlay.test.tsx [2m([22m[2m18 tests[22m[2m)[22m[33m 341[2mms[22m[39m
 [90mstderr[2m | src/components/__tests__/ScenePropertiesEditor.test.tsx[2m > [22m[2mScenePropertiesEditor — validation & save[2m > [22m[2mdisables save when the name is blank
 [22m[39mIn HTML, <button> cannot be a descendant of <button>.
 This will cause a hydration error.
@@ -50,7 +51,8 @@ This will cause a hydration error.
 <button> cannot contain a nested <button>.
 See this log for the ancestor stack trace.
 
- [32m✓[39m src/components/__tests__/ScenePropertiesEditor.test.tsx [2m([22m[2m22 tests[22m[2m)[22m[33m 1068[2mms[22m[39m
+ [32m✓[39m src/components/__tests__/ScenePropertiesEditor.test.tsx [2m([22m[2m22 tests[22m[2m)[22m[33m 1090[2mms[22m[39m
+     [33m[2m✓[22m[39m disables save when the name is blank [33m 307[2mms[22m[39m
 [90mstderr[2m | src/components/__tests__/TrashSection.test.tsx[2m > [22m[2mTrashSection — settings 数据 page trash view (ADR-028 P1)[2m > [22m[2ma failed 恢复 surfaces an error instead of looking like a success
 [22m[39mtarget not found
 
@@ -80,9 +82,8 @@ See this log for the ancestor stack trace.
     at commitHookEffectListMount [90m(/Users/runner/work/prompt-hub/prompt-hub/app/[39mnode_modules/[4m.pnpm[24m/react-dom@19.2.6_react@19.2.6/node_modules/[4mreact-dom[24m/cjs/react-dom-client.development.js:13249:29[90m)[39m
     at commitHookPassiveMountEffects [90m(/Users/runner/work/prompt-hub/prompt-hub/app/[39mnode_modules/[4m.pnpm[24m/react-dom@19.2.6_react@19.2.6/node_modules/[4mreact-dom[24m/cjs/react-dom-client.development.js:13336:11[90m)[39m
 
- [32m✓[39m src/components/__tests__/TrashSection.test.tsx [2m([22m[2m12 tests[22m[2m)[22m[33m 1013[2mms[22m[39m
- [32m✓[39m src/components/__tests__/PlacementMenu.test.tsx [2m([22m[2m9 tests[22m[2m)[22m[33m 906[2mms[22m[39m
-     [33m[2m✓[22m[39m changing the group sends the full placement and closes the menu [33m 322[2mms[22m[39m
+ [32m✓[39m src/components/__tests__/TrashSection.test.tsx [2m([22m[2m12 tests[22m[2m)[22m[33m 767[2mms[22m[39m
+ [32m✓[39m src/components/__tests__/PlacementMenu.test.tsx [2m([22m[2m9 tests[22m[2m)[22m[33m 626[2mms[22m[39m
 [90mstderr[2m | src/components/__tests__/MacroGrid.test.tsx[2m > [22m[2mMacroGrid — anchored editor rules (ADR-025 子决策 2)[2m > [22m[2mclicking outside saves the draft rather than dropping it
 [22m[39mEach child in a list should have a unique "key" prop.
 
@@ -101,9 +102,9 @@ Check the render method of `MacroGrid`. See https://react.dev/link/warning-keys 
     at runWithFiberInDEV [90m(/Users/runner/work/prompt-hub/prompt-hub/app/[39mnode_modules/[4m.pnpm[24m/react-dom@19.2.6_react@19.2.6/node_modules/[4mreact-dom[24m/cjs/react-dom-client.development.js:874:13[90m)[39m
     at processDispatchQueue [90m(/Users/runner/work/prompt-hub/prompt-hub/app/[39mnode_modules/[4m.pnpm[24m/react-dom@19.2.6_react@19.2.6/node_modules/[4mreact-dom[24m/cjs/react-dom-client.development.js:19166:19[90m)[39m
 
- [32m✓[39m src/components/__tests__/MacroGrid.test.tsx [2m([22m[2m8 tests[22m[2m)[22m[33m 633[2mms[22m[39m
- [32m✓[39m src/hooks/__tests__/useAnchoredPosition.test.ts [2m([22m[2m13 tests[22m[2m)[22m[32m 190[2mms[22m[39m
- [32m✓[39m src/stores/__tests__/toastStore.test.ts [2m([22m[2m16 tests[22m[2m)[22m[32m 9[2mms[22m[39m
+ [32m✓[39m src/components/__tests__/MacroGrid.test.tsx [2m([22m[2m8 tests[22m[2m)[22m[33m 432[2mms[22m[39m
+ [32m✓[39m src/hooks/__tests__/useAnchoredPosition.test.ts [2m([22m[2m13 tests[22m[2m)[22m[32m 168[2mms[22m[39m
+ [32m✓[39m src/stores/__tests__/toastStore.test.ts [2m([22m[2m16 tests[22m[2m)[22m[32m 8[2mms[22m[39m
 [90mstderr[2m | src/components/__tests__/DriftLedgerView.test.tsx[2m > [22m[2mDriftLedgerView — counts, never a verdict (ADR-029 子决策 4)[2m > [22m[2mreports a failed read instead of falling through to the empty state
 [22m[39mError: db locked
     at [90m/Users/runner/work/prompt-hub/prompt-hub/app/[39msrc/components/__tests__/DriftLedgerView.test.tsx:176:34
@@ -117,48 +118,47 @@ Check the render method of `MacroGrid`. See https://react.dev/link/warning-keys 
     at runWithTimeout [90m(file:///Users/runner/work/prompt-hub/prompt-hub/app/[39mnode_modules/[4m.pnpm[24m/@vitest+runner@4.1.7/node_modules/[4m@vitest/runner[24m/dist/chunk-artifact.js:2272:10[90m)[39m
     at [90mfile:///Users/runner/work/prompt-hub/prompt-hub/app/[39mnode_modules/[4m.pnpm[24m/@vitest+runner@4.1.7/node_modules/[4m@vitest/runner[24m/dist/chunk-artifact.js:2955:64
 
- [32m✓[39m src/components/__tests__/DriftLedgerView.test.tsx [2m([22m[2m13 tests[22m[2m)[22m[33m 313[2mms[22m[39m
+ [32m✓[39m src/components/__tests__/DriftLedgerView.test.tsx [2m([22m[2m13 tests[22m[2m)[22m[32m 265[2mms[22m[39m
  [32m✓[39m src/stores/__tests__/settingsStore.test.ts [2m([22m[2m19 tests[22m[2m)[22m[32m 9[2mms[22m[39m
- [32m✓[39m src/stores/__tests__/updaterStore.test.ts [2m([22m[2m12 tests[22m[2m)[22m[32m 64[2mms[22m[39m
- [32m✓[39m src/ipc/ipc-contract.test.ts [2m([22m[2m7 tests[22m[2m)[22m[32m 8[2mms[22m[39m
- [32m✓[39m src/components/__tests__/ScenePanelFocusRestore.test.tsx [2m([22m[2m5 tests[22m[2m)[22m[33m 637[2mms[22m[39m
- [32m✓[39m src/stores/__tests__/sessionStore.test.ts [2m([22m[2m10 tests[22m[2m)[22m[32m 7[2mms[22m[39m
- [32m✓[39m src/components/__tests__/HoverPreview.test.tsx [2m([22m[2m9 tests[22m[2m)[22m[32m 208[2mms[22m[39m
+ [32m✓[39m src/stores/__tests__/updaterStore.test.ts [2m([22m[2m12 tests[22m[2m)[22m[32m 62[2mms[22m[39m
+ [32m✓[39m src/ipc/ipc-contract.test.ts [2m([22m[2m7 tests[22m[2m)[22m[32m 5[2mms[22m[39m
+ [32m✓[39m src/components/__tests__/ScenePanelFocusRestore.test.tsx [2m([22m[2m5 tests[22m[2m)[22m[33m 625[2mms[22m[39m
+ [32m✓[39m src/stores/__tests__/sessionStore.test.ts [2m([22m[2m10 tests[22m[2m)[22m[32m 6[2mms[22m[39m
+ [32m✓[39m src/components/__tests__/HoverPreview.test.tsx [2m([22m[2m9 tests[22m[2m)[22m[32m 222[2mms[22m[39m
 [90mstderr[2m | src/components/__tests__/HotkeyRecorder.test.tsx[2m > [22m[2mHotkeyRecorder[2m > [22m[2msurfaces the backend's refusal and keeps the working chord
 [22m[39m快捷键 Control+Space 已被其他应用占用，请换一组
 
- [32m✓[39m src/components/__tests__/HotkeyRecorder.test.tsx [2m([22m[2m10 tests[22m[2m)[22m[32m 237[2mms[22m[39m
- [32m✓[39m src/hooks/__tests__/useRegionNav.test.tsx [2m([22m[2m8 tests[22m[2m)[22m[32m 163[2mms[22m[39m
+ [32m✓[39m src/components/__tests__/HotkeyRecorder.test.tsx [2m([22m[2m10 tests[22m[2m)[22m[32m 232[2mms[22m[39m
+ [32m✓[39m src/hooks/__tests__/useRegionNav.test.tsx [2m([22m[2m8 tests[22m[2m)[22m[32m 227[2mms[22m[39m
  [32m✓[39m src/styles/token-gate.test.ts [2m([22m[2m47 tests[22m[2m)[22m[32m 10[2mms[22m[39m
- [32m✓[39m src/components/__tests__/StatusBar.test.tsx [2m([22m[2m6 tests[22m[2m)[22m[32m 177[2mms[22m[39m
- [32m✓[39m src/components/__tests__/ModifierGrid.test.tsx [2m([22m[2m4 tests[22m[2m)[22m[32m 110[2mms[22m[39m
- [32m✓[39m src/components/__tests__/WebsitePanel.test.tsx [2m([22m[2m2 tests[22m[2m)[22m[33m 476[2mms[22m[39m
-     [33m[2m✓[22m[39m creates a shortcut, searches its description, opens by stored ID, and restores deletion [33m 418[2mms[22m[39m
+ [32m✓[39m src/components/__tests__/StatusBar.test.tsx [2m([22m[2m6 tests[22m[2m)[22m[32m 190[2mms[22m[39m
+ [32m✓[39m src/components/__tests__/ModifierGrid.test.tsx [2m([22m[2m4 tests[22m[2m)[22m[32m 118[2mms[22m[39m
  [32m✓[39m src/styles/theme-parity.test.ts [2m([22m[2m8 tests[22m[2m)[22m[32m 3[2mms[22m[39m
- [32m✓[39m src/components/__tests__/RecentList.test.tsx [2m([22m[2m3 tests[22m[2m)[22m[32m 44[2mms[22m[39m
- [32m✓[39m src/utils/__tests__/alignmentCopyText.test.ts [2m([22m[2m10 tests[22m[2m)[22m[32m 4[2mms[22m[39m
+ [32m✓[39m src/components/__tests__/WebsitePanel.test.tsx [2m([22m[2m2 tests[22m[2m)[22m[33m 345[2mms[22m[39m
+ [32m✓[39m src/components/__tests__/RecentList.test.tsx [2m([22m[2m3 tests[22m[2m)[22m[32m 52[2mms[22m[39m
+ [32m✓[39m src/utils/__tests__/alignmentCopyText.test.ts [2m([22m[2m10 tests[22m[2m)[22m[32m 3[2mms[22m[39m
  [32m✓[39m src/utils/__tests__/accelerator.test.ts [2m([22m[2m9 tests[22m[2m)[22m[32m 4[2mms[22m[39m
  [32m✓[39m src/hooks/__tests__/useCopy.test.ts [2m([22m[2m4 tests[22m[2m)[22m[32m 17[2mms[22m[39m
- [32m✓[39m src/components/__tests__/b2-separation.test.ts [2m([22m[2m5 tests[22m[2m)[22m[32m 4[2mms[22m[39m
- [32m✓[39m src/components/__tests__/HotkeyBanner.test.tsx [2m([22m[2m7 tests[22m[2m)[22m[32m 173[2mms[22m[39m
- [32m✓[39m src/utils/__tests__/errorMessage.test.ts [2m([22m[2m8 tests[22m[2m)[22m[32m 6[2mms[22m[39m
- [32m✓[39m src/hooks/__tests__/useSearchResults.test.ts [2m([22m[2m3 tests[22m[2m)[22m[32m 26[2mms[22m[39m
- [32m✓[39m src/styles/density-gate.test.ts [2m([22m[2m3 tests[22m[2m)[22m[32m 3[2mms[22m[39m
- [32m✓[39m src/components/__tests__/ErrorBoundary.test.tsx [2m([22m[2m3 tests[22m[2m)[22m[32m 180[2mms[22m[39m
- [32m✓[39m src/components/__tests__/PhaseBar.test.tsx [2m([22m[2m3 tests[22m[2m)[22m[32m 199[2mms[22m[39m
- [32m✓[39m src/components/__tests__/UpdaterBanner.test.tsx [2m([22m[2m4 tests[22m[2m)[22m[32m 256[2mms[22m[39m
+ [32m✓[39m src/components/__tests__/b2-separation.test.ts [2m([22m[2m5 tests[22m[2m)[22m[32m 3[2mms[22m[39m
+ [32m✓[39m src/components/__tests__/HotkeyBanner.test.tsx [2m([22m[2m7 tests[22m[2m)[22m[32m 138[2mms[22m[39m
+ [32m✓[39m src/utils/__tests__/errorMessage.test.ts [2m([22m[2m8 tests[22m[2m)[22m[32m 5[2mms[22m[39m
+ [32m✓[39m src/hooks/__tests__/useSearchResults.test.ts [2m([22m[2m3 tests[22m[2m)[22m[32m 24[2mms[22m[39m
+ [32m✓[39m src/styles/density-gate.test.ts [2m([22m[2m3 tests[22m[2m)[22m[32m 9[2mms[22m[39m
+ [32m✓[39m src/components/__tests__/ErrorBoundary.test.tsx [2m([22m[2m3 tests[22m[2m)[22m[32m 131[2mms[22m[39m
+ [32m✓[39m src/components/__tests__/PhaseBar.test.tsx [2m([22m[2m3 tests[22m[2m)[22m[32m 122[2mms[22m[39m
+ [32m✓[39m src/components/__tests__/UpdaterBanner.test.tsx [2m([22m[2m4 tests[22m[2m)[22m[32m 142[2mms[22m[39m
  [32m✓[39m scripts/doc-governance/doc-refs-gate.test.ts [2m([22m[2m2 tests[22m[2m)[22m[32m 2[2mms[22m[39m
  [32m✓[39m src/ipc/usageSource.test.ts [2m([22m[2m4 tests[22m[2m)[22m[32m 3[2mms[22m[39m
- [32m✓[39m src/components/__tests__/SearchBar.test.tsx [2m([22m[2m3 tests[22m[2m)[22m[32m 226[2mms[22m[39m
- [32m✓[39m src/components/__tests__/ModeToggle.test.tsx [2m([22m[2m3 tests[22m[2m)[22m[32m 218[2mms[22m[39m
- [32m✓[39m src/stores/__tests__/searchStore.test.ts [2m([22m[2m4 tests[22m[2m)[22m[32m 6[2mms[22m[39m
+ [32m✓[39m src/components/__tests__/SearchBar.test.tsx [2m([22m[2m3 tests[22m[2m)[22m[32m 134[2mms[22m[39m
+ [32m✓[39m src/components/__tests__/ModeToggle.test.tsx [2m([22m[2m3 tests[22m[2m)[22m[32m 170[2mms[22m[39m
+ [32m✓[39m src/stores/__tests__/searchStore.test.ts [2m([22m[2m4 tests[22m[2m)[22m[32m 5[2mms[22m[39m
  [32m✓[39m src/stores/__tests__/appStore.test.ts [2m([22m[2m2 tests[22m[2m)[22m[32m 3[2mms[22m[39m
  [32m✓[39m src/stores/prompt/__tests__/helpers.test.ts [2m([22m[2m1 test[22m[2m)[22m[32m 2[2mms[22m[39m
 
 [2m Test Files [22m [1m[32m50 passed[39m[22m[90m (50)[39m
 [2m      Tests [22m [1m[32m640 passed[39m[22m[90m (640)[39m
-[2m   Start at [22m 15:56:46
-[2m   Duration [22m 38.08s[2m (transform 2.16s, setup 8.73s, import 5.08s, tests 21.91s, environment 33.52s)[22m
+[2m   Start at [22m 15:57:10
+[2m   Duration [22m 31.64s[2m (transform 1.71s, setup 7.22s, import 3.95s, tests 19.13s, environment 27.04s)[22m
 
 exit=0
 ## build
@@ -183,5 +183,5 @@ computing gzip size...
 - Using dynamic import() to code-split the application
 - Use build.rollupOptions.output.manualChunks to improve chunking: https://rollupjs.org/configuration-options/#output-manualchunks
 - Adjust chunk size limit for this warning via build.chunkSizeWarningLimit.[39m
-[32m✓ built in 2.82s[39m
+[32m✓ built in 2.16s[39m
 exit=0
