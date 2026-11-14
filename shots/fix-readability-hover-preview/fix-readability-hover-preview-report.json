@@ -35,11 +35,13 @@
         "lineHeight": "18.85px",
         "color": "rgb(126, 126, 132)"
       },
-      "truncatedSpans": 16,
+      "truncatedNames": 2,
+      "nameCount": 42,
+      "columnTitlesTruncated": 0,
       "overflowX": false
     },
     "title-attr-on-rows": 0,
-    "hover-delay-ms-first": 316,
+    "hover-delay-ms-first": 389,
     "preview-state-long": {
       "visible": true,
       "rect": {
@@ -53,12 +55,21 @@
       "scrollable": false,
       "textLen": 810
     },
-    "hover-delay-ms-warm-switch": 129,
+    "hover-delay-ms-warm-switch": 107,
     "preview-stays-open-when-pointer-inside": true,
     "preview-scrolled": 0,
     "preview-closed-after-leave": true,
     "fast-sweep": {
-      "ms": 48,
+      "ms": 24,
+      "opens": 0
+    },
+    "sweep-across-800ms": {
+      "ms": 803,
+      "opens": 0
+    },
+    "sweep-down-column": {
+      "rows": 4,
+      "ms": 604,
       "opens": 0
     },
     "preview-closed-after-click": true,
@@ -127,7 +138,9 @@
         "lineHeight": "23.5625px",
         "color": "rgb(126, 126, 132)"
       },
-      "truncatedSpans": 19,
+      "truncatedNames": 8,
+      "nameCount": 42,
+      "columnTitlesTruncated": 0,
       "overflowX": false
     },
     "preview-state-largest": {
@@ -188,7 +201,9 @@
         "lineHeight": "18.85px",
         "color": "rgb(126, 126, 132)"
       },
-      "truncatedSpans": 22,
+      "truncatedNames": 15,
+      "nameCount": 42,
+      "columnTitlesTruncated": 0,
       "overflowX": false
     },
     "metrics-largest-1024": {
@@ -224,7 +239,9 @@
         "lineHeight": "23.5625px",
         "color": "rgb(126, 126, 132)"
       },
-      "truncatedSpans": 23,
+      "truncatedNames": 19,
+      "nameCount": 42,
+      "columnTitlesTruncated": 0,
       "overflowX": false
     },
     "preview-1024-largest": {
@@ -239,6 +256,10 @@
       "fontSize": "17.5px",
       "scrollable": true,
       "textLen": 810
+    },
+    "preview-1024-scrolled-to-end": {
+      "scrollTop": 191,
+      "atEnd": true
     },
     "metrics-default-800": {
       "rootClass": "dark accent-neutral",
@@ -273,7 +294,9 @@
         "lineHeight": "18.85px",
         "color": "rgb(126, 126, 132)"
       },
-      "truncatedSpans": 23,
+      "truncatedNames": 21,
+      "nameCount": 42,
+      "columnTitlesTruncated": 0,
       "overflowX": false
     },
     "metrics-largest-800": {
@@ -309,7 +332,9 @@
         "lineHeight": "23.5625px",
         "color": "rgb(126, 126, 132)"
       },
-      "truncatedSpans": 23,
+      "truncatedNames": 21,
+      "nameCount": 40,
+      "columnTitlesTruncated": 0,
       "overflowX": false
     },
     "preview-800-largest": {
@@ -324,6 +349,10 @@
       "fontSize": "17.5px",
       "scrollable": true,
       "textLen": 810
+    },
+    "preview-800-scrolled-to-end": {
+      "scrollTop": 291,
+      "atEnd": true
     }
   }
 }
