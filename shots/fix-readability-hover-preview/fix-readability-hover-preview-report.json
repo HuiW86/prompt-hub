@@ -39,7 +39,7 @@
       "overflowX": false
     },
     "title-attr-on-rows": 0,
-    "hover-delay-ms-first": 326,
+    "hover-delay-ms-first": 316,
     "preview-state-long": {
       "visible": true,
       "rect": {
@@ -53,12 +53,12 @@
       "scrollable": false,
       "textLen": 810
     },
-    "hover-delay-ms-warm-switch": 127,
+    "hover-delay-ms-warm-switch": 129,
     "preview-stays-open-when-pointer-inside": true,
     "preview-scrolled": 0,
     "preview-closed-after-leave": true,
     "fast-sweep": {
-      "ms": 36,
+      "ms": 48,
       "opens": 0
     },
     "preview-closed-after-click": true,
