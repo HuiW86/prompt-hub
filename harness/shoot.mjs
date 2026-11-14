@@ -46,8 +46,11 @@ async function metrics(page) {
       const cs = getComputedStyle(el);
       return { fontSize: cs.fontSize, lineHeight: cs.lineHeight, color: cs.color };
     };
-    const truncated = [...document.querySelectorAll('[aria-label="全景"] [data-tier] span')]
-      .filter((s) => s.scrollWidth > s.clientWidth + 1).length;
+    const names = [...document.querySelectorAll('[aria-label="全景"] [data-tier] span')]
+      .filter((s) => !s.getAttribute("aria-label") && s.textContent.length > 1);
+    const truncated = names.filter((s) => s.scrollWidth > s.clientWidth + 1 || s.scrollHeight > s.clientHeight + 1).length;
+    const titles = [...document.querySelectorAll('[data-column] header span:nth-child(2)')];
+    const titleTruncated = titles.filter((s) => s.scrollWidth > s.clientWidth + 1).length;
     return {
       rootClass: document.documentElement.className,
       rootFontScale: getComputedStyle(document.documentElement).getPropertyValue("--font-scale").trim(),
@@ -57,7 +60,9 @@ async function metrics(page) {
       columnTitle: pick('[data-column] header span:nth-child(2)'),
       columnCount: pick('[data-column] header span:last-child'),
       footer: pick('footer[aria-live]'),
-      truncatedSpans: truncated,
+      truncatedNames: truncated,
+      nameCount: names.length,
+      columnTitlesTruncated: titleTruncated,
       overflowX: document.documentElement.scrollWidth > window.innerWidth,
     };
   });
@@ -163,6 +168,26 @@ async function hoverDelay(page, sel) {
     await page.mouse.move(5, 5);
     await page.waitForTimeout(500);
     log("fast-sweep", { ms: sweepMs, opens: await page.evaluate(() => window.__opens) });
+    // Ordinary-speed passes: across all 8 columns in ~800ms, then down the
+    // first column ~120ms per row. Neither should open a preview.
+    const sweep = async (from, to, totalMs, steps) => {
+      await page.mouse.move(from[0], from[1]);
+      await page.evaluate(() => { window.__opens = 0; });
+      const t = Date.now();
+      for (let i = 1; i <= steps; i++) {
+        await page.mouse.move(from[0] + ((to[0] - from[0]) * i) / steps, from[1] + ((to[1] - from[1]) * i) / steps);
+        const due = t + (totalMs * i) / steps - Date.now();
+        if (due > 0) await page.waitForTimeout(due);
+      }
+      const ms = Date.now() - t;
+      await page.mouse.move(5, 5);
+      await page.waitForTimeout(450);
+      return { ms, opens: await page.evaluate(() => window.__opens) };
+    };
+    log("sweep-across-800ms", await sweep([grid.x + 10, first.y + 4], [grid.x + grid.width - 10, first.y + 4], 800, 40));
+    const colRows = await col.evaluateAll((els) => els.map((e) => { const r = e.getBoundingClientRect(); return r.y + r.height / 2; }));
+    const cx = first.x + first.width / 2;
+    log("sweep-down-column", { rows: colRows.length, ...(await sweep([cx, colRows[0]], [cx, colRows[colRows.length - 1] + 30], 120 * (colRows.length + 1), 30)) });
 
     // Click copies and dismisses.
     await hoverDelay(page, row);
@@ -269,7 +294,19 @@ for (const [w, h] of [[1024, 700], [800, 600]]) {
     if ((await hoverDelay(page, '[data-column="distill"] [data-tier]')) != null) {
       await page.waitForTimeout(100);
       await shot(page, `11-hover-preview-${w}-largest`);
-      log(`preview-${w}-largest`, await previewState(page));
+      const st = await previewState(page);
+      log(`preview-${w}-largest`, st);
+      if (st?.scrollable) {
+        await page.mouse.move(st.rect.x + st.rect.w / 2, st.rect.y + st.rect.h / 2, { steps: 10 });
+        await page.waitForTimeout(250);
+        await page.mouse.wheel(0, 2000);
+        await page.waitForTimeout(300);
+        log(`preview-${w}-scrolled-to-end`, await page.evaluate(() => {
+          const b = document.querySelector("[data-hover-preview-body]");
+          return b ? { scrollTop: b.scrollTop, atEnd: b.scrollTop + b.clientHeight >= b.scrollHeight - 2 } : null;
+        }));
+        await shot(page, `11b-hover-preview-${w}-largest-scrolled`);
+      }
     }
     await ctx.close();
   }
