@@ -1,12 +1,23 @@
 # Test + lint CI (frontend + Rust). Runs on every push to main and on all PRs.
 #
+# Runner policy — macOS minutes are the bottleneck, not execution time.
+#   macOS runner concurrency is small; a PR run plus the post-merge push run
+#   used to need 6 macOS jobs at once, so rust / bench-c1 sat in the queue for
+#   up to ~10 min while actually running for ~5. Hence:
+#   - frontend runs on ubuntu-latest: lint / prettier / vitest (jsdom) / vite
+#     build have no macOS dependency.
+#   - bench-c1 runs only on push to main (and manual dispatch), not on PRs.
+#     It is non-blocking anyway (see the job comment); the enforced C1 gate is
+#     the local `pnpm bench:hotkey-wake`.
+#   - rust stays on macOS (macos-private-api, objc / AppKit code paths).
+#
 # Style mirrors release.yml:
-#   - macos-15 runner (project targets macOS only; depends on macos-private-api).
-#     Pinned to a version, not macos-latest, so the image never changes under
-#     a PR silently. GitHub retired macos-14 on 2026-11-02; every job pinned to
-#     it was cancelled before start ("configuration not supported") and CI went
-#     dark without a single red check. When this label is retired too, bump it
-#     here — release.yml builds on macos-latest and is unaffected.
+#   - macOS jobs use macos-15, pinned to a version, not macos-latest, so the
+#     image never changes under a PR silently. GitHub retired macos-14 on
+#     2026-11-02; every job pinned to it was cancelled before start
+#     ("configuration not supported") and CI went dark without a single red
+#     check. When this label is retired too, bump it here — release.yml builds
+#     on macos-latest and is unaffected.
 #   - Third-party actions pinned to commit SHA (not tags); shared actions reuse
 #     the exact SHAs already pinned in release.yml.
 #   - `permissions` minimized to contents:read (nothing here writes back).
@@ -20,6 +31,7 @@ on:
     branches:
       - main
   pull_request:
+  workflow_dispatch:
 
 permissions:
   contents: read
@@ -31,7 +43,7 @@ concurrency:
 jobs:
   # ── Job 1: frontend — lint, format check, unit tests, production build. ─────
   frontend:
-    runs-on: macos-15
+    runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v7.0.0
       - uses: pnpm/action-setup@0ebf47130e4866e96fce0953f49152a61190b271 # v6.0.9
@@ -89,7 +101,12 @@ jobs:
   # job fails with a window/display error rather than a P95-over-budget error,
   # that is the environment limitation, not a real C1 regression — treat it as
   # a signal to investigate the runner, not to block the PR reflexively.
+  #
+  # Not run on pull_request: it would take a scarce macOS slot on every PR for
+  # a check that cannot block. A skipped job reports as success, so this does
+  # not leave a pending status if it is ever made a required check.
   bench-c1:
+    if: github.event_name != 'pull_request'
     runs-on: macos-15
     continue-on-error: true
     steps:
