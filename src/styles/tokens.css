@@ -488,10 +488,10 @@
   /* Full-prompt hover preview (HoverPreview). A ~40em reading measure: wide
      enough that a long prompt is a few dozen lines, not a hundred; narrow
      enough to stay a side panel next to the hovered row. Scales with text so
-     the line length in characters holds at every --font-scale step. The
-     height cap is a fallback — the panel is also clamped to the frame. */
+     the line length in characters holds at every --font-scale step. Height is
+     not capped here: the panel takes what the frame allows (JS clamp) and
+     scrolls past that — more of a long prompt visible means less scrolling. */
   --w-hover-preview: calc(480px * var(--font-scale));
-  --h-hover-preview-max: 560px;
 
   /* Toast width cap — long error strings wrap instead of stretching the toast
      across the viewport (P1-3 overflow guard). */
