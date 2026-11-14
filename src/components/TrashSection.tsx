@@ -1,4 +1,3 @@
-import { RotateCcw, Trash2 } from "lucide-react";
 import { useCallback, useEffect, useRef, useState } from "react";
 
 import { ipc } from "../ipc";
@@ -146,51 +145,19 @@ export function TrashSection() {
 
   return (
     <section className={styles.section} aria-label="废纸篓">
+      {/* Count sits in the group title. 子决策 4 bought "no auto-expiry" with
+          a promise that the size stays visible, so it belongs up here, not
+          buried under the list. The purge action shares the line (issue #29). */}
       <div className={styles.head}>
-        <span className={styles.label}>废纸篓</span>
-        {ready ? <span className={styles.count}>{count} 项</span> : null}
-      </div>
-      <span className={styles.hint}>
-        删除的资产会留在这里，不会自动清除，也不会出现在仪表盘或搜索中。
-        恢复后它回到原来的位置，使用历史一并回来。
-      </span>
-
-      {phase === "loading" ? (
-        <span className={styles.hint}>正在读取…</span>
-      ) : ready && count === 0 ? (
-        <EmptyState>废纸篓是空的</EmptyState>
-      ) : ready ? (
-        <div className={styles.list} role="list" aria-label="废纸篓条目">
-          {entries.map((entry) => (
-            <ListRowSurface
-              key={`${entry.kind}:${entry.id}`}
-              role="listitem"
-              className={styles.row}
-            >
-              <span className={styles.kind}>{KIND_LABEL[entry.kind]}</span>
-              <span className={styles.name}>{entry.label}</span>
-              <span className={styles.time}>
-                {relativeTime(entry.deletedAt)}
-              </span>
-              <button
-                type="button"
-                className={styles.rowBtn}
-                // The name, not just the verb: a column of identical 「恢复」
-                // buttons tells a screen-reader user nothing about which row
-                // they are on.
-                aria-label={`恢复「${entry.label}」`}
-                disabled={busy}
-                onClick={() => void handleRestore(entry)}
-              >
-                <RotateCcw size={13} strokeWidth={2} aria-hidden />
-                恢复
-              </button>
-            </ListRowSurface>
-          ))}
-        </div>
-      ) : null}
-
-      <div className={styles.actions}>
+        <span className={styles.title}>
+          废纸篓
+          {ready ? (
+            <>
+              {" · "}
+              <span className={styles.count}>{count} 项</span>
+            </>
+          ) : null}
+        </span>
         {confirming ? (
           // The last confirm in the app (子决策 3). It survived the cull because
           // it is the only step here that cannot be undone, so it has to say
@@ -205,15 +172,58 @@ export function TrashSection() {
         ) : (
           <button
             type="button"
-            className={styles.button}
+            className={styles.purge}
             disabled={busy || !ready || count === 0}
             onClick={() => setConfirming(true)}
           >
-            <Trash2 size={13} strokeWidth={2} aria-hidden />
             清空废纸篓
           </button>
         )}
       </div>
+
+      {phase === "error" ? null : (
+        <div className={styles.card}>
+          {phase === "loading" ? (
+            <span className={styles.placeholder}>正在读取…</span>
+          ) : count === 0 ? (
+            <div className={styles.empty}>
+              <EmptyState>废纸篓是空的</EmptyState>
+            </div>
+          ) : (
+            <div className={styles.list} role="list" aria-label="废纸篓条目">
+              {entries.map((entry) => (
+                <ListRowSurface
+                  key={`${entry.kind}:${entry.id}`}
+                  role="listitem"
+                  className={styles.row}
+                >
+                  <span className={styles.kind}>{KIND_LABEL[entry.kind]}</span>
+                  <span className={styles.name}>{entry.label}</span>
+                  <span className={styles.time}>
+                    {relativeTime(entry.deletedAt)}
+                  </span>
+                  <button
+                    type="button"
+                    className={styles.rowBtn}
+                    // The name, not just the verb: a column of identical 「恢复」
+                    // buttons tells a screen-reader user nothing about which row
+                    // they are on.
+                    aria-label={`恢复「${entry.label}」`}
+                    disabled={busy}
+                    onClick={() => void handleRestore(entry)}
+                  >
+                    恢复
+                  </button>
+                </ListRowSurface>
+              ))}
+            </div>
+          )}
+        </div>
+      )}
+
+      <span className={styles.note}>
+        删除的条目不会自动清除；恢复后回到原位置，使用记录一并回来。
+      </span>
 
       {status ? (
         <div className={styles.status}>

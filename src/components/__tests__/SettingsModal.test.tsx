@@ -164,6 +164,37 @@ describe("SettingsModal — appearance density", () => {
   });
 });
 
+describe("SettingsModal — grouped-row layout (issue #29)", () => {
+  beforeEach(() => {
+    useSettingsStore.setState(settingsInitial, true);
+    useSettingsStore.setState({ settingsOpen: true });
+  });
+
+  it("names the page once, in the nav, not again as a content title", () => {
+    render(<SettingsModal />);
+    // The selected nav item is the page name; a second 「外观」 heading in the
+    // content pane was the duplicate V7 removed.
+    expect(screen.getAllByText("外观")).toHaveLength(1);
+    expect(screen.getByRole("button", { name: "外观" })).toHaveAttribute(
+      "aria-current",
+      "true",
+    );
+  });
+
+  it("segment options are text only — no icon, no percentage", () => {
+    render(<SettingsModal />);
+    for (const name of ["主题模式", "字号", "密度"]) {
+      const group = screen.getByRole("group", { name });
+      const options = group.querySelectorAll("button");
+      expect(options.length).toBeGreaterThan(1);
+      for (const option of options) {
+        expect(option.querySelector("svg")).toBeNull();
+        expect(option.textContent).not.toMatch(/%/);
+      }
+    }
+  });
+});
+
 describe("SettingsModal — appearance text size (字号)", () => {
   beforeEach(() => {
     useSettingsStore.setState(settingsInitial, true);

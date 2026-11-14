@@ -6,23 +6,7 @@ import {
   open as openDialog,
   save as saveDialog,
 } from "@tauri-apps/plugin-dialog";
-import {
-  Check,
-  Database,
-  Download,
-  Keyboard,
-  Monitor,
-  Moon,
-  Palette,
-  RefreshCw,
-  RotateCw,
-  Rows3,
-  Rows4,
-  Sun,
-  Type,
-  Upload,
-  X,
-} from "lucide-react";
+import { Database, Download, Keyboard, Palette, X } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
 
 import { ipc } from "../ipc";
@@ -47,13 +31,6 @@ import styles from "./SettingsModal.module.css";
 
 type Tab = "appearance" | "hotkey" | "update" | "data";
 
-const TAB_TITLES: Record<Tab, string> = {
-  appearance: "外观",
-  hotkey: "快捷键",
-  update: "更新",
-  data: "数据",
-};
-
 // Default backup file name: prompt-hub-backup-YYYY-MM-DD.json.
 function defaultBackupName(): string {
   const d = new Date();
@@ -63,24 +40,26 @@ function defaultBackupName(): string {
   )}.json`;
 }
 
-const THEME_OPTIONS: { value: ThemeMode; label: string; icon: typeof Sun }[] = [
-  { value: "light", label: "浅色", icon: Sun },
-  { value: "dark", label: "深色", icon: Moon },
-  { value: "system", label: "跟随系统", icon: Monitor },
+// Segment options carry text only (issue #29): one icon per option said
+// nothing the label did not, and the three text-size steps shared one glyph.
+const THEME_OPTIONS: { value: ThemeMode; label: string }[] = [
+  { value: "light", label: "浅色" },
+  { value: "dark", label: "深色" },
+  { value: "system", label: "跟随系统" },
 ];
 
-const DENSITY_OPTIONS: { value: Density; label: string; icon: typeof Rows3 }[] =
-  [
-    { value: "comfortable", label: "舒适", icon: Rows3 },
-    { value: "compact", label: "紧凑", icon: Rows4 },
-  ];
+const DENSITY_OPTIONS: { value: Density; label: string }[] = [
+  { value: "comfortable", label: "舒适" },
+  { value: "compact", label: "紧凑" },
+];
 
-// Text size steps (issue: 字号偏小). Percentages are shown so "大" is not a
-// guess; each step scales type only (tokens.css --font-scale).
-const FONT_SCALE_OPTIONS: { value: FontScale; label: string; pct: string }[] = [
-  { value: "standard", label: "标准", pct: "100%" },
-  { value: "large", label: "大", pct: "112.5%" },
-  { value: "xlarge", label: "特大", pct: "125%" },
+// Text size steps (issue #25). Each step scales type only (tokens.css
+// --font-scale); the result is visible the moment it is picked, so the
+// percentages that used to sit beside each label were dropped (issue #29).
+const FONT_SCALE_OPTIONS: { value: FontScale; label: string }[] = [
+  { value: "standard", label: "标准" },
+  { value: "large", label: "大" },
+  { value: "xlarge", label: "特大" },
 ];
 
 const ACCENT_OPTIONS: { value: Accent; label: string; dot: string }[] = [
@@ -100,9 +79,50 @@ const STATUS_TEXT: Record<string, string> = {
   error: "检查失败",
 };
 
-// Settings overlay dialog absorbed from the Promptscape design. Two panes:
-// 外观 (theme mode + accent swatch, wired to settingsStore) and 更新 (the
-// ADR-017 opt-in egress switch + manual check/install, wired to updaterStore).
+// One segmented control: a single track with the options butted together and
+// the picked one lifted on a solid fill. aria-pressed carries the state.
+function Segment<T extends string>({
+  label,
+  options,
+  value,
+  onChange,
+  dataAttr,
+}: {
+  label: string;
+  options: { value: T; label: string }[];
+  value: T;
+  onChange: (next: T) => void;
+  /** Optional data-* hook stamped with each option's value (tests / styling). */
+  dataAttr?: string;
+}) {
+  return (
+    <div className={styles.segment} role="group" aria-label={label}>
+      {options.map((opt) => {
+        const extra: Record<string, string> = dataAttr
+          ? { [dataAttr]: opt.value }
+          : {};
+        return (
+          <button
+            key={opt.value}
+            type="button"
+            className={cx(styles.segItem, value === opt.value && styles.active)}
+            aria-pressed={value === opt.value}
+            {...extra}
+            onClick={() => onChange(opt.value)}
+          >
+            {opt.label}
+          </button>
+        );
+      })}
+    </div>
+  );
+}
+
+// Settings overlay dialog absorbed from the Promptscape design, reshaped into
+// macOS-style grouped rows (issue #29): each page is a stack of rounded cards,
+// each row has its name and a one-line note on the left and its control on the
+// right. The dialog has a fixed size so switching pages never resizes it; the
+// page body scrolls inside.
 export function SettingsModal() {
   const open = useSettingsStore((s) => s.settingsOpen);
   const close = useSettingsStore((s) => s.closeSettings);
@@ -316,6 +336,7 @@ export function SettingsModal() {
     status === "available" && availableVersion
       ? `发现新版本 ${availableVersion}`
       : (STATUS_TEXT[status] ?? "");
+  const mod = primaryModifierLabel();
 
   return (
     <div
@@ -379,8 +400,9 @@ export function SettingsModal() {
         </nav>
 
         <div className={styles.content}>
+          {/* No page title here: the selected nav item already names the
+              page (issue #29 V7). The bar only carries the close button. */}
           <div className={styles.contentHead}>
-            <span className={styles.contentTitle}>{TAB_TITLES[tab]}</span>
             {/* The third dismissal path, held to the same rule as Escape and
                 the overlay — a guard that leaves the most visible close
                 button live is not a guard. */}
@@ -397,261 +419,263 @@ export function SettingsModal() {
 
           {tab === "appearance" ? (
             <div className={styles.body}>
-              <div className={styles.field}>
-                <span className={styles.fieldLabel}>主题模式</span>
-                <div
-                  className={styles.segment}
-                  role="group"
-                  aria-label="主题模式"
-                >
-                  {THEME_OPTIONS.map(({ value, label, icon: Icon }) => (
-                    <button
-                      key={value}
-                      type="button"
-                      className={cx(
-                        styles.segItem,
-                        themeMode === value && styles.active,
-                      )}
-                      aria-pressed={themeMode === value}
-                      onClick={() => setThemeMode(value)}
-                    >
-                      <Icon size={13} strokeWidth={2} aria-hidden />
-                      {label}
-                    </button>
-                  ))}
+              <div className={styles.group}>
+                <div className={styles.groupHead}>
+                  <span className={styles.groupTitle}>显示</span>
                 </div>
-              </div>
-
-              <div className={styles.field}>
-                <span className={styles.fieldLabel}>字号</span>
-                <span className={styles.fieldHint}>
-                  放大界面与全文预览的文字，布局与留白不变。快捷键{" "}
-                  <span className={styles.nowrap}>
-                    {primaryModifierLabel()}= 放大
-                  </span>{" "}
-                  ·{" "}
-                  <span className={styles.nowrap}>
-                    {primaryModifierLabel()}− 缩小
-                  </span>{" "}
-                  ·{" "}
-                  <span className={styles.nowrap}>
-                    {primaryModifierLabel()}0 恢复默认
-                  </span>
-                  。
-                </span>
-                <div className={styles.segmentRow}>
-                  <div
-                    className={styles.segment}
-                    role="group"
-                    aria-label="字号"
-                  >
-                    {FONT_SCALE_OPTIONS.map(({ value, label, pct }) => (
-                      <button
-                        key={value}
-                        type="button"
-                        className={cx(
-                          styles.segItem,
-                          fontScale === value && styles.active,
-                        )}
-                        aria-pressed={fontScale === value}
-                        data-font-scale={value}
-                        onClick={() => setFontScale(value)}
-                      >
-                        <Type size={13} strokeWidth={2} aria-hidden />
-                        {label}
-                        <span className={styles.segMeta}>{pct}</span>
-                      </button>
-                    ))}
+                <div className={styles.card}>
+                  <div className={styles.row}>
+                    <div className={styles.rowText}>
+                      <span className={styles.rowLabel}>主题</span>
+                    </div>
+                    <div className={styles.rowControl}>
+                      <Segment
+                        label="主题模式"
+                        options={THEME_OPTIONS}
+                        value={themeMode}
+                        onChange={setThemeMode}
+                      />
+                    </div>
                   </div>
-                  <button
-                    type="button"
-                    className={styles.resetBtn}
-                    data-font-scale-reset
-                    aria-label="恢复默认字号"
-                    disabled={fontScale === DEFAULT_FONT_SCALE}
-                    onClick={() => setFontScale(DEFAULT_FONT_SCALE)}
-                  >
-                    恢复默认
-                  </button>
+
+                  <div className={styles.row}>
+                    <div className={styles.rowText}>
+                      <span className={styles.rowLabel}>字号</span>
+                      <span className={styles.rowHint}>
+                        <span className={styles.nowrap}>{mod}= 放大</span>
+                        {" · "}
+                        <span className={styles.nowrap}>{mod}− 缩小</span>
+                        {" · "}
+                        <span className={styles.nowrap}>{mod}0 恢复默认</span>
+                      </span>
+                    </div>
+                    <div className={styles.rowControl}>
+                      <Segment
+                        label="字号"
+                        options={FONT_SCALE_OPTIONS}
+                        value={fontScale}
+                        onChange={setFontScale}
+                        dataAttr="data-font-scale"
+                      />
+                      <button
+                        type="button"
+                        className={styles.resetBtn}
+                        data-font-scale-reset
+                        aria-label="恢复默认字号"
+                        disabled={fontScale === DEFAULT_FONT_SCALE}
+                        onClick={() => setFontScale(DEFAULT_FONT_SCALE)}
+                      >
+                        恢复默认
+                      </button>
+                    </div>
+                  </div>
+
+                  <div className={styles.row}>
+                    <div className={styles.rowText}>
+                      <span className={styles.rowLabel}>密度</span>
+                      <span className={styles.rowHint}>
+                        紧凑档一屏放下更多条目，字号不变
+                      </span>
+                    </div>
+                    <div className={styles.rowControl}>
+                      <Segment
+                        label="密度"
+                        options={DENSITY_OPTIONS}
+                        value={density}
+                        onChange={setDensity}
+                      />
+                    </div>
+                  </div>
                 </div>
               </div>
 
-              <div className={styles.field}>
-                <span className={styles.fieldLabel}>密度</span>
-                <span className={styles.fieldHint}>
-                  紧凑档收紧行高与区块留白，一屏承载更多资产；字号不变。
-                </span>
-                <div className={styles.segment} role="group" aria-label="密度">
-                  {DENSITY_OPTIONS.map(({ value, label, icon: Icon }) => (
-                    <button
-                      key={value}
-                      type="button"
-                      className={cx(
-                        styles.segItem,
-                        density === value && styles.active,
-                      )}
-                      aria-pressed={density === value}
-                      onClick={() => setDensity(value)}
-                    >
-                      <Icon size={13} strokeWidth={2} aria-hidden />
-                      {label}
-                    </button>
-                  ))}
+              <div className={styles.group}>
+                <div className={styles.groupHead}>
+                  <span className={styles.groupTitle}>颜色</span>
                 </div>
-              </div>
-
-              <div className={styles.field}>
-                <span className={styles.fieldLabel}>强调色</span>
-                <span className={styles.fieldHint}>
-                  身份主题色：驱动品牌标记、Macro 芯片、当前相位与焦点环，
-                  整舱换色。默认（中性）为 violet 品牌色。
-                </span>
-                <div
-                  className={styles.swatches}
-                  role="group"
-                  aria-label="强调色"
-                >
-                  {ACCENT_OPTIONS.map(({ value, label, dot }) => (
-                    <button
-                      key={value}
-                      type="button"
-                      className={cx(
-                        styles.swatch,
-                        accent === value && styles.active,
-                      )}
-                      aria-pressed={accent === value}
-                      aria-label={label}
-                      title={label}
-                      onClick={() => setAccent(value)}
-                    >
-                      <span className={cx(styles.dot, dot)} aria-hidden />
-                      {accent === value && (
-                        <Check
-                          size={12}
-                          strokeWidth={3}
-                          className={styles.check}
-                          aria-hidden
-                        />
-                      )}
-                    </button>
-                  ))}
+                <div className={styles.card}>
+                  <div className={styles.row}>
+                    <div className={styles.rowText}>
+                      <span className={styles.rowLabel}>强调色</span>
+                    </div>
+                    <div className={styles.rowControl}>
+                      <div
+                        className={styles.swatches}
+                        role="group"
+                        aria-label="强调色"
+                      >
+                        {ACCENT_OPTIONS.map(({ value, label, dot }) => (
+                          <button
+                            key={value}
+                            type="button"
+                            className={cx(
+                              styles.swatch,
+                              accent === value && styles.active,
+                            )}
+                            aria-pressed={accent === value}
+                            aria-label={label}
+                            title={label}
+                            onClick={() => setAccent(value)}
+                          >
+                            <span className={cx(styles.dot, dot)} aria-hidden />
+                          </button>
+                        ))}
+                      </div>
+                    </div>
+                  </div>
                 </div>
+                {/* A coloured swatch also takes over --brand (tokens.css §1b
+                    :root.accent-*, ADR-024 补遗); neutral leaves the brand
+                    violet alone. Too long to share a line with five dots, so
+                    it sits under the card. */}
+                <span className={styles.groupNote}>
+                  主色 · 标记、Macro 芯片、当前相位与焦点一起换；中性保留品牌紫
+                </span>
               </div>
             </div>
           ) : tab === "hotkey" ? (
             <div className={styles.body}>
-              <div className={styles.field}>
-                <span className={styles.fieldLabel}>全局唤起</span>
-                <span className={styles.fieldHint}>
-                  在任何应用中按下该组合键即可唤起仪表盘。组合键必须包含至少一个
-                  修饰键；若提示已被占用，说明另一个应用先注册了它，换一组即可。
+              <div className={styles.group}>
+                <div className={styles.groupHead}>
+                  <span className={styles.groupTitle}>全局唤起</span>
+                </div>
+                <div className={styles.card}>
+                  {/* HotkeyRecorder renders its chord row plus an optional
+                      notice as siblings; .rowWrap lets the notice drop to a
+                      full-width line under the row. */}
+                  <div className={cx(styles.row, styles.rowWrap)}>
+                    <div className={styles.rowText}>
+                      <span className={styles.rowLabel}>唤起快捷键</span>
+                      <span className={styles.rowHint}>
+                        任何应用中按下即唤起，须含修饰键
+                      </span>
+                    </div>
+                    <HotkeyRecorder />
+                  </div>
+                </div>
+                <span className={styles.groupNote}>
+                  被其他应用占用时会提示，换一组即可。
                 </span>
-                <HotkeyRecorder />
               </div>
             </div>
           ) : tab === "update" ? (
             <div className={styles.body}>
-              <div className={styles.field}>
-                <div className={styles.toggleRow}>
-                  <span className={styles.toggleText}>
-                    <span className={styles.fieldLabel}>自动检查更新</span>
-                    <span className={styles.fieldHint}>
-                      启用后应用会在启动时向 GitHub
-                      查询新版本（仅发送版本号，可随时关闭）。
-                    </span>
-                  </span>
-                  <button
-                    type="button"
-                    className={cx(styles.toggle, enabled && styles.on)}
-                    role="switch"
-                    aria-checked={enabled}
-                    aria-label="自动检查更新"
-                    onClick={() => (enabled ? declineOptIn() : acceptOptIn())}
-                  >
-                    <span className={styles.knob} aria-hidden />
-                  </button>
+              <div className={styles.group}>
+                <div className={styles.groupHead}>
+                  <span className={styles.groupTitle}>软件更新</span>
                 </div>
-              </div>
+                <div className={styles.card}>
+                  <div className={styles.row}>
+                    <div className={styles.rowText}>
+                      <span className={styles.rowLabel}>自动检查更新</span>
+                      <span className={styles.rowHint}>
+                        启动时向 GitHub 查询，仅发送版本号
+                      </span>
+                    </div>
+                    <div className={styles.rowControl}>
+                      <button
+                        type="button"
+                        className={cx(styles.toggle, enabled && styles.on)}
+                        role="switch"
+                        aria-checked={enabled}
+                        aria-label="自动检查更新"
+                        onClick={() =>
+                          enabled ? declineOptIn() : acceptOptIn()
+                        }
+                      >
+                        <span className={styles.knob} aria-hidden />
+                      </button>
+                    </div>
+                  </div>
 
-              <div className={styles.field}>
-                <div
-                  className={cx(
-                    styles.statusRow,
-                    status === "error" && styles.statusError,
-                  )}
-                >
-                  {status === "checking" || status === "downloading" ? (
-                    <RefreshCw size={13} strokeWidth={2} aria-hidden />
-                  ) : null}
-                  <span>
-                    {error && status === "error" ? error : statusLine}
-                  </span>
-                </div>
-                <div className={styles.actions}>
-                  {status === "available" ? (
-                    <button
-                      type="button"
-                      className={cx(styles.actionBtn, styles.actionPrimary)}
-                      onClick={() => void downloadAndInstall()}
-                    >
-                      <Download size={13} strokeWidth={2} aria-hidden />
-                      下载并安装
-                    </button>
-                  ) : (
-                    <button
-                      type="button"
-                      className={styles.actionBtn}
-                      disabled={
-                        !enabled ||
-                        status === "checking" ||
-                        status === "downloading"
-                      }
-                      onClick={() => void check(true)}
-                    >
-                      <RotateCw size={13} strokeWidth={2} aria-hidden />
-                      检查更新
-                    </button>
-                  )}
+                  <div className={styles.row}>
+                    <div className={styles.rowText}>
+                      <span className={styles.rowLabel}>版本状态</span>
+                      <span
+                        className={cx(
+                          styles.rowHint,
+                          status === "error" && styles.statusError,
+                        )}
+                      >
+                        {error && status === "error" ? error : statusLine}
+                      </span>
+                    </div>
+                    <div className={styles.rowControl}>
+                      {status === "available" ? (
+                        <button
+                          type="button"
+                          className={cx(styles.actionBtn, styles.actionPrimary)}
+                          onClick={() => void downloadAndInstall()}
+                        >
+                          下载并安装
+                        </button>
+                      ) : (
+                        <button
+                          type="button"
+                          className={styles.actionBtn}
+                          disabled={
+                            !enabled ||
+                            status === "checking" ||
+                            status === "downloading"
+                          }
+                          onClick={() => void check(true)}
+                        >
+                          检查更新
+                        </button>
+                      )}
+                    </div>
+                  </div>
                 </div>
               </div>
             </div>
           ) : (
             <div className={styles.body}>
-              <div className={styles.field}>
-                <span className={styles.fieldLabel}>导出备份</span>
-                <span className={styles.fieldHint}>
-                  将全部提示词资产导出为单个 JSON
-                  文件（不含使用记录）。文件仅写入你选择的本地路径，不上传任何服务。
-                </span>
-                <div className={styles.actions}>
-                  <button
-                    type="button"
-                    className={styles.actionBtn}
-                    disabled={dataBusy}
-                    onClick={() => void handleExport()}
-                  >
-                    <Download size={13} strokeWidth={2} aria-hidden />
-                    导出备份…
-                  </button>
+              <div className={styles.group}>
+                <div className={styles.groupHead}>
+                  <span className={styles.groupTitle}>备份</span>
                 </div>
-              </div>
+                <div className={styles.card}>
+                  <div className={styles.row}>
+                    <div className={styles.rowText}>
+                      <span className={styles.rowLabel}>导出</span>
+                      {/* Export carries the trash too (product-spec §13.3
+                          区域 9, ADR-028 子决策 6) — say so. */}
+                      <span className={styles.rowHint}>
+                        全部资产（含废纸篓，不含使用记录）存为本地 JSON
+                      </span>
+                    </div>
+                    <div className={styles.rowControl}>
+                      <button
+                        type="button"
+                        className={styles.actionBtn}
+                        disabled={dataBusy}
+                        onClick={() => void handleExport()}
+                      >
+                        导出备份…
+                      </button>
+                    </div>
+                  </div>
 
-              <div className={styles.field}>
-                <span className={styles.fieldLabel}>导入备份</span>
-                <span className={styles.fieldHint}>
-                  从 JSON
-                  备份整库替换：导入会清空当前全部资产并以备份内容覆盖，操作不可撤销。
-                </span>
-                <div className={styles.actions}>
-                  <button
-                    type="button"
-                    className={styles.actionBtn}
-                    disabled={dataBusy}
-                    onClick={() => void handleImport()}
-                  >
-                    <Upload size={13} strokeWidth={2} aria-hidden />
-                    导入备份…
-                  </button>
+                  <div className={styles.row}>
+                    <div className={styles.rowText}>
+                      <span className={styles.rowLabel}>导入</span>
+                      <span className={styles.rowHint}>
+                        用备份整库覆盖当前数据，不可撤销
+                      </span>
+                    </div>
+                    <div className={styles.rowControl}>
+                      {/* Amber text marks the destructive one of the pair
+                          (issue #29 V5); the confirm dialog still gates it. */}
+                      <button
+                        type="button"
+                        className={cx(styles.actionBtn, styles.actionDanger)}
+                        disabled={dataBusy}
+                        onClick={() => void handleImport()}
+                      >
+                        导入备份…
+                      </button>
+                    </div>
+                  </div>
                 </div>
                 {dataStatus ? (
                   <div className={styles.statusRow}>
