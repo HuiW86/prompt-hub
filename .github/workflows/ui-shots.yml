@@ -1,0 +1,46 @@
+# Temporary: real-render screenshots of the web layer for issue/PR evidence.
+# Lives on a throwaway branch; never merged.
+name: ui-shots
+on:
+  push:
+    branches: [chore/ui-shots-tmp]
+permissions:
+  contents: read
+jobs:
+  shots:
+    runs-on: macos-15
+    strategy:
+      fail-fast: false
+      matrix:
+        ref: [main]
+        engine: [webkit]
+    steps:
+      - uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0
+        with: { path: tools }
+      - uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0
+        with: { ref: "${{ matrix.ref }}", path: app }
+      - uses: pnpm/action-setup@0ebf47130e4866e96fce0953f49152a61190b271
+        with: { package_json_file: app/package.json }
+      - uses: actions/setup-node@48b55a011bda9f5d6aeb4c2d9c7362e8dae4041e
+        with: { node-version: 22 }
+      - name: build app web layer with harness
+        working-directory: app
+        run: |
+          pnpm install --frozen-lockfile
+          mkdir -p harness && cp ../tools/harness/* harness/
+          pnpm exec vite build --config harness/vite.harness.config.mjs
+          cp harness/mock-tauri.js harness-dist/harness/
+      - name: shoot
+        run: |
+          mkdir shooter && cd shooter && npm init -y >/dev/null && npm i playwright@1.56.1 >/dev/null
+          npx playwright install ${{ matrix.engine }}
+          cp ../tools/harness/shoot.mjs .
+          (cd ../app/harness-dist && python3 -m http.server 4173 >/dev/null 2>&1 &)
+          sleep 2
+          SAFE_REF=$(echo "${{ matrix.ref }}" | tr '/' '-')
+          ENGINE=${{ matrix.engine }} node shoot.mjs http://127.0.0.1:4173 ../out "$SAFE_REF"
+      - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
+        if: always()
+        with:
+          name: shots-${{ strategy.job-index }}
+          path: out/
