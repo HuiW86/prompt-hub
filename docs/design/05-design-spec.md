@@ -1,10 +1,10 @@
 ---
 type: design-spec
 project: prompt-hub
-version: v0.25
+version: v0.26
 created: 2026-05-18
-last_modified: 2026-11-13
-status: ratified  # v0.25 于 2026-11-14 经 HuiW86 签字（单裁点「全景改编号泳道 + 号位键帽 + 筛选框不常亮焦点环」按推荐通过）。起草说明：全景工作区视觉精修（V-01，issue #19）——§10.9.1–10.9.3 按实装重写、§10.9.4 与 §10.8.1 补两行，零新增 token，明细见文末修订记录 v0.25。前 v0.24 于 2026-11-13 经 HuiW86 签字（同批单裁点在 product-spec 按推荐通过）。起草说明：全景工作区与常用网站工作区的视觉契约补写（新增 §10.9 / §10.10，§10.3 与 §10.8.1 补行），照现行 CSS 写，**零新增 token**；与 [[03-product-spec]] v0.31 / [[06-prd]] v0.17 同批，明细见文末修订记录 v0.24。前 v0.23 于 2026-10-08 经 Rosa 在项目线程签字（人审批次 ⑬，单裁点「主界面减法 pass 四项」按推荐通过）：Toast 由右上角挪到底部居中（状态栏上方）+ Header 副标 / 相位格快捷键标签退场（与 [[03-product-spec]] v0.30 同批），明细见文末修订记录 v0.23。前 v0.22 于 2026-09-03 人审批次 ⑧ 经 omar 签字（与 [[06-prd]] v0.14 / [[03-product-spec]] v0.25 同批）。本版内容：§10.2.2 `ConfirmInline` 用量由六处收缩至一处（清空废纸篓）+ §11 新增「Toast 让位规则」（撤销 toast 不被普通 toast 顶掉，error 例外），两项都是**行为契约**不是施工细节，按 [[CLAUDE#§5.1.2]] 需签字。前 v0.21 于 2026-09-03 人审批次 ⑦ ratified（§10.2.2 接口契约第 6 条随 product-spec「锚点再按一次 = 无事发生」签字，第 5 条 `initialFocus` 必填属施工规范随批通过）；更前 v0.20 于 2026-09-01 人审批次 ⑥ ratified
+last_modified: 2026-11-14
+status: draft  # v0.26 起草于 2026-11-14，待 HuiW86 签字（与 [[032-panorama-work-stage-columns]] / [[03-product-spec]] v0.32 / [[06-prd]] v0.18 同批，单裁点「全景按工作阶段分列」），只改列数与序号，明细见文末修订记录 v0.26。前 v0.25 于 2026-11-14 经 HuiW86 签字（单裁点「全景改编号泳道 + 号位键帽 + 筛选框不常亮焦点环」按推荐通过）。起草说明：全景工作区视觉精修（V-01，issue #19）——§10.9.1–10.9.3 按实装重写、§10.9.4 与 §10.8.1 补两行，零新增 token，明细见文末修订记录 v0.25。前 v0.24 于 2026-11-13 经 HuiW86 签字（同批单裁点在 product-spec 按推荐通过）。起草说明：全景工作区与常用网站工作区的视觉契约补写（新增 §10.9 / §10.10，§10.3 与 §10.8.1 补行），照现行 CSS 写，**零新增 token**；与 [[03-product-spec]] v0.31 / [[06-prd]] v0.17 同批，明细见文末修订记录 v0.24。前 v0.23 于 2026-10-08 经 Rosa 在项目线程签字（人审批次 ⑬，单裁点「主界面减法 pass 四项」按推荐通过）：Toast 由右上角挪到底部居中（状态栏上方）+ Header 副标 / 相位格快捷键标签退场（与 [[03-product-spec]] v0.30 同批），明细见文末修订记录 v0.23。前 v0.22 于 2026-09-03 人审批次 ⑧ 经 omar 签字（与 [[06-prd]] v0.14 / [[03-product-spec]] v0.25 同批）。本版内容：§10.2.2 `ConfirmInline` 用量由六处收缩至一处（清空废纸篓）+ §11 新增「Toast 让位规则」（撤销 toast 不被普通 toast 顶掉，error 例外），两项都是**行为契约**不是施工细节，按 [[CLAUDE#§5.1.2]] 需签字。前 v0.21 于 2026-09-03 人审批次 ⑦ ratified（§10.2.2 接口契约第 6 条随 product-spec「锚点再按一次 = 无事发生」签字，第 5 条 `initialFocus` 必填属施工规范随批通过）；更前 v0.20 于 2026-09-01 人审批次 ⑥ ratified
 author: co  # 🤝 人机共创（CLAUDE §5.2）
 related: [[01-spec]], [[02-constitution]], [[03-product-spec]], [[012-lock-visual-quality-anchor]], [[023-ui-reshape-before-release]], [[024-dark-cockpit-identity]], [[019-supersede-flat-visual-anchor]], [[020-restore-protocol-dark-band]], [[021-scene-layered-editing]], [[025-unified-anchored-editing]], [[CLAUDE-DESIGN]], [[015-expose-mcp-write-pipeline]], [[016-choose-dnd-and-resizable-layout]], [[018-absorb-promptscape-design]], [[026-fixed-spatial-layout]], [[028-reversible-delete]], [[asset-editing-and-adaptive-layout]]
 description: 手动 AI 编程仪表盘的视觉规范——tokens.css 单一真源 + 主题/elevation/组件视觉契约；写 CSS / 视觉时召回。版本叙事见 CHANGELOG
@@ -710,7 +710,7 @@ bundle 派生的 3 个跨组件 chrome primitive：
 | `Header`（v0.11）| chrome（中性强调）| 顶部 slim 行，gear `--h-quickfind` 36px | logo 方块染 `--accent`/`--accent-fg`（B2 中性强调面）+ 标题（v0.23 起无副标）+ 内嵌 `SearchBar`(flex-1) + gear `IconButton`；去设计稿头像（spec §8.2 无账号），详见 §10.8 / 涟漪 [[018-absorb-promptscape-design]] |
 | `ProtocolBand`（v0.11 / v0.13 暗 band）| protocol | 协议层容器 band（inset，`--r-frame`）| **v0.13（[[020-restore-protocol-dark-band]]）改 `--band-bg` 暗底 + band 作用域整体重映射中性 token**（§2.4.5），双主题恒为深底浅字；`Route` icon「协议层」pill；纯布局壳，PhaseBar+AlignmentPhrases 内容/数据不变，详见 §10.8.2 |
 | `SettingsModal`（v0.11）| chrome（中性强调）| 居中 overlay 弹窗（`--scrim` 遮罩，宽 `--w-settings-modal`）| 左导航(外观/更新) + 右内容；外观=主题三态分段控件 + 5 色强调 swatch；更新=opt-in 开关 + 状态行 + 检查/安装（复用 updaterStore）；焦点环/激活态用 `--accent`（中性强调，B2 安全），详见 §10.8 |
-| `PanoramaView`（v0.24）| chrome（中性）| 全景工作区整页：筛选行 + 等宽意图列 grid + 底部两组 + 预览行 | 列为画布上的 hairline 泳道（v0.25 起无底无框，`01–06` 序号）、三层条目视觉见 §10.9 |
+| `PanoramaView`（v0.24）| chrome（中性）| 全景工作区整页：筛选行 + 等宽阶段列 grid + 底部两组 + 预览行 | 列为画布上的 hairline 泳道（v0.25 起无底无框；v0.26 起八个工作阶段列，`01–08` 序号）、三层条目视觉见 §10.9 |
 | `PlacementMenu`（v0.24）| 继承 `AnchoredEditor` | 锚定在全景条目上的位置菜单 | 两组选项网格，当前项 `--accent` 边 + `--selection` 底，见 §10.9.4 |
 | `WebsitePanel`（v0.24）| chrome（中性）| 常用网站工作区整页：左侧分组栏 + 主区列表 | 见 §10.10 |
 | `AnchoredEditor`（v0.18）| 继承内层 `EditorPanel` | 锚定在触发元素上的 top layer 浮层，宽随内容、**高受 frame 相对上限约束**后内部滚动 | 原生 `popover="manual"` 进 top layer（**不 portal 到 `body`**——DOM 祖先链不变，`ProtocolBand` 的 `--band-*` remap 照常继承，§2.4.5 用法 hard rule 得以成立）；`--shadow-2` + `--z-popover` 兜底；四个宿主共用（对齐话术 chip / Macro 卡 / Scene 话术卡 / 草稿卡「编辑」按钮），接口契约见 §10.2.2 |
@@ -918,17 +918,17 @@ bundle 派生的 3 个跨组件 chrome primitive：
 
 #### 10.9.1 页面骨架（v0.25 重写 — [V-01](https://github.com/HuiW86/prompt-hub/issues/19)）
 
-**一条构图原则**：六个意图列从左到右是一条工作流（对齐 → 发散 → 收敛 → 执行 → 打磨 → 沉淀），所以它们是**画布上的六条泳道**，以 hairline 分隔、以序号 `01–06` 标顺序；不是六个并排的盒子。列短时下半部分是安静的画布，不是被框住的空容器。
+**一条构图原则**：八个工作阶段列从左到右是一条工作流（理解 → 发散 → 收敛 → 规划 → 生成 → 执行 → 迭代 → 沉淀，v0.26 起，此前为六个意图列），所以它们是**画布上的八条泳道**，以 hairline 分隔、以序号 `01–08` 标顺序；不是八个并排的盒子。列短时下半部分是安静的画布，不是被框住的空容器。
 
 | 区域 | 视觉契约 |
 |------|---------|
 | 页面 | `--canvas` 底；内边距 `--s-4` / `--s-5` / 0（预览行贴底）；纵向 gap `--s-3` |
 | 筛选框 | 整行，高 `--h-quickfind`，`--surface-1` 底 + `--border-1` 框 + `--r-4`，正文 `--t-14`；左侧 lucide `Search` 16px `--fg-4`（聚焦时 `--fg-2`），输入左内边距 `--s-10` 让出图标；插入符 `--brand`；占位字「打字筛选全部条目」`--fg-4`。**聚焦态是边框升到 `--border-3`，不画 `--accent` 焦点环**——这个框整场会话都持有焦点，常亮的环会成为全屏最响的元素，而它不是主角 |
-| 意图列 grid | 列等宽（`grid-auto-columns: minmax(0, 1fr)`），6 列或 7 列（含「未分组」）同一规则；grid 向两侧外扩 `--s-2` 以便列内条目与筛选框左右对齐 |
+| 阶段列 grid | 列等宽（`grid-auto-columns: minmax(0, 1fr)`），8 列或 9 列（含「未分组」）同一规则；grid 向两侧外扩 `--s-2` 以便列内条目与筛选框左右对齐 |
 | 列 | **无底、无框、无阴影**；左右内边距 `--s-2`；相邻列之间一道 `--hairline` `--border-1` 竖线 |
-| 列头 | 序号（仅六个意图列）`01`–`06`：`--font-mono` `--t-11` `--w-500` `--fg-4`；标题 `--t-12` `--w-600` `--fg-2` 字距 `--tr-meta`，单行省略；右侧「活跃 / 总数」`--t-11` `--fg-4` 等宽数字。「未分组」与底部两组不编号——它们不在流程里 |
+| 列头 | 序号（仅八个阶段列）`01`–`08`：`--font-mono` `--t-11` `--w-500` `--fg-4`；标题 `--t-12` `--w-600` `--fg-2` 字距 `--tr-meta`，单行省略；右侧「活跃 / 总数」`--t-11` `--fg-4` 等宽数字。「未分组」与底部两组不编号——它们不在流程里 |
 | 列体 | 纵向溢出时滚动条隐藏（`scrollbar-width: none`）；底部留 `--s-3`；正常情况下休眠行先被收起，滚动只在常用位与活跃行本身放不下时兜底 |
-| 底部一排 | 与意图列之间一道整宽 hairline `--border-1`，上内边距 `--s-3`；两组（「中途口令」「工具」）等宽、组间 gap `--s-6`，组本身无底无框；组内条目为**键形 chip**横向换行（gap `--s-1_5`）：活跃 chip `--surface-1` 底 + `--border-2` 框、最小高 `--s-8`，hover `--surface-2` + `--border-3`；常用位 chip 不画用量条、不带阴影；休眠行仍在 chip 下方以纯文字列出 |
+| 底部一排 | 与阶段列之间一道整宽 hairline `--border-1`，上内边距 `--s-3`；两组（「中途口令」「工具」）等宽、组间 gap `--s-6`，组本身无底无框；组内条目为**键形 chip**横向换行（gap `--s-1_5`）：活跃 chip `--surface-1` 底 + `--border-2` 框、最小高 `--s-8`，hover `--surface-2` + `--border-3`；常用位 chip 不画用量条、不带阴影；休眠行仍在 chip 下方以纯文字列出 |
 | 预览行 | 贴页面底，横向出血到页面边缘；高 `--h-region-header`，`--surface-1` 底 + 顶部 hairline `--border-1`；名称 `--t-13` `--w-600` `--fg-1`，正文 `--t-12` `--fg-2` 单行省略，右侧「N 次 · 日期」`--t-11` `--fg-4` 等宽数字。无内容时显示键位提示：每个键一枚键帽（见下）+ `--fg-4` 说明文字，「1–9 贴出常用位 / ↑↓←→ 选择 / ↵ 贴出 / Esc 清空或收起」，键帽组之间 `--s-3` |
 | 键帽 | `--font-mono` `--t-11`，最小宽与高 `--s-5`，`--surface-2` 底 + `--hairline` `--border-2` 框、**底边加厚到 `--border-thick`**，`--r-3`。这是本页唯一的「按键」语法，常用位号位与预览行键位提示共用（号位用 `--border-3`）|
 
@@ -1163,6 +1163,18 @@ bundle 派生的 3 个跨组件 chrome primitive：
 ---
 
 ## 修订记录
+
+### v0.26（2026-11-14）— 全景列改为八个工作阶段
+
+> **状态：`draft`——待 HuiW86 签字**，与 [[032-panorama-work-stage-columns]] / [[03-product-spec]] v0.32 / [[06-prd]] v0.18 同批，单裁点见 product-spec v0.32。零新增 token，组件与条目视觉不动。
+
+| 章节 | 改动 |
+|------|------|
+| §8 组件表 `PanoramaView` | 「意图列」→「阶段列」，序号 `01–06` → `01–08` |
+| §10.9.1 构图原则 | 六条泳道 → 八条泳道，流程顺序改为八个相位 |
+| §10.9.1 grid / 列头 / 底部一排 | 列数 6/7 → 8/9；序号 `01–08`；措辞「意图列」→「阶段列」 |
+
+**已知代价**：列数增加约三分之一，每列更窄、名称更早省略；13 英寸屏宽度需真机走查确认（PR #24 未真机验证）。
 
 ### v0.25（2026-11-13）— 全景工作区视觉精修（[V-01](https://github.com/HuiW86/prompt-hub/issues/19)）
 

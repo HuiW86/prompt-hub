@@ -1,10 +1,10 @@
 ---
 type: prd
 project: prompt-hub
-version: v0.17
+version: v0.18
 created: 2026-05-18
-last_modified: 2026-11-13
-status: ratified  # v0.17 于 2026-11-13 经 HuiW86 签字（与 [[03-product-spec]] v0.31 / [[05-design-spec]] v0.24 同批，单裁点在 product-spec 按推荐通过）。起草说明：全景工作区（§5.9 / §6.11）与常用网站（§5.10 / §6.12）补写进契约，§6.9 导出沿革补到 1.5——照 [[031-panorama-default-view]] / [[030-website-library]] 已落地实现回流，批次内无新的数据决策（唯一裁点在 [[03-product-spec]] v0.31），明细见文末修订记录 v0.17。前 v0.16 于 2026-09-06 经 omar 签字（人审批次 ⑫，与 [[03-product-spec]] v0.29 同批，单裁点「编辑器加一行修订说明输入」按推荐通过）：§6.6 的 `notes` 补上 UI 写入方——v0.15 写「这是 `notes` 的第一个写入方」时，写入方只到 Rust 与 IPC 为止，编辑面从不发这个参数，真机上改完正文 `notes` 仍是 NULL（[[HANDOFF]] 第 53 项）。前 v0.15 于 2026-09-04 经 omar 签字（人审批次 ⑨，与 [[03-product-spec]] v0.26 同批，批次内两个裁点均按推荐通过）。本版是 [[029-alignment-coordinates-and-drift-ledger]] 的图纸回流（对齐坐标四轴 + 中途口令隐式记账），属图纸类改动，按 [[CLAUDE#§5.1.2]] 需 omar 签字后才转 `ratified`。**本版描述的契约已于 2026-09-05 落地**（ADR-029 P0 `0329520` / P1 `345e37f` / P2 `3af8308`，真机门 G7 6 过 / 2 部分 / 1 缺陷已修 `4a68fa9`，见 [[11-test-spec#4.6]]）。前 v0.14 于 2026-09-03 人审批次 ⑧ 经 omar 签字（三份图纸同批过：本文件 + [[03-product-spec]] v0.25 + [[05-design-spec]] v0.22；批次内无新决策，记的都是 ADR-028 已拍板的内容）。本版内容：§6 数据模型契约变更（新增 §6.0-bis 两套删除机制 + 七张资产表加 `deleted_at` + 四处「删除策略」重写 + 导出 data schema 1.1→1.2），属图纸类改动，按 [[CLAUDE#§5.1.2]] 需签字。**v0.12 起登记的 §6.1 drift 就此销账**——旧文承诺 `deprecated = true`、实装是 hard DELETE，现两边都已改正。前 v0.13 于 2026-09-01 人审批次 ④ ratified
+last_modified: 2026-11-14
+status: draft  # v0.18 起草于 2026-11-14，待 HuiW86 签字（与 [[032-panorama-work-stage-columns]] / [[03-product-spec]] v0.32 / [[05-design-spec]] v0.26 同批，单裁点在 product-spec），明细见文末修订记录 v0.18。前 v0.17 于 2026-11-13 经 HuiW86 签字（与 [[03-product-spec]] v0.31 / [[05-design-spec]] v0.24 同批，单裁点在 product-spec 按推荐通过）。起草说明：全景工作区（§5.9 / §6.11）与常用网站（§5.10 / §6.12）补写进契约，§6.9 导出沿革补到 1.5——照 [[031-panorama-default-view]] / [[030-website-library]] 已落地实现回流，批次内无新的数据决策（唯一裁点在 [[03-product-spec]] v0.31），明细见文末修订记录 v0.17。前 v0.16 于 2026-09-06 经 omar 签字（人审批次 ⑫，与 [[03-product-spec]] v0.29 同批，单裁点「编辑器加一行修订说明输入」按推荐通过）：§6.6 的 `notes` 补上 UI 写入方——v0.15 写「这是 `notes` 的第一个写入方」时，写入方只到 Rust 与 IPC 为止，编辑面从不发这个参数，真机上改完正文 `notes` 仍是 NULL（[[HANDOFF]] 第 53 项）。前 v0.15 于 2026-09-04 经 omar 签字（人审批次 ⑨，与 [[03-product-spec]] v0.26 同批，批次内两个裁点均按推荐通过）。本版是 [[029-alignment-coordinates-and-drift-ledger]] 的图纸回流（对齐坐标四轴 + 中途口令隐式记账），属图纸类改动，按 [[CLAUDE#§5.1.2]] 需 omar 签字后才转 `ratified`。**本版描述的契约已于 2026-09-05 落地**（ADR-029 P0 `0329520` / P1 `345e37f` / P2 `3af8308`，真机门 G7 6 过 / 2 部分 / 1 缺陷已修 `4a68fa9`，见 [[11-test-spec#4.6]]）。前 v0.14 于 2026-09-03 人审批次 ⑧ 经 omar 签字（三份图纸同批过：本文件 + [[03-product-spec]] v0.25 + [[05-design-spec]] v0.22；批次内无新决策，记的都是 ADR-028 已拍板的内容）。本版内容：§6 数据模型契约变更（新增 §6.0-bis 两套删除机制 + 七张资产表加 `deleted_at` + 四处「删除策略」重写 + 导出 data schema 1.1→1.2），属图纸类改动，按 [[CLAUDE#§5.1.2]] 需签字。**v0.12 起登记的 §6.1 drift 就此销账**——旧文承诺 `deprecated = true`、实装是 hard DELETE，现两边都已改正。前 v0.13 于 2026-09-01 人审批次 ④ ratified
 author: ai  # 🤖 AI 主笔 + 人审（CLAUDE §5.2）
 related: [[01-spec]], [[03-product-spec]], [[prompt-hub-mvp]], [[015-expose-mcp-write-pipeline]], [[027-configurable-global-hotkey]], [[028-reversible-delete]], [[029-alignment-coordinates-and-drift-ledger]], [[mcp-write-pipeline]]
 description: 手动 AI 编程仪表盘的工程契约——数据模型/状态机/NFR/Boundaries/IPC + MCP 接口契约；写后端 / 数据层时召回。版本叙事见 CHANGELOG
@@ -320,7 +320,7 @@ SOP 模板应该是**可自定义的**，初始内置是锚点，使用者会很
 
 ### 5.9 全景工作区（v0.17 新增 · [[031-panorama-default-view]]）
 
-**定位**：唤起后的首屏。一屏同时列出全部可复制条目，按意图分列，主次由使用数据决定，取用一键完成。核心目的：**一眼看到全局，一键贴出，每次都记数**。
+**定位**：唤起后的首屏。一屏同时列出全部可复制条目，按工作阶段分列（v0.18 起，此前按意图），主次由使用数据决定，取用一键完成。核心目的：**一眼看到全局，一键贴出，每次都记数**。
 
 **内容**：五类条目（Macro / 场景话术 / 对齐话术 / Modifier / Composition）全部在屏，排除 `deprecated` 与废纸篓中的行。分列、分层、筛选、键位的完整界面契约见 [[03-product-spec#13.6]] b。
 
@@ -1170,14 +1170,14 @@ SOP 节包含 2 个相关模型：**SOP**（标准作业流程）、**SOPStep**�
   "alignment_phrases": [/* AlignmentPhrase[] */],
   "alignment_axis_values": [/* AlignmentAxisValue[]，v0.15 新增顶层键 */],
   "website_library": { "groups": [/* WebsiteGroup[] */], "websites": [/* Website[] */] },  /* v0.17 补记，1.4 起 */
-  "panorama_placements": [/* PanoramaPlacement[]，v0.17 补记，1.5 起 */],
+  "panorama_placements": [/* PanoramaPlacement[]，v0.17 补记，1.5 起；1.6 起 groupId 为工作阶段 id */],
   "sops": [/* SOP[] */],
   "usage_records": [/* UsageRecord[]，可选，只导出最近 N 天 */]
 }
 ```
 
 **字段设计理由**：
-- `schema_version` 沿革：v1.0 → **1.1** 对应 Phase 和 AlignmentPhrase 的新增；**1.1 → 1.2**（v0.14 · [[028-reversible-delete]] 子决策 6）对应每条资产行新增可选 `deletedAt`；**1.2 → 1.3**（🎯 v0.15 · [[029-alignment-coordinates-and-drift-ledger]]）对应三处新增——顶层 `alignment_axis_values` 数组、`alignment_phrases[]` 每行多出六个字段（`kind` / `layerId` / `domainId` / `modeId` / `cueAxis` / `contentRevisedAt`）、`usage_records[]` 每行多出 `sessionStartedAt`；**1.3 → 1.4**（[[030-website-library]]，v0.17 补记）顶层新增可选 `website_library`；**1.4 → 1.5**（[[031-panorama-default-view]]，v0.17 补记）顶层新增可选 `panorama_placements`。这两个键的「缺失 / 空 / null」三态口径见 §6.12 / §6.11 各自的「与导出的关系」
+- `schema_version` 沿革：v1.0 → **1.1** 对应 Phase 和 AlignmentPhrase 的新增；**1.1 → 1.2**（v0.14 · [[028-reversible-delete]] 子决策 6）对应每条资产行新增可选 `deletedAt`；**1.2 → 1.3**（🎯 v0.15 · [[029-alignment-coordinates-and-drift-ledger]]）对应三处新增——顶层 `alignment_axis_values` 数组、`alignment_phrases[]` 每行多出六个字段（`kind` / `layerId` / `domainId` / `modeId` / `cueAxis` / `contentRevisedAt`）、`usage_records[]` 每行多出 `sessionStartedAt`；**1.3 → 1.4**（[[030-website-library]]，v0.17 补记）顶层新增可选 `website_library`；**1.4 → 1.5**（[[031-panorama-default-view]]，v0.17 补记）顶层新增可选 `panorama_placements`；**1.5 → 1.6**（[[032-panorama-work-stage-columns]]，v0.18）`panorama_placements[].groupId` 取值由意图 id 换成工作阶段 id——1.6 构建导入 1.5 文件时 `align` / `polish` / `retain` 自动读作 `understand` / `iterate` / `distill`；1.5 构建读到含 `plan` / `generate` 的 1.6 文件会拒绝整份导入（不半读）。这两个键的「缺失 / 空 / null」三态口径见 §6.12 / §6.11 各自的「与导出的关系」
 - **兼容口径按 MAJOR 判定**：`check_schema_version` 只比对主版本号，所以 1.1 的旧备份照常导入（无 `deletedAt` 的行反序列化为存活），1.2 文件被只认 1.1 的旧构建读到时该字段被忽略——双向兼容，MINOR 递增不挡门。1.3 沿用同一口径：**1.1 / 1.2 的旧备份照常导入**，缺 `kind` 的行反序列化为 `'opening'`，缺 `layerId` / `domainId` / `modeId` / `cueAxis` / `contentRevisedAt` / `sessionStartedAt` 的行一律为 NULL
 - **顶层键与行内字段的大小写不一样，这是既有事实不是笔误**：现有**十个**顶层键全是 snake_case（8 张资产表 + `schema_version` / `exported_at`；`ExportBundle` 结构体没有 `rename_all`），v0.15 后为十一个，资产行的字段是 camelCase（模型结构体逐个声明了 `#[serde(rename_all = "camelCase")]`）。新增的 `alignment_axis_values` 按顶层键的规矩走
 - `usage_records` 可选——大数据量场景下可只导出当前资产、不导出历史使用记录
@@ -1294,7 +1294,7 @@ stateDiagram-v2
 
 ### 6.11 PanoramaPlacement（全景布局 · v0.17 新增 · [[031-panorama-default-view]]）
 
-> **不是资产**，是视图状态：记录一条资产在全景里放在哪一列、占不占常用位。单独成表而不给五张资产表加列——资产表结构不动，第七道源码级闸门（[[11-test-spec#3]]）的七表清单不动，也不引入第四层资产（[[02-constitution#B1]]）。migration `0016`，`user_version` 15 → **16**。
+> **不是资产**，是视图状态：记录一条资产在全景里放在哪一列、占不占常用位。单独成表而不给五张资产表加列——资产表结构不动，第七道源码级闸门（[[11-test-spec#3]]）的七表清单不动，也不引入第四层资产（[[02-constitution#B1]]）。migration `0016`，`user_version` 15 → **16**；v0.18 起 migration `0017`（`user_version` 16 → **17**，[[032-panorama-work-stage-columns]]）重建本表换 `group_id` 取值，存量行按 `align→understand` / `polish→iterate` / `retain→distill` 映射，其余同名，不丢行、不动号位。
 
 #### Fields
 
@@ -1302,7 +1302,7 @@ stateDiagram-v2
 |------|------|----------|---------|------------|-------------|
 | asset_kind | enum | N | - | `macro` / `phrase` / `alignment_phrase` / `modifier` / `composition`；PK 一部分 | 资产类别 |
 | asset_id | string | N | - | PK 一部分 | 资产 id。**多态引用，无外键**——一列 id 指向五张表之一，SQLite 外键表达不了 |
-| group_id | enum | Y | NULL | `align` / `diverge` / `converge` / `execute` / `polish` / `retain` / `cue` / `tool` | 用户指定的列；NULL = 走默认规则（对齐话术按相位，其余进「未分组」，[[03-product-spec#13.6]] b）|
+| group_id | enum | Y | NULL | `understand` / `diverge` / `converge` / `plan` / `generate` / `execute` / `iterate` / `distill` / `cue` / `tool`（v0.18 起；八个工作阶段与 `phase-*` 后缀同名）| 用户指定的列；NULL = 走默认规则（带相位的条目——对齐话术与 Composition——进本相位列，其余进「未分组」，[[03-product-spec#13.6]] b）|
 | pin_slot | int | Y | NULL | 1–9；**非空时全表唯一**（部分唯一索引）| 常用位号；NULL = 不占位 |
 
 `(asset_kind, asset_id)` 为主键。**`group_id` 与 `pin_slot` 同时为 NULL 的行不存在**——写成这样即删除该行。
@@ -1837,6 +1837,16 @@ PRD 不复刻风险表，避免双源真理漂移；实施侧风险/缓解以 pl
 ---
 
 ## 修订记录
+
+### v0.18（2026-11-14）— 全景改按工作阶段分列
+
+> **状态：`draft`——待 HuiW86 签字**，与 [[032-panorama-work-stage-columns]] / [[03-product-spec]] v0.32 / [[05-design-spec]] v0.26 同批，单裁点见 product-spec v0.32。实现见 PR #24。
+
+| 章节 | 改动 |
+|------|------|
+| §5.9 | 定位里「按意图分列」→「按工作阶段分列」 |
+| §6.9 | 导出 1.5 → 1.6 沿革一条；`panorama_placements` 注释补 1.6 取值 |
+| §6.11 | migration `0017`（`user_version` 16 → 17）一句；`group_id` 取值换为十个；默认规则纳入 Composition |
 
 ### v0.17（2026-11-13）— 全景布局与常用网站补写进契约
 
