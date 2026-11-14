@@ -41,7 +41,7 @@
       "overflowX": false
     },
     "title-attr-on-rows": 0,
-    "hover-delay-ms-first": 320,
+    "hover-delay-ms-first": 311,
     "preview-state-long": {
       "visible": true,
       "rect": {
@@ -55,21 +55,21 @@
       "scrollable": false,
       "textLen": 810
     },
-    "hover-delay-ms-warm-switch": 101,
+    "hover-delay-ms-warm-switch": 111,
     "preview-stays-open-when-pointer-inside": true,
     "preview-scrolled": 0,
     "preview-closed-after-leave": true,
     "fast-sweep": {
-      "ms": 44,
+      "ms": 19,
       "opens": 0
     },
     "sweep-across-800ms": {
-      "ms": 802,
+      "ms": 803,
       "opens": 0
     },
     "sweep-down-column": {
       "rows": 4,
-      "ms": 603,
+      "ms": 602,
       "opens": 0
     },
     "preview-closed-after-click": true,
@@ -356,7 +356,7 @@
     },
     "manage-1440-largest-overflowX": false,
     "macro-title-attr-1440": null,
-    "macro-hover-delay-1440": 329,
+    "macro-hover-delay-1440": 322,
     "macro-preview-1440": {
       "visible": true,
       "rect": {
@@ -372,7 +372,7 @@
     },
     "manage-1024-largest-overflowX": false,
     "macro-title-attr-1024": null,
-    "macro-hover-delay-1024": 316,
+    "macro-hover-delay-1024": 345,
     "macro-preview-1024": {
       "visible": true,
       "rect": {
