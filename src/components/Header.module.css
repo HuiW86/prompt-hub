@@ -66,7 +66,7 @@
 
 .workspaces {
   display: flex;
-  gap: var(--s-1);
+  gap: var(--s-0_5);
   padding: var(--s-0_5);
   border: var(--hairline) solid var(--border-2);
   border-radius: var(--r-4);
@@ -81,7 +81,11 @@
   color: var(--fg-3);
   cursor: pointer;
   font: inherit;
+  line-height: var(--lh-tight);
   white-space: nowrap;
+  transition:
+    background-color var(--d-fast) var(--ease),
+    color var(--d-fast) var(--ease);
 }
 .current {
   color: var(--fg-1);

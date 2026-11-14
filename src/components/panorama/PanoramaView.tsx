@@ -8,6 +8,8 @@ import {
   type CSSProperties,
 } from "react";
 
+import { Search } from "lucide-react";
+
 import { useCopy } from "../../hooks/useCopy";
 import { usePanoramaStore, panoramaKey } from "../../stores/panoramaStore";
 import { usePromptStore } from "../../stores/promptStore";
@@ -21,6 +23,7 @@ import {
   matchesFilter,
   type PanoramaColumn,
   type PanoramaItem,
+  INTENT_COLUMN_IDS,
 } from "../../utils/panorama";
 
 import { PlacementMenu, type PlacementChange } from "./PlacementMenu";
@@ -42,6 +45,12 @@ function formatDate(iso: string | null): string {
   const mm = String(d.getMonth() + 1).padStart(2, "0");
   const dd = String(d.getDate()).padStart(2, "0");
   return `${d.getFullYear()}-${mm}-${dd}`;
+}
+
+/** The six intent columns read left to right as one workflow; number them. */
+function ordinal(id: string): string | null {
+  const i = (INTENT_COLUMN_IDS as readonly string[]).indexOf(id);
+  return i === -1 ? null : String(i + 1).padStart(2, "0");
 }
 
 function isEditable(el: EventTarget | null): boolean {
@@ -579,6 +588,11 @@ export function PanoramaView() {
         data-column={column.id}
       >
         <header className={styles.columnHeader}>
+          {ordinal(column.id) && (
+            <span className={styles.ordinal} aria-hidden>
+              {ordinal(column.id)}
+            </span>
+          )}
           <span className={styles.columnTitle}>{column.title}</span>
           <span className={styles.columnCount}>
             {column.activeCount} / {column.items.length}
@@ -609,19 +623,25 @@ export function PanoramaView() {
 
   return (
     <div className={styles.panorama} ref={rootRef} aria-label="全景">
-      <div className={styles.filterRow}>
+      <label className={styles.filterRow}>
+        <Search
+          className={styles.filterIcon}
+          size={16}
+          strokeWidth={2}
+          aria-hidden
+        />
         <input
           ref={inputRef}
           className={styles.filter}
           type="text"
           value={query}
-          placeholder="按 1–9 贴出常用位，打字筛选"
+          placeholder="打字筛选全部条目"
           aria-label="筛选"
           spellCheck={false}
           autoComplete="off"
           onChange={(e) => onQueryChange(e.target.value)}
         />
-      </div>
+      </label>
       <div className={styles.grid} ref={gridRef}>
         {visibleColumns.columns.map((c) => renderColumn(c, "column"))}
       </div>
@@ -639,7 +659,16 @@ export function PanoramaView() {
           </>
         ) : (
           <span className={styles.previewHint}>
-            {filtering ? "没有匹配的条目" : "↑↓←→ 选择，↵ 贴出，Esc 清空或收起"}
+            {filtering ? (
+              "没有匹配的条目"
+            ) : (
+              <>
+                <kbd className={styles.kbd}>1–9</kbd> 贴出常用位
+                <kbd className={styles.kbd}>↑↓←→</kbd> 选择
+                <kbd className={styles.kbd}>↵</kbd> 贴出
+                <kbd className={styles.kbd}>Esc</kbd> 清空或收起
+              </>
+            )}
           </span>
         )}
       </footer>

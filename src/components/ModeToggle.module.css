@@ -1,25 +1,26 @@
 /* ModeToggle — D-0 interaction-mode segmented control in the Header. A recessed
-   muted track holds two equal segments; the active one lifts to the primary
-   surface + accent border so "which mode am I in" is answerable at a glance. */
+   muted track holds two equal segments; the active one lifts to the raised
+   surface — the same grammar as the workspace switch beside the logo, so the
+   Header carries one segmented-control style, not two (V-01). */
 
 .segment {
   display: inline-flex;
-  gap: var(--s-1);
+  gap: var(--s-0_5);
   flex: 0 0 auto;
-  padding: var(--s-1);
+  padding: var(--s-0_5);
   background: var(--surface-2);
-  border: var(--hairline) solid var(--border-1);
+  border: var(--hairline) solid var(--border-2);
   border-radius: var(--r-4);
 }
 
 .item {
-  composes: ph-card-body from "../styles/typography.module.css";
   display: inline-flex;
   align-items: center;
   gap: var(--s-1_5);
-  height: var(--h-chip);
-  padding: 0 var(--s-2_5);
-  border: var(--hairline) solid transparent;
+  padding: var(--s-1_5) var(--s-2_5);
+  border: 0;
+  font: inherit;
+  line-height: var(--lh-tight);
   border-radius: var(--r-3);
   background: transparent;
   color: var(--fg-3);
@@ -29,7 +30,6 @@
   appearance: none;
   transition:
     background-color var(--d-fast) var(--ease),
-    border-color var(--d-fast) var(--ease),
     color var(--d-fast) var(--ease);
 }
 
@@ -38,8 +38,7 @@
 }
 
 .item.active {
-  background: var(--surface-1);
-  border-color: var(--accent);
+  background: var(--surface-3);
   color: var(--fg-1);
 }
 
