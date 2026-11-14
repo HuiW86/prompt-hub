@@ -1,0 +1,329 @@
+{
+  "label": "fix-readability-hover-preview",
+  "engine": "webkit",
+  "checks": {
+    "metrics-default-1440": {
+      "rootClass": "dark accent-neutral",
+      "rootFontScale": "1",
+      "activeName": {
+        "fontSize": "13px",
+        "lineHeight": "15.6px",
+        "color": "rgb(236, 236, 238)"
+      },
+      "pinnedName": {
+        "fontSize": "13px",
+        "lineHeight": "15.6px",
+        "color": "rgb(236, 236, 238)"
+      },
+      "dormantRow": {
+        "fontSize": "13px",
+        "lineHeight": "15.6px",
+        "color": "rgb(126, 126, 132)"
+      },
+      "columnTitle": {
+        "fontSize": "12px",
+        "lineHeight": "17.4px",
+        "color": "rgb(180, 180, 184)"
+      },
+      "columnCount": {
+        "fontSize": "11px",
+        "lineHeight": "15.95px",
+        "color": "rgb(126, 126, 132)"
+      },
+      "footer": {
+        "fontSize": "13px",
+        "lineHeight": "18.85px",
+        "color": "rgb(126, 126, 132)"
+      },
+      "truncatedSpans": 16,
+      "overflowX": false
+    },
+    "title-attr-on-rows": 0,
+    "hover-delay-ms-first": 326,
+    "preview-state-long": {
+      "visible": true,
+      "rect": {
+        "x": 198.75,
+        "y": 199,
+        "w": 480,
+        "h": 681
+      },
+      "inViewport": true,
+      "fontSize": "14px",
+      "scrollable": false,
+      "textLen": 810
+    },
+    "hover-delay-ms-warm-switch": 127,
+    "preview-stays-open-when-pointer-inside": true,
+    "preview-scrolled": 0,
+    "preview-closed-after-leave": true,
+    "fast-sweep": {
+      "ms": 36,
+      "opens": 0
+    },
+    "preview-closed-after-click": true,
+    "preview-right-edge": {
+      "visible": true,
+      "rect": {
+        "x": 762.25,
+        "y": 199,
+        "w": 480,
+        "h": 681
+      },
+      "inViewport": true,
+      "fontSize": "14px",
+      "scrollable": false,
+      "textLen": 810
+    },
+    "preview-bottom-edge": {
+      "visible": true,
+      "rect": {
+        "x": 92.671875,
+        "y": 771,
+        "w": 480,
+        "h": 109
+      },
+      "inViewport": true,
+      "fontSize": "14px",
+      "scrollable": false,
+      "textLen": 22
+    },
+    "font-scale-options": [
+      "标准100%",
+      "大112.5%",
+      "特大125%"
+    ],
+    "after-pick-largest": "accent-neutral dark text-xlarge",
+    "metrics-largest-1440": {
+      "rootClass": "accent-neutral dark text-xlarge",
+      "rootFontScale": "1.25",
+      "activeName": {
+        "fontSize": "16.25px",
+        "lineHeight": "19.5px",
+        "color": "rgb(236, 236, 238)"
+      },
+      "pinnedName": {
+        "fontSize": "16.25px",
+        "lineHeight": "19.5px",
+        "color": "rgb(236, 236, 238)"
+      },
+      "dormantRow": {
+        "fontSize": "16.25px",
+        "lineHeight": "19.5px",
+        "color": "rgb(126, 126, 132)"
+      },
+      "columnTitle": {
+        "fontSize": "15px",
+        "lineHeight": "21.75px",
+        "color": "rgb(180, 180, 184)"
+      },
+      "columnCount": {
+        "fontSize": "13.75px",
+        "lineHeight": "19.9375px",
+        "color": "rgb(126, 126, 132)"
+      },
+      "footer": {
+        "fontSize": "16.25px",
+        "lineHeight": "23.5625px",
+        "color": "rgb(126, 126, 132)"
+      },
+      "truncatedSpans": 19,
+      "overflowX": false
+    },
+    "preview-state-largest": {
+      "visible": true,
+      "rect": {
+        "x": 198.75,
+        "y": 29,
+        "w": 600,
+        "h": 851
+      },
+      "inViewport": true,
+      "fontSize": "17.5px",
+      "scrollable": false,
+      "textLen": 810
+    },
+    "persisted-after-reload": {
+      "cls": "dark accent-neutral text-xlarge",
+      "stored": "{\"state\":{\"themeMode\":\"dark\",\"accent\":\"neutral\",\"density\":\"comfortable\",\"fontScale\":\"xlarge\",\"interactionMode\":\"invoke\"},\"version\":2}"
+    },
+    "keyboard-shortcuts": {
+      "afterReset": "accent-neutral dark",
+      "afterPlus": "accent-neutral dark text-large",
+      "afterMinus": "accent-neutral dark"
+    },
+    "reset-enabled-when-larger": true,
+    "after-reset-button": "accent-neutral dark",
+    "reset-disabled-at-default": true,
+    "metrics-default-1024": {
+      "rootClass": "dark accent-neutral",
+      "rootFontScale": "1",
+      "activeName": {
+        "fontSize": "13px",
+        "lineHeight": "15.6px",
+        "color": "rgb(236, 236, 238)"
+      },
+      "pinnedName": {
+        "fontSize": "13px",
+        "lineHeight": "15.6px",
+        "color": "rgb(236, 236, 238)"
+      },
+      "dormantRow": {
+        "fontSize": "13px",
+        "lineHeight": "15.6px",
+        "color": "rgb(126, 126, 132)"
+      },
+      "columnTitle": {
+        "fontSize": "12px",
+        "lineHeight": "17.4px",
+        "color": "rgb(180, 180, 184)"
+      },
+      "columnCount": {
+        "fontSize": "11px",
+        "lineHeight": "15.95px",
+        "color": "rgb(126, 126, 132)"
+      },
+      "footer": {
+        "fontSize": "13px",
+        "lineHeight": "18.85px",
+        "color": "rgb(126, 126, 132)"
+      },
+      "truncatedSpans": 22,
+      "overflowX": false
+    },
+    "metrics-largest-1024": {
+      "rootClass": "dark accent-neutral text-xlarge",
+      "rootFontScale": "1.25",
+      "activeName": {
+        "fontSize": "16.25px",
+        "lineHeight": "19.5px",
+        "color": "rgb(236, 236, 238)"
+      },
+      "pinnedName": {
+        "fontSize": "16.25px",
+        "lineHeight": "19.5px",
+        "color": "rgb(236, 236, 238)"
+      },
+      "dormantRow": {
+        "fontSize": "16.25px",
+        "lineHeight": "19.5px",
+        "color": "rgb(126, 126, 132)"
+      },
+      "columnTitle": {
+        "fontSize": "15px",
+        "lineHeight": "21.75px",
+        "color": "rgb(180, 180, 184)"
+      },
+      "columnCount": {
+        "fontSize": "13.75px",
+        "lineHeight": "19.9375px",
+        "color": "rgb(126, 126, 132)"
+      },
+      "footer": {
+        "fontSize": "16.25px",
+        "lineHeight": "23.5625px",
+        "color": "rgb(126, 126, 132)"
+      },
+      "truncatedSpans": 23,
+      "overflowX": false
+    },
+    "preview-1024-largest": {
+      "visible": true,
+      "rect": {
+        "x": 278.25,
+        "y": 20,
+        "w": 600,
+        "h": 660
+      },
+      "inViewport": true,
+      "fontSize": "17.5px",
+      "scrollable": true,
+      "textLen": 810
+    },
+    "metrics-default-800": {
+      "rootClass": "dark accent-neutral",
+      "rootFontScale": "1",
+      "activeName": {
+        "fontSize": "13px",
+        "lineHeight": "15.6px",
+        "color": "rgb(236, 236, 238)"
+      },
+      "pinnedName": {
+        "fontSize": "13px",
+        "lineHeight": "15.6px",
+        "color": "rgb(236, 236, 238)"
+      },
+      "dormantRow": {
+        "fontSize": "13px",
+        "lineHeight": "15.6px",
+        "color": "rgb(126, 126, 132)"
+      },
+      "columnTitle": {
+        "fontSize": "12px",
+        "lineHeight": "17.4px",
+        "color": "rgb(180, 180, 184)"
+      },
+      "columnCount": {
+        "fontSize": "11px",
+        "lineHeight": "15.95px",
+        "color": "rgb(126, 126, 132)"
+      },
+      "footer": {
+        "fontSize": "13px",
+        "lineHeight": "18.85px",
+        "color": "rgb(126, 126, 132)"
+      },
+      "truncatedSpans": 23,
+      "overflowX": false
+    },
+    "metrics-largest-800": {
+      "rootClass": "dark accent-neutral text-xlarge",
+      "rootFontScale": "1.25",
+      "activeName": {
+        "fontSize": "16.25px",
+        "lineHeight": "19.5px",
+        "color": "rgb(236, 236, 238)"
+      },
+      "pinnedName": {
+        "fontSize": "16.25px",
+        "lineHeight": "19.5px",
+        "color": "rgb(236, 236, 238)"
+      },
+      "dormantRow": {
+        "fontSize": "16.25px",
+        "lineHeight": "19.5px",
+        "color": "rgb(126, 126, 132)"
+      },
+      "columnTitle": {
+        "fontSize": "15px",
+        "lineHeight": "21.75px",
+        "color": "rgb(180, 180, 184)"
+      },
+      "columnCount": {
+        "fontSize": "13.75px",
+        "lineHeight": "19.9375px",
+        "color": "rgb(126, 126, 132)"
+      },
+      "footer": {
+        "fontSize": "16.25px",
+        "lineHeight": "23.5625px",
+        "color": "rgb(126, 126, 132)"
+      },
+      "truncatedSpans": 23,
+      "overflowX": false
+    },
+    "preview-800-largest": {
+      "visible": true,
+      "rect": {
+        "x": 82.25,
+        "y": 20,
+        "w": 600,
+        "h": 560
+      },
+      "inViewport": true,
+      "fontSize": "17.5px",
+      "scrollable": true,
+      "textLen": 810
+    }
+  }
+}
