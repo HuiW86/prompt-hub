@@ -1,7 +1,7 @@
 ---
 type: adr
 project: prompt-hub
-status: Proposed
+status: Accepted
 author: ai
 created: 2026-11-14
 description: 全景列由六个意图改为八个工作阶段（与九个相位一一对应，中途仍在底部条）；Composition 与对齐话术一样按相位默认归列；`panorama_placements.group_id` 经 migration `0017` 映射到阶段 id，导出 1.5 → 1.6 且仍能导入 1.5
@@ -18,12 +18,14 @@ related:
 
 - **标题**：全景的六个意图列改为八个工作阶段列
 - **日期**：2026-11-14
-- **决策者**：HuiW86（方向口头裁决 2026-11-14：「应该从工作的阶段来分」；本 ADR 待签字）
+- **决策者**：HuiW86（方向口头裁决 2026-11-14：「应该从工作的阶段来分」；2026-11-14 签字通过本 ADR 与三份图纸回流）
 - **影响范围**：[[031-panorama-default-view]] 原则 6 与子决策 2 的取值 / 数据层 migration `0017`（`user_version` 16→17）/ 导出 data schema 1.5→1.6 / `src/utils/panorama.ts` / 签字后回流 [[03-product-spec]]、[[05-design-spec]]、[[06-prd]]
 
 ## 2. Status
 
-`Proposed`
+`Accepted`
+
+- Last reviewed: 2026-11-14（HuiW86 签字，单裁点按推荐通过）
 
 ## 3. Context
 
@@ -79,7 +81,7 @@ related:
 
 - 中等：回到意图列需要反向迁移（`plan→converge`、`generate→execute` 会丢失区分），导出版本再 bump 一次。
 
-### 待回流（签字后按八步走）
+### 回流（2026-11-14 随签字完成）
 
 - [[03-product-spec]] 全景章节列名与默认规则
 - [[05-design-spec]] §10.9 列数与序号 01–08
