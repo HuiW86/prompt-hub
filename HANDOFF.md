@@ -22,11 +22,10 @@
 
 ## Next Actions
 
-> 编号沿用旧账，只列仍开着的。M-01 的发布门已全部通过；**`main` 已提到 0.2.3，下一步是打 tag `v0.2.3` 出包**（第 70 项）；第 65 项已结（三份图纸签字、裁点实装）；下一步按需从「待裁决」或「审查与验证欠账」里挑。
+> 编号沿用旧账，只列仍开着的。M-01 的发布门已全部通过；**v0.2.3 已发布并经自动更新装上**；第 65 项已结（三份图纸签字、裁点实装）；下一步按需从「待裁决」或「审查与验证欠账」里挑。
 
 ### 全景（M-01）收尾
 
-70. **发布 v0.2.3**（new 2026-11-13）：`main` 已提到 0.2.3、发布说明在 `docs/release-notes/v0.2.3.md`。按 `docs/release-runbook.md` 在本机做：§1 前置检查（含 `bash scripts/check-version.sh 0.2.3`）→ §1.5 凭据自检 → §2 打 tag `v0.2.3` 并推送（云端推不了 tag）→ 审批 sign job（7 天内）→ §3 本地核对 → §4 把 draft 转正式发布 → 用 0.2.2 客户端「检查更新」验一次真实更新链路
 69. （低优先）全景在**紧凑密度档**下的一屏无滚动未单独看过（2026-11-13 验收用的是默认档）。切到紧凑档时顺手看一眼即可
 67. （低优先）清空废纸篓不清 `panorama_placements` 悬空行：不显示、占的常用位被新抢占者静默让出、导入时清理。要立即干净就在 `purge_trash` 末尾调 `repo_write::panorama::delete_dangling_placements`
 ### 待裁决
@@ -46,7 +45,6 @@
 6. `a24c7c0` / `4b722c1` / `716bd4c` 三个 commit 补 verifier 对抗审查
 46. Codex 代理账户余额约 $0.3，充值到 ≥ $3 后补跑 `/codex review`（ADR-029 三期、第 53 项均无第二意见）
 55. 正式版上反查一次 `notes`：omar 下次真要改话术正文时填说明保存，再跑 `sqlite3 "$HOME/Library/Application Support/dev.prompt-hub/prompt-hub.db" "SELECT id, name, notes, content_revised_at FROM alignment_phrases WHERE content_revised_at IS NOT NULL ORDER BY content_revised_at DESC LIMIT 3;"`。AI 不替他挑话术改真实库
-62. runbook §4 更新链路未单独确认：0.2.0 客户端「检查更新」→ 公开 v0.2.1，须在另一台机或隔离安装上做
 40. （低优先）G5 两处覆盖薄处：六个删除入口只真机走了 Macro 卡；`revive_trashed_ancestors` 祖先复活路径未真机跑
 45. （低优先）G6 未验：1 MiB 日志滚动是否真保留一份；每小时后台线程跨休眠的每日排期
 
@@ -86,6 +84,7 @@
 
 ## Dropped
 
+- 第 70 项（发布 v0.2.3）与第 62 项（runbook §4 更新链路）：2026-11-13 HuiW86 本机推送 tag `v0.2.3`（指向 `d06a45a`，不含其后合并的 PR #20），release 流程成功、16:26 UTC 转正式发布，公开 `latest.json` 版本 0.2.3（含 darwin-aarch64 / darwin-x86_64）；随后在已装客户端上经应用内「检查更新」升到 0.2.3（用户确认）。第 62 项原写的是 0.2.0 → 0.2.1，实际以 0.2.2 → 0.2.3 这次真实更新闭合
 - 第 65 项（全景 + 网站 Tab 契约回流）：2026-11-13 product-spec v0.31 / prd v0.17 / design-spec v0.24 同批签字；裁点「每次唤起都回到全景」按推荐通过并当日实装（`src/App.tsx`，管理里有编辑面板开着时例外，防丢草稿），`App.test.tsx` +5
 - 第 58 项（ADR-030 裁决）与第 60 项（`ccb145b` 补审查）：2026-11-13 HuiW86 授权 AI 裁决，裁前对照代码逐条复核无缺陷，ADR-030 **Accepted**；补充子决策：网站表不进第七道闸门（理由见 ADR-030「裁决」节）。契约回流并入第 65 项
 - 第 64 项（全景真机门）：2026-11-13 全部通过——macOS clippy 通过；`bench:hotkey-wake` p95 **20.143ms**（低于 200ms，但比 2026-09-05 的 14.139ms 多 6.004ms / +42%，原因未查，再涨须先定位）；真实库副本 15→16 迁移正常、原库 `quick_check` 正常；真实库 76 条一屏无纵向滚动（未分组列底部「还有 29 条」）；整理态选中后 `⌥3` 出现常用位徽标 3、`⌥0` 消失。验收副本在 `/tmp/prompt-hub-acceptance-home`
