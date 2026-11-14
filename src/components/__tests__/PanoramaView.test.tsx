@@ -214,17 +214,19 @@ describe("PanoramaView", () => {
 
   // ── S1: one screen, everything visible, loudness by tier ─────────────────
 
-  it("S1 renders the six intent columns in order, then 未分组, then the strip", async () => {
+  it("S1 renders the eight stage columns in order, then 未分组, then the strip", async () => {
     await renderView();
     const titles = screen
       .getAllByRole("region")
       .map((r) => r.getAttribute("aria-label"));
     expect(titles).toEqual([
-      "对齐与理解",
-      "发散与调研",
-      "收敛与方案",
-      "执行与验收",
-      "打磨与表达",
+      "理解",
+      "发散",
+      "收敛",
+      "规划",
+      "生成",
+      "执行",
+      "迭代",
       "沉淀",
       "未分组",
       "中途口令",
@@ -235,9 +237,9 @@ describe("PanoramaView", () => {
   it("S1 places items by placement or default rule and shows every item at once", async () => {
     await renderView();
     const col = (label: string) => screen.getByRole("region", { name: label });
-    expect(within(col("执行与验收")).getByText("审查改动")).toBeInTheDocument();
-    expect(within(col("收敛与方案")).getByText("设计导出")).toBeInTheDocument();
-    expect(within(col("对齐与理解")).getByText("先对齐")).toBeInTheDocument();
+    expect(within(col("执行")).getByText("审查改动")).toBeInTheDocument();
+    expect(within(col("收敛")).getByText("设计导出")).toBeInTheDocument();
+    expect(within(col("理解")).getByText("先对齐")).toBeInTheDocument();
     expect(within(col("中途口令")).getByText("停")).toBeInTheDocument();
     expect(within(col("未分组")).getByText("补测试")).toBeInTheDocument();
     // Dormant is shown, just quieter — never hidden.
@@ -358,7 +360,7 @@ describe("PanoramaView", () => {
   it("S3 ↵ copies the first match in reading order", async () => {
     await renderView();
     const input = screen.getByLabelText("筛选");
-    // Matches 设计导出 (收敛与方案, column 3) and 补测试 (未分组, column 7);
+    // Matches 设计导出 (收敛, column 3) and 补测试 (未分组, column 9);
     // 设计导出 comes first reading left to right.
     fireEvent.change(input, { target: { value: "正文" } });
     fireEvent.change(input, { target: { value: "设" } });
@@ -381,7 +383,7 @@ describe("PanoramaView", () => {
   it("arrow keys move the selection and ↵ copies the selected item", async () => {
     await renderView();
     fireEvent.keyDown(document.body, { key: "ArrowDown" });
-    // First visible item in reading order: 先对齐 in 对齐与理解.
+    // First visible item in reading order: 先对齐 in 理解.
     expect(row("先对齐")).toHaveAttribute("aria-current", "true");
     fireEvent.keyDown(document.body, { key: "ArrowRight" });
     expect(row("设计导出")).toHaveAttribute("aria-current", "true");

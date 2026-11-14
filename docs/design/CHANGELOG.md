@@ -14,6 +14,21 @@ description: prompt-hub 设计文档体系变更日志——记录文档结构�
 
 ---
 
+## 2026-11-14（六）— 全景改按工作阶段分列（ADR-032 Proposed，issue #23）
+
+### 变更内容
+
+- 全景六个意图列改为八个工作阶段列（理解 / 发散 / 收敛 / 规划 / 生成 / 执行 / 迭代 / 沉淀），与相位一一对应，列标题即相位名；底部「中途口令」「工具」不变
+- 默认归列：对齐话术按相位恒等映射（不再把规划并入收敛、生成并入执行）；Composition 新增按 `phaseId` 默认归列
+- migration `0017`（`user_version` 16→**17**）重建 `panorama_placements`：`align→understand` / `polish→iterate` / `retain→distill`，不丢行、不动常用位
+- 导出 data schema 1.5→**1.6**；1.5 文件仍可导入（旧 id 自动映射）
+
+### 变更原因
+
+2026-11-14 Notion 提示词库先按意图归组 76 条，HuiW86 判断「应该从工作的阶段来分」并采纳阶段分法；应用全景随之对齐。契约回流（product-spec / design-spec / prd）待 ADR-032 签字后按八步走。
+
+---
+
 ## 2026-11-13（五）— 全景工作区视觉精修（V-01，issue #19）+ design-spec v0.25 送签
 
 ### 变更内容

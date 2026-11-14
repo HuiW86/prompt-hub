@@ -171,8 +171,8 @@ mod tests {
     fn panorama_set_is_an_upsert() {
         let (_d, c) = conn();
         let m = ids(&c, "macros")[0].clone();
-        let out = set_panorama_placement(&c, p(K::Macro, &m, Some(G::Align), None)).unwrap();
-        assert_eq!(out, vec![p(K::Macro, &m, Some(G::Align), None)]);
+        let out = set_panorama_placement(&c, p(K::Macro, &m, Some(G::Understand), None)).unwrap();
+        assert_eq!(out, vec![p(K::Macro, &m, Some(G::Understand), None)]);
         let out = set_panorama_placement(&c, p(K::Macro, &m, Some(G::Tool), Some(2))).unwrap();
         assert_eq!(out, vec![p(K::Macro, &m, Some(G::Tool), Some(2))]);
     }
@@ -182,16 +182,16 @@ mod tests {
         let (_d, c) = conn();
         let macros = ids(&c, "macros");
         let ap = ids(&c, "alignment_phrases")[0].clone();
-        set_panorama_placement(&c, p(K::Macro, &macros[0], Some(G::Align), Some(1))).unwrap();
+        set_panorama_placement(&c, p(K::Macro, &macros[0], Some(G::Understand), Some(1))).unwrap();
         // Holder with no group: losing the pin leaves nothing, so its row goes.
         set_panorama_placement(&c, p(K::Macro, &macros[1], None, Some(2))).unwrap();
 
         let out = set_panorama_placement(&c, p(K::AlignmentPhrase, &ap, None, Some(1))).unwrap();
-        assert!(out.contains(&p(K::Macro, &macros[0], Some(G::Align), None)));
+        assert!(out.contains(&p(K::Macro, &macros[0], Some(G::Understand), None)));
         assert!(out.contains(&p(K::AlignmentPhrase, &ap, None, Some(1))));
 
-        let out =
-            set_panorama_placement(&c, p(K::Macro, &macros[0], Some(G::Align), Some(2))).unwrap();
+        let out = set_panorama_placement(&c, p(K::Macro, &macros[0], Some(G::Understand), Some(2)))
+            .unwrap();
         assert!(
             out.iter().all(|x| x.asset_id != macros[1]),
             "displaced holder with no group is deleted, not stored empty"
@@ -210,7 +210,7 @@ mod tests {
     fn panorama_both_null_deletes_the_row() {
         let (_d, c) = conn();
         let m = ids(&c, "macros")[0].clone();
-        set_panorama_placement(&c, p(K::Macro, &m, Some(G::Retain), Some(5))).unwrap();
+        set_panorama_placement(&c, p(K::Macro, &m, Some(G::Distill), Some(5))).unwrap();
         let out = set_panorama_placement(&c, p(K::Macro, &m, None, None)).unwrap();
         assert!(out.is_empty());
         // Deleting a row that does not exist is a no-op, not an error.
@@ -225,7 +225,7 @@ mod tests {
         crate::delete_macro(&c, &m).unwrap();
         assert!(list_panorama_placements(&c).unwrap().is_empty());
         assert!(
-            set_panorama_placement(&c, p(K::Macro, &m, Some(G::Align), None)).is_err(),
+            set_panorama_placement(&c, p(K::Macro, &m, Some(G::Understand), None)).is_err(),
             "a trashed asset cannot be placed"
         );
         crate::restore_asset(&c, repo_core::AssetKind::Macro, &m).unwrap();
@@ -239,9 +239,11 @@ mod tests {
     fn panorama_rejects_unknown_assets_and_out_of_range_slots() {
         let (_d, c) = conn();
         let m = ids(&c, "macros")[0].clone();
-        assert!(set_panorama_placement(&c, p(K::Macro, "nope", Some(G::Align), None)).is_err());
+        assert!(
+            set_panorama_placement(&c, p(K::Macro, "nope", Some(G::Understand), None)).is_err()
+        );
         // Right id, wrong kind: the reference is (kind, id), not id alone.
-        assert!(set_panorama_placement(&c, p(K::Phrase, &m, Some(G::Align), None)).is_err());
+        assert!(set_panorama_placement(&c, p(K::Phrase, &m, Some(G::Understand), None)).is_err());
         assert!(set_panorama_placement(&c, p(K::Macro, &m, None, Some(0))).is_err());
         assert!(set_panorama_placement(&c, p(K::Macro, &m, None, Some(10))).is_err());
         assert!(list_panorama_placements(&c).unwrap().is_empty());

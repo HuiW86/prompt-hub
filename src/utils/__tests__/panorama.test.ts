@@ -237,13 +237,36 @@ describe("buildPanorama — columns", () => {
       macros: [macro("m")],
       phrases: [phrase("p")],
       modifiers: [modifier("mod")],
-      compositions: [composition("c")],
+      compositions: [composition("c", { phaseId: "phase-custom" })],
       alignmentPhrases: [ap("unknown-phase", "phase-custom")],
     });
     for (const id of ["m", "p", "mod", "c", "unknown-phase"]) {
       expect(columnOf(m, id)).toBe("ungrouped");
     }
     expect(m.columns[m.columns.length - 1]?.title).toBe("未分组");
+  });
+
+  it.each(Object.entries(PHASE_TO_GROUP))(
+    "composition in %s defaults to column %s",
+    (phaseId, group) => {
+      const m = build({ compositions: [composition("c", { phaseId })] });
+      expect(columnOf(m, "c")).toBe(group);
+    },
+  );
+
+  it("each stage has its own column: 规划 and 生成 are no longer folded away", () => {
+    const m = build({
+      alignmentPhrases: [
+        ap("plan", "phase-plan"),
+        ap("conv", "phase-converge"),
+        ap("gen", "phase-generate"),
+        ap("exec", "phase-execute"),
+      ],
+    });
+    expect(columnOf(m, "plan")).toBe("plan");
+    expect(columnOf(m, "conv")).toBe("converge");
+    expect(columnOf(m, "gen")).toBe("generate");
+    expect(columnOf(m, "exec")).toBe("execute");
   });
 
   it("an explicit groupId overrides the default rule, including for alignment phrases", () => {
@@ -254,7 +277,7 @@ describe("buildPanorama — columns", () => {
         groupId: "tool",
         pinSlot: null,
       },
-      { assetKind: "macro", assetId: "m", groupId: "polish", pinSlot: null },
+      { assetKind: "macro", assetId: "m", groupId: "iterate", pinSlot: null },
     ];
     const m = build({
       alignmentPhrases: [ap("a", "phase-understand")],
@@ -262,29 +285,46 @@ describe("buildPanorama — columns", () => {
       placements,
     });
     expect(columnOf(m, "a")).toBe("tool");
-    expect(columnOf(m, "m")).toBe("polish");
+    expect(columnOf(m, "m")).toBe("iterate");
   });
 
   it("a placement is matched by kind AND id, not id alone", () => {
     const m = build({
       macros: [macro("same")],
       placements: [
-        { assetKind: "phrase", assetId: "same", groupId: "retain", pinSlot: 1 },
+        {
+          assetKind: "phrase",
+          assetId: "same",
+          groupId: "distill",
+          pinSlot: 1,
+        },
       ],
     });
     expect(columnOf(m, "same")).toBe("ungrouped");
     expect(m.bySlot[1]).toBeUndefined();
   });
 
-  it("always has the six intent columns and both strip groups; 未分组 only when non-empty", () => {
+  it("always has the eight stage columns and both strip groups; 未分组 only when non-empty", () => {
     const m = build({ alignmentPhrases: [ap("a", "phase-understand")] });
     expect(m.columns.map((c) => c.id)).toEqual([
-      "align",
+      "understand",
       "diverge",
       "converge",
+      "plan",
+      "generate",
       "execute",
-      "polish",
-      "retain",
+      "iterate",
+      "distill",
+    ]);
+    expect(m.columns.map((c) => c.title)).toEqual([
+      "理解",
+      "发散",
+      "收敛",
+      "规划",
+      "生成",
+      "执行",
+      "迭代",
+      "沉淀",
     ]);
     expect(m.strip.map((c) => c.id)).toEqual(["cue", "tool"]);
     expect(m.strip.map((c) => c.title)).toEqual(["中途口令", "工具"]);

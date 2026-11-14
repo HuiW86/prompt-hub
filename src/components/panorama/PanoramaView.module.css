@@ -1,5 +1,5 @@
 /* Panorama workspace (I-03 / ADR-031; visual pass V-01). Everything on one
- * screen: filter row, six intent columns (+ 未分组 when non-empty) that read
+ * screen: filter row, eight work-stage columns (+ 未分组 when non-empty) that read
  * left to right as one workflow, the cue/tool strip, then the preview line.
  *
  * Loudness by tier — pinned card > active row > dormant row — never by hiding.
@@ -68,9 +68,9 @@
   color: var(--fg-2);
 }
 
-/* ── Intent columns ─────────────────────────────────────────────────────── */
+/* ── Stage columns ──────────────────────────────────────────────────────── */
 
-/* Equal-width lanes for however many there are (6, or 7 with 未分组). */
+/* Equal-width lanes for however many there are (8, or 9 with 未分组). */
 .grid {
   display: grid;
   grid-auto-flow: column;
