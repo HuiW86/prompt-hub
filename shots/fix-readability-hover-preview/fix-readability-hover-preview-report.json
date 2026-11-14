@@ -41,7 +41,7 @@
       "overflowX": false
     },
     "title-attr-on-rows": 0,
-    "hover-delay-ms-first": 389,
+    "hover-delay-ms-first": 320,
     "preview-state-long": {
       "visible": true,
       "rect": {
@@ -55,21 +55,21 @@
       "scrollable": false,
       "textLen": 810
     },
-    "hover-delay-ms-warm-switch": 107,
+    "hover-delay-ms-warm-switch": 93,
     "preview-stays-open-when-pointer-inside": true,
     "preview-scrolled": 0,
     "preview-closed-after-leave": true,
     "fast-sweep": {
-      "ms": 24,
+      "ms": 41,
       "opens": 0
     },
     "sweep-across-800ms": {
-      "ms": 803,
+      "ms": 801,
       "opens": 0
     },
     "sweep-down-column": {
       "rows": 4,
-      "ms": 604,
+      "ms": 602,
       "opens": 0
     },
     "preview-closed-after-click": true,
@@ -294,8 +294,8 @@
         "lineHeight": "18.85px",
         "color": "rgb(126, 126, 132)"
       },
-      "truncatedNames": 21,
-      "nameCount": 42,
+      "truncatedNames": 20,
+      "nameCount": 41,
       "columnTitlesTruncated": 0,
       "overflowX": false
     },
@@ -332,8 +332,8 @@
         "lineHeight": "23.5625px",
         "color": "rgb(126, 126, 132)"
       },
-      "truncatedNames": 21,
-      "nameCount": 40,
+      "truncatedNames": 20,
+      "nameCount": 39,
       "columnTitlesTruncated": 0,
       "overflowX": false
     },
