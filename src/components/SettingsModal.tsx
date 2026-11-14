@@ -426,8 +426,18 @@ export function SettingsModal() {
                 <span className={styles.fieldLabel}>字号</span>
                 <span className={styles.fieldHint}>
                   放大界面与全文预览的文字，布局与留白不变。快捷键{" "}
-                  {primaryModifierLabel()}= 放大 · {primaryModifierLabel()}−
-                  缩小 · {primaryModifierLabel()}0 恢复默认。
+                  <span className={styles.nowrap}>
+                    {primaryModifierLabel()}= 放大
+                  </span>{" "}
+                  ·{" "}
+                  <span className={styles.nowrap}>
+                    {primaryModifierLabel()}− 缩小
+                  </span>{" "}
+                  ·{" "}
+                  <span className={styles.nowrap}>
+                    {primaryModifierLabel()}0 恢复默认
+                  </span>
+                  。
                 </span>
                 <div className={styles.segmentRow}>
                   <div

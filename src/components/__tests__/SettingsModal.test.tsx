@@ -199,7 +199,8 @@ describe("SettingsModal — appearance text size (字号)", () => {
 
   it("names the keyboard shortcuts so the setting is findable without the dialog", () => {
     render(<SettingsModal />);
-    expect(screen.getByText(/⌘= 放大/)).toBeInTheDocument();
+    expect(screen.getByText("⌘= 放大")).toBeInTheDocument();
+    expect(screen.getByText("⌘0 恢复默认")).toBeInTheDocument();
   });
 });
 

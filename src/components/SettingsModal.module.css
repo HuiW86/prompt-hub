@@ -231,6 +231,11 @@
   gap: var(--s-3);
 }
 
+/* Keep each shortcut and its verb on one line (「⌘=」 must not end a line). */
+.nowrap {
+  white-space: nowrap;
+}
+
 .segMeta {
   color: var(--fg-3);
   font-size: var(--t-11);
