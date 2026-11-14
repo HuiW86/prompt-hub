@@ -223,6 +223,54 @@
   outline-offset: 0;
 }
 
+/* ── Text size (字号): the segment plus a reset that sits after it ─────────── */
+.segmentRow {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--s-3);
+}
+
+.segMeta {
+  color: var(--fg-3);
+  font-size: var(--t-11);
+  font-variant-numeric: tabular-nums;
+}
+
+.segItem.active .segMeta {
+  color: var(--fg-2);
+}
+
+/* Quiet text button: the reset is secondary to picking a size, and disabled
+   (not hidden) at the default so its place does not jump. */
+.resetBtn {
+  composes: ph-action from "../styles/typography.module.css";
+  height: var(--h-chip);
+  padding: 0 var(--s-2);
+  border: 0;
+  border-radius: var(--r-3);
+  background: transparent;
+  color: var(--fg-2);
+  cursor: pointer;
+  appearance: none;
+  transition: color var(--d-fast) var(--ease);
+}
+
+.resetBtn:hover:not(:disabled) {
+  color: var(--fg-1);
+  text-decoration: underline;
+}
+
+.resetBtn:disabled {
+  color: var(--fg-4);
+  cursor: default;
+}
+
+.resetBtn:focus-visible {
+  outline: var(--border-thick) solid var(--accent);
+  outline-offset: 0;
+}
+
 /* ── Accent swatches ────────────────────────────────────────────────────────── */
 .swatches {
   display: flex;

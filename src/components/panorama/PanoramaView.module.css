@@ -52,8 +52,10 @@
     background-color var(--d-fast) var(--ease);
 }
 
+/* fg-3, not fg-4: the placeholder is the only instruction on screen at wake
+ * (fg-4 is 2.7:1 on surface-1 — below what a reading hint needs). */
 .filter::placeholder {
-  color: var(--fg-4);
+  color: var(--fg-3);
 }
 
 /* The field holds focus for the whole session, so its focus state is a calm
@@ -130,7 +132,7 @@
 
 .columnCount {
   flex: 0 0 auto;
-  color: var(--fg-4);
+  color: var(--fg-3);
   font-size: var(--t-11);
   font-variant-numeric: tabular-nums;
 }
@@ -324,12 +326,15 @@
   line-height: 1;
 }
 
+/* Quieter by colour and weight, not by size: 12px CJK at fg-3 was the
+ * hardest text on the screen to read, and dormant rows are still items the
+ * user scans for. One step under the active rows (14) keeps the tier visible. */
 .dormant {
   min-height: 0;
   padding-top: var(--s-0_5);
   padding-bottom: var(--s-0_5);
   color: var(--fg-3);
-  font-size: var(--t-12);
+  font-size: var(--t-13);
 }
 
 .dormant:hover {
@@ -453,7 +458,7 @@
   border-top: var(--hairline) solid var(--border-1);
   background: var(--surface-1);
   color: var(--fg-3);
-  font-size: var(--t-12);
+  font-size: var(--t-13);
 }
 
 .previewName {
@@ -474,7 +479,7 @@
 
 .previewMeta {
   flex: 0 0 auto;
-  color: var(--fg-4);
+  color: var(--fg-3);
   font-size: var(--t-11);
   font-variant-numeric: tabular-nums;
 }
@@ -483,7 +488,10 @@
   display: flex;
   align-items: center;
   gap: var(--s-1_5);
-  color: var(--fg-4);
+  min-width: 0;
+  overflow: hidden;
+  color: var(--fg-3);
+  white-space: nowrap;
 }
 
 .kbd {

@@ -164,6 +164,45 @@ describe("SettingsModal — appearance density", () => {
   });
 });
 
+describe("SettingsModal — appearance text size (字号)", () => {
+  beforeEach(() => {
+    useSettingsStore.setState(settingsInitial, true);
+    useSettingsStore.getState().setFontScale("standard");
+    useSettingsStore.setState({ settingsOpen: true });
+  });
+
+  it("picks a step, applies it live, and 恢复默认 resets it", () => {
+    render(<SettingsModal />);
+    const group = screen.getByRole("group", { name: "字号" });
+    const standard = group.querySelector('[data-font-scale="standard"]')!;
+    const xlarge = group.querySelector('[data-font-scale="xlarge"]')!;
+    const reset = screen.getByRole("button", { name: "恢复默认字号" });
+    expect(standard).toHaveAttribute("aria-pressed", "true");
+    // Nothing to restore at the default: disabled, not hidden.
+    expect(reset).toBeDisabled();
+
+    fireEvent.click(xlarge);
+    expect(useSettingsStore.getState().fontScale).toBe("xlarge");
+    expect(xlarge).toHaveAttribute("aria-pressed", "true");
+    expect(document.documentElement.classList.contains("text-xlarge")).toBe(
+      true,
+    );
+    expect(reset).toBeEnabled();
+
+    fireEvent.click(reset);
+    expect(useSettingsStore.getState().fontScale).toBe("standard");
+    expect(document.documentElement.classList.contains("text-xlarge")).toBe(
+      false,
+    );
+    expect(reset).toBeDisabled();
+  });
+
+  it("names the keyboard shortcuts so the setting is findable without the dialog", () => {
+    render(<SettingsModal />);
+    expect(screen.getByText(/⌘= 放大/)).toBeInTheDocument();
+  });
+});
+
 describe("SettingsModal — focus domain", () => {
   beforeEach(() => {
     usePromptStore.setState(promptInitial, true);
