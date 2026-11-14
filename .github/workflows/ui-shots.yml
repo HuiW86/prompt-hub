@@ -57,3 +57,40 @@ jobs:
             git push origin HEAD:chore/ui-shots-evidence && break
             sleep 5
           done
+  checks:
+    runs-on: macos-15
+    steps:
+      - uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0
+        with: { path: tools }
+      - uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0
+        with: { ref: fix/readability-hover-preview, path: app }
+      - uses: pnpm/action-setup@0ebf47130e4866e96fce0953f49152a61190b271
+        with: { package_json_file: app/package.json }
+      - uses: actions/setup-node@48b55a011bda9f5d6aeb4c2d9c7362e8dae4041e
+        with: { node-version: 22 }
+      - name: lint / format / test / build
+        working-directory: app
+        run: |
+          pnpm install --frozen-lockfile
+          mkdir -p ../out
+          set +e
+          { echo "## sha $(git rev-parse HEAD)"; echo "## lint"; pnpm lint 2>&1; echo "exit=$?"; } > ../out/checks.txt
+          { echo "## prettier"; pnpm exec prettier --check . 2>&1 | tail -20; echo "exit=${PIPESTATUS[0]}"; } >> ../out/checks.txt
+          { echo "## test"; pnpm test 2>&1 | tail -150; echo "exit=${PIPESTATUS[0]}"; } >> ../out/checks.txt
+          { echo "## build"; pnpm build 2>&1 | tail -40; echo "exit=${PIPESTATUS[0]}"; } >> ../out/checks.txt
+          exit 0
+      - name: publish
+        if: always()
+        working-directory: tools
+        run: |
+          git config user.name "ui-shots"
+          git config user.email "ui-shots@users.noreply.github.com"
+          for i in 1 2 3 4 5; do
+            git fetch origin chore/ui-shots-evidence && git checkout -B ev origin/chore/ui-shots-evidence || git checkout --orphan ev
+            git rm -rq --cached . >/dev/null 2>&1 || true
+            mkdir -p checks && cp ../out/checks.txt checks/
+            git add checks
+            git commit -qm "checks @ ${{ github.sha }}" || true
+            git push origin HEAD:chore/ui-shots-evidence && break
+            sleep 5
+          done
