@@ -194,6 +194,12 @@
       "nameCount": 42,
       "columnTitlesTruncated": 8,
       "overflowX": false
-    }
+    },
+    "manage-1440-largest-overflowX": false,
+    "macro-title-attr-1440": "你是一名资深的软件架构师。请先通读我给出的需求文档和现有代码结构，然后按以下步骤工作：\n\n1. 用三句话复述你理解的目标、约束和非目标（Non-goals），如果有任何歧义，先列出问题再继续。\n2. 给出 2–3 个候选方案，每个方案说明 trade-off：复杂度、性能（P95 latency）、可维护性、迁移成本。\n3. 推荐一个方案，并说明 why not 其它方案；引用具体文件路径，例如 src/stores/settingsStore.ts。\n4. 输出实施计划：按 PR 粒度拆分，每个 PR 包含 scope、验收标准（acceptance criteria）和回滚方式。\n\n约束：不要引入新的第三方依赖；所有 CSS 必须使用 design tokens；保持 hotkey wake ≤ 200ms P95。如果信息不足，请明确说 I don't know，而不是猜测。最后用一个 Markdown 表格总结风险 (risk) 与缓解措施 (mitigation)。\n\n附加说明：这段提示词刻意写得很长，用来检验全文预览能否完整阅读——包括换行、列表、English words mixed with 中文、以及一个很长的不可断开的 URL：https://github.com/HuiW86/prompt-hub/blob/main/docs/design/05-design-spec.md#section-10-2-2-typography-scale-and-readability-contract 。\n\n第二部分：请再检查一遍边界情况——空列表、超长名称、网络失败、并发写入、时区切换（UTC vs Asia/Shanghai），以及 macOS 与 Windows 的快捷键差异（⌘ vs Ctrl）。每一项都要给出复现步骤和预期结果。全部完成后，用不超过 200 字给出一句话结论。",
+    "macro-hover-delay-1440": null,
+    "manage-1024-largest-overflowX": false,
+    "macro-title-attr-1024": "你是一名资深的软件架构师。请先通读我给出的需求文档和现有代码结构，然后按以下步骤工作：\n\n1. 用三句话复述你理解的目标、约束和非目标（Non-goals），如果有任何歧义，先列出问题再继续。\n2. 给出 2–3 个候选方案，每个方案说明 trade-off：复杂度、性能（P95 latency）、可维护性、迁移成本。\n3. 推荐一个方案，并说明 why not 其它方案；引用具体文件路径，例如 src/stores/settingsStore.ts。\n4. 输出实施计划：按 PR 粒度拆分，每个 PR 包含 scope、验收标准（acceptance criteria）和回滚方式。\n\n约束：不要引入新的第三方依赖；所有 CSS 必须使用 design tokens；保持 hotkey wake ≤ 200ms P95。如果信息不足，请明确说 I don't know，而不是猜测。最后用一个 Markdown 表格总结风险 (risk) 与缓解措施 (mitigation)。\n\n附加说明：这段提示词刻意写得很长，用来检验全文预览能否完整阅读——包括换行、列表、English words mixed with 中文、以及一个很长的不可断开的 URL：https://github.com/HuiW86/prompt-hub/blob/main/docs/design/05-design-spec.md#section-10-2-2-typography-scale-and-readability-contract 。\n\n第二部分：请再检查一遍边界情况——空列表、超长名称、网络失败、并发写入、时区切换（UTC vs Asia/Shanghai），以及 macOS 与 Windows 的快捷键差异（⌘ vs Ctrl）。每一项都要给出复现步骤和预期结果。全部完成后，用不超过 200 字给出一句话结论。",
+    "macro-hover-delay-1024": null
   }
 }
