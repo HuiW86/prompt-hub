@@ -331,5 +331,33 @@ for (const [w, h] of [[1024, 700], [800, 600]]) {
   await ctx.close();
 }
 
+// ── 4. manage workspace at the largest text size + Macro card preview ───────
+for (const [w, h] of [[1440, 900], [1024, 700]]) {
+  const { ctx, page } = await open(
+    { width: w, height: h },
+    { persisted: JSON.stringify({ state: { themeMode: "dark", accent: "neutral", density: "comfortable", interactionMode: "invoke", fontScale: "xlarge" }, version: 2 }) },
+  );
+  const tab = page.getByRole("tab", { name: "管理" });
+  const btn = (await tab.count()) ? tab : page.getByRole("button", { name: /^管理$/ });
+  if (await btn.count()) {
+    await btn.first().click();
+    await page.waitForTimeout(400);
+    await shot(page, `13-manage-${w}-largest`);
+    log(`manage-${w}-largest-overflowX`, await page.evaluate(() => document.documentElement.scrollWidth > innerWidth));
+    const macro = 'button[aria-label="代码审查 Code Review"]';
+    if (await page.locator(macro).count()) {
+      log(`macro-title-attr-${w}`, await page.locator(macro).getAttribute("title"));
+      const d = await hoverDelay(page, macro);
+      log(`macro-hover-delay-${w}`, d);
+      if (d != null) {
+        await page.waitForTimeout(100);
+        await shot(page, `14-manage-macro-preview-${w}-largest`);
+        log(`macro-preview-${w}`, await previewState(page));
+      }
+    }
+  }
+  await ctx.close();
+}
+
 writeFileSync(join(out, `${label}-report.json`), JSON.stringify(report, null, 2));
 await browser.close();
