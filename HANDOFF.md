@@ -31,7 +31,6 @@
 67. （低优先）清空废纸篓不清 `panorama_placements` 悬空行：不显示、占的常用位被新抢占者静默让出、导入时清理。要立即干净就在 `purge_trash` 末尾调 `repo_write::panorama::delete_dangling_placements`
 ### 技能 Tab（issue #28 · PR #35）
 
-72. **签字**：PR #35 单裁点「技能不进备份」+ ADR-033 转 Accepted + 三份图纸 draft → ratified
 73. **真机走查**（缺口表 §3.19 三行）：真实库 17 → 18 迁移；导入 `docs/skill-index/skill-index.json`；调用态复制后隐窗、`⇧⏎` 不隐窗；整理态 `⌥1` 让位与撤销；六列与底部条 1440 宽一屏可见
 74. **Muse 内置 57 个**进索引：需在本机读 `/opt/muse/skills/` 各 SKILL.md 的 frontmatter，补进 Notion「技能索引」（来源 Muse，阶段留空）后重新生成索引文件
 75. 索引文件现由 Claude 从 Notion 生成；若 Notion ↔ 应用同步器立项，改为直接读 Notion（ADR-033 负向后果第一条）
