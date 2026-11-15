@@ -21,33 +21,15 @@
   font-variant-numeric: tabular-nums;
 }
 
-/* The one irreversible action left in the app: amber text, no frame — the
-   same amber-as-signal convention as 导入备份… (issue #29 V5). */
+/* The one irreversible action left in the app: a small framed button with an
+   amber border and neutral text — the same shape and warning convention as
+   导入备份… (SettingsModal .actionDanger; reasoning there and in Toast .error).
+   Composed rather than restyled so hover / focus / disabled stay in step. */
 .purge {
-  composes: ph-action from "../styles/typography.module.css";
-  height: var(--h-chip);
-  padding: 0 var(--s-1);
-  border: 0;
-  border-radius: var(--r-3);
-  background: transparent;
-  color: var(--accent-swatch-amber);
-  cursor: pointer;
-  appearance: none;
-  transition: opacity var(--d-fast) var(--ease);
-}
-
-.purge:hover:not(:disabled) {
-  text-decoration: underline;
-}
-
-.purge:disabled {
-  opacity: var(--op-dim);
-  cursor: not-allowed;
-}
-
-.purge:focus-visible {
-  outline: var(--border-thick) solid var(--accent);
-  outline-offset: 0;
+  composes: actionBtn actionDanger from "./SettingsModal.module.css";
+  /* The group head is inset by --s-1, the card rows by --s-3: pull the
+     framed button in so its right edge lines up with 导入备份… above. */
+  margin-right: calc(var(--s-3) - var(--s-1));
 }
 
 .card {

@@ -655,8 +655,9 @@ export function SettingsModal() {
                       </span>
                     </div>
                     <div className={styles.rowControl}>
-                      {/* Amber text marks the destructive one of the pair
-                          (issue #29 V5); the confirm dialog still gates it. */}
+                      {/* An amber border (neutral text) marks the destructive
+                          one of the pair (issue #29 V5); the confirm dialog
+                          still gates it. */}
                       <button
                         type="button"
                         className={cx(styles.actionBtn, styles.actionDanger)}
