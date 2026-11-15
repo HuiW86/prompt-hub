@@ -464,6 +464,29 @@ mod tests {
         assert_eq!(by_id(&skills, "edl").usage_count, 0);
     }
 
+    /// The index file shipped in the repo — generated from the Notion skill
+    /// index — must import cleanly, so the file handed to the user is known
+    /// good before it ever reaches the app.
+    #[test]
+    fn the_shipped_skill_index_imports() {
+        let (_dir, c) = conn();
+        let json = include_str!("../../../../docs/skill-index/skill-index.json");
+        let summary = import_skill_index(&c, json).unwrap();
+        assert_eq!(summary.added, summary.total);
+        let skills = list_skills(&c).unwrap();
+        let installed_manual = skills
+            .iter()
+            .filter(|s| s.status == SkillStatus::Installed && s.trigger == SkillTrigger::Manual);
+        for s in installed_manual {
+            assert!(
+                s.stage.is_some(),
+                "{} is called by hand but has no stage",
+                s.name
+            );
+            assert!(!s.invocation.is_empty(), "{} has no invocation", s.name);
+        }
+    }
+
     #[test]
     fn a_backup_restore_leaves_the_skill_index_alone() {
         let (_dir, c) = conn();

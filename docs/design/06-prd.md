@@ -1,10 +1,10 @@
 ---
 type: prd
 project: prompt-hub
-version: v0.18
+version: v0.19
 created: 2026-05-18
-last_modified: 2026-11-14
-status: ratified  # v0.18 于 2026-11-14 经 HuiW86 签字（与 [[032-panorama-work-stage-columns]] / [[03-product-spec]] v0.32 / [[05-design-spec]] v0.26 同批，单裁点在 product-spec），明细见文末修订记录 v0.18。前 v0.17 于 2026-11-13 经 HuiW86 签字（与 [[03-product-spec]] v0.31 / [[05-design-spec]] v0.24 同批，单裁点在 product-spec 按推荐通过）。起草说明：全景工作区（§5.9 / §6.11）与常用网站（§5.10 / §6.12）补写进契约，§6.9 导出沿革补到 1.5——照 [[031-panorama-default-view]] / [[030-website-library]] 已落地实现回流，批次内无新的数据决策（唯一裁点在 [[03-product-spec]] v0.31），明细见文末修订记录 v0.17。前 v0.16 于 2026-09-06 经 omar 签字（人审批次 ⑫，与 [[03-product-spec]] v0.29 同批，单裁点「编辑器加一行修订说明输入」按推荐通过）：§6.6 的 `notes` 补上 UI 写入方——v0.15 写「这是 `notes` 的第一个写入方」时，写入方只到 Rust 与 IPC 为止，编辑面从不发这个参数，真机上改完正文 `notes` 仍是 NULL（[[HANDOFF]] 第 53 项）。前 v0.15 于 2026-09-04 经 omar 签字（人审批次 ⑨，与 [[03-product-spec]] v0.26 同批，批次内两个裁点均按推荐通过）。本版是 [[029-alignment-coordinates-and-drift-ledger]] 的图纸回流（对齐坐标四轴 + 中途口令隐式记账），属图纸类改动，按 [[CLAUDE#§5.1.2]] 需 omar 签字后才转 `ratified`。**本版描述的契约已于 2026-09-05 落地**（ADR-029 P0 `0329520` / P1 `345e37f` / P2 `3af8308`，真机门 G7 6 过 / 2 部分 / 1 缺陷已修 `4a68fa9`，见 [[11-test-spec#4.6]]）。前 v0.14 于 2026-09-03 人审批次 ⑧ 经 omar 签字（三份图纸同批过：本文件 + [[03-product-spec]] v0.25 + [[05-design-spec]] v0.22；批次内无新决策，记的都是 ADR-028 已拍板的内容）。本版内容：§6 数据模型契约变更（新增 §6.0-bis 两套删除机制 + 七张资产表加 `deleted_at` + 四处「删除策略」重写 + 导出 data schema 1.1→1.2），属图纸类改动，按 [[CLAUDE#§5.1.2]] 需签字。**v0.12 起登记的 §6.1 drift 就此销账**——旧文承诺 `deprecated = true`、实装是 hard DELETE，现两边都已改正。前 v0.13 于 2026-09-01 人审批次 ④ ratified
+last_modified: 2026-11-15
+status: draft  # v0.19（2026-11-15 · [[033-skill-index]] / PR #35）待 HuiW86 签字，与 [[03-product-spec]] v0.35 / [[05-design-spec]] v0.29 同批（单裁点在 product-spec）：新增 §5.11 / §6.13 技能索引，明细见文末修订记录 v0.19。前 v0.18 于 2026-11-14 经 HuiW86 签字（与 [[032-panorama-work-stage-columns]] / [[03-product-spec]] v0.32 / [[05-design-spec]] v0.26 同批，单裁点在 product-spec），明细见文末修订记录 v0.18。前 v0.17 于 2026-11-13 经 HuiW86 签字（与 [[03-product-spec]] v0.31 / [[05-design-spec]] v0.24 同批，单裁点在 product-spec 按推荐通过）。起草说明：全景工作区（§5.9 / §6.11）与常用网站（§5.10 / §6.12）补写进契约，§6.9 导出沿革补到 1.5——照 [[031-panorama-default-view]] / [[030-website-library]] 已落地实现回流，批次内无新的数据决策（唯一裁点在 [[03-product-spec]] v0.31），明细见文末修订记录 v0.17。前 v0.16 于 2026-09-06 经 omar 签字（人审批次 ⑫，与 [[03-product-spec]] v0.29 同批，单裁点「编辑器加一行修订说明输入」按推荐通过）：§6.6 的 `notes` 补上 UI 写入方——v0.15 写「这是 `notes` 的第一个写入方」时，写入方只到 Rust 与 IPC 为止，编辑面从不发这个参数，真机上改完正文 `notes` 仍是 NULL（[[HANDOFF]] 第 53 项）。前 v0.15 于 2026-09-04 经 omar 签字（人审批次 ⑨，与 [[03-product-spec]] v0.26 同批，批次内两个裁点均按推荐通过）。本版是 [[029-alignment-coordinates-and-drift-ledger]] 的图纸回流（对齐坐标四轴 + 中途口令隐式记账），属图纸类改动，按 [[CLAUDE#§5.1.2]] 需 omar 签字后才转 `ratified`。**本版描述的契约已于 2026-09-05 落地**（ADR-029 P0 `0329520` / P1 `345e37f` / P2 `3af8308`，真机门 G7 6 过 / 2 部分 / 1 缺陷已修 `4a68fa9`，见 [[11-test-spec#4.6]]）。前 v0.14 于 2026-09-03 人审批次 ⑧ 经 omar 签字（三份图纸同批过：本文件 + [[03-product-spec]] v0.25 + [[05-design-spec]] v0.22；批次内无新决策，记的都是 ADR-028 已拍板的内容）。本版内容：§6 数据模型契约变更（新增 §6.0-bis 两套删除机制 + 七张资产表加 `deleted_at` + 四处「删除策略」重写 + 导出 data schema 1.1→1.2），属图纸类改动，按 [[CLAUDE#§5.1.2]] 需签字。**v0.12 起登记的 §6.1 drift 就此销账**——旧文承诺 `deprecated = true`、实装是 hard DELETE，现两边都已改正。前 v0.13 于 2026-09-01 人审批次 ④ ratified
 author: ai  # 🤖 AI 主笔 + 人审（CLAUDE §5.2）
 related: [[01-spec]], [[03-product-spec]], [[prompt-hub-mvp]], [[015-expose-mcp-write-pipeline]], [[027-configurable-global-hotkey]], [[028-reversible-delete]], [[029-alignment-coordinates-and-drift-ledger]], [[mcp-write-pipeline]]
 description: 手动 AI 编程仪表盘的工程契约——数据模型/状态机/NFR/Boundaries/IPC + MCP 接口契约；写后端 / 数据层时召回。版本叙事见 CHANGELOG
@@ -357,6 +357,24 @@ SOP 模板应该是**可自定义的**，初始内置是锚点，使用者会很
 - **不在唤起路径上**：进入网站工作区才读库
 - 「打开成功」的含义是**交给了系统**，不保证网页能加载
 - 不预留书签批量导入、账号、同步、网页内容抓取——需要时重新扫描并另开 ADR（[[030-website-library]]）
+
+### 5.11 技能（v0.19 新增 · [[033-skill-index]]）
+
+**定位**：像取提示词一样取技能——一屏看到全部已装技能，选对，一键复制调用句并记数；维护时一键拿到源地址。
+
+**内容**：技能索引（名称、用途、什么时候用、不用于、调用句、阶段、触发方式、来源、源地址、状态）+ 本机的常用位与逐次使用记录。界面契约见 [[03-product-spec#13.6]] f。
+
+**关键交互**：取用（复制调用句并记数）、筛选、复制源地址、设常用位、导入技能索引。
+
+**为什么这样设计**：
+- 技能不是提示词资产（[[02-constitution#B1]]），与常用网站同类单独成表（§6.13）、单独成工作区
+- 文字的事实源在外部（仓库、claude.ai 账号、Notion），应用不编辑、只导入；常用位和使用记录只有应用知道，导入时保留——**每个字段只有一个写入方**
+- 使用逐次记一行而不是只存累计数：复盘要回答「这段时间用了什么」，累计数回答不了
+
+**实现注意**：
+- **不在唤起路径上**：进入技能工作区才读库，视图按需加载
+- 复制即记数，与 `record_usage` 共用复制后隐窗计时器（整理态不隐窗）
+- 复制源地址不记数、不隐窗
 
 ---
 
@@ -1372,6 +1390,76 @@ stateDiagram-v2
 
 ---
 
+### 6.13 Skill / SkillUsage（技能索引 · v0.19 新增 · [[033-skill-index]]）
+
+> **不是资产**：不进三层模型、不进废纸篓、不进导出。migration `0018`，`user_version` 17 → **18**。
+
+#### Fields · `skills`
+
+| Name | Type | Nullable | Default | Constraint | Description |
+|------|------|----------|---------|------------|-------------|
+| id | string | N | - | PK；1–64 字符，首尾无空白 | 索引文件给的稳定 id（Notion 生成时用页面 id） |
+| name | string | N | - | 去空白后 1–120 字符 | 名称 |
+| purpose | string | N | `''` | ≤ 4000 字符 | 一句话用途 |
+| when_to_use | string | N | `''` | ≤ 4000 字符 | 什么时候用 |
+| not_for | string | N | `''` | ≤ 4000 字符 | 不用于 |
+| invocation | string | N | `''` | ≤ 4000 字符 | 调用句；为空时复制技能名 |
+| stage | enum | Y | NULL | `understand` / `diverge` / `plan` / `generate` / `iterate` / `distill` | 入口阶段；自动触发类与 Muse 内置可空 |
+| trigger_mode | enum | N | - | `manual` / `auto` | 主动叫 / 自动触发 |
+| source | enum | N | - | `own` / `anthropic` / `muse` / `community` | 来源 |
+| source_url | string | N | `''` | ≤ 4000 字符 | 仓库链接或本地路径，自由文本 |
+| status | enum | N | - | `installed` / `candidate` / `retired` | 只有 `installed` 上看板、可占常用位 |
+| pin_slot | int | Y | NULL | 1–9；部分唯一索引 | **应用持有**，导入不改 |
+| order_index | int | N | - | ≥ 0 | 索引文件中的顺序，即看板层内顺序 |
+| created_at | timestamp | N | now | - | 首次导入时间，更新不变 |
+
+枚举在 Rust 校验，不写 CHECK：新开一个阶段列应当是决策（[[033-skill-index]] 子决策 1），但不该再付一次重建表。
+
+#### Fields · `skill_usage`
+
+| Name | Type | Nullable | Default | Constraint | Description |
+|------|------|----------|---------|------------|-------------|
+| id | int | N | 自增 | PK | |
+| skill_id | string | N | - | FK → `skills.id`，`ON DELETE CASCADE` | |
+| used_at | timestamp | N | now | - | 复制时间 |
+
+读取时 `usageCount` = 行数，`lastUsedAt` = 最大 `used_at`。
+
+#### 技能索引文件（导入格式 v1）
+
+```json
+{
+  "kind": "prompt-hub-skill-index",
+  "version": 1,
+  "skills": [
+    { "id": "…", "name": "…", "purpose": "…", "whenToUse": "…", "notFor": "…",
+      "invocation": "…", "stage": "plan", "trigger": "manual", "source": "own",
+      "sourceUrl": "…", "status": "installed" }
+  ]
+}
+```
+
+- 除 `id`、`name` 外均可省略：文本默认空串，`stage` 默认空，`trigger` 默认 `manual`，`source` 默认 `own`，`status` 默认 `installed`
+- **整份即全部**：文件里有的按 `id` 新增或更新，顺序写入 `order_index`；文件里没有的删除，连同其 `skill_usage`（要保留历史请把状态改为 `retired`）
+- **保留**：已存在技能的 `pin_slot`、`created_at` 与全部 `skill_usage`
+- 导入后凡非 `installed` 的技能让出常用位
+- **整体成功或整体不动**；以下一律拒绝：`kind` 不符、`version` 不是 1、空列表、超过 500 条、`id` 重复或含首尾空白、名称为空、未知枚举值（含 `converge` / `execute`）、任一文本超长
+
+#### 命令
+
+| 命令 | 说明 |
+|------|------|
+| `list_skills` | 全部行（含待试、已退役）及派生的次数与最近使用 |
+| `import_skill_index(path)` | 读文件并按上文导入，返回 `{ total, added, updated, removed }` |
+| `record_skill_use(id, suppressHide)` | 记一次使用；`suppressHide` 为假时 200ms 后隐窗（同 `record_usage`） |
+| `set_skill_pin(id, pinSlot)` | 设或清常用位；占用他人号位时同一事务内让位；只有 `installed` 可设；返回全部行 |
+
+#### 与导出的关系
+
+**不随导出走**，导入备份也**不清空、不回卷**技能库。索引的事实源在外部，重新导入即可；代价是换机恢复备份时常用位与次数不随行——与 `usage_records` 不进导出（§6.9）同一口径。
+
+---
+
 ## 7. 非功能需求
 
 ### 7.1 性能
@@ -1837,6 +1925,17 @@ PRD 不复刻风险表，避免双源真理漂移；实施侧风险/缓解以 pl
 ---
 
 ## 修订记录
+
+### v0.19（2026-11-15）— 技能索引（[issue #28](https://github.com/HuiW86/prompt-hub/issues/28) · [[033-skill-index]]）
+
+> **状态：`draft`——待 HuiW86 在 PR #35 签字**，与 [[03-product-spec]] v0.35 / [[05-design-spec]] v0.29 同批，单裁点（技能不进备份）见 product-spec v0.35。
+
+| 章节 | 改动 |
+|------|------|
+| §5.11（新增） | 技能模块定位、交互与设计理由 |
+| §6.13（新增） | `skills` / `skill_usage` 字段、索引文件格式 v1、四条命令、与导出的关系；migration `0018`（`user_version` 17 → 18） |
+
+导出 data schema **不变**（仍 1.6）。
 
 ### v0.18（2026-11-14）— 全景改按工作阶段分列
 
