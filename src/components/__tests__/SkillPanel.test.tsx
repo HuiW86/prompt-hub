@@ -1,4 +1,5 @@
 import {
+  act,
   fireEvent,
   render,
   screen,
@@ -232,7 +233,7 @@ describe("SkillPanel", () => {
     useSettingsStore.setState({ interactionMode: "organize" });
     render(<SkillPanel />);
     await screen.findByText("EDL");
-    useSkillStore.getState().select("deep");
+    act(() => useSkillStore.getState().select("deep"));
     fireEvent.keyDown(document.body, {
       key: "¡",
       code: "Digit1",
@@ -257,7 +258,7 @@ describe("SkillPanel", () => {
   it("⌥digit does nothing in invoke mode", async () => {
     render(<SkillPanel />);
     await screen.findByText("EDL");
-    useSkillStore.getState().select("deep");
+    act(() => useSkillStore.getState().select("deep"));
     fireEvent.keyDown(document.body, {
       key: "¡",
       code: "Digit1",
@@ -273,7 +274,10 @@ describe("SkillPanel", () => {
     library = [];
     openMock.mockResolvedValue("/tmp/skill-index.json");
     render(<SkillPanel />);
-    const button = await screen.findByRole("button", { name: /导入技能索引/ });
+    // Wait for the loaded empty state: the button rendered before the first
+    // load resolves is replaced by the empty state's own.
+    await screen.findByText(/还没有技能/);
+    const button = screen.getByRole("button", { name: /导入技能索引/ });
     fireEvent.click(button);
     await waitFor(() =>
       expect(invokeMock).toHaveBeenCalledWith("import_skill_index", {
@@ -290,9 +294,8 @@ describe("SkillPanel", () => {
     library = [];
     openMock.mockResolvedValue(null);
     render(<SkillPanel />);
-    fireEvent.click(
-      await screen.findByRole("button", { name: /导入技能索引/ }),
-    );
+    await screen.findByText(/还没有技能/);
+    fireEvent.click(screen.getByRole("button", { name: /导入技能索引/ }));
     await waitFor(() => expect(openMock).toHaveBeenCalled());
     expect(invokeMock).not.toHaveBeenCalledWith(
       "import_skill_index",

@@ -110,7 +110,11 @@ const invoked = new Set(
 // 71 → 73 with I-02 (M-01 panorama): `list_panorama_placements` and
 // `set_panorama_placement`. One write command covers group, pin slot and
 // clearing (both null deletes the row), so the layout needs no third command.
-const EXPECTED_COMMAND_COUNT = 73;
+//
+// 73 → 77 with ADR-033 (skill index): `list_skills`, `import_skill_index`,
+// `record_skill_use`, `set_skill_pin`. No per-skill edit command — the text of
+// a skill is maintained in the index file, not in the app.
+const EXPECTED_COMMAND_COUNT = 77;
 
 describe("IPC contract — commands.rs / lib.rs / ipc/index.ts stay in sync", () => {
   it("exposes exactly the expected number of commands", () => {
