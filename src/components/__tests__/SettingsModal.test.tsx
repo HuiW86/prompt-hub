@@ -164,6 +164,37 @@ describe("SettingsModal — appearance density", () => {
   });
 });
 
+describe("SettingsModal — grouped-row layout (issue #29)", () => {
+  beforeEach(() => {
+    useSettingsStore.setState(settingsInitial, true);
+    useSettingsStore.setState({ settingsOpen: true });
+  });
+
+  it("names the page once, in the nav, not again as a content title", () => {
+    render(<SettingsModal />);
+    // The selected nav item is the page name; a second 「外观」 heading in the
+    // content pane was the duplicate V7 removed.
+    expect(screen.getAllByText("外观")).toHaveLength(1);
+    expect(screen.getByRole("button", { name: "外观" })).toHaveAttribute(
+      "aria-current",
+      "true",
+    );
+  });
+
+  it("segment options are text only — no icon, no percentage", () => {
+    render(<SettingsModal />);
+    for (const name of ["主题模式", "字号", "密度"]) {
+      const group = screen.getByRole("group", { name });
+      const options = group.querySelectorAll("button");
+      expect(options.length).toBeGreaterThan(1);
+      for (const option of options) {
+        expect(option.querySelector("svg")).toBeNull();
+        expect(option.textContent).not.toMatch(/%/);
+      }
+    }
+  });
+});
+
 describe("SettingsModal — appearance text size (字号)", () => {
   beforeEach(() => {
     useSettingsStore.setState(settingsInitial, true);
@@ -171,15 +202,12 @@ describe("SettingsModal — appearance text size (字号)", () => {
     useSettingsStore.setState({ settingsOpen: true });
   });
 
-  it("picks a step, applies it live, and 恢复默认 resets it", () => {
+  it("picks a step, applies it live, and 标准 is the way back", () => {
     render(<SettingsModal />);
     const group = screen.getByRole("group", { name: "字号" });
     const standard = group.querySelector('[data-font-scale="standard"]')!;
     const xlarge = group.querySelector('[data-font-scale="xlarge"]')!;
-    const reset = screen.getByRole("button", { name: "恢复默认字号" });
     expect(standard).toHaveAttribute("aria-pressed", "true");
-    // Nothing to restore at the default: disabled, not hidden.
-    expect(reset).toBeDisabled();
 
     fireEvent.click(xlarge);
     expect(useSettingsStore.getState().fontScale).toBe("xlarge");
@@ -187,14 +215,18 @@ describe("SettingsModal — appearance text size (字号)", () => {
     expect(document.documentElement.classList.contains("text-xlarge")).toBe(
       true,
     );
-    expect(reset).toBeEnabled();
 
-    fireEvent.click(reset);
+    // No separate 恢复默认 button (issue #29): the 标准 step is the default,
+    // and ⌘0 (App.test) still returns to it.
+    expect(
+      screen.queryByRole("button", { name: "恢复默认字号" }),
+    ).not.toBeInTheDocument();
+    fireEvent.click(standard);
     expect(useSettingsStore.getState().fontScale).toBe("standard");
+    expect(standard).toHaveAttribute("aria-pressed", "true");
     expect(document.documentElement.classList.contains("text-xlarge")).toBe(
       false,
     );
-    expect(reset).toBeDisabled();
   });
 
   it("names the keyboard shortcuts so the setting is findable without the dialog", () => {

@@ -1,52 +1,64 @@
 /* TrashSection — the ADR-028 P1 trash view, rendered inside the settings 数据
- * page. Chrome deliberately re-states the settings page's own vocabulary
- * (field label / note / action button / mono status line) rather than importing
- * dashboard looks: this pane is chrome, not a region. Same arrangement as
+ * page as one of its groups (issue #29). The group / card / note shapes are
+ * composed from SettingsModal's own module so the trash reads as one of the
+ * page's groups rather than a dashboard region. Same arrangement as
  * HotkeyRecorder, which sits in the 快捷键 page under its own module. */
 
 .section {
-  display: flex;
-  flex-direction: column;
-  gap: var(--s-2_5);
+  composes: group from "./SettingsModal.module.css";
 }
 
-/* Label and count share one baseline. 子决策 4 bought "no auto-expiry" with a
-   promise that the size stays visible, so the count belongs in the header, not
-   buried under the list. */
+/* 「废纸篓 · N 项」 on the left, 清空废纸篓 (or its confirm) on the right. */
 .head {
-  display: flex;
-  align-items: baseline;
-  gap: var(--s-2);
+  composes: groupHead from "./SettingsModal.module.css";
 }
 
-.label {
-  composes: ph-label from "../styles/typography.module.css";
+.title {
+  composes: groupTitle from "./SettingsModal.module.css";
 }
 
 .count {
-  composes: ph-num from "../styles/typography.module.css";
+  font-variant-numeric: tabular-nums;
 }
 
-.hint {
+/* The one irreversible action left in the app: a small framed button with an
+   amber border and neutral text — the same shape and warning convention as
+   导入备份… (SettingsModal .actionDanger; reasoning there and in Toast .error).
+   Composed rather than restyled so hover / focus / disabled stay in step. */
+.purge {
+  composes: actionBtn actionDanger from "./SettingsModal.module.css";
+  /* The group head is inset by --s-1, the card rows by --s-3: pull the
+     framed button in so its right edge lines up with 导入备份… above. */
+  margin-right: calc(var(--s-3) - var(--s-1));
+}
+
+.card {
+  composes: card from "./SettingsModal.module.css";
+}
+
+.placeholder {
   composes: ph-note from "../styles/typography.module.css";
+  padding: var(--s-2_5) var(--s-3);
+}
+
+.empty {
+  display: flex;
+  padding: var(--s-4) var(--s-3);
 }
 
 /* ── Entry list ─────────────────────────────────────────────────────────────
-   No max-height: the modal already caps at 80vh and .content scrolls, so a
-   long trash rides that scroller instead of nesting a second one. */
+   No max-height: the settings page body is already the scroller, so a long
+   trash rides it instead of nesting a second one. */
 .list {
   display: flex;
   flex-direction: column;
-  border: var(--hairline) solid var(--border-1);
-  border-radius: var(--r-3);
-  overflow: hidden;
 }
 
 /* ListRowSurface brings the separator and hover; the domain sets the vertical
    rhythm, since the primitive carries no height of its own. */
 .row {
-  padding-top: var(--s-2);
-  padding-bottom: var(--s-2);
+  padding-top: var(--s-1_5);
+  padding-bottom: var(--s-1_5);
 }
 
 /* Two classes deep so it outranks the primitive's own .row rule regardless of
@@ -75,65 +87,45 @@
   flex: 0 0 auto;
 }
 
-/* ── Actions ────────────────────────────────────────────────────────────────
-   Matches the data page's 导出备份… / 导入备份… buttons so 清空 reads as one of
-   the pane's own controls. */
-.button {
+/* Row-scale text button: quiet until hovered, so a column of 恢复 does not
+   out-shout the names it sits beside. */
+.rowBtn {
   composes: ph-action from "../styles/typography.module.css";
-  display: inline-flex;
-  align-items: center;
-  gap: var(--s-1_5);
+  flex: 0 0 auto;
   height: var(--h-chip);
-  padding: 0 var(--s-3);
-  border: var(--hairline) solid var(--border-1);
+  padding: 0 var(--s-2);
+  border: 0;
   border-radius: var(--r-3);
-  background: var(--surface-1);
-  color: var(--fg-1);
+  background: transparent;
+  color: var(--fg-2);
   cursor: pointer;
   appearance: none;
   transition:
     background-color var(--d-fast) var(--ease),
-    border-color var(--d-fast) var(--ease);
+    color var(--d-fast) var(--ease);
 }
 
-.button:hover:not(:disabled) {
-  border-color: var(--border-2);
-  background: var(--surface-2);
+.rowBtn:hover:not(:disabled) {
+  background: var(--surface-3);
+  color: var(--fg-1);
 }
 
-.button:disabled {
+.rowBtn:disabled {
   opacity: var(--op-dim);
   cursor: not-allowed;
 }
 
-.button:focus-visible {
+.rowBtn:focus-visible {
   outline: var(--border-thick) solid var(--accent);
   outline-offset: 0;
 }
 
-/* Row-scale variant: same control, quieter and tighter inside a list row. */
-.rowBtn {
-  composes: button;
-  flex: 0 0 auto;
-  padding: 0 var(--s-2);
-  color: var(--fg-2);
-}
-
-.actions {
-  display: flex;
-  gap: var(--s-2);
+.note {
+  composes: groupNote from "./SettingsModal.module.css";
 }
 
 /* Mono receipt line, twinned with SettingsModal's .statusRow — the purge is the
-   one action here whose result is a number worth reading twice.
-   preset-equivalent: none (mono 12/400 meta) */
+   one action here whose result is a number worth reading twice. */
 .status {
-  display: flex;
-  align-items: center;
-  gap: var(--s-2);
-  font-family: var(--font-mono);
-  font-size: var(--t-12);
-  font-weight: var(--w-400);
-  line-height: var(--lh-tight);
-  color: var(--fg-2);
+  composes: statusRow from "./SettingsModal.module.css";
 }

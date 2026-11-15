@@ -1,10 +1,10 @@
 ---
 type: design-spec
 project: prompt-hub
-version: v0.27
+version: v0.28
 created: 2026-05-18
 last_modified: 2026-11-14
-status: ratified  # v0.27 于 2026-11-14 经 HuiW86 签字（与 [[03-product-spec]] v0.33 同批，单裁点「字号可调 + 悬停全文预览」按推荐写回，issue #25 / PR #26），明细见文末修订记录 v0.27。前 v0.26 于 2026-11-14 经 HuiW86 签字（与 [[032-panorama-work-stage-columns]] / [[03-product-spec]] v0.32 / [[06-prd]] v0.18 同批，单裁点「全景按工作阶段分列」），只改列数与序号，明细见文末修订记录 v0.26。前 v0.25 于 2026-11-14 经 HuiW86 签字（单裁点「全景改编号泳道 + 号位键帽 + 筛选框不常亮焦点环」按推荐通过）。起草说明：全景工作区视觉精修（V-01，issue #19）——§10.9.1–10.9.3 按实装重写、§10.9.4 与 §10.8.1 补两行，零新增 token，明细见文末修订记录 v0.25。前 v0.24 于 2026-11-13 经 HuiW86 签字（同批单裁点在 product-spec 按推荐通过）。起草说明：全景工作区与常用网站工作区的视觉契约补写（新增 §10.9 / §10.10，§10.3 与 §10.8.1 补行），照现行 CSS 写，**零新增 token**；与 [[03-product-spec]] v0.31 / [[06-prd]] v0.17 同批，明细见文末修订记录 v0.24。前 v0.23 于 2026-10-08 经 Rosa 在项目线程签字（人审批次 ⑬，单裁点「主界面减法 pass 四项」按推荐通过）：Toast 由右上角挪到底部居中（状态栏上方）+ Header 副标 / 相位格快捷键标签退场（与 [[03-product-spec]] v0.30 同批），明细见文末修订记录 v0.23。前 v0.22 于 2026-09-03 人审批次 ⑧ 经 omar 签字（与 [[06-prd]] v0.14 / [[03-product-spec]] v0.25 同批）。本版内容：§10.2.2 `ConfirmInline` 用量由六处收缩至一处（清空废纸篓）+ §11 新增「Toast 让位规则」（撤销 toast 不被普通 toast 顶掉，error 例外），两项都是**行为契约**不是施工细节，按 [[CLAUDE#§5.1.2]] 需签字。前 v0.21 于 2026-09-03 人审批次 ⑦ ratified（§10.2.2 接口契约第 6 条随 product-spec「锚点再按一次 = 无事发生」签字，第 5 条 `initialFocus` 必填属施工规范随批通过）；更前 v0.20 于 2026-09-01 人审批次 ⑥ ratified
+status: ratified  # v0.28 于 2026-11-14 HuiW86 签字（答复『按建议处理』，含删字号恢复默认按钮与危险操作改琥珀描边）（与 [[03-product-spec]] v0.34 同批，单裁点「设置弹窗改分组行形态，并删掉字号旁的「恢复默认」按钮」按推荐通过，issue #29 / PR #30）：§10.8.3 按新形态重写，`--w-settings-modal` 560→640 + 新增 `--h-settings-modal` 520，不新增颜色 token，明细见文末修订记录 v0.28。前 v0.27 于 2026-11-14 经 HuiW86 签字（与 [[03-product-spec]] v0.33 同批，单裁点「字号可调 + 悬停全文预览」按推荐写回，issue #25 / PR #26），明细见文末修订记录 v0.27。前 v0.26 于 2026-11-14 经 HuiW86 签字（与 [[032-panorama-work-stage-columns]] / [[03-product-spec]] v0.32 / [[06-prd]] v0.18 同批，单裁点「全景按工作阶段分列」），只改列数与序号，明细见文末修订记录 v0.26。前 v0.25 于 2026-11-14 经 HuiW86 签字（单裁点「全景改编号泳道 + 号位键帽 + 筛选框不常亮焦点环」按推荐通过）。起草说明：全景工作区视觉精修（V-01，issue #19）——§10.9.1–10.9.3 按实装重写、§10.9.4 与 §10.8.1 补两行，零新增 token，明细见文末修订记录 v0.25。前 v0.24 于 2026-11-13 经 HuiW86 签字（同批单裁点在 product-spec 按推荐通过）。起草说明：全景工作区与常用网站工作区的视觉契约补写（新增 §10.9 / §10.10，§10.3 与 §10.8.1 补行），照现行 CSS 写，**零新增 token**；与 [[03-product-spec]] v0.31 / [[06-prd]] v0.17 同批，明细见文末修订记录 v0.24。前 v0.23 于 2026-10-08 经 Rosa 在项目线程签字（人审批次 ⑬，单裁点「主界面减法 pass 四项」按推荐通过）：Toast 由右上角挪到底部居中（状态栏上方）+ Header 副标 / 相位格快捷键标签退场（与 [[03-product-spec]] v0.30 同批），明细见文末修订记录 v0.23。前 v0.22 于 2026-09-03 人审批次 ⑧ 经 omar 签字（与 [[06-prd]] v0.14 / [[03-product-spec]] v0.25 同批）。本版内容：§10.2.2 `ConfirmInline` 用量由六处收缩至一处（清空废纸篓）+ §11 新增「Toast 让位规则」（撤销 toast 不被普通 toast 顶掉，error 例外），两项都是**行为契约**不是施工细节，按 [[CLAUDE#§5.1.2]] 需签字。前 v0.21 于 2026-09-03 人审批次 ⑦ ratified（§10.2.2 接口契约第 6 条随 product-spec「锚点再按一次 = 无事发生」签字，第 5 条 `initialFocus` 必填属施工规范随批通过）；更前 v0.20 于 2026-09-01 人审批次 ⑥ ratified
 author: co  # 🤝 人机共创（CLAUDE §5.2）
 related: [[01-spec]], [[02-constitution]], [[03-product-spec]], [[012-lock-visual-quality-anchor]], [[023-ui-reshape-before-release]], [[024-dark-cockpit-identity]], [[019-supersede-flat-visual-anchor]], [[020-restore-protocol-dark-band]], [[021-scene-layered-editing]], [[025-unified-anchored-editing]], [[CLAUDE-DESIGN]], [[015-expose-mcp-write-pipeline]], [[016-choose-dnd-and-resizable-layout]], [[018-absorb-promptscape-design]], [[026-fixed-spatial-layout]], [[028-reversible-delete]], [[asset-editing-and-adaptive-layout]]
 description: 手动 AI 编程仪表盘的视觉规范——tokens.css 单一真源 + 主题/elevation/组件视觉契约；写 CSS / 视觉时召回。版本叙事见 CHANGELOG
@@ -910,14 +910,26 @@ bundle 派生的 3 个跨组件 chrome primitive：
 
 #### 10.8.3 SettingsModal（设置弹窗）
 
+> **v0.28 重写（[issue #29](https://github.com/HuiW86/prompt-hub/issues/29)）**：参照 macOS 系统设置的**分组行**形态——每页是若干组圆角卡片，每行「左文右控」。旧形态是「小标签 → 两行灰色说明 → 一排按钮」竖着堆，说明比控件更占地方；分段控件选中只靠 `--accent` 描边，中性强调色下几乎看不出；弹窗高度随内容走，切页整窗跳。交互契约一条不改（[[03-product-spec#13.3]] 区域 9）。
+
 | 区域 | 视觉契约 |
 |------|---------|
 | 遮罩 | 全屏 `--scrim`（`rgba(0,0,0,.45)`）+ 居中；点遮罩 / Esc 关闭（`role="dialog"` `aria-modal`）|
-| 弹窗 | `--surface-1` 底 + `--border-2` 框 + `--r-frame`；宽 `--w-settings-modal` 560px，max-height 80vh |
-| 左导航 | 宽 `--w-settings-nav` 140px，「外观 / 更新」两项；激活态 `--surface-2`+`--border-2`；焦点环 `--accent`（中性强调，B2 安全）|
-| 外观页 | 主题三态分段控件（浅色/深色/跟随系统，lucide `Sun`/`Moon`/`Monitor`，激活边框 `--accent`）+ **字号三档分段控件（v0.27）**：「标准 / 大 / 特大」各带 lucide `Type` 与 `--t-11` `--fg-3` 百分比（选中项百分比提到 `--fg-2`），段后一枚文字按钮「恢复默认」（`--fg-2`，hover 下划线，标准档时 disabled 为 `--fg-4` 而非隐藏——位置不跳）；字段说明里列出三个快捷键，每个「键 + 动词」不折行 + 密度两档分段控件 + 5 色强调 swatch（dot 染 `--accent-swatch-*`，选中 `Check`）|
-| 更新页 | opt-in `role="switch"` 开关（on 态染 `--accent`）+ 状态行（error 态 `--task` 提示）+「检查更新」/「下载并安装」按钮（复用 updaterStore，[[017-enable-auto-update]]）|
-| 禁止 | ❌ 强调色/焦点环染 protocol/task ❌ 更新页造 channel 概念（updaterStore 无）|
+| 弹窗 | `--surface-1` 底 + `--border-2` 框 + `--r-frame`；**固定尺寸**：宽 `--w-settings-modal` 640px、高 `--h-settings-modal` 520px，高度另受 `80vh` 封顶（v0.28，原宽 560px、高随内容）。**切页时弹窗尺寸不变**；页面内容超出时只在右侧内容区内部滚动，弹窗不撑高。520 的依据：默认字号下外观页无需滚动 |
+| 左导航 | 宽 `--w-settings-nav` 140px，顶部「设置」用 `ph-page-title`（弹窗唯一的标题，v0.28 由 mono 大写 meta 改）+ 四项「外观 / 快捷键 / 更新 / 数据」（lucide 14px）；激活态 `--surface-2`+`--border-2`；焦点环 `--accent`（中性强调，B2 安全）|
+| 右侧顶栏 | **只放 × 关闭按钮**（右对齐，`--h-chip` 方钮），不再放页面大标题——与左栏选中项同字，重复（v0.28）。顶栏不随内容滚动 |
+| 页面骨架 | 内容区内边距 `--s-5`（顶部贴顶栏为 0），组与组之间 `--s-5` |
+| 组 | 组标题 `ph-label` `--fg-3`（左右内缩 `--s-1`，最小高 `--h-chip`；右侧可放一个组级动作，见数据页）→ `--s-1_5` → **卡片**：`--surface-2` 底 + `--hairline` `--border-1` 框 + `--r-4`；卡片下方可选一行组脚注 `ph-note` |
+| 行 | 内边距 `--s-2_5` / `--s-3`，左右两栏 gap `--s-4`，垂直居中；同卡内相邻行之间一道 `--hairline` `--border-1`。**左栏**：名称 `ph-action` `--fg-1` + 可选一行说明 `ph-note`（`--s-0_5` 间距）；左栏吃掉控件剩下的宽度，放不下时说明在自己栏内折行，不把控件挤到下一行。**右栏**：控件，不收缩，控件间 gap `--s-2` |
+| 说明文案 | **每条一行**（默认字号、640 宽下）。说得长的放组脚注而不是行内 |
+| 分段控件 | **一个底槽内连续排列**：底槽 `--surface-1` 底 + `--hairline` `--border-1` 框 + `--r-4`、内边距与项间距 `--s-0_5`；项高 `--h-chip`、左右内边距 `--s-2_5`、`--r-3`、无框、透明底、`--fg-3`，hover `--fg-1`；**选中项实底 `--surface-3` + `--shadow-1` + `--fg-1`**（v0.28，原为分开的描边按钮、选中只把边框换成 `--accent`）。**只有文字**：去掉每项前的图标与字号档的百分比。焦点环 `--accent` |
+| 按钮 | 行内动作按钮：高 `--h-chip`、左右 `--s-3`、`--surface-1` 底 + `--border-2` 框 + `--r-3`、`ph-action` `--fg-1`，hover `--surface-3` + `--border-3`，disabled `--op-dim`；不带图标。**危险动作只换边框色为琥珀** `--accent-swatch-amber`、文字保持 `--fg-1`（「导入备份…」「清空废纸篓」；hover 保留琥珀框只换底色，focus 用强调色外框，disabled `--op-dim`），沿用 Toast `.error` / HotkeyBanner 的「琥珀描边、中性文字」惯例，**不新增颜色 token**；其余按钮中性 |
+| 外观页 | 组「显示」三行：主题（浅色 / 深色 / 跟随系统，无说明）· 字号（标准 / 大 / 特大；说明列出 `⌘=` 放大 · `⌘−` 缩小 · `⌘0` 恢复默认，每个「键 + 动词」不折行；**v0.28 删去段后的「恢复默认」文字按钮**——「标准」档本身就是恢复默认，`⌘0` 也还在）· 密度（舒适 / 紧凑）。组「颜色」一行：强调色 5 个色点；组脚注一行写明彩色同时换品牌色 |
+| 强调色色点 | 按钮 `--h-chip` 见方、**圆形**、**`padding: 0`**（v0.28 修：UA 默认 padding 曾把 16px 色点挤成竖条，Chrome 所见，WebKit 默认 padding 较小）、透明底；色点 `--s-4` 圆形，染 `--accent-swatch-*`；**选中 = `--border-thick` `--fg-1` 外环**（环与色点之间留 `--s-0_5` 空隙），hover 未选中项外环 `--border-3`；不再叠 `Check` 图标。色点间距 `--s-1` |
+| 快捷键页 | 组「全局唤起」一行：名称「唤起快捷键」+ 说明；右栏是录键器（键帽 +「更改」+「恢复默认」）。录键器的错误 / 冲突提示（琥珀字）占行下方整行。组脚注一行：被占用时会提示 |
+| 更新页 | 组「软件更新」两行：自动检查更新（opt-in `role="switch"` 开关，on 态染 `--accent`）· 版本状态（说明位显示状态文字，error 态提到 `--fg-1`；右栏「检查更新」或「下载并安装」——后者 `--accent` 实底，复用 updaterStore，[[017-enable-auto-update]]）|
+| 数据页 | 组「备份」两行：导出（中性按钮「导出备份…」）· 导入（琥珀描边按钮「导入备份…」）；导入 / 导出结果的 mono 状态行在卡片下方。组「废纸篓 · N 项」：**「清空废纸篓」（与「导入备份…」同形的琥珀描边小按钮，右缘与卡片内按钮对齐）在组标题右侧**，点击后同一位置换成唯一的 `ConfirmInline` 确认（§10.2.2）；卡片内为条目列表（类型 `ph-meta` + 名称 + 删除时间 `ph-num` + 无框「恢复」文字按钮，hover `--surface-3`）或空态；组脚注一行写明不自动清除、恢复回原位 |
+| 禁止 | ❌ 强调色/焦点环染 protocol/task ❌ 更新页造 channel 概念（updaterStore 无）❌ 为危险动作新增颜色 token |
 
 > **B2 复检**：本组三处「强调」（logo / swatch / 焦点环 / 开关 on 态）全部用 `--accent` 中性强调 token，物理隔离于 ontology；ProtocolBand 标签 pill 自 v0.12 起中性（v0.13 起走 `--band-*` muted 档），层身份靠 band 位置表达，合规。
 
@@ -1189,6 +1201,23 @@ bundle 派生的 3 个跨组件 chrome primitive：
 ---
 
 ## 修订记录
+
+### v0.28（2026-11-14）— 设置弹窗改分组行形态（[issue #29](https://github.com/HuiW86/prompt-hub/issues/29)）
+
+> **状态：`ratified`——2026-11-14 HuiW86 签字（答复『按建议处理』，含删字号恢复默认按钮与危险操作改琥珀描边）**，与 [[03-product-spec]] v0.34 同批。一句话决定：**设置弹窗改为 macOS 式分组行（组卡片 + 左文右控 + 底槽式分段控件 + 固定 640 × 520），危险动作改琥珀描边、中性文字，字号旁的「恢复默认」按钮删掉。** 推荐：同意（已签）。实现见 PR #30。
+
+| 章节 | 改动 |
+|------|------|
+| §10.8.3 | 整节按新形态重写：固定尺寸、去右侧重复标题、组 / 行 / 分段控件 / 按钮 / 色点契约，四页逐页结构 |
+| §10.8.3 外观页 | 删去 v0.27 新增的字号「恢复默认」文字按钮（需签字，单独 commit，可单独回退）|
+
+**token**：`--w-settings-modal` 560px → **640px**（改值）；新增 **`--h-settings-modal` 520px**。不新增颜色 token——琥珀描边复用 `--accent-swatch-amber`。
+
+**附带**：左导航「设置」由 mono 大写 meta（§9 v0.15 随注里列为 longhand 例外的那一处）改用 `ph-page-title`，该例外随之消失。
+
+**留证**：按真实 CSS 与 token 在无头 Chrome 里静态重建四个页签截图（`docs/settings-redesign/after-dark.png` / `after-light.png`，非真机 WKWebView，图标以圆圈占位）。**Tauri 真机未目测。**
+
+**签字同批修订（危险动作样式）**：起草稿用琥珀色文字，浅色主题白底上约 2.5:1（深色底上约 7:1），低于正文 4.5:1；签字时改为「琥珀描边 + 中性文字」，沿用 Toast `.error` 的做法，仍在 v0.28 内改、不另 bump。文字回到 `--fg-1` 全对比度；琥珀框在浅色卡片上实测约 2.1–2.5:1，只作辅助信号，含义由按钮文字本身承担。「清空废纸篓」随之由无框文字按钮改为同形带框小按钮（直接复用 `.actionBtn` + `.actionDanger`）。截图已按新样式重建，**真机仍未目测**。
 
 ### v0.27（2026-11-14）— 字号可调 + 悬停全文预览 + 全景截断修正（[issue #25](https://github.com/HuiW86/prompt-hub/issues/25)）
 

@@ -1,5 +1,6 @@
 .row {
   display: flex;
+  flex: 0 0 auto;
   align-items: center;
   gap: var(--s-2);
 }
@@ -64,5 +65,13 @@
  * established convention here (HotkeyBanner, Toast .error). */
 .error {
   composes: ph-note from "../styles/typography.module.css";
+  /* The recorder sits inside a settings row (SettingsModal .rowWrap); the
+     notice takes a full-width line of its own under that row. */
+  flex: 1 0 100%;
+}
+
+/* Doubled: overrides ph-note's color regardless of bundle order (cascade
+   caveat in typography.module.css). */
+.error.error {
   color: var(--accent-swatch-amber);
 }

@@ -1,6 +1,7 @@
-/* SettingsModal — centered overlay dialog absorbed from the Promptscape design.
- * Two-pane: left nav (外观 / 更新) + right content. Tokens only; the swatch
- * previews ride the global --accent-swatch-* tokens so no naked hex lands here. */
+/* SettingsModal — centered overlay dialog absorbed from the Promptscape design,
+ * reshaped into macOS-style grouped rows (issue #29). Two panes: left nav +
+ * right content. Tokens only; the swatch previews ride the global
+ * --accent-swatch-* tokens so no naked hex lands here. */
 
 .overlay {
   position: fixed;
@@ -32,10 +33,14 @@
   }
 }
 
+/* Fixed size (issue #29 V3): the dialog no longer follows its content, so
+   switching pages never makes it jump. Short windows still win via 80vh; the
+   page body scrolls inside. */
 .modal {
   display: flex;
   width: 100%;
   max-width: var(--w-settings-modal);
+  height: var(--h-settings-modal);
   max-height: 80vh;
   overflow: hidden;
   background: var(--surface-1);
@@ -59,18 +64,11 @@
   border-right: var(--hairline) solid var(--border-1);
 }
 
-/* Mono uppercase nav-section head — no mono-meta-label preset exists
-   (ph-label is sans); kept as longhand. preset-equivalent: none (mono 11/600
-   uppercase meta) */
+/* The dialog's only title: the right pane no longer repeats the page name
+   (issue #29 V7), so this head carries "设置" at page-title weight. */
 .navHead {
-  padding: var(--s-1) var(--s-2);
-  font-family: var(--font-mono);
-  font-size: var(--t-11);
-  font-weight: var(--w-600);
-  line-height: var(--lh-tight);
-  color: var(--fg-3);
-  text-transform: uppercase;
-  letter-spacing: var(--tr-meta);
+  composes: ph-page-title from "../styles/typography.module.css";
+  padding: var(--s-1) var(--s-2) var(--s-2);
 }
 
 .navItem {
@@ -111,21 +109,17 @@
 .content {
   flex: 1;
   min-width: 0;
+  min-height: 0;
   display: flex;
   flex-direction: column;
-  overflow-y: auto;
 }
 
+/* Close-button bar only. It stays put while .body scrolls under it. */
 .contentHead {
+  flex: 0 0 auto;
   display: flex;
-  align-items: center;
-  justify-content: space-between;
-  padding: var(--s-3) var(--s-4);
-  border-bottom: var(--hairline) solid var(--border-1);
-}
-
-.contentTitle {
-  composes: ph-page-title from "../styles/typography.module.css";
+  justify-content: flex-end;
+  padding: var(--s-2) var(--s-2) 0;
 }
 
 .close {
@@ -134,6 +128,7 @@
   justify-content: center;
   width: var(--h-chip);
   height: var(--h-chip);
+  padding: 0;
   border: var(--hairline) solid transparent;
   border-radius: var(--r-3);
   background: transparent;
@@ -162,59 +157,157 @@
   outline-offset: 0;
 }
 
+/* The page body is the one scroller: at the largest text size a page may
+   outgrow the fixed dialog, and it scrolls here instead of stretching it. */
 .body {
+  flex: 1 1 auto;
+  min-height: 0;
+  overflow-y: auto;
   display: flex;
   flex-direction: column;
   gap: var(--s-5);
-  padding: var(--s-4);
+  padding: 0 var(--s-5) var(--s-5);
 }
 
-.field {
+/* ── Groups: a small title over a rounded card of rows ───────────────────── */
+.group {
   display: flex;
   flex-direction: column;
-  gap: var(--s-2_5);
+  gap: var(--s-1_5);
 }
 
-.fieldLabel {
+/* Title left, optional action right (the trash's 清空废纸篓). */
+.groupHead {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--s-2);
+  min-height: var(--h-chip);
+  padding: 0 var(--s-1);
+}
+
+.groupTitle {
   composes: ph-label from "../styles/typography.module.css";
 }
 
-.fieldHint {
+/* Doubled: overrides the preset's color regardless of bundle order (see the
+   cascade caveat in typography.module.css). */
+.groupTitle.groupTitle {
+  color: var(--fg-3);
+}
+
+/* Footnote under a card: context that does not belong to any one row. */
+.groupNote {
+  composes: ph-note from "../styles/typography.module.css";
+  padding: 0 var(--s-1);
+}
+
+.card {
+  display: flex;
+  flex-direction: column;
+  background: var(--surface-2);
+  border: var(--hairline) solid var(--border-1);
+  border-radius: var(--r-4);
+  overflow: hidden;
+}
+
+/* Name + one-line note on the left, control on the right; rows inside one
+   card are split by a hairline. */
+.row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--s-4);
+  padding: var(--s-2_5) var(--s-3);
+}
+
+.row + .row {
+  border-top: var(--hairline) solid var(--border-1);
+}
+
+/* A row whose control can grow a full-width line under it (HotkeyRecorder's
+   notice). */
+.rowWrap {
+  flex-wrap: wrap;
+}
+
+/* Basis 0: the text takes what the control leaves, so a long note wraps
+   inside its own column instead of shoving the control onto a new line. */
+.rowText {
+  display: flex;
+  flex: 1 1 0;
+  flex-direction: column;
+  gap: var(--s-0_5);
+  min-width: 0;
+}
+
+/* In a wrapping row the text keeps a floor, so the control drops below it
+   only when the two genuinely cannot share a line (largest text size). */
+.rowWrap .rowText {
+  min-width: calc(var(--s-20) * 1.5);
+}
+
+.rowLabel {
+  composes: ph-action from "../styles/typography.module.css";
+  color: var(--fg-1);
+}
+
+.rowHint {
   composes: ph-note from "../styles/typography.module.css";
 }
 
-/* ── Theme-mode segmented control ───────────────────────────────────────────── */
-.segment {
+.rowControl {
   display: flex;
-  gap: var(--s-1_5);
+  flex: 0 0 auto;
+  align-items: center;
+  gap: var(--s-2);
+}
+
+/* Keep each shortcut and its verb on one line (「⌘=」 must not end a line). */
+.nowrap {
+  white-space: nowrap;
+}
+
+/* ── Segmented control ──────────────────────────────────────────────────────
+   One recessed track, options butted together inside it, the picked one lifted
+   on a solid fill (issue #29 V2). The old look — separate outlined buttons,
+   picked only by an --accent border — vanished under the neutral accent, where
+   --accent resolves to the same ink as the text. */
+.segment {
+  display: inline-flex;
+  gap: var(--s-0_5);
+  padding: var(--s-0_5);
+  background: var(--surface-1);
+  border: var(--hairline) solid var(--border-1);
+  border-radius: var(--r-4);
 }
 
 .segItem {
   composes: ph-action from "../styles/typography.module.css";
   display: inline-flex;
   align-items: center;
-  gap: var(--s-1_5);
   height: var(--h-chip);
   padding: 0 var(--s-2_5);
-  border: var(--hairline) solid var(--border-1);
+  border: 0;
   border-radius: var(--r-3);
-  background: var(--surface-1);
-  color: var(--fg-2);
+  background: transparent;
+  color: var(--fg-3);
+  white-space: nowrap;
   cursor: pointer;
   appearance: none;
   transition:
     background-color var(--d-fast) var(--ease),
-    border-color var(--d-fast) var(--ease),
     color var(--d-fast) var(--ease);
 }
 
 .segItem:hover {
-  border-color: var(--border-2);
   color: var(--fg-1);
 }
 
 .segItem.active {
-  border-color: var(--accent);
+  background: var(--surface-3);
+  box-shadow: var(--shadow-1);
   color: var(--fg-1);
 }
 
@@ -223,78 +316,33 @@
   outline-offset: 0;
 }
 
-/* ── Text size (字号): the segment plus a reset that sits after it ─────────── */
-.segmentRow {
-  display: flex;
-  flex-wrap: wrap;
-  align-items: center;
-  gap: var(--s-3);
-}
-
-/* Keep each shortcut and its verb on one line (「⌘=」 must not end a line). */
-.nowrap {
-  white-space: nowrap;
-}
-
-.segMeta {
-  color: var(--fg-3);
-  font-size: var(--t-11);
-  font-variant-numeric: tabular-nums;
-}
-
-.segItem.active .segMeta {
-  color: var(--fg-2);
-}
-
-/* Quiet text button: the reset is secondary to picking a size, and disabled
-   (not hidden) at the default so its place does not jump. */
-.resetBtn {
-  composes: ph-action from "../styles/typography.module.css";
-  height: var(--h-chip);
-  padding: 0 var(--s-2);
-  border: 0;
-  border-radius: var(--r-3);
-  background: transparent;
-  color: var(--fg-2);
-  cursor: pointer;
-  appearance: none;
-  transition: color var(--d-fast) var(--ease);
-}
-
-.resetBtn:hover:not(:disabled) {
-  color: var(--fg-1);
-  text-decoration: underline;
-}
-
-.resetBtn:disabled {
-  color: var(--fg-4);
-  cursor: default;
-}
-
-.resetBtn:focus-visible {
-  outline: var(--border-thick) solid var(--accent);
-  outline-offset: 0;
-}
-
-/* ── Accent swatches ────────────────────────────────────────────────────────── */
+/* ── Accent swatches ────────────────────────────────────────────────────────
+   Round dots; the picked one gets an outer ring (issue #29 V6/7). padding: 0
+   is load-bearing: the UA button padding squeezed the 16px dot inside the 24px
+   button into a vertical bar (Chrome; WebKit's default padding is smaller). */
 .swatches {
   display: flex;
-  gap: var(--s-2);
+  align-items: center;
+  gap: var(--s-1);
 }
 
 .swatch {
-  position: relative;
   display: inline-flex;
   align-items: center;
   justify-content: center;
   width: var(--h-chip);
   height: var(--h-chip);
+  padding: 0;
   border: var(--border-thick) solid transparent;
-  border-radius: var(--r-4);
-  background: var(--surface-2);
+  border-radius: 50%;
+  background: transparent;
   cursor: pointer;
   appearance: none;
   transition: border-color var(--d-fast) var(--ease);
+}
+
+.swatch:hover:not(.active) {
+  border-color: var(--border-3);
 }
 
 .swatch.active {
@@ -302,16 +350,17 @@
 }
 
 /* Inline control: hairline offset (focus-offset taxonomy — design-spec §10.1),
-   enough to clear the swatch's own 2px selection border. */
+   enough to clear the swatch's own ring. */
 .swatch:focus-visible {
   outline: var(--border-thick) solid var(--accent);
   outline-offset: var(--hairline);
 }
 
 .dot {
+  flex: 0 0 auto;
   width: var(--s-4);
   height: var(--s-4);
-  border-radius: var(--r-4);
+  border-radius: 50%;
 }
 
 .dotNeutral {
@@ -330,26 +379,7 @@
   background: var(--accent-swatch-amber);
 }
 
-.check {
-  position: absolute;
-  color: var(--accent-fg);
-}
-
-/* ── Update tab ─────────────────────────────────────────────────────────────── */
-.toggleRow {
-  display: flex;
-  align-items: flex-start;
-  justify-content: space-between;
-  gap: var(--s-3);
-}
-
-.toggleText {
-  display: flex;
-  flex-direction: column;
-  gap: var(--s-1);
-  min-width: 0;
-}
-
+/* ── Switch ─────────────────────────────────────────────────────────────── */
 .toggle {
   flex: 0 0 auto;
   width: var(--s-10);
@@ -387,13 +417,14 @@
   transform: translateX(var(--s-4));
 }
 
-/* Mono status line ("上次检查…") — descriptive mono meta text with no matching
-   preset (ph-code is 13px content type, ph-num is numeric/aux). Kept longhand.
-   preset-equivalent: none (mono 12/400 meta) */
+/* Mono status line (data-page receipts) — descriptive mono meta text with no
+   matching preset (ph-code is 13px content type, ph-num is numeric/aux). Kept
+   longhand. preset-equivalent: none (mono 12/400 meta) */
 .statusRow {
   display: flex;
   align-items: center;
   gap: var(--s-2);
+  padding: 0 var(--s-1);
   font-family: var(--font-mono);
   font-size: var(--t-12);
   font-weight: var(--w-400);
@@ -402,16 +433,13 @@
 }
 
 /* No --danger token in the palette; surface errors as high-contrast neutral
-   (ADR-019 dropped the --task-green reuse here). A dedicated --danger is TODO. */
-.statusError {
+   (ADR-019 dropped the --task-green reuse here). A dedicated --danger is TODO.
+   Two classes so it outranks the ph-note color the hint composes. */
+.rowHint.statusError {
   color: var(--fg-1);
 }
 
-.actions {
-  display: flex;
-  gap: var(--s-2);
-}
-
+/* ── Buttons ────────────────────────────────────────────────────────────── */
 .actionBtn {
   composes: ph-action from "../styles/typography.module.css";
   display: inline-flex;
@@ -419,10 +447,11 @@
   gap: var(--s-1_5);
   height: var(--h-chip);
   padding: 0 var(--s-3);
-  border: var(--hairline) solid var(--border-1);
+  border: var(--hairline) solid var(--border-2);
   border-radius: var(--r-3);
   background: var(--surface-1);
   color: var(--fg-1);
+  white-space: nowrap;
   cursor: pointer;
   appearance: none;
   transition:
@@ -431,8 +460,8 @@
 }
 
 .actionBtn:hover:not(:disabled) {
-  border-color: var(--border-2);
-  background: var(--surface-2);
+  border-color: var(--border-3);
+  background: var(--surface-3);
 }
 
 .actionBtn:disabled {
@@ -454,4 +483,24 @@
 .actionPrimary:hover:not(:disabled) {
   background: var(--accent);
   border-color: var(--accent);
+}
+
+/* Destructive action (导入备份…, and 清空废纸篓 via TrashSection .purge):
+   same shape as its neutral neighbour, warning carried by an amber border.
+   Text stays --fg-1, as in Toast .error: amber-on-white text only clears
+   ~2.5:1 in the light theme, far below the design-spec §2.3 body-text bar.
+   The label carries the meaning at full contrast; the amber frame is a
+   supplementary cue, not the only one (on the light card it measures
+   ~2.1–2.5:1, so it must never become the sole signal). Amber, not red: the
+   palette has no danger token (HotkeyBanner, Toast .error). No new colour
+   token (issue #29 V5). */
+.actionDanger {
+  border-color: var(--accent-swatch-amber);
+  color: var(--fg-1);
+}
+
+/* Keep the amber frame on hover: the generic .actionBtn hover would swap it
+   for --border-3 and drop the warning exactly when the pointer is on it. */
+.actionDanger:hover:not(:disabled) {
+  border-color: var(--accent-swatch-amber);
 }

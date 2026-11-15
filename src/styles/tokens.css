@@ -465,8 +465,13 @@
      literal here silently broke the moment compact tightened the padding. */
   --h-scroll-fade: var(--s-3_5);
 
-  /* Settings overlay dialog — off-primary surface, larger than the 32px cap. */
-  --w-settings-modal: 560px;
+  /* Settings overlay dialog — off-primary surface, larger than the 32px cap.
+     Fixed size (issue #29): width and height no longer follow the page, so
+     switching pages never resizes the dialog; .modal still caps the height at
+     80vh and the page body scrolls inside. 520 holds the 外观 page at the
+     default text size without scrolling. */
+  --w-settings-modal: 640px;
+  --h-settings-modal: 520px;
   --w-settings-nav: 140px;
 
   /* Search overlay result column minimum — below this the 2-col grid drops to
