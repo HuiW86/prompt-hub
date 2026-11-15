@@ -98,6 +98,11 @@ const MIGRATIONS: &[Migration] = &[
         name: "0017_panorama_work_stages",
         sql: include_str!("../migrations/0017_panorama_work_stages.sql"),
     },
+    Migration {
+        target_version: 18,
+        name: "0018_skills",
+        sql: include_str!("../migrations/0018_skills.sql"),
+    },
 ];
 
 struct Migration {
@@ -1142,11 +1147,11 @@ mod tests {
             .expect("seed v16 layout");
         }
 
-        let conn = open_and_migrate(&path).expect("migrate v16 -> v17");
+        let conn = open_and_migrate(&path).expect("migrate v16 -> latest");
         let v: u32 = conn
             .pragma_query_value(None, "user_version", |row| row.get(0))
             .expect("read user_version");
-        assert_eq!(v, 17);
+        assert_eq!(v, latest_version());
         let rows: Vec<(String, Option<String>, Option<i64>)> = conn
             .prepare(
                 "SELECT asset_id, group_id, pin_slot FROM panorama_placements ORDER BY asset_id",
@@ -1192,5 +1197,80 @@ mod tests {
                 []
             )
             .is_err());
+    }
+
+    // --- ADR-033: migration 0018 --------------------------------------------
+
+    /// A v17 file with real content comes out at v18 with the two empty skill
+    /// tables, the pin-slot index enforced, and nothing else disturbed.
+    #[test]
+    fn migration_0018_skills_lands_on_a_populated_v17_database() {
+        let dir = tempfile::tempdir().expect("tempdir");
+        let path = dir.path().join("prompt-hub.db");
+        {
+            let conn = Connection::open(&path).expect("open");
+            configure(&conn).expect("configure");
+            for m in MIGRATIONS.iter().filter(|m| m.target_version <= 17) {
+                conn.execute_batch(m.sql)
+                    .unwrap_or_else(|e| panic!("migration {} failed: {e}", m.name));
+            }
+            conn.pragma_update(None, "user_version", 17u32)
+                .expect("pin v17");
+            conn.execute(
+                "INSERT INTO panorama_placements VALUES ('macro', 'm1', 'plan', 3)",
+                [],
+            )
+            .expect("seed a placement");
+        }
+
+        let conn = open_and_migrate(&path).expect("migrate v17 -> v18");
+        let v: u32 = conn
+            .pragma_query_value(None, "user_version", |row| row.get(0))
+            .expect("read user_version");
+        assert_eq!(v, 18, "0018 owns user_version 18");
+        let skills: i64 = conn
+            .query_row("SELECT COUNT(*) FROM skills", [], |r| r.get(0))
+            .expect("skills table exists");
+        let usage: i64 = conn
+            .query_row("SELECT COUNT(*) FROM skill_usage", [], |r| r.get(0))
+            .expect("skill_usage table exists");
+        assert_eq!((skills, usage), (0, 0), "0018 seeds nothing");
+        let placements: i64 = conn
+            .query_row("SELECT COUNT(*) FROM panorama_placements", [], |r| r.get(0))
+            .expect("placements survive");
+        assert_eq!(placements, 1);
+
+        let insert = "INSERT INTO skills (id, name, trigger_mode, source, status, pin_slot, order_index, created_at)
+                      VALUES (?1, ?2, 'manual', 'own', 'installed', ?3, 0, '2026-11-15T00:00:00Z')";
+        conn.execute(insert, rusqlite::params!["s1", "EDL", 1])
+            .expect("first holder of slot 1");
+        assert!(
+            conn.execute(insert, rusqlite::params!["s2", "Other", 1])
+                .is_err(),
+            "a pin slot has one holder"
+        );
+        assert!(
+            conn.execute(insert, rusqlite::params!["s3", "Other", 10])
+                .is_err(),
+            "slots are 1-9"
+        );
+        // Usage rows go with their skill.
+        conn.execute(
+            "INSERT INTO skill_usage (skill_id, used_at) VALUES ('s1', '2026-11-15T00:00:00Z')",
+            [],
+        )
+        .expect("usage row");
+        conn.execute("DELETE FROM skills WHERE id = 's1'", [])
+            .expect("delete skill");
+        let left: i64 = conn
+            .query_row("SELECT COUNT(*) FROM skill_usage", [], |r| r.get(0))
+            .unwrap();
+        assert_eq!(left, 0, "usage cascades with its skill");
+        let fk: i64 = conn
+            .query_row("SELECT COUNT(*) FROM pragma_foreign_key_check", [], |r| {
+                r.get(0)
+            })
+            .unwrap();
+        assert_eq!(fk, 0);
     }
 }

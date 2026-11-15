@@ -1,10 +1,10 @@
 ---
 type: design-spec
 project: prompt-hub
-version: v0.28
+version: v0.29
 created: 2026-05-18
-last_modified: 2026-11-14
-status: ratified  # v0.28 于 2026-11-14 HuiW86 签字（答复『按建议处理』，含删字号恢复默认按钮与危险操作改琥珀描边）（与 [[03-product-spec]] v0.34 同批，单裁点「设置弹窗改分组行形态，并删掉字号旁的「恢复默认」按钮」按推荐通过，issue #29 / PR #30）：§10.8.3 按新形态重写，`--w-settings-modal` 560→640 + 新增 `--h-settings-modal` 520，不新增颜色 token，明细见文末修订记录 v0.28。前 v0.27 于 2026-11-14 经 HuiW86 签字（与 [[03-product-spec]] v0.33 同批，单裁点「字号可调 + 悬停全文预览」按推荐写回，issue #25 / PR #26），明细见文末修订记录 v0.27。前 v0.26 于 2026-11-14 经 HuiW86 签字（与 [[032-panorama-work-stage-columns]] / [[03-product-spec]] v0.32 / [[06-prd]] v0.18 同批，单裁点「全景按工作阶段分列」），只改列数与序号，明细见文末修订记录 v0.26。前 v0.25 于 2026-11-14 经 HuiW86 签字（单裁点「全景改编号泳道 + 号位键帽 + 筛选框不常亮焦点环」按推荐通过）。起草说明：全景工作区视觉精修（V-01，issue #19）——§10.9.1–10.9.3 按实装重写、§10.9.4 与 §10.8.1 补两行，零新增 token，明细见文末修订记录 v0.25。前 v0.24 于 2026-11-13 经 HuiW86 签字（同批单裁点在 product-spec 按推荐通过）。起草说明：全景工作区与常用网站工作区的视觉契约补写（新增 §10.9 / §10.10，§10.3 与 §10.8.1 补行），照现行 CSS 写，**零新增 token**；与 [[03-product-spec]] v0.31 / [[06-prd]] v0.17 同批，明细见文末修订记录 v0.24。前 v0.23 于 2026-10-08 经 Rosa 在项目线程签字（人审批次 ⑬，单裁点「主界面减法 pass 四项」按推荐通过）：Toast 由右上角挪到底部居中（状态栏上方）+ Header 副标 / 相位格快捷键标签退场（与 [[03-product-spec]] v0.30 同批），明细见文末修订记录 v0.23。前 v0.22 于 2026-09-03 人审批次 ⑧ 经 omar 签字（与 [[06-prd]] v0.14 / [[03-product-spec]] v0.25 同批）。本版内容：§10.2.2 `ConfirmInline` 用量由六处收缩至一处（清空废纸篓）+ §11 新增「Toast 让位规则」（撤销 toast 不被普通 toast 顶掉，error 例外），两项都是**行为契约**不是施工细节，按 [[CLAUDE#§5.1.2]] 需签字。前 v0.21 于 2026-09-03 人审批次 ⑦ ratified（§10.2.2 接口契约第 6 条随 product-spec「锚点再按一次 = 无事发生」签字，第 5 条 `initialFocus` 必填属施工规范随批通过）；更前 v0.20 于 2026-09-01 人审批次 ⑥ ratified
+last_modified: 2026-11-15
+status: ratified  # v0.29 于 2026-11-15 HuiW86 在 PR #35 签字（[[033-skill-index]]），与 [[03-product-spec]] v0.35 同批（单裁点在 product-spec）：新增 §10.12 技能工作区，**零新增 token**，明细见文末修订记录 v0.29。前 v0.28 于 2026-11-14 HuiW86 签字（答复『按建议处理』，含删字号恢复默认按钮与危险操作改琥珀描边）（与 [[03-product-spec]] v0.34 同批，单裁点「设置弹窗改分组行形态，并删掉字号旁的「恢复默认」按钮」按推荐通过，issue #29 / PR #30）：§10.8.3 按新形态重写，`--w-settings-modal` 560→640 + 新增 `--h-settings-modal` 520，不新增颜色 token，明细见文末修订记录 v0.28。前 v0.27 于 2026-11-14 经 HuiW86 签字（与 [[03-product-spec]] v0.33 同批，单裁点「字号可调 + 悬停全文预览」按推荐写回，issue #25 / PR #26），明细见文末修订记录 v0.27。前 v0.26 于 2026-11-14 经 HuiW86 签字（与 [[032-panorama-work-stage-columns]] / [[03-product-spec]] v0.32 / [[06-prd]] v0.18 同批，单裁点「全景按工作阶段分列」），只改列数与序号，明细见文末修订记录 v0.26。前 v0.25 于 2026-11-14 经 HuiW86 签字（单裁点「全景改编号泳道 + 号位键帽 + 筛选框不常亮焦点环」按推荐通过）。起草说明：全景工作区视觉精修（V-01，issue #19）——§10.9.1–10.9.3 按实装重写、§10.9.4 与 §10.8.1 补两行，零新增 token，明细见文末修订记录 v0.25。前 v0.24 于 2026-11-13 经 HuiW86 签字（同批单裁点在 product-spec 按推荐通过）。起草说明：全景工作区与常用网站工作区的视觉契约补写（新增 §10.9 / §10.10，§10.3 与 §10.8.1 补行），照现行 CSS 写，**零新增 token**；与 [[03-product-spec]] v0.31 / [[06-prd]] v0.17 同批，明细见文末修订记录 v0.24。前 v0.23 于 2026-10-08 经 Rosa 在项目线程签字（人审批次 ⑬，单裁点「主界面减法 pass 四项」按推荐通过）：Toast 由右上角挪到底部居中（状态栏上方）+ Header 副标 / 相位格快捷键标签退场（与 [[03-product-spec]] v0.30 同批），明细见文末修订记录 v0.23。前 v0.22 于 2026-09-03 人审批次 ⑧ 经 omar 签字（与 [[06-prd]] v0.14 / [[03-product-spec]] v0.25 同批）。本版内容：§10.2.2 `ConfirmInline` 用量由六处收缩至一处（清空废纸篓）+ §11 新增「Toast 让位规则」（撤销 toast 不被普通 toast 顶掉，error 例外），两项都是**行为契约**不是施工细节，按 [[CLAUDE#§5.1.2]] 需签字。前 v0.21 于 2026-09-03 人审批次 ⑦ ratified（§10.2.2 接口契约第 6 条随 product-spec「锚点再按一次 = 无事发生」签字，第 5 条 `initialFocus` 必填属施工规范随批通过）；更前 v0.20 于 2026-09-01 人审批次 ⑥ ratified
 author: co  # 🤝 人机共创（CLAUDE §5.2）
 related: [[01-spec]], [[02-constitution]], [[03-product-spec]], [[012-lock-visual-quality-anchor]], [[023-ui-reshape-before-release]], [[024-dark-cockpit-identity]], [[019-supersede-flat-visual-anchor]], [[020-restore-protocol-dark-band]], [[021-scene-layered-editing]], [[025-unified-anchored-editing]], [[CLAUDE-DESIGN]], [[015-expose-mcp-write-pipeline]], [[016-choose-dnd-and-resizable-layout]], [[018-absorb-promptscape-design]], [[026-fixed-spatial-layout]], [[028-reversible-delete]], [[asset-editing-and-adaptive-layout]]
 description: 手动 AI 编程仪表盘的视觉规范——tokens.css 单一真源 + 主题/elevation/组件视觉契约；写 CSS / 视觉时召回。版本叙事见 CHANGELOG
@@ -723,6 +723,7 @@ bundle 派生的 3 个跨组件 chrome primitive：
 | `PanoramaView`（v0.24）| chrome（中性）| 全景工作区整页：筛选行 + 等宽阶段列 grid + 底部两组 + 预览行 | 列为画布上的 hairline 泳道（v0.25 起无底无框；v0.26 起八个工作阶段列，`01–08` 序号）、三层条目视觉见 §10.9 |
 | `PlacementMenu`（v0.24）| 继承 `AnchoredEditor` | 锚定在全景条目上的位置菜单 | 两组选项网格，当前项 `--accent` 边 + `--selection` 底，见 §10.9.4 |
 | `WebsitePanel`（v0.24）| chrome（中性）| 常用网站工作区整页：左侧分组栏 + 主区列表 | 见 §10.10 |
+| `SkillPanel`（v0.29）| chrome（中性）| 技能工作区整页：筛选行 + 导入按钮 + 六个阶段列 + 底部条 + 预览行 | **直接复用 `PanoramaView` 的样式模块**——技能行与提示词行是同一个对象；只多导入按钮、源地址按钮与空状态，见 §10.12 |
 | `AnchoredEditor`（v0.18）| 继承内层 `EditorPanel` | 锚定在触发元素上的 top layer 浮层，宽随内容、**高受 frame 相对上限约束**后内部滚动 | 原生 `popover="manual"` 进 top layer（**不 portal 到 `body`**——DOM 祖先链不变，`ProtocolBand` 的 `--band-*` remap 照常继承，§2.4.5 用法 hard rule 得以成立）；`--shadow-2` + `--z-popover` 兜底；四个宿主共用（对齐话术 chip / Macro 卡 / Scene 话术卡 / 草稿卡「编辑」按钮），接口契约见 §10.2.2 |
 | `HoverPreview`（v0.27）| chrome（中性）| 全应用唯一的悬停全文预览面，固定定位、portal 到 `body` | 视觉与时序见 §10.11；**刻意不用 `popover`**——`App.tsx` 以「存在 `[popover]` 节点」判定编辑器打开中，预览面不能被误认成编辑器 |
 
@@ -888,7 +889,7 @@ bundle 派生的 3 个跨组件 chrome primitive：
 | 容器 | `--surface-1` 底 + 底部 hairline `--border-1`；padding `--s-2`/`--s-3_5`；行内 flex，gap `--s-3` |
 | logo | `--s-8` 32px 方块，圆角 `--r-4`，**染 `--accent`/`--accent-fg`**（B2 中性强调面——非 ontology）；lucide `Layers` 16px |
 | 标题 | 「prompt-hub」`--w-600` `--t-14`（**不改名 Promptscape**，spec 定位）。**v0.23 删副标**「提示词资产 · 全景仪表盘」：解释性文案，用过一次即无信息量 |
-| 工作区切换（v0.24；v0.25 项间距 `--s-0_5`）| 标题右侧分段控件「全景 / 管理 / 常用网站」：容器 `--surface-2` 底 + `--border-2` 框 + `--r-4`、内边距 `--s-0_5`；项 `--r-3`、`--fg-3`，hover `--fg-1`；当前项 `--surface-3` 底 + `--fg-1`；焦点环 `--accent` |
+| 工作区切换（v0.24；v0.25 项间距 `--s-0_5`）| 标题右侧分段控件「全景 / 技能 / 管理 / 常用网站」（v0.29 加技能）：容器 `--surface-2` 底 + `--border-2` 框 + `--r-4`、内边距 `--s-0_5`；项 `--r-3`、`--fg-3`，hover `--fg-1`；当前项 `--surface-3` 底 + `--fg-1`；焦点环 `--accent` |
 | 模式切换（v0.25）| 「调用 / 整理」分段控件，**与工作区切换同一套语法**：容器 `--surface-2` 底 + `--border-2` 框 + `--r-4`、内边距 `--s-0_5`、项间距 `--s-0_5`；项 `--r-3`、`--fg-3`、lucide 图标 13px；当前项 `--surface-3` 底 + `--fg-1`，**不再加 `--accent` 描边**（中性默认下 `--accent` 即 `--fg-1`，一道常亮白框在 Header 里比内容还响）；焦点环 `--accent` |
 | 搜索 | 内嵌 `SearchBar`，flex-1 占据中段（由整行 border-only 改为圆角内联字段，行 chrome 上移到 Header）。**v0.24：只在管理工作区出现**，全景与常用网站以等宽空白占位，Header 其余元素不位移 |
 | gear | `IconButton` `--h-quickfind` 36px，lucide `Settings`，点击 `openSettings`（⌘,）；hover `--surface-2`/`--fg-1` |
@@ -1012,6 +1013,20 @@ bundle 派生的 3 个跨组件 chrome primitive：
 | 页脚 | 「N 字」`--t-11` `--fg-3` 等宽数字；正文确实溢出时右侧追加「移入此处滚动阅读全文」，不溢出时不显示 |
 | 放置 | **在行旁边，不在行下方**——下方会盖住指针接下来要去的行，而全景是顺列往下读的。右侧优先（阅读方向），右侧放不下放左侧，两侧都放不下（窄窗下的整宽行）才放上或下（取空间大的一侧）；与行间距、与窗口边距均为 8px（JS 几何，同 `useAnchoredPosition`，不是 token 契约）；顶边对齐行顶，再夹回窗口内 |
 | 出现 | 先定位后显示，同一帧完成——不在原点闪一下；无入场动画 |
+
+### 10.12 技能工作区视觉契约（v0.29 — 涟漪 [[033-skill-index]]）
+
+> 交互契约见 [[03-product-spec#13.6]] f。**原则：与全景是同一个看板**——`SkillPanel` 直接引用 `PanoramaView.module.css`，筛选框、列、列头、三层条目、底部 chip、状态、预览行、键帽全部按 §10.9 渲染，不另起一套。用户在两个工作区之间切换时，眼睛不需要重新学。**零新增 token。**
+
+| 与 §10.9 的差异 | 视觉契约 |
+|------|---------|
+| 列数 | 六个阶段列，序号 `01–06`，列名与全景同（理解 / 发散 / 规划 / 生成 / 迭代 / 沉淀）；列更宽，名称截断比全景少 |
+| 列体 | 纵向溢出时可滚动（滚动条仍隐藏），**不做休眠行收起**——六列每列十条上下，正常放得下；索引变大时滚动兜底，不静默藏行 |
+| 底部条 | 一到三组（「自动触发」「通用能力」「未分阶段」，有内容才出现），按组数等分宽度，其余同 §10.9.1 底部一排 |
+| 筛选行 | 筛选框后接「导入技能索引…」按钮：lucide `FileUp` 14px + `--t-12` `--fg-3`，透明底 + `--hairline` `--border-2` 框 + `--r-4`，内边距 `--s-1_5` / `--s-2_5`；hover `--surface-2` + `--fg-1`；焦点环 `--accent`。占位字「打字筛选技能：名称、用途、什么时候用」 |
+| 预览行 | 选中或首个匹配时：名称 + 用途（无用途时为调用句）+「复制源地址 ⇧↵」按钮（同导入按钮形态，键帽沿用 §10.9.1）+「N 次 · 日期」。无源地址时不显示该按钮。无内容时键位提示多一组「⇧↵ 复制源地址」，整理态再多「⌥1–9 设为常用位」 |
+| 空状态 | 页面主体居中偏左一列，最大宽 `calc(var(--s-20) * 8)`：一句标题 `--t-15` `--w-600` `--fg-1` + 一句说明 `--t-13` `--fg-3` + 导入按钮，gap `--s-3` |
+| 悬停预览 | 沿用 §10.11 面板；正文为「用途 / 什么时候用 / 不用于 / 调用句 / 源地址」分段，段间空一行 |
 
 ---
 
@@ -1201,6 +1216,18 @@ bundle 派生的 3 个跨组件 chrome primitive：
 ---
 
 ## 修订记录
+
+### v0.29（2026-11-15）— 技能工作区（[issue #28](https://github.com/HuiW86/prompt-hub/issues/28) · [[033-skill-index]]）
+
+> **状态：`ratified`——2026-11-15 HuiW86 在 PR #35 签字**，与 [[03-product-spec]] v0.35 同批，单裁点在 product-spec。本文件无独立裁点：技能工作区复用全景看板，只记差异。
+
+| 章节 | 改动 |
+|------|------|
+| §10.3 组件清单 | 新增 `SkillPanel` 行 |
+| §10.8.1 工作区切换 | 「全景 / 技能 / 管理 / 常用网站」 |
+| §10.12（新增） | 与 §10.9 的差异：六列、列体滚动不收起、一到三组底部条、导入与源地址按钮、空状态、悬停内容分段 |
+
+**零新增 token**；§10.9 一字未动。
 
 ### v0.28（2026-11-14）— 设置弹窗改分组行形态（[issue #29](https://github.com/HuiW86/prompt-hub/issues/29)）
 

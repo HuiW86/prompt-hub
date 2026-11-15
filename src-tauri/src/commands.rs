@@ -155,20 +155,13 @@ pub fn count_today_usage(state: State<'_, AppState>) -> AppResult<i64> {
     with_conn(&state, repo::count_today_usage)
 }
 
-#[tauri::command]
-pub fn record_usage(
-    state: State<'_, AppState>,
-    app: AppHandle,
-    input: RecordUsageInput,
-    // Organize-mode gate (D-0). The frontend is the single source of truth for
-    // the interaction mode; when it copies in 整理态 it passes suppressHide=true
-    // (Tauri maps the JS camelCase arg to this snake_case param) so the window
-    // stays put for continuous organizing. The usage record is written either
-    // way — hiding and statistics are decoupled. Absent (legacy callers)
-    // defaults to false = 复制即隐藏.
+// The window side of a copy, shared by every command that records one
+// (prompt assets via `record_usage`, skills via `record_skill_use`).
+fn schedule_hide_after_copy(
+    state: &State<'_, AppState>,
+    app: &AppHandle,
     suppress_hide: Option<bool>,
-) -> AppResult<UsageRecord> {
-    let record = with_conn(&state, |c| repo::record_usage(c, input))?;
+) {
     // Always bump the token so any pending 200ms hide timer from an earlier
     // copy is invalidated (a fresh copy — even a non-hiding one — must not be
     // hidden by a stale timer).
@@ -193,6 +186,23 @@ pub fn record_usage(
             });
         }
     }
+}
+
+#[tauri::command]
+pub fn record_usage(
+    state: State<'_, AppState>,
+    app: AppHandle,
+    input: RecordUsageInput,
+    // Organize-mode gate (D-0). The frontend is the single source of truth for
+    // the interaction mode; when it copies in 整理态 it passes suppressHide=true
+    // (Tauri maps the JS camelCase arg to this snake_case param) so the window
+    // stays put for continuous organizing. The usage record is written either
+    // way — hiding and statistics are decoupled. Absent (legacy callers)
+    // defaults to false = 复制即隐藏.
+    suppress_hide: Option<bool>,
+) -> AppResult<UsageRecord> {
+    let record = with_conn(&state, |c| repo::record_usage(c, input))?;
+    schedule_hide_after_copy(&state, &app, suppress_hide);
     Ok(record)
 }
 
@@ -1228,6 +1238,42 @@ pub async fn open_website(state: State<'_, AppState>, id: String) -> AppResult<(
         .map_err(|e| RepoError::Other(format!("打开浏览器失败：{e}")))?
         .map_err(|e| RepoError::Other(format!("打开浏览器失败：{e}")))?;
     Ok(())
+}
+// ADR-033: the skill index. Read, import the index file, log a use, pin.
+#[tauri::command]
+pub fn list_skills(state: State<'_, AppState>) -> AppResult<Vec<repo_core::skills::Skill>> {
+    with_conn(&state, repo_core::skills::list_skills)
+}
+#[tauri::command]
+pub fn import_skill_index(
+    state: State<'_, AppState>,
+    path: String,
+) -> AppResult<repo_write::skills::SkillImportSummary> {
+    let json = std::fs::read_to_string(&path).map_err(repo_core::RepoError::from)?;
+    with_write_conn(&state, |c| repo_write::skills::import_skill_index(c, &json))
+}
+// Same contract as `record_usage`: the use is logged either way, and the
+// window hides after the flash unless the copy came from organize mode.
+#[tauri::command]
+pub fn record_skill_use(
+    state: State<'_, AppState>,
+    app: AppHandle,
+    id: String,
+    suppress_hide: Option<bool>,
+) -> AppResult<()> {
+    with_conn(&state, |c| repo_write::skills::record_skill_use(c, &id))?;
+    schedule_hide_after_copy(&state, &app, suppress_hide);
+    Ok(())
+}
+#[tauri::command]
+pub fn set_skill_pin(
+    state: State<'_, AppState>,
+    id: String,
+    pin_slot: Option<i64>,
+) -> AppResult<Vec<repo_core::skills::Skill>> {
+    with_write_conn(&state, |c| {
+        repo_write::skills::set_skill_pin(c, &id, pin_slot)
+    })
 }
 // I-02 (M-01): panorama layout. The list hides rows of trashed assets; the
 // write returns the full list so the caller can show who lost a pin slot.

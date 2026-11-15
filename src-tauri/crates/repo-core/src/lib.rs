@@ -8,6 +8,7 @@ pub mod models;
 pub mod panorama;
 pub mod repo;
 pub mod settings;
+pub mod skills;
 pub mod trash;
 
 pub use asset_read::ReadOnlyAssetRepo;

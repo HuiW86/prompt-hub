@@ -439,6 +439,45 @@ export interface WebsiteInput {
   groupId: string | null;
 }
 
+// ── Skill index (ADR-033) ────────────────────────────────────────────────────
+// Mirrors `repo_core::skills` — keep the two in step. Not a prompt asset: the
+// descriptive fields come from an imported index file; `pinSlot` and the usage
+// figures are this app's own.
+export type SkillStage =
+  | "understand"
+  | "diverge"
+  | "plan"
+  | "generate"
+  | "iterate"
+  | "distill";
+export type SkillTrigger = "manual" | "auto";
+export type SkillSource = "own" | "anthropic" | "muse" | "community";
+export type SkillStatus = "installed" | "candidate" | "retired";
+export interface Skill {
+  id: string;
+  name: string;
+  purpose: string;
+  whenToUse: string;
+  notFor: string;
+  invocation: string;
+  stage: SkillStage | null;
+  trigger: SkillTrigger;
+  source: SkillSource;
+  sourceUrl: string;
+  status: SkillStatus;
+  pinSlot: number | null;
+  orderIndex: number;
+  usageCount: number;
+  lastUsedAt: string | null;
+  createdAt: string;
+}
+export interface SkillImportSummary {
+  total: number;
+  added: number;
+  updated: number;
+  removed: number;
+}
+
 // ── Panorama layout (I-02, M-01) ─────────────────────────────────────────────
 export type PanoramaAssetKind =
   | "macro"

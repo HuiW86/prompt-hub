@@ -971,7 +971,7 @@ describe("Default workspace — panorama (ADR-031)", () => {
     const labels = Array.from(nav.querySelectorAll("button")).map(
       (b) => b.textContent,
     );
-    expect(labels).toEqual(["全景", "管理", "常用网站"]);
+    expect(labels).toEqual(["全景", "技能", "管理", "常用网站"]);
     expect(within(nav).getByRole("button", { name: "全景" })).toHaveAttribute(
       "aria-current",
       "page",

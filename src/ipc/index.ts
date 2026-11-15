@@ -34,6 +34,8 @@ import type {
   WebsiteLibrary,
   WebsiteInput,
   PanoramaPlacement,
+  Skill,
+  SkillImportSummary,
 } from "./types";
 
 // ── Trash types (ADR-028) ─────────────────────────────────────────────────────
@@ -446,6 +448,17 @@ export const ipc = {
   reorderWebsiteGroups: (orderedIds: string[]) =>
     invoke<void>("reorder_website_groups", { orderedIds }),
   openWebsite: (id: string) => invoke<void>("open_website", { id }),
+
+  // ── Skill index (ADR-033). `importSkillIndex` replaces the descriptive
+  // fields from the file and keeps pins and usage; `recordSkillUse` shares the
+  // copy-then-hide timer with `recordUsage` (suppressHide in organize mode).
+  listSkills: () => invoke<Skill[]>("list_skills"),
+  importSkillIndex: (path: string) =>
+    invoke<SkillImportSummary>("import_skill_index", { path }),
+  recordSkillUse: (id: string, suppressHide: boolean) =>
+    invoke<void>("record_skill_use", { id, suppressHide }),
+  setSkillPin: (id: string, pinSlot: number | null) =>
+    invoke<Skill[]>("set_skill_pin", { id, pinSlot }),
 
   // ── Panorama layout (I-02, M-01). The list hides rows whose asset is trashed.
   // `setPanoramaPlacement` is an upsert (both fields null deletes the row);

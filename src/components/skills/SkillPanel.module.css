@@ -1,0 +1,73 @@
+/* Skill workspace (ADR-033). The board itself reuses PanoramaView.module.css
+ * so a skill row and a prompt row are the same object to the eye; this file
+ * only adds what the panorama does not have: the import entry, the source-
+ * address action and the empty state. */
+
+.topRow {
+  display: flex;
+  align-items: center;
+  gap: var(--s-3);
+  flex: 0 0 auto;
+}
+
+.filterGrow {
+  flex: 1;
+  min-width: 0;
+}
+
+.importButton,
+.sourceButton {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--s-1_5);
+  flex: 0 0 auto;
+  padding: var(--s-1_5) var(--s-2_5);
+  border: var(--hairline) solid var(--border-2);
+  border-radius: var(--r-4);
+  background: transparent;
+  color: var(--fg-3);
+  font-size: var(--t-12);
+  white-space: nowrap;
+  cursor: pointer;
+}
+
+.importButton:hover,
+.sourceButton:hover {
+  color: var(--fg-1);
+  background: var(--surface-2);
+}
+
+.importButton:focus-visible,
+.sourceButton:focus-visible {
+  outline: var(--border-thick) solid var(--accent);
+}
+
+/* Six columns of at most a dozen rows fit the frame; if an index ever grows
+ * past that, a column scrolls rather than silently cutting rows. */
+.scrollable {
+  overflow-y: auto;
+}
+
+.empty {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  justify-content: center;
+  gap: var(--s-3);
+  flex: 1;
+  max-width: calc(var(--s-20) * 8);
+  margin: 0 auto;
+}
+
+.emptyTitle {
+  margin: 0;
+  color: var(--fg-1);
+  font-size: var(--t-15);
+  font-weight: var(--w-600);
+}
+
+.emptyHint {
+  margin: 0;
+  color: var(--fg-3);
+  font-size: var(--t-13);
+}
