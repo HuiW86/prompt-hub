@@ -1,4 +1,5 @@
 import { useWebsiteStore } from "./stores/websiteStore";
+import { useSkillStore } from "./stores/skillStore";
 import { usePanoramaStore } from "./stores/panoramaStore";
 import { useAppStore } from "./stores/appStore";
 import { useEffect } from "react";
@@ -54,6 +55,7 @@ function App() {
     return useSessionStore.subscribe((state, prev) => {
       if (state.sessionStartedAt === prev.sessionStartedAt) return;
       usePanoramaStore.getState().resetView();
+      useSkillStore.getState().resetView();
       const app = useAppStore.getState();
       if (app.workspace === "panorama") return;
       if (document.querySelector("[popover]")) return;
@@ -153,6 +155,13 @@ function App() {
         usePanoramaStore.getState().query
       ) {
         usePanoramaStore.getState().setQuery("");
+        return;
+      }
+      if (
+        useAppStore.getState().workspace === "skills" &&
+        useSkillStore.getState().query
+      ) {
+        useSkillStore.getState().setQuery("");
         return;
       }
       if (

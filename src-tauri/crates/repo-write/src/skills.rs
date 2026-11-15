@@ -77,8 +77,8 @@ fn check_text(name: &str, field: &str, value: &str) -> RepoResult<()> {
 }
 
 fn parse_index(json: &str) -> RepoResult<Vec<SkillIndexEntry>> {
-    let file: SkillIndexFile = serde_json::from_str(json)
-        .map_err(|e| invalid(format!("这不是一份技能索引文件：{e}")))?;
+    let file: SkillIndexFile =
+        serde_json::from_str(json).map_err(|e| invalid(format!("这不是一份技能索引文件：{e}")))?;
     if file.kind != SKILL_INDEX_KIND {
         return Err(invalid("这不是一份技能索引文件（kind 不匹配）"));
     }
@@ -433,7 +433,11 @@ mod tests {
         set_skill_pin(&c, "edl", Some(1)).unwrap();
         let after = set_skill_pin(&c, "deep", Some(1)).unwrap();
         assert_eq!(by_id(&after, "deep").pin_slot, Some(1));
-        assert_eq!(by_id(&after, "edl").pin_slot, None, "previous holder cleared");
+        assert_eq!(
+            by_id(&after, "edl").pin_slot,
+            None,
+            "previous holder cleared"
+        );
         // Re-pinning the holder to its own slot is a no-op, not an error.
         set_skill_pin(&c, "deep", Some(1)).unwrap();
         let after = set_skill_pin(&c, "deep", None).unwrap();

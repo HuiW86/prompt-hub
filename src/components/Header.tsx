@@ -14,6 +14,8 @@ import styles from "./Header.module.css";
 // ModeToggle beside this nav (D-0 整理态), and the two sat side by side.
 const WORKSPACES: ReadonlyArray<{ id: Workspace; label: string }> = [
   { id: "panorama", label: "全景" },
+  // ADR-033: next to 全景 because it is the same act — fetch, not organize.
+  { id: "skills", label: "技能" },
   { id: "prompts", label: "管理" },
   { id: "websites", label: "常用网站" },
 ];

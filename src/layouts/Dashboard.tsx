@@ -50,6 +50,14 @@ const WebsitePanel = lazy(() =>
   })),
 );
 
+// Lazy for the same reason as WebsitePanel: a wake lands on the panorama, so
+// the skill board is never on the C1 path.
+const SkillPanel = lazy(() =>
+  import("../components/skills/SkillPanel").then((module) => ({
+    default: module.SkillPanel,
+  })),
+);
+
 export function Dashboard() {
   const workspace = useAppStore((s) => s.workspace);
   const loadState = usePromptStore((s) => s.loadState);
@@ -105,6 +113,10 @@ export function Dashboard() {
       <Header />
       {workspace === "panorama" ? (
         <PanoramaView />
+      ) : workspace === "skills" ? (
+        <Suspense fallback={<div className={styles.loading}>加载中…</div>}>
+          <SkillPanel />
+        </Suspense>
       ) : workspace === "prompts" ? (
         <>
           <ProtocolBand />

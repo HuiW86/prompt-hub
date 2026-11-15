@@ -5,8 +5,9 @@ import { create } from "zustand";
 // commands land in B4 — for now `setVisible` is the single source of truth in
 // the renderer process.
 // ADR-031: the panorama is where a wake lands. "prompts" is the organize
-// workspace (the original dashboard), "websites" the site library.
-export type Workspace = "panorama" | "prompts" | "websites";
+// workspace (the original dashboard), "websites" the site library, "skills"
+// the skill board (ADR-033).
+export type Workspace = "panorama" | "skills" | "prompts" | "websites";
 
 interface AppState {
   isVisible: boolean;
