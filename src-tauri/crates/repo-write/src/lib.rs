@@ -9,6 +9,7 @@ pub mod panorama;
 pub mod phrases;
 pub mod promote;
 pub mod scenes;
+pub mod skills;
 mod soft_delete;
 pub mod sub_stages;
 pub mod trash;
