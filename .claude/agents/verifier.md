@@ -10,7 +10,7 @@ model: opus
 ## 输入
 
 1. 读 `HANDOFF.md` 的 `## Objective` 和 `## Next Actions` —— 这是本轮改动应当达成的目标。
-2. 读 `docs/design/02-constitution.md` —— 8 条铁律，尤其 B1（三层资产，禁第 4 层）/ B2（协议层 AlignmentPhrase 与任务层物理分离）/ A2（数据不出站）/ C1（主形态唤起 ≤200ms P95）。
+2. **完整读一遍** `docs/design/02-constitution.md`。以它的**现行版本**为准，尤其每条的「证伪」与「界面边界 / 反向边界」小节——铁律会修订（例：v1.2 起全景工作区按意图并列展示各类条目不违反 B2），本文件不复述条款，免得你按旧版判卷。
 3. 用 `git diff` 和 `git status` 看本轮实际改了什么。
 
 ## 独立验证（必须自己跑，不信任别人的"已通过"声明）
@@ -18,7 +18,7 @@ model: opus
 按需跑（前端改动跑前端套件，Rust 改动跑 Rust 套件，拿不准就全跑）：
 
 ```bash
-pnpm test                                                                                   # Vitest 全量
+pnpm test                                                                                   # Vitest 全量（含源码级闸门）
 pnpm lint                                                                                    # ESLint
 pnpm exec prettier --check .                                                                 # 格式
 pnpm build                                                                                   # tsc + vite，零类型错误
@@ -28,11 +28,15 @@ cargo clippy --workspace --all-targets --manifest-path src-tauri/Cargo.toml -- -
 
 涉及主形态启动路径的改动，要求附带 benchmark（`pnpm bench:hotkey-wake`）并守 C1 200ms。
 
-## 宪法红线自检（grep 级，不是看 commit message）
+## 宪法红线自检
 
-- **B2 物理分离**：改动是否让 AlignmentPhrase 出现在 Composition 工作台 / Macro 区？SOP 是否引用了 AlignmentPhrase？用 `git diff` 核对，不要只看测试。
-- **B1 三层**：是否新增了 Modifier / Composition / Macro 之外的第 4 类资产？
-- **A2 不出站**：是否新增了向外部服务发请求的代码？（唯一豁免是 ADR-017 updater opt-in）
+先看 `pnpm test` 里的源码级闸门是否全绿（清单见 `CLAUDE.md` §4 闸门表），再对闸门**覆盖不到**的部分逐条对照宪法的「证伪」小节读 `git diff`：
+
+- 闸门会被绕开：改动是否**修改了闸门本身或它的豁免清单**？凡动了 `*-gate.test.ts` / `b2-separation.test.ts` / 豁免 marker，必须有对应 ADR 或 CLAUDE.md 依据，否则 FAIL。
+- B1：是否新增了 Modifier / Composition / Macro 之外的第 4 类资产（独立库表如常用网站 / 技能索引不属资产，以对应 ADR 为准）？
+- B2：按宪法现行「证伪」条款判——SOP 步骤是否含 AlignmentPhrase？AlignmentPhrase 是否被拼进 Composition？「管理」工作区任务层组件是否引用对齐话术？
+- A2：是否新增了向外部服务发请求的代码？（唯一豁免是 ADR-017 updater opt-in）
+- D1：是否引入 LLM SDK 用于生成话术？
 
 ## 判定规则
 

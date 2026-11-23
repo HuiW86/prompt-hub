@@ -1,9 +1,9 @@
 ---
 type: learnings
 project: prompt-hub
-version: v0.6
+version: v0.7
 created: 2026-06-04
-last_modified: 2026-09-02
+last_modified: 2026-11-23
 status: living
 author: co  # 🤝 人机共创（CLAUDE §5.2），人审
 related:
@@ -165,7 +165,7 @@ description: prompt-hub 从 M0 到 v0.2.0 发布，反复出现、被真实踩�
 
 ## 附录 B：真机走查 / 发布与更新 / 本地环境陷阱
 
-> 2026-09-01 自 HANDOFF.md Risks 段收编。这些不是「本轮风险」，是每次动手都要重新记起的项目常识；HANDOFF 只留本轮新增。按场景分三组，每条一句现象 + 一句应对。
+> 2026-09-01 自 HANDOFF.md Risks 段收编；2026-11-23 第二次收编（#38：HANDOFF 只留本轮风险，长期陷阱一律落这里，新增 B.4）。这些不是「本轮风险」，是每次动手都要重新记起的项目常识；HANDOFF 只留本轮新增。按场景分三组，每条一句现象 + 一句应对。
 
 ### B.1 真机走查（macOS）
 
@@ -188,6 +188,9 @@ description: prompt-hub 从 M0 到 v0.2.0 发布，反复出现、被真实踩�
 - **`HOME` 隔离下 MCP 也能对准**：`PROMPT_HUB_DB` 指向隔离库路径即可用 `prompt-hub-mcp` 造草稿，JSON-RPC 三行（initialize / initialized / tools/call）。
 - **OS 外观可临时翻转**：`osascript -e 'tell application "System Events" to tell appearance preferences to set dark mode to true'`，验「跟随系统」后立刻翻回。
 - **「今日复制」按本机时区计日**：本机 UTC−7，跨夜后计数归零不是 bug。
+- **`onscreen=true` 不等于键盘能打进 webview**：唤起后先点一下窗口并核 `frontmost`，再开始键入。
+- **`tell application "prompt-hub"` 唤起的是 `/Applications` 正式版**，不是刚编出来的裸二进制；装机口径：`--bundles app` + 关 updater 产物，chunk 名与 `dist/assets/` 一致即算核过，`spctl` 报 `Unnotarized Developer ID` 属正常。
+- **导入后 `usage_records` 归零是设计**（prd §6.9 D2），不是数据丢失。
 
 ### B.2 发布与更新
 
@@ -195,14 +198,32 @@ description: prompt-hub 从 M0 到 v0.2.0 发布，反复出现、被真实踩�
 - **`user_version` 迁移是唯一不可逆项**：MCP 进程共享同库，分发 MCP 二进制须与主 app 同批。反悔的正确做法是留空表 + 新开 migration 标废弃，不是降版本。
 - **`release.yml` 的 secret→变量映射是故意交叉的**：`APPLE_API_KEY: ${{ secrets.APPLE_API_KEY_ID }}`，不要「顺手改正」。
 - **Developer ID 证书有效期仅 8 个月**（2026-06-04 → 2027-02-01），到期前需续。
+- **出包前先查 GitHub Releases 的最新 tag，版本号必须更高**：曾以为 0.2.2 未发版、而它早已公开；同号不同内容会让已装客户端永远收不到更新。对话、HANDOFF、记忆里的「还没发」都不可信。
+- **云端会话推不了 tag**（代理 403）：打 tag、审批、publish 一律在本机做。
+- **钉死的 CI runner 版本会被 GitHub 退役，退役后任务显示「cancelled」而不是失败**：不出红叉，看着只是没结果。看 PR 时 cancelled 要当成没跑，不能当成没问题。
+- **降级路径会让 CI 失明**：凡有 fallback，就要有 CI 看得到的信号区分主路径与 fallback。isa-swizzle 的「布局相等」要比 ivar 集合与偏移，且看运行时实际类（KVO 会插入 `NSKVONotifying_*`）。
 - dev 裸二进制 WebKit 存储在 `~/Library/WebKit/prompt-hub`，正式 `.app` 在 `dev.prompt-hub`，两套界面偏好互不相通。
 
 ### B.3 本地环境
 
-- **`pnpm bench:*` 会拿真实数据库跑**：bench 直接 spawn dev 二进制，用真实 `app_data_dir`，会把线上库迁到最新 `user_version`（自动留 `pre-migrate-*.db`）。
+- **`pnpm bench:*` 在一次性 `HOME` 里跑空库**（`bench/*.bench.mjs` 的 `makeSandboxHome`）：此前 bench 用真实 `app_data_dir`，会把线上库迁到工作树 schema（真发生过一次），故改为 `mkdtemp`。改前的 cold-start 数字取自真实库，跨这次改动的数字不可直接比较。*（2026-11-23 订正：本条原文仍写「会拿真实数据库跑」，与现行脚本相反。）*
 - **`HOME` 覆盖只隔离数据库，隔离不了界面偏好**：SQLite 落到临时目录，但 WebKit localStorage 不认 `HOME` 覆盖，照旧读写真实的 `~/Library/WebKit/prompt-hub/...`。后果：「空白配置」不空白（据此误报过一次「首装是浅色」），且走查会写到真实界面偏好里。
 - **`prettier --check .` 在本地必挂，不是本仓的问题**：报错文件全在未跟踪的 `dsh-plugin-ziwuliuzhu/`（归 omar），CI 检出的树不含它们。照 runbook 跑时用 `prettier --check src/ docs/ CLAUDE.md HANDOFF.md`，不要「顺手格式化」。`.codex/` / `AGENTS.md` / `dsh-plugin-ziwuliuzhu/` 三者保持未跟踪。
 - **`pkill` tauri 父进程会留下 vite 子进程占住 1420**：清理须补 `lsof -ti :1420 | xargs kill`。
+- **本机 shell 跑在 Rosetta 下**：前端命令一律包 `arch -arm64 /bin/zsh -lc '…'`，别为 `@rollup/rollup-darwin-x64` 报错重装 `node_modules`。
+- **云端 Linux 编不过主 crate 里 macOS 专有的 `RunEvent::Reopen`**：测试时临时替换该行、测完还原。
+- **本地 `AGENTS.md` 是旧规则且已 gitignore**：用 Codex 前先同步或改为指向 `CLAUDE.md`。
+- **测试计数只信 vitest JSON reporter**（`pnpm exec vitest run --reporter=json` 逐文件相加），不抄任何人给的数。
+
+### B.4 代码不变量（最容易被「顺手改正」的）
+
+> 每条都是刻意的设计，看着像 bug。改之前先读对应 ADR / prd 条款。
+
+- **`notes` 留空 = 清空，不是保留**：正文真变时 `AlignmentPhraseEditor.handleSubmit` 总是发 `notes`（可为空串），读方按空串 = 无说明（prd §6.6）。别把谓词改回「非空才发」。
+- **`live_cue` 语义已冻住（append-only）**；`refCount` 是查询期现算；`update_alignment_phrase` 缺省 `coordinates` = 不动，显式 `null` 才清空。
+- **第七道闸门只强制 `deleted_at`**（`deprecated` 无人写入）；轴取值表是硬删。
+- **error toast 顶掉撤销 toast 是刻意的**：藏掉一次失败比丢一个撤销按钮更糟。
+- **改 `SceneNotEmpty` 或单条恢复之前先读 `revive_trashed_ancestors`**：单条恢复曾能造出一条既不在废纸篓、也不在仪表盘上的资产（ADR-028）。
 
 ---
 
