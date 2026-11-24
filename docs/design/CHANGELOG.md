@@ -35,7 +35,7 @@ description: prompt-hub 设计文档体系变更日志——记录文档结构�
 - **`.claude/agents/verifier.md`**：B2 检查仍按宪法 v1.1 判「AlignmentPhrase 出现在 Macro 区」，v1.2（ADR-031）已删掉这条证伪条件，会把合法的全景改动判成 FAIL。改为每次读现行宪法、不复述条款，并要求先看闸门结果、再查闸门本身是否被改
 - **新增三个 skill**（`.claude/skills/`，按需加载）：`doc-change`（原 CLAUDE §5 全文：八步 / 快车道判定表 / 日志不签字 / 主笔分工 / ADR / anchor）、`release`（`docs/release-runbook.md` 之外的三条前置检查）、`c1-bench`（何时必须跑、怎么判、基线在哪）
 - **`HANDOFF.md` 改为任务层**：Objective 指向 #38，Next Actions 5 条；旧 Next Actions 42 条按原分类迁入 issue #39–#46，保留原编号，HANDOFF 留「旧编号 → issue」对照表；旧 Risks 段的长期陷阱收编进 learnings，旧 Dropped 段原文见下
-- **新增第 8 道源码级闸门 `scripts/doc-governance/context-budget.test.ts`**：CLAUDE.md ≤ 12 000 字节、不含日期（多种写法，frontmatter 只放行 `created` / `last_modified`）、不含测试计数、被引用的 § 标题不丢；HANDOFF.md ≤ 8 000 字节、有 Objective、Next Actions ≤ 5 条。test-spec v0.22 §3 登记（图纸，待签）
+- **新增第 8 道源码级闸门 `scripts/doc-governance/context-budget.test.ts`**：CLAUDE.md ≤ 12 000 字节、不含日期（多种写法，frontmatter 只放行 `created` / `last_modified`）、不含测试计数、被引用的 § 标题不丢；HANDOFF.md ≤ 8 000 字节、有 Objective、Next Actions ≤ 5 条。test-spec v0.22 §3 登记（图纸，2026-11-24 HuiW86 在 PR #48 签字「同意合并 #48」，CLAUDE.md v2.0 同批转 ratified）
 - **learnings v0.6 → v0.7**：附录 B 第二次自 HANDOFF 收编（B.1 / B.2 / B.3 各补数条，新增 B.4「代码不变量」）；**订正 B.3**：原文写「`pnpm bench:*` 会拿真实数据库跑」，与 2026-09-04 起的一次性 `HOME` 脚本相反
 - **事实订正**：CLAUDE.md 与 HANDOFF 一直写「GitHub 最新公开版 v0.2.4、PR #26 尚未发版」。核对 GitHub Releases：**v0.2.5 已于 2026-11-15 03:06 UTC 发布**（tag 指向 `8e7fcbd`，schema 17，含 PR #26 / #30）；`main` 上未发版的是技能 Tab（PR #35，schema 18）与新图标（PR #37）
 - 后续另开 #47：01–11 设计文档 frontmatter 的 `status` 注释同样长成了编年史（test-spec 一行 8 KB）

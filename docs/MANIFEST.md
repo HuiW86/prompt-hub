@@ -253,6 +253,6 @@ related:
 | `.claude/skills/doc-change/SKILL.md` | 新增：原 CLAUDE.md §5 全文（八步 / 快车道 / 日志不签字 / 主笔分工 / ADR / anchor），改文档前加载 |
 | `.claude/skills/release/SKILL.md` | 新增：`docs/release-runbook.md` 之外的三条发版前置检查 |
 | `.claude/skills/c1-bench/SKILL.md` | 新增：C1 唤起基准何时跑、怎么判、基线在哪 |
-| `scripts/doc-governance/context-budget.test.ts` | 新增：第 8 道源码级闸门（[[11-test-spec]] §3.8，待签） |
+| `scripts/doc-governance/context-budget.test.ts` | 新增：第 8 道源码级闸门（[[11-test-spec]] §3.8，2026-11-24 签字） |
 
 `CLAUDE.md` 与 `HANDOFF.md` 两行已在 §11 原地改写；§11.6 工程护栏表未补此闸门行，以本节为准。

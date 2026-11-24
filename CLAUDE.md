@@ -3,7 +3,7 @@ type: claude-md
 project: prompt-hub
 version: v2.0  # 重组为纯协议层：状态叙事移出、流程改 skill、加 context-budget 闸门（#38）
 created: 2026-05-19
-status: draft  # v2.0 待 HuiW86 在 #38 的 PR 签字后转 ratified
+status: ratified  # v2.0 由 HuiW86 签字（PR #48，#38）
 author: co  # 🤝 人机共创（CLAUDE §5.2 本文档自身）
 audience: [ai, human]
 description: prompt-hub 项目级 AI 上下文——定位/命令/规则与守卫闸门/忌讳/去哪查现状。AI 进场始终注入

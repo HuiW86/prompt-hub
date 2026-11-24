@@ -14,16 +14,18 @@
 - 新增 skill：`.claude/skills/doc-change`（原 §5 全文）/ `release` / `c1-bench`
 - [[learnings]] v0.7：收编本文件旧 Risks 段的长期陷阱（新增 B.4 代码不变量），订正 B.3 bench 条目（原文与现行脚本相反）
 - 第 8 道闸门 `context-budget`：CLAUDE.md ≤ 12 000 字节、无日期、无测试计数、引用标题不丢；HANDOFF ≤ 8 000 字节且 Next Actions ≤ 5
-- 涟漪：[[11-test-spec]] v0.22（§3 登记第 8 道闸门，属图纸，待签）/ [[MANIFEST]] v1.25 / CHANGELOG
+- 涟漪：[[11-test-spec]] v0.22（§3 登记第 8 道闸门）/ [[MANIFEST]] v1.25 / CHANGELOG
+- **签字**：HuiW86 于 2026-11-24 回复「同意合并 #48」，CLAUDE.md v2.0 与 test-spec v0.22 转 ratified
+- 同 PR 附带 #49 的一处 spec 改动：01-spec v0.9 删去 §8.6「Macro 区不展示 AlignmentPhrase」（HuiW86 指示）。话术资产整理在 Notion 完成，12 月复查已设定时任务（2026-12-15，**未挂 Notion 连接**，需在 claude.ai 定时任务页补上）
 
 ## In Progress
 
-- PR 待 HuiW86 审，一句话的决定：**采纳 #38 的分层方案**（CLAUDE.md v2.0 + 第 8 道闸门 `context-budget`），推荐通过。v2.0 新写进三条约束，请一并过目：§4「改闸门或豁免清单需有依据」、§4.2「新增独立库表前先开 ADR」、§6 第 11 条「不往 CLAUDE.md 追加状态叙事」
+- PR #48 已签字，等 CI 通过后合并
 - 审查已过两道：verifier 首轮 FAIL（7 处事实错误与闸门漏报）已全部修正；记录类按 [[CLAUDE#§5.1.2]] 只读反查，8 处不一致先改后归档，10 条无法核（运行结果、真机与本机观测、宿主注入行为），原文保留
 
 ## Next Actions
 
-1. **签 #38 的 PR**：CLAUDE.md v2.0 与 test-spec v0.22 转 ratified，合并
+1. **#33 待裁：宪法 A2 是否补一句例外**——决定 Notion 同步能否双向；#49 的 Q1 / Q3 都等计数恢复同步。同步 ADR 草稿在分支 `claude/adr-033-notion-sync`，编号与 `main` 的 ADR-033（技能索引）撞号，落地时改 034
 2. **技能 Tab 真机走查**（#40 第 73 项）：`main` 上的技能 Tab（migration `0018`）和新图标还没发版，下一次发版前必须过这一门
 3. **Developer ID 证书 2027-02-01 到期**（#43 第 20 项）：约 10 周后到期，先续证书，再发下一版
 4. **CI 上 C1 不设防**（#43 第 10 / 56 项）：`bench-c1` 仍为 `continue-on-error`，swizzle 降级也不判失败
