@@ -18,7 +18,7 @@ description: prompt-hub 设计文档体系变更日志——记录文档结构�
 
 ### 变更内容
 
-- **`CLAUDE.md` v1.1 → v2.0**（36 KB → 约 10.6 KB）：只留协议层（定位 / 命令 / 规则与守卫闸门对照表 / 忌讳 / 去哪查现状）。§7「当前状态指针」原有 22 KB 的签字批次与计数编年史整体移出——这些事实本就以本文件、各 ADR、features、test-spec 为准，原文可用 `git show 91e87a4:CLAUDE.md` 取回。§1–§7 及被引用的 §4.x / §5.x 标题全部保留，全仓上百处 `[[CLAUDE#§N]]` 引用不断。§3 如实改为「只有本文件自动注入」，原「热区」里的 spec / 宪法 / HANDOFF 实际都要靠 AI 自觉去读
+- **`CLAUDE.md` v1.1 → v2.0**（36 KB → 约 11.3 KB）：只留协议层（定位 / 命令 / 规则与守卫闸门对照表 / 忌讳 / 去哪查现状）。§7「当前状态指针」原有 22 KB 的签字批次与计数编年史整体移出——这些事实本就以本文件、各 ADR、features、test-spec 为准，原文可用 `git show 91e87a4:CLAUDE.md` 取回。§1–§7 及被引用的 §4.x / §5.x 标题全部保留，全仓上百处 `[[CLAUDE#§N]]` 引用不断。§3 如实改为「只有本文件自动注入」，原「热区」里的 spec / 宪法 / HANDOFF 实际都要靠 AI 自觉去读
 - **`.claude/agents/verifier.md`**：B2 检查仍按宪法 v1.1 判「AlignmentPhrase 出现在 Macro 区」，v1.2（ADR-031）已删掉这条证伪条件，会把合法的全景改动判成 FAIL。改为每次读现行宪法、不复述条款，并要求先看闸门结果、再查闸门本身是否被改
 - **新增三个 skill**（`.claude/skills/`，按需加载）：`doc-change`（原 CLAUDE §5 全文：八步 / 快车道判定表 / 日志不签字 / 主笔分工 / ADR / anchor）、`release`（`docs/release-runbook.md` 之外的三条前置检查）、`c1-bench`（何时必须跑、怎么判、基线在哪）
 - **`HANDOFF.md` 改为任务层**：Objective 指向 #38，Next Actions 5 条；旧 Next Actions 42 条按原分类迁入 issue #39–#46，保留原编号，HANDOFF 留「旧编号 → issue」对照表；旧 Risks 段的长期陷阱收编进 learnings，旧 Dropped 段原文见下

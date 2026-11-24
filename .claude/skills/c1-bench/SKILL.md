@@ -17,7 +17,7 @@ description: prompt-hub 改动碰到主形态唤起路径（全局快捷键、�
 
 ```bash
 pnpm bench:hotkey-wake                    # C1 判据：show()+set_focus() Rust 调用 P95；P95 > 200ms 退出码 1
-pnpm bench:cold-start                     # spawn → 首次 CGWindow entry；非 C1 约束（目标 ≤1.5s，只告警）
+pnpm bench:cold-start                     # spawn → 首次 CGWindow entry；非 C1 约束（目标 ≤1.5s；脚本不判这个数，只打印供对比）
 BENCH_ROUNDS=50 pnpm bench:cold-start     # 只有 cold-start 读 BENCH_ROUNDS（默认 20）
 ```
 
@@ -38,4 +38,4 @@ BENCH_ROUNDS=50 pnpm bench:cold-start     # 只有 cold-start 读 BENCH_ROUNDS�
 
 ## CI 现状
 
-`.github/workflows/ci.yml` 的 `bench-c1` 只在 push 到 `main` 时跑，且仍是 `continue-on-error: true`——**CI 上 C1 不设防**，本机这一跑是唯一真正的闸门（积压见 GitHub issue「积压 · CI / 发布」第 10 / 56 项）。
+`.github/workflows/ci.yml` 的 `bench-c1` 只在 push 到 `main` 或手动触发（`workflow_dispatch`）时跑、PR 上不跑，且仍是 `continue-on-error: true`——**CI 上 C1 不设防**，本机这一跑是唯一真正的闸门（积压见 GitHub issue「积压 · CI / 发布」第 10 / 56 项）。

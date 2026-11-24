@@ -40,7 +40,7 @@ pnpm tauri build                                                       # 生产�
 pnpm test                                                              # Vitest 全量，含 §4 全部源码级闸门（watch：pnpm test:watch）
 pnpm format                                                            # Prettier 写盘
 pnpm lint && pnpm build && pnpm exec prettier --check .                # ESLint / tsc + vite / 格式
-cargo test --workspace --manifest-path src-tauri/Cargo.toml            # --workspace 必须：真实用例在三个库 crate，不加只测 bin
+cargo test --workspace --manifest-path src-tauri/Cargo.toml            # --workspace 必须：不加只测根包，三个库 crate 的用例全被跳过
 cargo clippy --workspace --all-targets --manifest-path src-tauri/Cargo.toml -- -D warnings
 cargo fmt --manifest-path src-tauri/Cargo.toml
 node scripts/doc-governance/index.mjs --config doc-governance.config.mjs   # 文档闸门单独跑
