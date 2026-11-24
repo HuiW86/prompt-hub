@@ -168,7 +168,7 @@ pnpm bench:hotkey-wake                                                 # C1 判�
 
 | 文档 | 版本 |
 |---|---|
-| [[01-spec]] | v0.8 |
+| [[01-spec]] | v0.9 |
 | [[02-constitution]] | v1.2 |
 | [[03-product-spec]] | v0.35 |
 | [[05-design-spec]] | v0.29 |

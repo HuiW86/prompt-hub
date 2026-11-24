@@ -43,7 +43,7 @@ related:
 
 | 路径 | 内容 | 状态 |
 |---|---|---|
-| `docs/design/01-spec.md` | 项目定位与九条哲学 | v0.6（2026-06-01 M-X.0 涟漪：§8.8 反向 AI 写入边界，对应 ADR-015）|
+| `docs/design/01-spec.md` | 项目定位与九条哲学 | v0.9（2026-11-24：§8.6 删去「Macro 区不展示 AlignmentPhrase」，与宪法 v1.2 对齐，#49；中间版本见文件 frontmatter）|
 | `docs/design/02-constitution.md` | 8 条铁律 | ratified v1.1（2026-06-01 M-X.0 涟漪：D1 补反向边界 note，对应 ADR-015）|
 
 ---
