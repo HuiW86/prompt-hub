@@ -1,10 +1,10 @@
 ---
 type: spec
 project: prompt-hub
-version: v0.8
+version: v0.9
 created: 2026-04-23
-last_modified: 2026-09-04
-status: active  # v0.8 于 2026-09-04：§3.5 相位表补第 9 行「中途」（ADR-029 出厂相位 8→9，omar 裁定补行，其余一字未动，由 AI 按其指示执行）；2026-09-01 对账：v0.2.0 已发布，pre-code 不再成立。人主笔文档不设人审环节，取 active；status 改动由 AI 执行，omar 同日人审批次 ② 确认（内容未动）
+last_modified: 2026-11-24
+status: active  # v0.9 于 2026-11-24：§8.6 删去「Macro 区不展示 AlignmentPhrase」（HuiW86 指示删除，由 AI 执行，#49）。v0.8 于 2026-09-04：§3.5 相位表补第 9 行「中途」（ADR-029 出厂相位 8→9，omar 裁定补行，其余一字未动，由 AI 按其指示执行）；2026-09-01 对账：v0.2.0 已发布，pre-code 不再成立。人主笔文档不设人审环节，取 active；status 改动由 AI 执行，omar 同日人审批次 ② 确认（内容未动）
 author: human  # 🧑 人主笔，AI 禁止起草（CLAUDE §5.2）
 related: [[03-product-spec]], [[05-design-spec]], [[06-prd]], [[prompt-hub-mvp]]
 description: 手动 AI 编程仪表盘的产品 spec——What/Why/九条哲学/边界/未决决策
@@ -595,9 +595,10 @@ Modifier 四组固定不变（枚举），Phase 可配置增删（独立表）�
 - AlignmentPhrase 不出现在 Composition 工作台（不参与 Modifier 拼接）
 - AlignmentPhrase 不能被加入 SOP 步骤
 - AlignmentPhrase 不与 Macro 互相转化（即使内容相似也是两个对象）
-- Macro 区不展示 AlignmentPhrase
 - 相位带（Phase Bar）不展示任何任务话术
 - Scene 不包含 AlignmentPhrase
+
+> v0.9：按 HuiW86 指示删去原第四条「Macro 区不展示 AlignmentPhrase」。[[02-constitution]] v1.2（[[031-panorama-default-view]]）已把分离约束落在数据关系上、不落在界面分区上，全景并列展示各类条目不违反；这一条是旧的界面分区写法，与宪法冲突。「管理」工作区的任务层组件仍零引用对齐话术（`b2-separation.test.ts`）。
 
 **理由**：
 

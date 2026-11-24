@@ -14,6 +14,58 @@ description: prompt-hub 设计文档体系变更日志——记录文档结构�
 
 ---
 
+## 2026-11-24（二）— spec §8.6 删去一条与宪法冲突的界面分区写法（issue #49）
+
+### 变更内容
+
+- **01-spec v0.8 → v0.9**：§8.6 删去「Macro 区不展示 AlignmentPhrase」，原位置留一行说明。HuiW86 指示删除，AI 执行（人主笔文档）。其余五条分离约束一字未动
+- 涟漪：CLAUDE.md §7 版本表、MANIFEST 01-spec 行
+
+### 变更原因
+
+宪法 v1.2（ADR-031，2026-11-13 签字）已把 B2 的证伪条件从界面分区收窄到数据关系，全景工作区并列展示各类条目不构成违反。spec §8.6 这一条仍是旧的界面分区写法，两处互相矛盾。这处冲突是 #38 记录类反查时发现的（范围外，当时未动），#49 中提交 HuiW86 裁定。
+
+---
+
+## 2026-11-23（一）— AI 上下文重组（issue #38）
+
+### 变更内容
+
+- **`CLAUDE.md` v1.1 → v2.0**（36 KB → 约 11.3 KB）：只留协议层（定位 / 命令 / 规则与守卫闸门对照表 / 忌讳 / 去哪查现状）。§7「当前状态指针」原有 22 KB 的签字批次与计数编年史整体移出——这些事实本就以本文件、各 ADR、features、test-spec 为准，原文可用 `git show 91e87a4:CLAUDE.md` 取回。§1–§7 及被引用的 §4.x / §5.x 标题全部保留，全仓上百处 `[[CLAUDE#§N]]` 引用不断。§3 如实改为「只有本文件自动注入」，原「热区」里的 spec / 宪法 / HANDOFF 实际都要靠 AI 自觉去读
+- **`.claude/agents/verifier.md`**：B2 检查仍按宪法 v1.1 判「AlignmentPhrase 出现在 Macro 区」，v1.2（ADR-031）已删掉这条证伪条件，会把合法的全景改动判成 FAIL。改为每次读现行宪法、不复述条款，并要求先看闸门结果、再查闸门本身是否被改
+- **新增三个 skill**（`.claude/skills/`，按需加载）：`doc-change`（原 CLAUDE §5 全文：八步 / 快车道判定表 / 日志不签字 / 主笔分工 / ADR / anchor）、`release`（`docs/release-runbook.md` 之外的三条前置检查）、`c1-bench`（何时必须跑、怎么判、基线在哪）
+- **`HANDOFF.md` 改为任务层**：Objective 指向 #38，Next Actions 5 条；旧 Next Actions 42 条按原分类迁入 issue #39–#46，保留原编号，HANDOFF 留「旧编号 → issue」对照表；旧 Risks 段的长期陷阱收编进 learnings，旧 Dropped 段原文见下
+- **新增第 8 道源码级闸门 `scripts/doc-governance/context-budget.test.ts`**：CLAUDE.md ≤ 12 000 字节、不含日期（多种写法，frontmatter 只放行 `created` / `last_modified`）、不含测试计数、被引用的 § 标题不丢；HANDOFF.md ≤ 8 000 字节、有 Objective、Next Actions ≤ 5 条。test-spec v0.22 §3 登记（图纸，2026-11-24 HuiW86 在 PR #48 签字「同意合并 #48」，CLAUDE.md v2.0 同批转 ratified）
+- **learnings v0.6 → v0.7**：附录 B 第二次自 HANDOFF 收编（B.1 / B.2 / B.3 各补数条，新增 B.4「代码不变量」）；**订正 B.3**：原文写「`pnpm bench:*` 会拿真实数据库跑」，与 2026-09-04 起的一次性 `HOME` 脚本相反
+- **事实订正**：CLAUDE.md 与 HANDOFF 一直写「GitHub 最新公开版 v0.2.4、PR #26 尚未发版」。核对 GitHub Releases：**v0.2.5 已于 2026-11-15 03:06 UTC 发布**（tag 指向 `8e7fcbd`，schema 17，含 PR #26 / #30）；`main` 上未发版的是技能 Tab（PR #35，schema 18）与新图标（PR #37）
+- 后续另开 #47：01–11 设计文档 frontmatter 的 `status` 注释同样长成了编年史（test-spec 一行 8 KB）
+- MANIFEST v1.24 → v1.25 登记新文件
+
+### 变更原因
+
+CLAUDE.md 是每次会话唯一自动注入的文件，六成内容却是过期的编年史，标题写着「只留指针，不留编年史」，「最近一轮改动」停在两个月前。HANDOFF 长成了 75 个编号的待办池，没有「本轮要做的那一件」。根因是同一个：每段工作结束都往常驻文件里补一句现状，文字规则「保持简短」不会自己执行。按 learnings 信条一「把纪律交给编译器」，改为用闸门强制分层。
+
+### 旧 HANDOFF「Dropped」段原文（迁入存档）
+
+
+- 第 70 项（发布 v0.2.3）与第 62 项（runbook §4 更新链路）：2026-11-13 HuiW86 本机推送 tag `v0.2.3`（指向 `d06a45a`，不含其后合并的 PR #20），release 流程成功、16:26 UTC 转正式发布，公开 `latest.json` 版本 0.2.3（含 darwin-aarch64 / darwin-x86_64）；随后在已装客户端上经应用内「检查更新」升到 0.2.3（用户确认）。第 62 项原写的是 0.2.0 → 0.2.1，实际以 0.2.2 → 0.2.3 这次真实更新闭合
+- 第 65 项（全景 + 网站 Tab 契约回流）：2026-11-13 product-spec v0.31 / prd v0.17 / design-spec v0.24 同批签字；裁点「每次唤起都回到全景」按推荐通过并当日实装（`src/App.tsx`，管理里有编辑面板开着时例外，防丢草稿），`App.test.tsx` +5
+- 第 58 项（ADR-030 裁决）与第 60 项（`ccb145b` 补审查）：2026-11-13 HuiW86 授权 AI 裁决，裁前对照代码逐条复核无缺陷，ADR-030 **Accepted**；补充子决策：网站表不进第七道闸门（理由见 ADR-030「裁决」节）。契约回流并入第 65 项
+- 第 64 项（全景真机门）：2026-11-13 全部通过——macOS clippy 通过；`bench:hotkey-wake` p95 **20.143ms**（低于 200ms，但比 2026-09-05 的 14.139ms 多 6.004ms / +42%，原因未查，再涨须先定位）；真实库副本 15→16 迁移正常、原库 `quick_check` 正常；真实库 76 条一屏无纵向滚动（未分组列底部「还有 29 条」）；整理态选中后 `⌥3` 出现常用位徽标 3、`⌥0` 消失。验收副本在 `/tmp/prompt-hub-acceptance-home`
+- 第 68 项（CI runner 失效）：PR #14 改钉 `macos-15` + 全 workspace `cargo fmt`，首跑 rust / frontend / bench-c1 三项全绿，2026-11-13 合并（`dee9ee6`）
+
+- 第 63 项（PR #12 合并）：2026-11-13 已合并
+- 第 66 项（「整理」撞名）：工作区改名「管理」，模式名不动（CHANGELOG 2026-11-13）
+- 第 59 项（网站 Tab 补 C1 bench）：并入第 64 项，同一次 `bench:hotkey-wake` 一并覆盖
+
+
+### 旧 HANDOFF「Risks」段中已化解、未收编进 learnings 的两条（原文）
+
+- **两个 0.2.1 同号不同内容**（已由公开 v0.2.2 化解）：公开 v0.2.1 = 闪退修复、schema 14；本机 `/Applications` 的 0.2.1 = 网站 Tab、schema 15（2026-09-24 自建，未公证）。v0.2.2 发布后，本机 0.2.1 检查更新会看到 0.2.2
+- **Rust workspace 已整体 `cargo fmt` 一次**（2026-11-13，PR #14）：此前 `repo-core` / `repo-write` 积了约 59 处格式差异，CI 在 macos-14 退役前后都没真正检查到；macos-15 首跑即在 `cargo fmt --check` 上失败。现在全量干净，之后 CI 会照常拦
+
+---
+
 ## 2026-11-15（日）— 技能工作区（issue #28 / ADR-033 / PR #35）
 
 ### 变更内容

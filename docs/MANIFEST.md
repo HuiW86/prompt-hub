@@ -1,10 +1,10 @@
 ---
 type: manifest
 project: prompt-hub
-version: v1.24
+version: v1.25
 status: active
 created: 2026-05-24
-last_modified: 2026-09-23
+last_modified: 2026-11-23
 audience: [human, ai]
 description: prompt-hub 项目前期准备文件总清单——按方法论 v1.3 六层架构（L0 宪法 / L1 产品契约 / L2 工程规格 / L3 实施规格 / L4 索引 / L5 协作契约）+ ADR + 实施方案 + 视觉原型 + AI 上下文 + 工程护栏（CI/gate 测试）。AI 进项目读完 CLAUDE.md 后接读本文件能 1 分钟拿全貌；不写行数（参考性强但易过期）。v1.23：2026-09-04 omar 撤销 [[07-features#§1]] `verified` 判据的 ② ③ 条（进过 publish release / 自用 ≥1 周），判据只剩留证一条——features **v1.24**（「删除可撤销」升 `verified`，矩阵 **71 / 6**，合计仍 92）/ test-spec **v0.10**（§4.1 门的分量）。v1.22：2026-09-03 人审批次 ⑧ + ADR-028 三期落地——prd **v0.14 ratified** / product-spec **v0.25 ratified** / design-spec **v0.22 ratified** 三份图纸同批签字（ADR-028 回流的图纸类 draft 至此清零，ops-spec 的 draft 另有欠账不在本批）；另刷新两份记录类文档（features **v1.23** / test-spec **v0.9**）、§8 的 028 行由「实施未开始」改为 P0/P1/P2 已落地 + G5 门八项全过、§1 与 §11.6 登记**第七道源码级 gate**（`soft-delete-gate`，护栏 8 → 9）。v1.21：2026-09-03 [[028-reversible-delete]] Accepted 登记——ADR 总数 27 → **28**、Accepted 24 → **25**；§8 决策表补齐 022–028 七行（该表自 2026-07-06 起停在 021，表头「21 份」与 §1 概览的 27 长期不符，本版一并订正）。v1.20：2026-09-03 人审批次 ⑦ + 新治理规则「日志不签字」（[[CLAUDE#§5.1.2]]）——product-spec **v0.24 ratified** / design-spec **v0.21 ratified** / test-spec **v0.7 ratified**（首份按 5.1.2 由 AI 反查代码后直接归档的文档，非人审）。v1.16：2026-09-01 文档对账日——features v1.18（合计 88→91、S1/ADR-017 状态纠正、§7 重写）+ prd/ops-spec/user-flows/spec 四份 `pre-code` 转出 + learnings v0.5 收编 HANDOFF 长期风险。v1.15：ADR-027 回流 + 冲突提示 + 密度层立论重写 + ADR-026 两项遗留裁决——product-spec v0.22 / design-spec v0.19 / prd v0.13 / features v1.17 / test-spec v0.5，另修正 prd 行的**版本漂移**（本表记 v0.11，实际早已 v0.12）。⚠️ 其余行仍停在 2026-07-06 口径（未随 ADR-022/025/026 更新），属旧账
 related:
@@ -43,7 +43,7 @@ related:
 
 | 路径 | 内容 | 状态 |
 |---|---|---|
-| `docs/design/01-spec.md` | 项目定位与九条哲学 | v0.6（2026-06-01 M-X.0 涟漪：§8.8 反向 AI 写入边界，对应 ADR-015）|
+| `docs/design/01-spec.md` | 项目定位与九条哲学 | v0.9（2026-11-24：§8.6 删去「Macro 区不展示 AlignmentPhrase」，与宪法 v1.2 对齐，#49；中间版本见文件 frontmatter）|
 | `docs/design/02-constitution.md` | 8 条铁律 | ratified v1.1（2026-06-01 M-X.0 涟漪：D1 补反向边界 note，对应 ADR-015）|
 
 ---
@@ -169,8 +169,8 @@ related:
 
 | 路径 | 内容 | 状态 |
 |---|---|---|
-| `CLAUDE.md` | 项目级行为规范（含三温区映射 / 忌讳清单 / §7 状态指针 / 八步两条例外） | v1.1（2026-07-01 §7 除锈+补账；2026-08-18 增 §5.1.1 减法快车道；2026-09-03 增 **§5.1.2 日志不签字**——记录类内容 AI 反查归档不进人审队列，§6 第 6 条例外同步）|
-| `HANDOFF.md` | 会话断点 | 动态（每次 /checkpoint 更新） |
+| `CLAUDE.md` | 项目级 AI 上下文——纯协议层：定位 / 命令 / 上下文怎么取 / 代码规范与守卫闸门表 / 文档工作流一句话版 / 忌讳 / 去哪查现状 + 设计文档版本表 | v2.0（2026-11-23 #38 重组：36 KB → 约 11.3 KB，§7 编年史移出，§5 全文迁入 skill `doc-change`；由 `context-budget` 闸门守体积与写入规则） |
+| `HANDOFF.md` | 会话断点——任务层：Objective + ≤ 5 条 Next Actions + 本轮风险；积压在 GitHub Issues（旧编号对照表在本文件） | 动态（2026-11-23 #38 起受 `context-budget` 闸门约束） |
 
 ---
 
@@ -244,3 +244,15 @@ related:
 | `docs/website-tab/README.md`、`design-delta.md`、`architecture.mmd/svg/png`、`practice-feedback.md` | AI 草案/执行证据；从 `docs/design/README.md` 进入，待人审与真机走查 |
 
 旧 §1 汇总和 §2–§11 的历史行保留其原版本口径，不将本次自动测试计为已批准或已验证功能。
+
+## 2026-11-23 增量登记（v1.25 · #38 AI 上下文重组）
+
+| 文件 | 状态 / 链接 |
+| --- | --- |
+| `.claude/agents/verifier.md` | 修改：改为读现行宪法、不复述条款（原 B2 检查停在宪法 v1.1） |
+| `.claude/skills/doc-change/SKILL.md` | 新增：原 CLAUDE.md §5 全文（八步 / 快车道 / 日志不签字 / 主笔分工 / ADR / anchor），改文档前加载 |
+| `.claude/skills/release/SKILL.md` | 新增：`docs/release-runbook.md` 之外的三条发版前置检查 |
+| `.claude/skills/c1-bench/SKILL.md` | 新增：C1 唤起基准何时跑、怎么判、基线在哪 |
+| `scripts/doc-governance/context-budget.test.ts` | 新增：第 8 道源码级闸门（[[11-test-spec]] §3.8，2026-11-24 签字） |
+
+`CLAUDE.md` 与 `HANDOFF.md` 两行已在 §11 原地改写；§11.6 工程护栏表未补此闸门行，以本节为准。
