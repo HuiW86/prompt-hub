@@ -14,8 +14,10 @@ import { describe, expect, it } from "vitest";
 // state", and prose rules ("keep this short") do not execute.
 //
 // This gate makes the layering executable:
-//   CLAUDE.md  = protocol layer: no ISO dates in the body, hard byte budget,
-//                and the §-headings that ~130 `[[CLAUDE#§N]]` refs point at.
+//   CLAUDE.md  = protocol layer: hard byte budget, no dates (any common
+//                format; frontmatter only on created/last_modified), no test
+//                counts, and the §-headings that 100+ `[[CLAUDE#§N]]` refs
+//                point at (outside code fences).
 //   HANDOFF.md = task layer: hard byte budget, ≤ 5 Next Actions.
 // History goes to docs/design/CHANGELOG.md, backlog to GitHub Issues.
 //
@@ -49,16 +51,35 @@ const CLAUDE_REQUIRED_HEADINGS = [
   /^## §7 /m,
 ];
 
-const ISO_DATE = /\b20\d{2}-\d{2}-\d{2}\b/g;
+// Any common date spelling: 2026-11-23 / 2026/11/23 / 2026.11.23 /
+// 2026 年 11 月 23 日 / month-level 2026-11. Version strings (v0.2.5) and
+// sizes (36 KB) do not match: they lack a 20xx year followed by a separator.
+const DATE = /\b20\d{2}\s*[-/.年]\s*\d{1,2}(?:\s*[-/.月]\s*\d{1,2})?/g;
+
+// Test counts are records (test-spec §2), and every merge makes them stale.
+const TEST_COUNT =
+  /\d+\s*(?:条|个)?\s*(?:用例|测试)|\d+\s*(?:passed|tests?)\b/gi;
+
+// Frontmatter keys whose value is legitimately a date.
+const DATED_FRONTMATTER_KEY = /^(created|last_modified):/;
+
+// A Next Actions item: `1. ` / `1) ` / `- ` / `* ` / `+ `, at most one space
+// of indentation (two or more = nested detail, which is free).
+const LIST_ITEM = /^ ?(?:\d+[.)]|[-*+]) /;
 
 function read(rel: string): string {
   return readFileSync(resolve(repoRoot, rel), "utf8");
 }
 
-function stripFrontmatter(text: string): string {
-  if (!text.startsWith("---\n")) return text;
+function splitFrontmatter(text: string): { front: string; body: string } {
+  if (!text.startsWith("---\n")) return { front: "", body: text };
   const end = text.indexOf("\n---\n", 4);
-  return end === -1 ? text : text.slice(end + 5);
+  if (end === -1) return { front: "", body: text };
+  return { front: text.slice(4, end), body: text.slice(end + 5) };
+}
+
+function stripCodeFences(text: string): string {
+  return text.replace(/^```[\s\S]*?^```/gm, "");
 }
 
 /** Lines of the `## <title>` section, up to the next `## ` heading. */
@@ -73,7 +94,7 @@ function section(text: string, title: string): string[] | null {
 
 describe("context-budget gate — CLAUDE.md stays a protocol layer", () => {
   const raw = read("CLAUDE.md");
-  const body = stripFrontmatter(raw);
+  const { front, body } = splitFrontmatter(raw);
 
   it(`is at most ${CLAUDE_MAX_BYTES} bytes`, () => {
     const bytes = Buffer.byteLength(raw, "utf8");
@@ -85,20 +106,34 @@ describe("context-budget gate — CLAUDE.md stays a protocol layer", () => {
     ).toBeLessThanOrEqual(CLAUDE_MAX_BYTES);
   });
 
-  it("carries no dates outside the frontmatter", () => {
-    const dates = body.match(ISO_DATE) ?? [];
+  it("carries no dates (frontmatter: only created / last_modified)", () => {
+    const frontDates = front
+      .split("\n")
+      .filter((l) => !DATED_FRONTMATTER_KEY.test(l))
+      .flatMap((l) => l.match(DATE) ?? []);
+    const dates = [...frontDates, ...(body.match(DATE) ?? [])];
     expect(
       dates,
-      `CLAUDE.md body contains dates ${JSON.stringify(dates)}. A date in the ` +
+      `CLAUDE.md contains dates ${JSON.stringify(dates)}. A date in the ` +
         `always-injected layer is a chronicle entry that will go stale; ` +
         `put it in CHANGELOG / HANDOFF and point to it.`,
     ).toEqual([]);
   });
 
+  it("carries no test counts", () => {
+    const counts = raw.match(TEST_COUNT) ?? [];
+    expect(
+      counts,
+      `CLAUDE.md contains test counts ${JSON.stringify(counts)}. Counts are ` +
+        `records: they live in docs/design/11-test-spec.md §2 and HANDOFF Verify.`,
+    ).toEqual([]);
+  });
+
   it("keeps every §-heading that [[CLAUDE#§…]] references point at", () => {
-    const missing = CLAUDE_REQUIRED_HEADINGS.filter((re) => !re.test(body)).map(
-      String,
-    );
+    const prose = stripCodeFences(body);
+    const missing = CLAUDE_REQUIRED_HEADINGS.filter(
+      (re) => !re.test(prose),
+    ).map(String);
     expect(missing, "CLAUDE.md lost referenced headings").toEqual([]);
   });
 });
@@ -123,8 +158,7 @@ describe("context-budget gate — HANDOFF.md stays a task layer", () => {
   it(`lists at most ${HANDOFF_MAX_NEXT_ACTIONS} Next Actions`, () => {
     const lines = section(raw, "Next Actions");
     expect(lines, "missing `## Next Actions`").not.toBeNull();
-    // Top-level list items only (no indentation); nested detail lines are free.
-    const items = lines!.filter((l) => /^(\d+\.|[-*]) /.test(l));
+    const items = lines!.filter((l) => LIST_ITEM.test(l));
     expect(
       items.length,
       `HANDOFF has ${items.length} Next Actions (max ${HANDOFF_MAX_NEXT_ACTIONS}). ` +

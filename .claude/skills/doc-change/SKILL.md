@@ -68,7 +68,7 @@ AI 不得擅自起草人主笔文档（spec / constitution），可起草共创 
 ### 5.3 决策走 ADR
 - 任何"二选一/多选一"的不可逆决策 → 开 ADR（模板：`docs/adr/000-template.md`）
 - constitution 变更 → 必须先开 ADR（[[02-constitution#E1]]）
-- 技术栈 bump major version → 必须开 ADR（[[09-tech-stack#§5]]）
+- 技术栈 bump major version → 必须开 ADR（[[09-tech-stack#§8]]（§8 升级流程））
 
 ### 5.4 Anchor 命名约定
 
@@ -86,5 +86,5 @@ AI 不得擅自起草人主笔文档（spec / constitution），可起草共创 
 ## 收尾自检
 
 - `pnpm test` 里的 doc-governance 闸门（`scripts/doc-governance/doc-refs-gate.test.ts`）绿：引用不悬空、MANIFEST 覆盖、frontmatter、`CLAUDE.md` 版本表与目标文档一致。
-- 动了 01–11 任一份的 `version`，同步改 `CLAUDE.md` §7 版本表那一行（闸门会抓）。
+- 动了 01 / 02 / 03 / 05 / 06 / 07 / 09 或 MANIFEST 的 `version`，同步改 `CLAUDE.md` §7 版本表那一行（`doc-governance.config.mjs` 的 `versionPointers` 只核对这 8 份；04 / 08 / 10 / 11 不在表里，也不受核对）。
 - `CLAUDE.md` 只改协议层内容；本轮做了什么写 CHANGELOG，下一步做什么写 HANDOFF（`context-budget` 闸门会挡住往 CLAUDE.md 里塞日期）。

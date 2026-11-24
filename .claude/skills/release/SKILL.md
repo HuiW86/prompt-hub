@@ -27,4 +27,4 @@ description: prompt-hub 准备发版（改版本号、打 v* tag、审批 sign j
 ## 发完之后
 
 - CHANGELOG 记一行（版本、tag 指向的 commit、schema 版本）。
-- `CLAUDE.md` §7「当前状态指针」只更新「最新公开版」一个字段，不写叙事。
+- 在 HANDOFF「发布状态」写最新公开版与 `main` 上未发版的内容。**`CLAUDE.md` §7 不动**——它只写「去哪查」，不存会过期的值。

@@ -3,7 +3,7 @@ type: claude-md
 project: prompt-hub
 version: v2.0  # 重组为纯协议层：状态叙事移出、流程改 skill、加 context-budget 闸门（#38）
 created: 2026-05-19
-status: ratified
+status: draft  # v2.0 待 HuiW86 在 #38 的 PR 签字后转 ratified
 author: co  # 🤝 人机共创（CLAUDE §5.2 本文档自身）
 audience: [ai, human]
 description: prompt-hub 项目级 AI 上下文——定位/命令/规则与守卫闸门/忌讳/去哪查现状。AI 进场始终注入
@@ -17,7 +17,7 @@ related:
 
 > 本文件只放**协议层**：很少变、每次都要遵守的东西。全局规则见 `~/.claude/CLAUDE.md`（中文沟通 / Conventional Commits 等）。
 >
-> **写入规则**（`scripts/doc-governance/context-budget.test.ts` 强制）：不写日期、不写测试计数、不写「最近做了什么」，且有字节上限。本轮做了什么 → `docs/design/CHANGELOG.md`；下一步做什么 → [[HANDOFF]]；为什么这么定 → ADR / [[learnings]]。
+> **写入规则**：不写日期、不写测试计数、不写「最近做了什么」。前两条与字节上限由 `scripts/doc-governance/context-budget.test.ts` 强制；「不写近况」闸门查不出，靠自觉。本轮做了什么 → `docs/design/CHANGELOG.md`；下一步做什么 → [[HANDOFF]]；为什么这么定 → ADR / [[learnings]]。
 
 ---
 
@@ -35,10 +35,12 @@ prompt-hub 是 **AI 编程手动挡阶段的桌面仪表盘**——主形态快�
 
 ```bash
 pnpm install --frozen-lockfile                                         # 只用 pnpm；npm / yarn / bun 会造成 lockfile 冲突
-pnpm tauri dev                                                         # Dev server + Tauri shell
-pnpm test                                                              # Vitest 全量，含 §4 全部源码级闸门
+pnpm tauri dev                                                         # Dev server + Tauri shell（Vite HMR）
+pnpm tauri build                                                       # 生产构建
+pnpm test                                                              # Vitest 全量，含 §4 全部源码级闸门（watch：pnpm test:watch）
+pnpm format                                                            # Prettier 写盘
 pnpm lint && pnpm build && pnpm exec prettier --check .                # ESLint / tsc + vite / 格式
-cargo test --workspace --manifest-path src-tauri/Cargo.toml            # --workspace 必须，否则只测 bin（0 测试）
+cargo test --workspace --manifest-path src-tauri/Cargo.toml            # --workspace 必须：真实用例在三个库 crate，不加只测 bin
 cargo clippy --workspace --all-targets --manifest-path src-tauri/Cargo.toml -- -D warnings
 cargo fmt --manifest-path src-tauri/Cargo.toml
 node scripts/doc-governance/index.mjs --config doc-governance.config.mjs   # 文档闸门单独跑
@@ -59,6 +61,8 @@ pnpm bench:hotkey-wake                                                 # C1 判�
 | 写后端 / 数据层 | [[06-prd]] |
 | 写 UI | [[03-product-spec]] |
 | 写 CSS / 视觉 | [[05-design-spec]]，token 在 `src/styles/tokens.css` |
+| 用 Claude Design 设计 UI | [[CLAUDE-DESIGN]]（sticky context）+ [[claude-design-prompts]]（task 模板） |
+| 排实施任务 | `docs/plans/prompt-hub-mvp.md` |
 | 生成 import / 加依赖 | [[09-tech-stack]] |
 | 追溯决策 | `docs/adr/`（frontmatter `status` 为准） |
 | 理解规矩背后的判断、真机与发版陷阱 | [[learnings]]（附录 B） |
@@ -79,7 +83,7 @@ pnpm bench:hotkey-wake                                                 # C1 判�
 新增资产类型前先确认能否归入 Modifier / Composition / Macro；**不允许第 4 层资产**（[[02-constitution#B1]]）。常用网站、技能索引是独立库表、不属资产（ADR-030 / ADR-033），新增同类前先开 ADR。
 
 ### 4.3 协议层与任务层分离
-涉及 AlignmentPhrase / Phase / SOP / Macro 时自检 [[02-constitution#B2]]：AlignmentPhrase 不被拼进 Composition、不进 SOP、不与 Macro 互转。全景工作区并列展示各类条目不构成违反；「管理」工作区的 `MacroGrid` / `ScenePanel` / `ModifierGrid` / `SopProgress` 仍零引用对齐话术。
+涉及 AlignmentPhrase / Phase / SOP / Macro 时自检 [[02-constitution#B2]] 与 [[01-spec]] §8.6：AlignmentPhrase 不出现在 Composition 工作台、不被拼进 Composition、不进 SOP（SOP 不引用 AlignmentPhrase）、不与 Macro 互转、不归属 Scene。全景工作区并列展示各类条目不构成违反；「管理」工作区的 `MacroGrid` / `ScenePanel` / `ModifierGrid` / `SopProgress` 仍零引用对齐话术。
 
 ### 4.4 性能预算
 主形态唤起 ≤ 200ms P95（[[02-constitution#C1]]）。碰启动路径的改动必须附 benchmark，加载 skill `c1-bench`。
@@ -160,7 +164,7 @@ pnpm bench:hotkey-wake                                                 # C1 判�
 | ADR 状态 | `docs/adr/*.md` 各自 frontmatter `status` |
 | 每份文档改过什么 | 各文档文末修订记录 + `docs/design/CHANGELOG.md` |
 
-**设计文档当前版本**（doc-governance 闸门逐行核对，bump 文档时必须同改这一行）：
+**设计文档当前版本**（doc-governance 的 `versionPointers` 只核对下表这 8 份；bump 其中任一份必须同改这一行，04 / 08 / 10 / 11 不在核对范围）：
 
 | 文档 | 版本 |
 |---|---|

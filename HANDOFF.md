@@ -10,19 +10,20 @@
 
 - 开 #38；旧 Next Actions 42 条按原分类迁入 #39–#46，保留原编号（对照表见下）；frontmatter 编年史另开 #47
 - `.claude/agents/verifier.md`：不再复述宪法条款，改为每次读现行宪法；原 B2 检查仍按 v1.1 的「Macro 区」判卷，会把合法的全景改动判成 FAIL
-- `CLAUDE.md` v2.0：36 KB → 约 10.6 KB；§7 编年史移出（原文 `git show 91e87a4:CLAUDE.md`）；§1–§7 及子标题全部保留；新增闸门对照表；§3 改为如实说明「只有本文件自动注入」
+- `CLAUDE.md` v2.0：36 KB → 约 10.6 KB；§7 编年史移出（原文 `git show 91e87a4:CLAUDE.md`）；§1–§7 及被引用的 4.x / 5.x 子标题全部保留（旧 §3 热 / 温 / 冷三个子标题改为一张表，无引用指向它们）；新增闸门对照表；§3 改为如实说明「只有本文件自动注入」
 - 新增 skill：`.claude/skills/doc-change`（原 §5 全文）/ `release` / `c1-bench`
 - [[learnings]] v0.7：收编本文件旧 Risks 段的长期陷阱（新增 B.4 代码不变量），订正 B.3 bench 条目（原文与现行脚本相反）
-- 第 8 道闸门 `context-budget`：CLAUDE.md ≤ 12 000 字节且正文无日期、引用标题不丢；HANDOFF ≤ 8 000 字节且 Next Actions ≤ 5
+- 第 8 道闸门 `context-budget`：CLAUDE.md ≤ 12 000 字节、无日期、无测试计数、引用标题不丢；HANDOFF ≤ 8 000 字节且 Next Actions ≤ 5
 - 涟漪：[[11-test-spec]] v0.22（§3 登记第 8 道闸门，属图纸，待签）/ [[MANIFEST]] v1.25 / CHANGELOG
 
 ## In Progress
 
-- PR 待 HuiW86 审：唯一的决定是「新增第 8 道闸门 `context-budget`」，推荐通过
+- PR 待 HuiW86 审，一句话的决定：**采纳 #38 的分层方案**（CLAUDE.md v2.0 + 第 8 道闸门 `context-budget`），推荐通过。v2.0 新写进三条约束，请一并过目：§4「改闸门或豁免清单需有依据」、§4.2「新增独立库表前先开 ADR」、§6 第 11 条「不往 CLAUDE.md 追加状态叙事」
+- verifier 首轮 FAIL（7 处事实错误与闸门漏报），已全部修正；记录类反查子代理因额度中断，待重跑
 
 ## Next Actions
 
-1. **签 #38 的 PR**：同意新增 `context-budget` 闸门，test-spec v0.22 转 ratified，合并
+1. **签 #38 的 PR**：CLAUDE.md v2.0 与 test-spec v0.22 转 ratified，合并
 2. **技能 Tab 真机走查**（#40 第 73 项）：`main` 上的技能 Tab（migration `0018`）和新图标还没发版，下一次发版前必须过这一门
 3. **Developer ID 证书 2027-02-01 到期**（#43 第 20 项）：约 10 周后到期，先续证书，再发下一版
 4. **CI 上 C1 不设防**（#43 第 10 / 56 项）：`bench-c1` 仍为 `continue-on-error`，swizzle 降级也不判失败
@@ -53,15 +54,15 @@
 
 - **旧编号引用只在本表可解**：文档里约 137 处「[[HANDOFF]] 第 N 项」，靠上表找到去向。删这张表之前，先确认这些引用已经不再需要
 - **提高闸门预算是允许的，但要有理由**：改 `context-budget.test.ts` 里的常量，并在提交说明里写清为什么现在的分层装不下；不要只是把数字调大
-- **CLAUDE.md §7 版本表仍要手改**：bump 01–11 任一文档的 `version`，同步改那一行（doc-governance 闸门会抓）
+- **CLAUDE.md §7 版本表仍要手改**：bump 01 / 02 / 03 / 05 / 06 / 07 / 09 或 MANIFEST 的 `version`，同步改那一行（doc-governance 只核对这 8 份；04 / 08 / 10 / 11 不受核对）
 - 长期陷阱（真机取证、发版、本地环境、代码不变量）见 [[learnings]] 附录 B
 
 ## Verify
 
 > 2026-11-23 云端 Linux 实测。
 
-- `pnpm test`：53 个文件 / 665 条用例，全绿（本轮新增 `context-budget` 6 条；改前 52 / 659）。另有一次与 cargo 编译并发的运行挂了 1 条，未定位是哪条；之后单独重跑全绿。若再遇到，先查对时间敏感的用例
-- `context-budget` 变异自检：往 CLAUDE.md 正文加日期、删 `5.1.2` 标题、HANDOFF 加第 6 条，三条断言各自报红；还原后转绿
+- `pnpm test`：53 个文件 / 666 条用例，全绿（本轮新增 `context-budget` 7 条；改前 52 / 659）。另有一次与 cargo 编译并发的运行挂了 1 条，未定位是哪条；之后单独重跑全绿。若再遇到，先查对时间敏感的用例
+- `context-budget` 变异自检：中文 / 斜杠 / 月份日期、frontmatter 注释里的日期、测试计数、把 `5.1.2` 标题藏进代码块、Next Actions 第 6 条用 `6)` / `+` / ` *` 写，九种写法逐一注入均报红，还原后转绿（其中多数是 verifier 对初版闸门实测绕过的写法）
 - `cargo test -p repo-core -p repo-write -p prompt-hub-mcp`：244 条全过（主 crate 0 条测试，Linux 上编不过所以没跑；本轮没改 Rust）
 - `node scripts/doc-governance/index.mjs --config doc-governance.config.mjs`：0 error（24 条 warning 都是改前就有的）
 - `pnpm lint`、`pnpm exec prettier --check .`：全绿

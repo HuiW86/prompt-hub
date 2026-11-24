@@ -32,9 +32,9 @@ cargo clippy --workspace --all-targets --manifest-path src-tauri/Cargo.toml -- -
 
 先看 `pnpm test` 里的源码级闸门是否全绿（清单见 `CLAUDE.md` §4 闸门表），再对闸门**覆盖不到**的部分逐条对照宪法的「证伪」小节读 `git diff`：
 
-- 闸门会被绕开：改动是否**修改了闸门本身或它的豁免清单**？凡动了 `*-gate.test.ts` / `b2-separation.test.ts` / 豁免 marker，必须有对应 ADR 或 CLAUDE.md 依据，否则 FAIL。
+- 闸门会被绕开：改动是否**修改了闸门本身或它的豁免清单**？凡动了 `CLAUDE.md` §4 闸门表中任一测试文件，或任何豁免 marker / 豁免清单，必须有对应 ADR 或 CLAUDE.md 依据，否则 FAIL。
 - B1：是否新增了 Modifier / Composition / Macro 之外的第 4 类资产（独立库表如常用网站 / 技能索引不属资产，以对应 ADR 为准）？
-- B2：按宪法现行「证伪」条款判——SOP 步骤是否含 AlignmentPhrase？AlignmentPhrase 是否被拼进 Composition？「管理」工作区任务层组件是否引用对齐话术？
+- B2：先按宪法现行「证伪」条款判（SOP 步骤是否含 AlignmentPhrase？AlignmentPhrase 是否被拼进 Composition？），再按 B2 正文判证伪小节没列的部分（是否与 Macro 互转？是否归属 Scene？），最后按 `CLAUDE.md` §4.3 判界面层（是否出现在 Composition 工作台？「管理」工作区任务层组件是否引用对齐话术？）。
 - A2：是否新增了向外部服务发请求的代码？（唯一豁免是 ADR-017 updater opt-in）
 - D1：是否引入 LLM SDK 用于生成话术？
 

@@ -18,11 +18,11 @@ description: prompt-hub 改动碰到主形态唤起路径（全局快捷键、�
 ```bash
 pnpm bench:hotkey-wake                    # C1 判据：show()+set_focus() Rust 调用 P95；P95 > 200ms 退出码 1
 pnpm bench:cold-start                     # spawn → 首次 CGWindow entry；非 C1 约束（目标 ≤1.5s，只告警）
-BENCH_ROUNDS=50 pnpm bench:hotkey-wake    # 默认 20 轮；结果边缘时加轮数
+BENCH_ROUNDS=50 pnpm bench:cold-start     # 只有 cold-start 读 BENCH_ROUNDS（默认 20）
 ```
 
 - 两个 bench 都在 `mkdtemp` 出的一次性 `HOME` 里跑空库，**不碰真实资产库**（`bench/*.bench.mjs` 的 `makeSandboxHome`）。早于这一改动的 cold-start 数字取自真实库，不可直接比较。
-- hotkey-wake 测的是 Rust 侧 `show()+set_focus()`，**不含** OS 快捷键分发（约 10ms）。
+- hotkey-wake 测的是 Rust 侧 `show()+set_focus()`，**不含** OS 快捷键分发（约 10ms）。轮数写死在 `src-tauri/src/bench.rs`（`WARMUP_ROUNDS` 5 轮预热 + `SAMPLE_ROUNDS` 50 轮采样），不读环境变量。
 - 本机 shell 若在 Rosetta 下，前端命令包 `arch -arm64 /bin/zsh -lc '…'`（[[learnings]] 附录 B.3）。
 
 ## 怎么判
