@@ -1,11 +1,22 @@
 import { useCallback } from "react";
 
 import type { RecordUsageInput } from "../ipc/types";
+import { useAppStore } from "../stores/appStore";
 import { usePromptStore } from "../stores/promptStore";
 import { useSettingsStore } from "../stores/settingsStore";
 import { useToastStore } from "../stores/toastStore";
 
+import { countPaste, type TrialView } from "../utils/viewTrial";
+
 import { writeClipboard } from "./useClipboard";
+
+// ADR-034 trial: which view a paste came from. Websites never copy a prompt.
+const TRIAL_VIEW: Record<string, TrialView | undefined> = {
+  quick: "quick",
+  panorama: "panorama",
+  skills: "skills",
+  prompts: "manage",
+};
 
 // Single entry point used by every clickable asset. Order matters:
 //   1. write clipboard first so the user gets the literal value even if the
@@ -39,6 +50,8 @@ export function useCopy() {
         return;
       }
       showToast("已复制", flashId);
+      const view = TRIAL_VIEW[useAppStore.getState().workspace];
+      if (view) countPaste(view);
       const suppressHide =
         useSettingsStore.getState().interactionMode === "organize";
       try {

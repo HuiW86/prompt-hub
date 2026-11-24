@@ -26,6 +26,7 @@ import {
   type SkillColumn,
   type SkillItem,
 } from "../../utils/skills";
+import { countPaste } from "../../utils/viewTrial";
 
 import board from "../panorama/PanoramaView.module.css";
 import styles from "./SkillPanel.module.css";
@@ -131,6 +132,7 @@ export function SkillPanel() {
         return;
       }
       show("已复制", item.skill.id);
+      countPaste("skills");
       // Organize mode keeps the window (D-0), exactly as for prompts.
       const suppressHide =
         useSettingsStore.getState().interactionMode === "organize";

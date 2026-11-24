@@ -13,6 +13,8 @@ import styles from "./Header.module.css";
 // are fetched. Not 整理 — that word already names the interaction mode in the
 // ModeToggle beside this nav (D-0 整理态), and the two sat side by side.
 const WORKSPACES: ReadonlyArray<{ id: Workspace; label: string }> = [
+  // ADR-034: 快取 is where a wake lands — find one thing and paste it.
+  { id: "quick", label: "快取" },
   { id: "panorama", label: "全景" },
   // ADR-033: next to 全景 because it is the same act — fetch, not organize.
   { id: "skills", label: "技能" },

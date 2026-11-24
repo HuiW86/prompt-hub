@@ -25,10 +25,13 @@ import App from "./App";
 import { useAppStore } from "./stores/appStore";
 import { usePanoramaStore } from "./stores/panoramaStore";
 import { usePromptStore } from "./stores/promptStore";
+import { useQuickStore } from "./stores/quickStore";
 import { useSearchStore } from "./stores/searchStore";
 import { useSessionStore } from "./stores/sessionStore";
 import { useSettingsStore } from "./stores/settingsStore";
+import { useSkillStore } from "./stores/skillStore";
 import { useToastStore } from "./stores/toastStore";
+import { useWebsiteStore } from "./stores/websiteStore";
 
 const fakePhases: Phase[] = [
   "发散",
@@ -911,10 +914,10 @@ describe("Wake hygiene — clear search residue on hide (P1-4)", () => {
   });
 });
 
-describe("Default workspace — panorama (ADR-031)", () => {
+describe("Panorama workspace (ADR-031; reached by Tab since ADR-034)", () => {
   beforeEach(() => {
     usePromptStore.setState(initialStore, true);
-    useAppStore.setState(initialAppStore, true);
+    useAppStore.setState({ ...initialAppStore, workspace: "panorama" }, true);
     usePanoramaStore.setState({ query: "", selectedKey: null, placements: [] });
     useSettingsStore.setState({
       interactionMode: "invoke",
@@ -963,15 +966,14 @@ describe("Default workspace — panorama (ADR-031)", () => {
     });
   });
 
-  it("starts on the panorama, with 全景 first and the old dashboard renamed 管理", async () => {
-    expect(useAppStore.getState().workspace).toBe("panorama");
+  it("shows every item, with 快取 then 全景 first in the nav and the old dashboard named 管理", async () => {
     render(<App />);
     await screen.findByLabelText("全景");
     const nav = screen.getByRole("navigation", { name: "工作区" });
     const labels = Array.from(nav.querySelectorAll("button")).map(
       (b) => b.textContent,
     );
-    expect(labels).toEqual(["全景", "技能", "管理", "常用网站"]);
+    expect(labels).toEqual(["快取", "全景", "技能", "管理", "常用网站"]);
     expect(within(nav).getByRole("button", { name: "全景" })).toHaveAttribute(
       "aria-current",
       "page",
@@ -1050,9 +1052,16 @@ describe("Default workspace — panorama (ADR-031)", () => {
       ]);
     });
   });
+
+  it("Tab flips to the quick view", async () => {
+    render(<App />);
+    await screen.findByLabelText("全景");
+    fireEvent.keyDown(screen.getByLabelText("筛选"), { key: "Tab" });
+    expect(useAppStore.getState().workspace).toBe("quick");
+  });
 });
 
-describe("Wake returns to the panorama (product-spec v0.31 §13.6 a)", () => {
+describe("Wake lands on the quick view (ADR-034)", () => {
   beforeEach(() => {
     usePromptStore.setState(initialStore, true);
     useAppStore.setState({ ...initialAppStore, workspace: "prompts" }, true);
@@ -1078,6 +1087,7 @@ describe("Wake returns to the panorama (product-spec v0.31 §13.6 a)", () => {
         case "list_drafts":
         case "list_recent_usage":
         case "list_panorama_placements":
+        case "list_skills":
         case "list_websites":
           return Promise.resolve(
             cmd === "list_websites" ? { groups: [], websites: [] } : [],
@@ -1097,20 +1107,35 @@ describe("Wake returns to the panorama (product-spec v0.31 §13.6 a)", () => {
     });
   }
 
-  it("a wake from the organize workspace switches to the panorama", async () => {
+  it("a wake from the organize workspace switches to the quick view", async () => {
     render(<App />);
     await screen.findByText("借力最优解");
     expect(useAppStore.getState().workspace).toBe("prompts");
     wake("2026-11-13T10:00:00Z");
-    expect(useAppStore.getState().workspace).toBe("panorama");
-    expect(await screen.findByLabelText("全景")).toBeInTheDocument();
+    expect(useAppStore.getState().workspace).toBe("quick");
+    expect(await screen.findByLabelText("快取")).toBeInTheDocument();
   });
 
-  it("a wake from the websites workspace switches to the panorama", async () => {
+  it("a wake from the panorama also returns to the quick view", async () => {
+    useAppStore.setState({ workspace: "panorama" });
+    render(<App />);
+    wake("2026-11-13T10:02:00Z");
+    expect(useAppStore.getState().workspace).toBe("quick");
+  });
+
+  it("a wake from the websites workspace switches to the quick view", async () => {
     useAppStore.setState({ workspace: "websites" });
     render(<App />);
     wake("2026-11-13T10:05:00Z");
-    expect(useAppStore.getState().workspace).toBe("panorama");
+    expect(useAppStore.getState().workspace).toBe("quick");
+  });
+
+  it("a wake clears a quick-view query left over from an earlier visit", async () => {
+    useQuickStore.setState({ query: "旧", selectedKey: "prompt:macro:x" });
+    render(<App />);
+    wake("2026-11-13T10:08:00Z");
+    expect(useQuickStore.getState().query).toBe("");
+    expect(useQuickStore.getState().selectedKey).toBeNull();
   });
 
   it("a wake clears a panorama filter left over from an earlier visit", async () => {
@@ -1138,5 +1163,210 @@ describe("Wake returns to the panorama (product-spec v0.31 §13.6 a)", () => {
     render(<App />);
     await act(async () => {});
     expect(useAppStore.getState().workspace).toBe("prompts");
+  });
+});
+
+describe("Quick view (ADR-034)", () => {
+  const fakeSkill = {
+    id: "skill-review",
+    name: "代码审查",
+    purpose: "按清单审查当前改动",
+    whenToUse: "提交前",
+    notFor: "",
+    invocation: "/code-review",
+    stage: null,
+    trigger: "manual",
+    source: "custom",
+    sourceUrl: "",
+    status: "installed",
+    pinSlot: null,
+    orderIndex: 0,
+    usageCount: 2,
+    lastUsedAt: "2026-05-01T00:00:00Z",
+    createdAt: "2026-05-01T00:00:00Z",
+  };
+  const fakeSite = {
+    id: "site-gh",
+    name: "GitHub",
+    url: "https://github.com",
+    description: "",
+    groupId: null,
+    orderIndex: 0,
+    createdAt: "2026-05-01T00:00:00Z",
+    deletedAt: null,
+  };
+
+  beforeEach(() => {
+    usePromptStore.setState(initialStore, true);
+    useAppStore.setState({ ...initialAppStore, workspace: "quick" }, true);
+    useQuickStore.setState({ query: "", selectedKey: null });
+    usePanoramaStore.setState({ query: "", selectedKey: null, placements: [] });
+    useSkillStore.setState({ skills: [], loaded: false, error: null });
+    useWebsiteStore.setState({
+      library: { groups: [], websites: [] },
+      loaded: false,
+      error: null,
+    });
+    useSettingsStore.setState({
+      interactionMode: "invoke",
+      settingsOpen: false,
+    });
+    vi.mocked(navigator.clipboard.writeText).mockClear();
+    localStorage.clear();
+    invokeMock.mockReset();
+    invokeMock.mockImplementation((cmd: string) => {
+      switch (cmd) {
+        case "list_phases":
+          return Promise.resolve(fakePhases);
+        case "list_alignment_axis_values":
+          return Promise.resolve([]);
+        case "list_alignment_phrases":
+          return Promise.resolve(fakeAlignments);
+        case "list_macros":
+          return Promise.resolve(fakeMacros);
+        case "list_modifiers":
+        case "list_compositions":
+        case "list_drafts":
+        case "list_recent_usage":
+          return Promise.resolve([]);
+        case "list_scenes_with_children":
+          return Promise.resolve(fakeScenes);
+        case "count_today_usage":
+        case "count_pending_drafts":
+          return Promise.resolve(0);
+        case "list_panorama_placements":
+          return Promise.resolve([
+            {
+              assetKind: "macro",
+              assetId: "macro-best-practice",
+              groupId: null,
+              pinSlot: 1,
+            },
+          ]);
+        case "list_skills":
+          return Promise.resolve([fakeSkill]);
+        case "list_websites":
+          return Promise.resolve({ groups: [], websites: [fakeSite] });
+        case "record_usage":
+          return Promise.resolve({
+            id: "r",
+            timestamp: "2026-11-24T00:00:00Z",
+          });
+        case "record_skill_use":
+        case "open_website":
+        case "hide_window":
+          return Promise.resolve();
+        default:
+          return Promise.reject(new Error(`unexpected ${cmd}`));
+      }
+    });
+  });
+
+  function usageInputs() {
+    return invokeMock.mock.calls
+      .filter((c) => c[0] === "record_usage")
+      .map(
+        (c) => (c[1] as { input: { targetId: string; source: string } }).input,
+      );
+  }
+
+  it("is the default workspace, caret in the box, prompts + skills + websites in one list", async () => {
+    expect(useAppStore.getState().workspace).toBe("quick");
+    render(<App />);
+    const box = await screen.findByLabelText("快取筛选");
+    expect(document.activeElement).toBe(box);
+    await screen.findByText("代码审查");
+    await screen.findByText("GitHub");
+    // Once in its row, once in the preview pane (pin 1 starts selected).
+    expect(screen.getAllByText("借力最优解")).toHaveLength(2);
+    // The first line of the body sits next to the name.
+    expect(screen.getAllByText("调研外部成熟方案。").length).toBeGreaterThan(0);
+  });
+
+  it("puts pin slot 1 first and a bare 1 pastes it, counted for the trial", async () => {
+    render(<App />);
+    await screen.findByText("代码审查");
+    const first = document.querySelector("[data-row-key]") as HTMLElement;
+    expect(first.dataset.rowKey).toBe("prompt:macro:macro-best-practice");
+    fireEvent.keyDown(screen.getByLabelText("快取筛选"), { key: "1" });
+    await waitFor(() =>
+      expect(usageInputs()).toEqual([
+        expect.objectContaining({ targetId: "macro-best-practice" }),
+      ]),
+    );
+    const trial = JSON.parse(
+      localStorage.getItem("prompt-hub:view-trial:v1") ?? "{}",
+    ) as Record<string, Record<string, number>>;
+    expect(Object.values(trial)[0]).toEqual({ quick: 1 });
+  });
+
+  it("typing narrows the list and ↵ pastes the top match", async () => {
+    render(<App />);
+    await screen.findByText("代码审查");
+    fireEvent.change(screen.getByLabelText("快取筛选"), {
+      target: { value: "导出" },
+    });
+    expect(screen.queryByText("借力最优解")).toBeNull();
+    fireEvent.keyDown(screen.getByLabelText("快取筛选"), { key: "Enter" });
+    await waitFor(() =>
+      expect(usageInputs()).toEqual([
+        expect.objectContaining({ targetId: "phrase-plan-export" }),
+      ]),
+    );
+  });
+
+  it("↵ on a skill match pastes its invocation and records a skill use", async () => {
+    render(<App />);
+    await screen.findByText("代码审查");
+    const box = screen.getByLabelText("快取筛选");
+    fireEvent.change(box, { target: { value: "审查" } });
+    fireEvent.keyDown(box, { key: "Enter" });
+    await waitFor(() =>
+      expect(navigator.clipboard.writeText).toHaveBeenCalledWith(
+        "/code-review",
+      ),
+    );
+    await waitFor(() =>
+      expect(
+        invokeMock.mock.calls.some((c) => c[0] === "record_skill_use"),
+      ).toBe(true),
+    );
+  });
+
+  it("a website row opens in the browser instead of copying", async () => {
+    render(<App />);
+    await screen.findByText("GitHub");
+    fireEvent.click(screen.getByText("GitHub"));
+    await waitFor(() =>
+      expect(invokeMock.mock.calls.some((c) => c[0] === "open_website")).toBe(
+        true,
+      ),
+    );
+    expect(navigator.clipboard.writeText).not.toHaveBeenCalled();
+  });
+
+  it("Esc clears the box first, and only then hides", async () => {
+    render(<App />);
+    const box = await screen.findByLabelText("快取筛选");
+    fireEvent.change(box, { target: { value: "借力" } });
+    fireEvent.keyDown(document, { key: "Escape" });
+    expect(useQuickStore.getState().query).toBe("");
+    expect(invokeMock.mock.calls.some((c) => c[0] === "hide_window")).toBe(
+      false,
+    );
+    fireEvent.keyDown(document, { key: "Escape" });
+    await waitFor(() =>
+      expect(invokeMock.mock.calls.some((c) => c[0] === "hide_window")).toBe(
+        true,
+      ),
+    );
+  });
+
+  it("Tab goes to the panorama", async () => {
+    render(<App />);
+    const box = await screen.findByLabelText("快取筛选");
+    fireEvent.keyDown(box, { key: "Tab" });
+    expect(useAppStore.getState().workspace).toBe("panorama");
+    expect(await screen.findByLabelText("全景")).toBeInTheDocument();
   });
 });
