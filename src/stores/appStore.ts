@@ -4,10 +4,15 @@ import { create } from "zustand";
 // React can react (focus search input, dim background, etc.). Window control
 // commands land in B4 — for now `setVisible` is the single source of truth in
 // the renderer process.
-// ADR-031: the panorama is where a wake lands. "prompts" is the organize
-// workspace (the original dashboard), "websites" the site library, "skills"
-// the skill board (ADR-033).
-export type Workspace = "panorama" | "skills" | "prompts" | "websites";
+// ADR-034: the quick view is where a wake lands; the panorama is one Tab
+// away. "prompts" is the organize workspace (the original dashboard),
+// "websites" the site library, "skills" the skill board (ADR-033).
+export type Workspace =
+  | "quick"
+  | "panorama"
+  | "skills"
+  | "prompts"
+  | "websites";
 
 interface AppState {
   isVisible: boolean;
@@ -25,7 +30,7 @@ interface AppState {
 
 export const useAppStore = create<AppState>()((set) => ({
   isVisible: true,
-  workspace: "panorama",
+  workspace: "quick",
   setWorkspace: (workspace) => set({ workspace }),
   activePhaseId: null,
   draftsViewRequestId: 0,

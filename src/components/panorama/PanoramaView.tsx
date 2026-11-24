@@ -11,15 +11,15 @@ import {
 import { Search } from "lucide-react";
 
 import { useCopy } from "../../hooks/useCopy";
+import { usePanoramaModel } from "../../hooks/usePanoramaModel";
+import { useAppStore } from "../../stores/appStore";
 import { hoverPreviewHandlers } from "../../stores/hoverPreviewStore";
 import { usePanoramaStore, panoramaKey } from "../../stores/panoramaStore";
-import { usePromptStore } from "../../stores/promptStore";
 import { useSessionStore } from "../../stores/sessionStore";
 import { useSettingsStore } from "../../stores/settingsStore";
 import { useToastStore } from "../../stores/toastStore";
 import { toUserMessage } from "../../utils/errorMessage";
 import {
-  buildPanorama,
   itemsInReadingOrder,
   matchesFilter,
   type PanoramaColumn,
@@ -69,15 +69,6 @@ function isEditable(el: EventTarget | null): boolean {
 type NavGrid = string[][];
 
 export function PanoramaView() {
-  const phases = usePromptStore((s) => s.phases);
-  const macros = usePromptStore((s) => s.macros);
-  const modifiers = usePromptStore((s) => s.modifiers);
-  const scenes = usePromptStore((s) => s.scenes);
-  const alignmentByPhase = usePromptStore((s) => s.alignmentPhrasesByPhase);
-  const compositionsByPhase = usePromptStore((s) => s.compositionsByPhase);
-  const axisById = usePromptStore((s) => s.alignmentAxisValuesById);
-
-  const placements = usePanoramaStore((s) => s.placements);
   const load = usePanoramaStore((s) => s.load);
   const query = usePanoramaStore((s) => s.query);
   const setQuery = usePanoramaStore((s) => s.setQuery);
@@ -107,41 +98,7 @@ export function PanoramaView() {
     void load();
   }, [load]);
 
-  const model = useMemo(() => {
-    // Phase order first, so alignment phrases enter in the order the phase
-    // bar shows them; buckets for phases the store no longer lists come last.
-    const order = [
-      ...phases.map((p) => p.id),
-      ...Object.keys(alignmentByPhase).filter(
-        (id) => !phases.some((p) => p.id === id),
-      ),
-    ];
-    const compOrder = [
-      ...phases.map((p) => p.id),
-      ...Object.keys(compositionsByPhase).filter(
-        (id) => !phases.some((p) => p.id === id),
-      ),
-    ];
-    return buildPanorama({
-      macros,
-      modifiers,
-      phrases: scenes.flatMap((s) => s.phrases),
-      alignmentPhrases: order.flatMap((id) => alignmentByPhase[id] ?? []),
-      compositions: compOrder.flatMap((id) => compositionsByPhase[id] ?? []),
-      placements,
-      now: new Date(),
-      alignmentAxisValuesById: axisById,
-    });
-  }, [
-    phases,
-    macros,
-    modifiers,
-    scenes,
-    alignmentByPhase,
-    compositionsByPhase,
-    placements,
-    axisById,
-  ]);
+  const model = usePanoramaModel();
 
   const filtering = query.trim() !== "";
 
@@ -412,6 +369,14 @@ export function PanoramaView() {
       }
       if (e.altKey) return;
 
+      // Tab flips back to the quick view (ADR-034): the two views are one
+      // key apart, so the panorama never has to be the default to be near.
+      if (e.key === "Tab" && !e.shiftKey) {
+        e.preventDefault();
+        useAppStore.getState().setWorkspace("quick");
+        return;
+      }
+
       const q = usePanoramaStore.getState().query;
       if (/^[1-9]$/.test(e.key) && q === "") {
         e.preventDefault();
@@ -673,6 +638,7 @@ export function PanoramaView() {
                 <kbd className={styles.kbd}>1–9</kbd> 贴出常用位
                 <kbd className={styles.kbd}>↑↓←→</kbd> 选择
                 <kbd className={styles.kbd}>↵</kbd> 贴出
+                <kbd className={styles.kbd}>Tab</kbd> 快取
                 <kbd className={styles.kbd}>Esc</kbd> 清空或收起
               </>
             )}

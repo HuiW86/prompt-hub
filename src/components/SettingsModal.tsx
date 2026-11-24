@@ -22,6 +22,7 @@ import { useToastStore } from "../stores/toastStore";
 import { useUpdaterStore } from "../stores/updaterStore";
 import { toUserMessage } from "../utils/errorMessage";
 import { primaryModifierLabel } from "../utils/platform";
+import { trialTotals } from "../utils/viewTrial";
 
 import { HotkeyRecorder } from "./HotkeyRecorder";
 import { TrashSection } from "./TrashSection";
@@ -621,6 +622,7 @@ export function SettingsModal() {
             </div>
           ) : (
             <div className={styles.body}>
+              <ViewTrialGroup />
               <div className={styles.group}>
                 <div className={styles.groupHead}>
                   <span className={styles.groupTitle}>备份</span>
@@ -684,6 +686,31 @@ export function SettingsModal() {
               <TrashSection />
             </div>
           )}
+        </div>
+      </div>
+    </div>
+  );
+}
+
+// ADR-034 trial (issue #50): pastes per view over the last 14 days, read from
+// this device's local storage. Temporary — removed with utils/viewTrial.ts
+// when the trial is decided.
+function ViewTrialGroup() {
+  const t = trialTotals(14);
+  return (
+    <div className={styles.group}>
+      <div className={styles.groupHead}>
+        <span className={styles.groupTitle}>试用计数</span>
+      </div>
+      <div className={styles.card}>
+        <div className={styles.row}>
+          <div className={styles.rowText}>
+            <span className={styles.rowLabel}>近 14 天贴出次数</span>
+            <span className={styles.rowHint}>
+              快取 {t.quick} · 全景 {t.panorama} · 技能 {t.skills} · 管理{" "}
+              {t.manage}
+            </span>
+          </div>
         </div>
       </div>
     </div>

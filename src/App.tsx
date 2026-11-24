@@ -2,6 +2,7 @@ import { useWebsiteStore } from "./stores/websiteStore";
 import { useSkillStore } from "./stores/skillStore";
 import { usePanoramaStore } from "./stores/panoramaStore";
 import { useAppStore } from "./stores/appStore";
+import { useQuickStore } from "./stores/quickStore";
 import { useEffect } from "react";
 
 import "./App.css";
@@ -43,9 +44,9 @@ function App() {
     };
   }, []);
 
-  // Every wake lands on the panorama (product-spec v0.31 §13.6 a, owner's
-  // ruling 2026-11-13): "see everything at a glance" only holds if it holds
-  // on each summon, not just at app start. The one exception is an open
+  // Every wake lands on the quick view (ADR-034, issue #50; it replaces the
+  // 2026-11-13 ruling that landed every wake on the panorama): the common
+  // summon is "give me that one", and the panorama is one Tab away. The one exception is an open
   // editor in the organize workspace — the window can be hidden by a blur
   // while a draft is unsaved, and switching workspaces would unmount the
   // editor and drop the draft. AnchoredEditor is the only element that
@@ -54,13 +55,14 @@ function App() {
   useEffect(() => {
     return useSessionStore.subscribe((state, prev) => {
       if (state.sessionStartedAt === prev.sessionStartedAt) return;
+      useQuickStore.getState().resetView();
       usePanoramaStore.getState().resetView();
       useSkillStore.getState().resetView();
       const app = useAppStore.getState();
-      if (app.workspace === "panorama") return;
+      if (app.workspace === "quick") return;
       if (document.querySelector("[popover]")) return;
       useSearchStore.getState().clearQuery();
-      app.setWorkspace("panorama");
+      app.setWorkspace("quick");
     });
   }, []);
 
@@ -149,7 +151,14 @@ function App() {
       // synchronous setState so the check sees the live state; React's
       // synthetic event delegation is irrelevant here.
       if (selectIsSearching(useSearchStore.getState())) return;
-      // Panorama: the first Esc clears the filter, the next one hides.
+      // Quick view and panorama: the first Esc clears the box, the next hides.
+      if (
+        useAppStore.getState().workspace === "quick" &&
+        useQuickStore.getState().query
+      ) {
+        useQuickStore.getState().setQuery("");
+        return;
+      }
       if (
         useAppStore.getState().workspace === "panorama" &&
         usePanoramaStore.getState().query
