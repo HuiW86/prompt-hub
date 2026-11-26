@@ -22,8 +22,12 @@ import { UpdaterBanner } from "../components/UpdaterBanner";
 import { PanoramaView } from "../components/panorama/PanoramaView";
 import { Button } from "../components/primitives";
 import { useAppStore } from "../stores/appStore";
-import { lazy, Suspense } from "react";
+import { Suspense } from "react";
 import { usePromptStore } from "../stores/promptStore";
+import motion from "../styles/motion.module.css";
+import { cx } from "../components/primitives/cx";
+
+import { SkillPanel, WebsitePanel } from "./workspacePanels";
 
 import styles from "./Dashboard.module.css";
 
@@ -44,22 +48,9 @@ import styles from "./Dashboard.module.css";
 // PanoramaView is imported eagerly (above) while WebsitePanel stays lazy: the
 // panorama is the default view, on the wake path, and must paint with the
 // first frame (constitution C1).
-const WebsitePanel = lazy(() =>
-  import("../components/WebsitePanel").then((module) => ({
-    default: module.WebsitePanel,
-  })),
-);
-
-// Lazy for the same reason as WebsitePanel: a wake lands on the panorama, so
-// the skill board is never on the C1 path.
-const SkillPanel = lazy(() =>
-  import("../components/skills/SkillPanel").then((module) => ({
-    default: module.SkillPanel,
-  })),
-);
-
 export function Dashboard() {
   const workspace = useAppStore((s) => s.workspace);
+  const workspaceAnimated = useAppStore((s) => s.workspaceAnimated);
   const loadState = usePromptStore((s) => s.loadState);
   const loadError = usePromptStore((s) => s.loadError);
   const refreshAll = usePromptStore((s) => s.refreshAll);
@@ -111,43 +102,49 @@ export function Dashboard() {
       <HotkeyBanner />
       <UpdaterBanner />
       <Header />
-      {workspace === "panorama" ? (
-        <PanoramaView />
-      ) : workspace === "skills" ? (
-        <Suspense fallback={<div className={styles.loading}>加载中…</div>}>
-          <SkillPanel />
-        </Suspense>
-      ) : workspace === "prompts" ? (
-        <>
-          <ProtocolBand />
-          <div className={styles.panorama}>
-            <Group
-              id="dashboard-2col"
-              className={styles.panoramaGroup}
-              defaultLayout={columnLayout.defaultLayout}
-              onLayoutChanged={columnLayout.onLayoutChanged}
-            >
-              <Panel
-                id="task"
-                className={styles.panel}
-                defaultSize="68%"
-                minSize="42%"
+      {/* One stage per workspace (keyed), so a user's switch replays the
+          fade-in on the arriving view. Opacity only and never on wake. */}
+      <div
+        key={workspace}
+        className={cx(styles.stage, workspaceAnimated && motion.contentEnter)}
+      >
+        {workspace === "panorama" ? (
+          <PanoramaView />
+        ) : workspace === "skills" ? (
+          <Suspense fallback={<div className={styles.loading}>加载中…</div>}>
+            <SkillPanel />
+          </Suspense>
+        ) : workspace === "prompts" ? (
+          <>
+            <ProtocolBand />
+            <div className={styles.panorama}>
+              <Group
+                id="dashboard-2col"
+                className={styles.panoramaGroup}
+                defaultLayout={columnLayout.defaultLayout}
+                onLayoutChanged={columnLayout.onLayoutChanged}
               >
-                {/* Task column: the Macro / Scene split.
+                <Panel
+                  id="task"
+                  className={styles.panel}
+                  defaultSize="68%"
+                  minSize="42%"
+                >
+                  {/* Task column: the Macro / Scene split.
                 The 任务层 marker pill was removed 2026-08-20 (omar) together
                 with ProtocolBand's 协议层 pill — position already says which
                 layer this column is, so the label was the interface explaining
                 its own architecture. ModifierGrid keeps its pill because that
                 panel has no such positional cue. */}
-                <div className={styles.taskCol}>
-                  <Group
-                    id="task-2row"
-                    orientation="vertical"
-                    className={styles.taskGroup}
-                    defaultLayout={taskLayout.defaultLayout}
-                    onLayoutChanged={taskLayout.onLayoutChanged}
-                  >
-                    {/* Default leans to Macro (0-step reach, heat-sorted). Both
+                  <div className={styles.taskCol}>
+                    <Group
+                      id="task-2row"
+                      orientation="vertical"
+                      className={styles.taskGroup}
+                      defaultLayout={taskLayout.defaultLayout}
+                      onLayoutChanged={taskLayout.onLayoutChanged}
+                    >
+                      {/* Default leans to Macro (0-step reach, heat-sorted). Both
                     minimums are PIXELS, not percentages: a percentage floor
                     keeps shrinking with the window, so the region thins out
                     exactly when space is scarcest — that is how the old
@@ -159,56 +156,57 @@ export function Dashboard() {
                     needs a scroll shadow or arrow. Measured on device
                     (2026-08-19), not derived from tokens — region chrome
                     stacks in ways the token values alone don't predict. */}
-                    <Panel
-                      id="macro"
-                      className={styles.panel}
-                      defaultSize="46%"
-                      minSize="132px"
-                    >
-                      <MacroGrid />
-                    </Panel>
-                    <Separator className={styles.separatorRow} />
-                    {/* 288px = region header + tab row + card head (224) + first
+                      <Panel
+                        id="macro"
+                        className={styles.panel}
+                        defaultSize="46%"
+                        minSize="132px"
+                      >
+                        <MacroGrid />
+                      </Panel>
+                      <Separator className={styles.separatorRow} />
+                      {/* 288px = region header + tab row + card head (224) + first
                     phrase card in full (→265) + the next card's edge (→288).
                     The earlier 196px cleared the chrome but left ZERO phrases
                     visible, and ScenePanel hides its scrollbar, so the region
                     read as empty rather than scrollable — it failed ADR-026
                     子决策 2's own wording ("下限保证 Scene 至少完整显示一个子阶段列"). */}
-                    <Panel
-                      id="scene"
-                      className={styles.panel}
-                      defaultSize="54%"
-                      minSize="288px"
-                    >
-                      <ScenePanel />
-                    </Panel>
-                  </Group>
-                </div>
-              </Panel>
-              <Separator className={styles.separator} />
-              <Panel
-                id="aside"
-                className={styles.panel}
-                defaultSize="32%"
-                minSize="20%"
-              >
-                <div className={styles.aside}>
-                  <ModifierGrid />
-                  <RecentList />
-                  <SopProgress />
-                </div>
-              </Panel>
-            </Group>
-            <SearchOverlay />
-          </div>
-        </>
-      ) : (
-        <Suspense
-          fallback={<div className={styles.loading}>加载常用网站…</div>}
-        >
-          <WebsitePanel />
-        </Suspense>
-      )}
+                      <Panel
+                        id="scene"
+                        className={styles.panel}
+                        defaultSize="54%"
+                        minSize="288px"
+                      >
+                        <ScenePanel />
+                      </Panel>
+                    </Group>
+                  </div>
+                </Panel>
+                <Separator className={styles.separator} />
+                <Panel
+                  id="aside"
+                  className={styles.panel}
+                  defaultSize="32%"
+                  minSize="20%"
+                >
+                  <div className={styles.aside}>
+                    <ModifierGrid />
+                    <RecentList />
+                    <SopProgress />
+                  </div>
+                </Panel>
+              </Group>
+              <SearchOverlay />
+            </div>
+          </>
+        ) : (
+          <Suspense
+            fallback={<div className={styles.loading}>加载常用网站…</div>}
+          >
+            <WebsitePanel />
+          </Suspense>
+        )}
+      </div>
       {workspace === "prompts" && <StatusBar />}
       <Toast />
       <HoverPreviewLayer />
