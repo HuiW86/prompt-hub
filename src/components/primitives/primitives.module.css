@@ -185,10 +185,15 @@
 }
 
 /* ── Flash (single @keyframes source — §11). Color injected per layer
-   via --layer-16; holds the fill for --d-fast then snaps to base bg. ── */
+   via --layer-16. Lands on the fill at once (the click is answered on the
+   first frame), holds it for the first half of --d-fast, then hands back to
+   the element's own background over the second half — a settle, not the old
+   snap at the last frame. No `to` frame on purpose: the animation returns to
+   whatever the element's background is now (hover, selected), so it never
+   ends on a colour the element is not. ── */
 @keyframes ph-flash {
   0%,
-  100% {
+  50% {
     background-color: var(--layer-16);
   }
 }
@@ -336,7 +341,7 @@
   outline-offset: var(--hairline);
 }
 
-/* ── IconButton — bare icon square tool (§10.2.2) ────────────────────── */
+/* ── IconButton — bare icon square tool (§10.2.2) ──────────────────── */
 .iconBtn {
   display: inline-flex;
   align-items: center;
@@ -380,7 +385,7 @@
   cursor: grab;
 }
 
-/* ── Input / EditorInput (§10.2.2) ───────────────────────────────────── */
+/* ── Input / EditorInput (§10.2.2) ─────────────────────────────────── */
 .input,
 .editorInput {
   width: 100%;
@@ -487,6 +492,32 @@
   overflow: visible;
 }
 
+/* Entrance: grows out of its anchor — a short fade with a --s-1 drift from
+   the anchor's side and a 2% scale about the edge nearest the anchor. Plays
+   once, when data-side first appears (after measurement). No exit: closing
+   unmounts at once so focus return and the [popover] wake guard in App.tsx
+   stay exact, and a press on another row is never held up. */
+.anchoredEditor[data-side] {
+  animation: anchored-in var(--d-fast) var(--ease);
+}
+
+.anchoredEditor[data-side="below"] {
+  --enter-y: calc(-1 * var(--s-1));
+  transform-origin: top left;
+}
+
+.anchoredEditor[data-side="above"] {
+  --enter-y: var(--s-1);
+  transform-origin: bottom left;
+}
+
+@keyframes anchored-in {
+  from {
+    opacity: 0;
+    transform: translateY(var(--enter-y)) scale(0.98);
+  }
+}
+
 /* ── Chip — single tag (§10.2.2) ─────────────────────────────────────── */
 .chip {
   composes: ph-card-body from "../../styles/typography.module.css";
@@ -568,4 +599,27 @@
 .confirmText {
   composes: ph-action from "../../styles/typography.module.css";
   color: var(--fg-1);
+}
+
+/* ── Press (design-spec §11 态 3) ─────────────────────────────────────────
+   One press grammar for every primitive control: the surface answers the
+   pointer on the first frame (--d-instant) and eases back on release through
+   the element's own --d-fast transition. Unfilled controls take the 8% fill;
+   filled ones (primary / accent) drop their hover elevation — pushed down,
+   not recoloured. Never on disabled controls. */
+.btn:active:not(:disabled),
+.iconBtn:active:not(:disabled),
+.chip:active,
+.row:active {
+  background-color: var(--layer-8, var(--surface-2));
+  transition-duration: var(--d-instant);
+}
+
+.btnPrimary:active:not(:disabled) {
+  background-color: var(--layer);
+}
+
+.btnAccent:active:not(:disabled) {
+  background-color: var(--accent);
+  box-shadow: none;
 }

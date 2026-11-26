@@ -326,6 +326,9 @@ export function AnchoredEditor({
       role="group"
       aria-label={ariaLabel}
       className={cx(styles.anchoredEditor, styles[layer], className)}
+      // Set once the first measurement lands: the entrance plays then, from
+      // the anchor's side, never at the unpositioned origin.
+      data-side={position ? (position.flipped ? "above" : "below") : undefined}
       style={{
         top: position?.top ?? 0,
         left: position?.left ?? 0,
