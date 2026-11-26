@@ -3,6 +3,8 @@ import { Inbox, Plus } from "lucide-react";
 import type { SceneWithChildren } from "../../ipc/types";
 
 import { SceneIcon } from "../SceneIcon";
+import { useSegmentThumb } from "../../hooks/useSegmentThumb";
+
 import styles from "../ScenePanel.module.css";
 
 interface SceneTabsProps {
@@ -31,8 +33,11 @@ export function SceneTabs({
   onSelectScene,
   onCreateScene,
 }: SceneTabsProps) {
+  const trackRef = useSegmentThumb<HTMLElement>(
+    draftsActive ? "__drafts" : currentSceneId,
+  );
   return (
-    <nav className={styles.tabs} aria-label="Scene tabs">
+    <nav ref={trackRef} className={styles.tabs} aria-label="Scene tabs">
       {draftsAvailable && (
         <>
           <button
@@ -40,6 +45,7 @@ export function SceneTabs({
             className={`${styles.tab} ${styles.draftTab} ${draftsActive ? styles.active : ""}`}
             onClick={onSelectDrafts}
             aria-current={draftsActive ? "page" : undefined}
+            data-segment-active={draftsActive ? "true" : undefined}
             aria-label={`草稿收件箱，${pendingDraftCount} 条待审`}
             data-nav-item
             tabIndex={-1}
@@ -65,6 +71,7 @@ export function SceneTabs({
             className={`${styles.tab} ${isActive ? styles.active : ""}`}
             onClick={() => onSelectScene(sc.scene.id)}
             aria-current={isActive ? "page" : undefined}
+            data-segment-active={isActive ? "true" : undefined}
             data-nav-item
             tabIndex={-1}
           >
