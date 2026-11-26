@@ -4,6 +4,7 @@
    Header carries one segmented-control style, not two (V-01). */
 
 .segment {
+  composes: segmentTrack from "../styles/motion.module.css";
   display: inline-flex;
   gap: var(--s-0_5);
   flex: 0 0 auto;

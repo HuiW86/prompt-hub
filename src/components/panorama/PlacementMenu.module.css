@@ -48,6 +48,10 @@
   font-size: var(--t-12);
   cursor: pointer;
   white-space: nowrap;
+  transition:
+    background-color var(--d-fast) var(--ease),
+    border-color var(--d-fast) var(--ease),
+    color var(--d-fast) var(--ease);
 }
 
 .option:hover {

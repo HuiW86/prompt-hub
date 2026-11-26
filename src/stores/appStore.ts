@@ -12,7 +12,11 @@ export type Workspace = "panorama" | "skills" | "prompts" | "websites";
 interface AppState {
   isVisible: boolean;
   workspace: Workspace;
-  setWorkspace: (workspace: Workspace) => void;
+  // Whether the current workspace arrived by the user's own switch (Header).
+  // Only then does the new view fade in; the wake reset to the panorama and
+  // every other programmatic switch stay instant (C1: no entrance on wake).
+  workspaceAnimated: boolean;
+  setWorkspace: (workspace: Workspace, opts?: { animate?: boolean }) => void;
   activePhaseId: string | null;
   // Monotonic ping: bumped when the 待审 badge is clicked so ScenePanel jumps to
   // the 📥 草稿 tab. A counter (not a boolean) so repeated clicks re-fire even if
@@ -26,7 +30,9 @@ interface AppState {
 export const useAppStore = create<AppState>()((set) => ({
   isVisible: true,
   workspace: "panorama",
-  setWorkspace: (workspace) => set({ workspace }),
+  workspaceAnimated: false,
+  setWorkspace: (workspace, opts) =>
+    set({ workspace, workspaceAnimated: opts?.animate === true }),
   activePhaseId: null,
   draftsViewRequestId: 0,
   setVisible: (isVisible) => set({ isVisible }),

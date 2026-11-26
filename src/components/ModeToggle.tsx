@@ -5,6 +5,8 @@ import {
   useSettingsStore,
 } from "../stores/settingsStore";
 
+import { useSegmentThumb } from "../hooks/useSegmentThumb";
+
 import styles from "./ModeToggle.module.css";
 
 // D-0 interaction-mode switch. An always-visible segmented control (never
@@ -20,13 +22,13 @@ const OPTIONS: Array<{
   {
     value: "invoke",
     label: "调用",
-    hint: "点卡即复制，复制后自动隐藏",
+    hint: "点击即复制，复制后自动隐藏窗口",
     icon: MousePointerClick,
   },
   {
     value: "organize",
     label: "整理",
-    hint: "点卡展开预览，复制为显式动作，窗口驻留",
+    hint: "窗口保持打开，可调整内容与位置",
     icon: PencilRuler,
   },
 ];
@@ -34,9 +36,15 @@ const OPTIONS: Array<{
 export function ModeToggle() {
   const interactionMode = useSettingsStore((s) => s.interactionMode);
   const setInteractionMode = useSettingsStore((s) => s.setInteractionMode);
+  const trackRef = useSegmentThumb<HTMLDivElement>(interactionMode);
 
   return (
-    <div className={styles.segment} role="group" aria-label="交互模式">
+    <div
+      ref={trackRef}
+      className={styles.segment}
+      role="group"
+      aria-label="交互模式"
+    >
       {OPTIONS.map(({ value, label, hint, icon: Icon }) => {
         const active = interactionMode === value;
         return (
@@ -45,6 +53,7 @@ export function ModeToggle() {
             type="button"
             className={active ? `${styles.item} ${styles.active}` : styles.item}
             aria-pressed={active}
+            data-segment-active={active ? "true" : undefined}
             title={hint}
             onClick={() => setInteractionMode(value)}
           >
