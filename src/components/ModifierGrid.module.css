@@ -156,3 +156,12 @@
   box-shadow: var(--shadow-1);
   transform: translateY(var(--lift-1));
 }
+
+/* Press: a lifted surface settles back onto the page at once (instant
+   press-in, eased release) — pressing a card that stays floating reads as
+   pressing nothing. */
+.atomChip:active {
+  box-shadow: none;
+  transform: none;
+  transition-duration: var(--d-instant);
+}

@@ -21,6 +21,21 @@
   justify-content: center;
   padding: var(--s-6);
   background: var(--scrim);
+  /* Same entrance as the settings dialog: the two modals share one voice. */
+  animation: ledger-overlay-in var(--d-base) var(--ease);
+}
+
+@keyframes ledger-overlay-in {
+  from {
+    opacity: 0;
+  }
+}
+
+@keyframes ledger-panel-in {
+  from {
+    opacity: 0;
+    transform: scale(0.98);
+  }
 }
 
 .panel {
@@ -34,6 +49,7 @@
   border: var(--hairline) solid var(--border-2);
   border-radius: var(--r-frame);
   box-shadow: var(--shadow-2);
+  animation: ledger-panel-in var(--d-base) var(--ease);
 }
 
 .head {

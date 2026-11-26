@@ -42,6 +42,13 @@ const VISIBLE_MS = {
   action: 6000,
 } as const;
 
+let pendingReflash: string | null = null;
+
+const nextFrame = (fn: () => void) =>
+  typeof requestAnimationFrame === "function"
+    ? requestAnimationFrame(fn)
+    : setTimeout(fn, 16);
+
 export const useToastStore = create<ToastState>()((set, get) => {
   // Shared arm: set the toast payload, take a seq ticket, and schedule the
   // dwell clear. `dwell` is keyed off the presence of an action rather than the
@@ -77,7 +84,35 @@ export const useToastStore = create<ToastState>()((set, get) => {
     // the intended model (same as the ADR-022 MoveReceipt undo).
     if (action === null && intent !== "error" && get().action !== null) return;
     const my = get().seq + 1;
-    set({ message, intent, flashTargetId, action, seq: my });
+    // Same target flashing again (a repeat copy inside the dwell): drop the
+    // flash for one frame first, or the class never leaves the element and
+    // the second copy gets no visible answer.
+    // A reflash already waiting on its frames counts as "still flashing":
+    // a third copy inside that window must keep the class off and hand the
+    // restore to its own (newest) seq, or the class comes back too early.
+    const reflash =
+      flashTargetId !== null &&
+      (get().flashTargetId === flashTargetId ||
+        pendingReflash === flashTargetId);
+    pendingReflash = reflash ? flashTargetId : null;
+    set({
+      message,
+      intent,
+      flashTargetId: reflash ? null : flashTargetId,
+      action,
+      seq: my,
+    });
+    if (reflash) {
+      // Two frames: the first lets the class-less state reach a style recalc,
+      // the second puts the class back so the animation starts over.
+      nextFrame(() =>
+        nextFrame(() => {
+          if (get().seq !== my) return;
+          pendingReflash = null;
+          set({ flashTargetId });
+        }),
+      );
+    }
     const dwell = action ? VISIBLE_MS.action : VISIBLE_MS[intent];
     setTimeout(() => {
       if (get().seq === my) {
@@ -101,13 +136,15 @@ export const useToastStore = create<ToastState>()((set, get) => {
       arm(message, flashTargetId ?? null, intent, null),
     showError: (message) => arm(message, null, "error", null),
     showWithAction: (message, action) => arm(message, null, "success", action),
-    clear: () =>
+    clear: () => {
+      pendingReflash = null;
       set((s) => ({
         message: null,
         intent: "success",
         flashTargetId: null,
         action: null,
         seq: s.seq + 1,
-      })),
+      }));
+    },
   };
 });

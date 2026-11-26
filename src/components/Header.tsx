@@ -1,5 +1,7 @@
 import { Layers, Settings } from "lucide-react";
 
+import { useSegmentThumb } from "../hooks/useSegmentThumb";
+import { prefetchWorkspace } from "../layouts/workspacePanels";
 import { useAppStore, type Workspace } from "../stores/appStore";
 import { useSearchStore } from "../stores/searchStore";
 import { useSettingsStore } from "../stores/settingsStore";
@@ -27,6 +29,7 @@ export function Header() {
   const workspace = useAppStore((s) => s.workspace);
   const setWorkspace = useAppStore((s) => s.setWorkspace);
   const openSettings = useSettingsStore((s) => s.openSettings);
+  const navRef = useSegmentThumb<HTMLElement>(workspace);
 
   return (
     <header className={styles.header}>
@@ -36,18 +39,25 @@ export function Header() {
         </span>
         <span className={styles.title}>prompt-hub</span>
       </div>
-      <nav className={styles.workspaces} aria-label="工作区">
+      <nav ref={navRef} className={styles.workspaces} aria-label="工作区">
         {WORKSPACES.map(({ id, label }) => (
           <button
             key={id}
             type="button"
             className={workspace === id ? styles.current : styles.workspace}
             aria-current={workspace === id ? "page" : undefined}
+            data-segment-active={workspace === id ? "true" : undefined}
+            // Warm the lazy panel while the pointer is on its way, so the
+            // switch lands on the panel, not on a 「加载中…」 frame.
+            onPointerEnter={() => prefetchWorkspace(id)}
+            onFocus={() => prefetchWorkspace(id)}
             onClick={() => {
               // The organize search overlay must not survive into a workspace
               // that has no search bar to dismiss it from.
               if (id !== "prompts") useSearchStore.getState().clearQuery();
-              setWorkspace(id);
+              // Only a user's own switch fades the new view in; the wake path
+              // (App.tsx) calls setWorkspace plainly and stays instant (C1).
+              setWorkspace(id, { animate: id !== workspace });
             }}
           >
             {label}

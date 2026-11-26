@@ -100,8 +100,12 @@
   transform: translateY(var(--lift-1));
 }
 
+/* Press: settles back down at once (instant press-in, eased release). */
 .item:active:not(:disabled) {
   background: var(--surface-3);
+  box-shadow: none;
+  transform: none;
+  transition-duration: var(--d-instant);
 }
 
 .item:focus-visible {

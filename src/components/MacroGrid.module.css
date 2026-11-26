@@ -100,6 +100,14 @@
   border-color: var(--brand-ghost);
 }
 
+/* Press: a lifted surface settles back onto the page at once (instant
+   press-in, eased release) — pressing a card that stays floating reads as
+   pressing nothing. */
+.macroCard:active {
+  transform: none;
+  transition-duration: var(--d-instant);
+}
+
 /* Main click-to-copy surface fills the bar; action controls overlay the right. */
 .copyArea {
   display: flex;

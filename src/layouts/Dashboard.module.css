@@ -19,6 +19,16 @@
   line-height: var(--lh-body);
 }
 
+/* Workspace stage: a transparent flex column standing in for the dashboard
+ * column, so each workspace's root keeps the flex:1 sizing it had as a direct
+ * child. Exists so a user-initiated switch can fade the arriving view in. */
+.stage {
+  display: flex;
+  flex: 1;
+  flex-direction: column;
+  min-height: 0;
+}
+
 .panorama {
   position: relative;
   flex: 1;

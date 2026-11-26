@@ -17,7 +17,7 @@
   background: var(--canvas);
 }
 
-/* ── Filter ─────────────────────────────────────────────────────────────── */
+/* ── Filter ───────────────────────────────────────────────────────────────────── */
 
 .filterRow {
   position: relative;
@@ -70,7 +70,7 @@
   color: var(--fg-2);
 }
 
-/* ── Stage columns ──────────────────────────────────────────────────────── */
+/* ── Stage columns ───────────────────────────────────────────────────────────────────── */
 
 /* Equal-width lanes for however many there are (8, or 9 with 未分组). */
 .grid {
@@ -222,8 +222,10 @@
   background: var(--surface-2);
 }
 
+/* Press answers on the first frame; release eases back (--d-fast). */
 .item:active {
   background: var(--surface-3);
+  transition-duration: var(--d-instant);
 }
 
 /* Up to two lines, then an ellipsis. Eight equal columns are narrow — at
@@ -263,7 +265,7 @@
   color: var(--fg-2);
 }
 
-/* ── Tiers ──────────────────────────────────────────────────────────────── */
+/* ── Tiers ────────────────────────────────────────────────────────────────────── */
 
 /* Pinned: a raised card with a keycap — the thing a number key presses. */
 .pinned {
@@ -325,17 +327,27 @@
   color: var(--brand-fg);
 }
 
-/* Usage bar: width = this item's count / the library's highest count. A
- * hard-stop two-tone fill, not a gradient. */
+/* Usage bar: fill = this item's count / the library's highest count. A
+ * hard-stop two-tone fill, not a gradient. The fill is a scaled layer (not a
+ * gradient stop) so a changed count re-fills over --d-base on the compositor
+ * instead of jumping — the bar grows in place, nothing moves (§10.9.3). */
 .bar {
+  position: relative;
   flex: 0 0 100%;
   height: var(--s-0_5);
+  overflow: hidden;
   border-radius: var(--r-1);
-  background: linear-gradient(
-    to right,
-    var(--brand) calc(var(--usage, 0) * 100%),
-    var(--border-1) calc(var(--usage, 0) * 100%)
-  );
+  background: var(--border-1);
+}
+
+.bar::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background: var(--brand);
+  transform: scaleX(var(--usage, 0));
+  transform-origin: left center;
+  transition: transform var(--d-base) var(--ease);
 }
 
 .active {
@@ -369,7 +381,7 @@
   color: var(--fg-1);
 }
 
-/* ── States ─────────────────────────────────────────────────────────────── */
+/* ── States ──────────────────────────────────────────────────────────────────── */
 
 /* Filtered out: still in place, just quiet (变暗不消失). */
 .dimmed {
@@ -380,9 +392,12 @@
   opacity: var(--op-dim);
 }
 
+/* Selection lands at once and the old row fades out behind it: arrow keys
+ * auto-repeat, and an eased highlight would trail the caret down the column. */
 .selected {
   border-color: var(--brand-ghost);
   background: var(--brand-dim);
+  transition-duration: var(--d-instant);
 }
 
 .selected .count {
@@ -393,8 +408,13 @@
   border-color: var(--brand);
 }
 
+/* Copy answer: the shared ph-flash pulse (design-spec §11 flash 态), tinted
+ * with the brand ghost. It decays on its own after --d-fast instead of holding
+ * the fill for the toast's whole dwell; the keycap (.flash .slot) stays lit
+ * for the dwell so the pressed number is still legible. */
 .flash {
-  background: var(--brand-ghost);
+  composes: flash from "../primitives/primitives.module.css";
+  --layer-16: var(--brand-ghost);
 }
 
 .more {
@@ -472,7 +492,7 @@
   padding: var(--s-0_5) var(--s-2);
 }
 
-/* ── Preview line ───────────────────────────────────────────────────────── */
+/* ── Preview line ─────────────────────────────────────────────────────────────────── */
 
 .preview {
   display: flex;
@@ -577,16 +597,6 @@
 .row[data-selected] .placeButton,
 .placeButton:focus-visible {
   opacity: 1;
-}
-
-@media (prefers-reduced-motion: reduce) {
-  .item,
-  .slot,
-  .count,
-  .filter,
-  .placeButton {
-    transition: none;
-  }
 }
 
 /* In the wrapped strip a reserved-but-invisible button per chip would open a

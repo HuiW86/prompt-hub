@@ -1,3 +1,5 @@
+import type { CSSProperties } from "react";
+
 import { useUpdaterStore } from "../stores/updaterStore";
 
 import styles from "./UpdaterBanner.module.css";
@@ -79,7 +81,13 @@ export function UpdaterBanner() {
               className={
                 hasPercent ? styles.progressFill : styles.progressIndeterminate
               }
-              style={hasPercent ? { width: `${percent}%` } : undefined}
+              // A scale, not a width: progress ticks re-fill on the compositor
+              // instead of re-laying-out the banner every chunk.
+              style={
+                hasPercent
+                  ? ({ "--progress": (percent ?? 0) / 100 } as CSSProperties)
+                  : undefined
+              }
             />
           </span>
         </span>

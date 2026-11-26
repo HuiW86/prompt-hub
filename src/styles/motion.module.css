@@ -1,0 +1,53 @@
+/* Shared motion pieces (2026-11 motion pass). Tokens only — durations and the
+ * curve live in tokens.css §4; this file only says WHAT moves.
+ *
+ * Segmented-control thumb — paired with hooks/useSegmentThumb.ts.
+ * One thumb per track slides between segments instead of each segment
+ * toggling its own fill, so a switch reads as "moved from here to there".
+ * Until the hook has measured (data-thumb absent), segments keep their own
+ * fill — the control is never shown without a selection. Compose this class
+ * into the track and set --thumb-bg / --thumb-shadow to the active fill the
+ * segments used to paint themselves. */
+.segmentTrack {
+  position: relative;
+  isolation: isolate;
+}
+
+.segmentTrack[data-thumb]::before {
+  content: "";
+  position: absolute;
+  top: 0;
+  left: 0;
+  z-index: -1;
+  width: var(--thumb-w);
+  height: var(--thumb-h);
+  border-radius: var(--r-3);
+  background: var(--thumb-bg, var(--surface-3));
+  box-shadow: var(--thumb-shadow, none);
+  transform: translate(var(--thumb-x), var(--thumb-y));
+  pointer-events: none;
+}
+
+.segmentTrack[data-thumb="live"]::before {
+  transition:
+    transform var(--d-base) var(--ease),
+    width var(--d-base) var(--ease);
+}
+
+.segmentTrack[data-thumb] > [data-segment-active="true"] {
+  background: transparent;
+  box-shadow: none;
+}
+
+/* Workspace / page content arriving after a user-initiated switch. Opacity
+ * only: the panorama's positions are a contract (design-spec §10.9.3), so the
+ * new view settles in place rather than sliding. Never applied on wake (C1). */
+@keyframes content-in {
+  from {
+    opacity: 0;
+  }
+}
+
+.contentEnter {
+  animation: content-in var(--d-fast) var(--ease);
+}

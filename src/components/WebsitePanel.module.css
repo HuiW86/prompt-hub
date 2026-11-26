@@ -45,6 +45,9 @@
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
+  transition:
+    background-color var(--d-fast) var(--ease),
+    color var(--d-fast) var(--ease);
 }
 .sidebar > .groupButton,
 .sidebar > .selected {
@@ -71,6 +74,9 @@
   font: inherit;
   text-align: left;
   cursor: pointer;
+  transition:
+    border-color var(--d-fast) var(--ease),
+    color var(--d-fast) var(--ease);
 }
 .addGroup:hover {
   color: var(--fg-1);
@@ -187,6 +193,9 @@
   background: transparent;
   color: var(--fg-3);
   cursor: pointer;
+  transition:
+    background-color var(--d-fast) var(--ease),
+    color var(--d-fast) var(--ease);
 }
 .tiny:hover:not(:disabled) {
   color: var(--fg-1);

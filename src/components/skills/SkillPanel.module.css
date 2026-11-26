@@ -29,6 +29,9 @@
   font-size: var(--t-12);
   white-space: nowrap;
   cursor: pointer;
+  transition:
+    background-color var(--d-fast) var(--ease),
+    color var(--d-fast) var(--ease);
 }
 
 .importButton:hover,

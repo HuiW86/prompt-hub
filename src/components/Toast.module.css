@@ -1,6 +1,8 @@
 /* Floating "已复制" indicator, bottom-centre just above the status bar so it
  * never covers the header controls (mode toggle / settings gear).
- * Visible window is bounded by toastStore.VISIBLE_MS; CSS animates fade-in only.
+ * Visible window is bounded by toastStore.VISIBLE_MS. It rises in from where it
+ * will sit (--d-slow) and leaves faster than it came (--d-fast, .leaving);
+ * a replacement toast keeps the surface and only fades its text in.
  * Neutral surface + elevation (ADR-019: floating feedback, no task-green). */
 .toast {
   composes: ph-action from "../styles/typography.module.css";
@@ -30,6 +32,18 @@
 
 .message {
   min-width: 0;
+  animation: toast-text-in var(--d-fast) var(--ease);
+}
+
+/* Leaving: shorter than the entrance, sinks back the way it came, and takes
+   no input — the undo button included — so the exit never eats a click. */
+.leaving {
+  animation: toast-out var(--d-fast) var(--ease) forwards;
+  pointer-events: none;
+}
+
+.leaving .action {
+  pointer-events: none;
 }
 
 /* Undo affordance (D-5). The toast surface is pointer-events:none so it never
@@ -75,6 +89,19 @@
   border-color: var(--accent-swatch-amber);
   color: var(--fg-1);
   font-weight: var(--w-600);
+}
+
+@keyframes toast-text-in {
+  from {
+    opacity: 0;
+  }
+}
+
+@keyframes toast-out {
+  to {
+    opacity: 0;
+    transform: translateY(var(--s-1));
+  }
 }
 
 @keyframes fadeIn {

@@ -9,6 +9,7 @@ import {
 import { Database, Download, Keyboard, Palette, X } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
 
+import { useSegmentThumb } from "../hooks/useSegmentThumb";
 import { ipc } from "../ipc";
 import {
   type Accent,
@@ -26,6 +27,7 @@ import { primaryModifierLabel } from "../utils/platform";
 import { HotkeyRecorder } from "./HotkeyRecorder";
 import { TrashSection } from "./TrashSection";
 import { cx } from "./primitives/cx";
+import motion from "../styles/motion.module.css";
 import styles from "./SettingsModal.module.css";
 
 type Tab = "appearance" | "hotkey" | "update" | "data";
@@ -94,8 +96,14 @@ function Segment<T extends string>({
   /** Optional data-* hook stamped with each option's value (tests / styling). */
   dataAttr?: string;
 }) {
+  const trackRef = useSegmentThumb<HTMLDivElement>(value);
   return (
-    <div className={styles.segment} role="group" aria-label={label}>
+    <div
+      ref={trackRef}
+      className={styles.segment}
+      role="group"
+      aria-label={label}
+    >
       {options.map((opt) => {
         const extra: Record<string, string> = dataAttr
           ? { [dataAttr]: opt.value }
@@ -106,6 +114,7 @@ function Segment<T extends string>({
             type="button"
             className={cx(styles.segItem, value === opt.value && styles.active)}
             aria-pressed={value === opt.value}
+            data-segment-active={value === opt.value ? "true" : undefined}
             {...extra}
             onClick={() => onChange(opt.value)}
           >
@@ -116,6 +125,9 @@ function Segment<T extends string>({
     </div>
   );
 }
+
+// Exit length mirrors --d-fast; a fallback for when animationend never fires.
+const EXIT_FALLBACK_MS = 160;
 
 // Settings overlay dialog absorbed from the Promptscape design, reshaped into
 // macOS-style grouped rows (issue #29): each page is a stack of rounded cards,
@@ -147,6 +159,7 @@ export function SettingsModal() {
   const showToast = useToastStore((s) => s.show);
 
   const [tab, setTab] = useState<Tab>("appearance");
+  const navRef = useSegmentThumb<HTMLElement>(tab);
   // Guards the export/import buttons against re-entry while a dialog or the
   // file I/O is in flight, and carries the last data-tab status line.
   const [dataBusy, setDataBusy] = useState(false);
@@ -329,7 +342,23 @@ export function SettingsModal() {
     };
   }, [open, close]);
 
-  if (!open) return null;
+  // Exit: the dialog stays on screen for one short fade after it closes. The
+  // focus effect above has already cleaned up (focus is back on the opener),
+  // and the leaving overlay is inert + aria-hidden + pointer-events:none, so
+  // the fade never holds the user up — dismissal is still instant to input.
+  const [shownOpen, setShownOpen] = useState(open);
+  const [leaving, setLeaving] = useState(false);
+  if (open !== shownOpen) {
+    setShownOpen(open);
+    setLeaving(!open);
+  }
+  useEffect(() => {
+    if (!leaving) return;
+    const t = setTimeout(() => setLeaving(false), EXIT_FALLBACK_MS);
+    return () => clearTimeout(t);
+  }, [leaving]);
+
+  if (!open && !leaving) return null;
 
   const statusLine =
     status === "available" && availableVersion
@@ -339,8 +368,13 @@ export function SettingsModal() {
 
   return (
     <div
-      className={styles.overlay}
+      className={cx(styles.overlay, leaving && styles.leaving)}
       role="presentation"
+      aria-hidden={leaving || undefined}
+      inert={leaving || undefined}
+      onAnimationEnd={(e) => {
+        if (leaving && e.target === e.currentTarget) setLeaving(false);
+      }}
       onClick={(e) => {
         // Same guard as Escape: no dismissal while the data page is working.
         if (dataBusy) return;
@@ -355,7 +389,7 @@ export function SettingsModal() {
         aria-label="设置"
         tabIndex={-1}
       >
-        <nav className={styles.nav} aria-label="设置分区">
+        <nav ref={navRef} className={styles.nav} aria-label="设置分区">
           <span className={styles.navHead}>设置</span>
           <button
             type="button"
@@ -364,6 +398,7 @@ export function SettingsModal() {
               tab === "appearance" && styles.active,
             )}
             aria-current={tab === "appearance"}
+            data-segment-active={tab === "appearance" ? "true" : undefined}
             onClick={() => setTab("appearance")}
           >
             <Palette size={14} strokeWidth={2} aria-hidden />
@@ -373,6 +408,7 @@ export function SettingsModal() {
             type="button"
             className={cx(styles.navItem, tab === "hotkey" && styles.active)}
             aria-current={tab === "hotkey"}
+            data-segment-active={tab === "hotkey" ? "true" : undefined}
             onClick={() => setTab("hotkey")}
           >
             <Keyboard size={14} strokeWidth={2} aria-hidden />
@@ -382,6 +418,7 @@ export function SettingsModal() {
             type="button"
             className={cx(styles.navItem, tab === "update" && styles.active)}
             aria-current={tab === "update"}
+            data-segment-active={tab === "update" ? "true" : undefined}
             onClick={() => setTab("update")}
           >
             <Download size={14} strokeWidth={2} aria-hidden />
@@ -391,6 +428,7 @@ export function SettingsModal() {
             type="button"
             className={cx(styles.navItem, tab === "data" && styles.active)}
             aria-current={tab === "data"}
+            data-segment-active={tab === "data" ? "true" : undefined}
             onClick={() => setTab("data")}
           >
             <Database size={14} strokeWidth={2} aria-hidden />
@@ -417,7 +455,7 @@ export function SettingsModal() {
           </div>
 
           {tab === "appearance" ? (
-            <div className={styles.body}>
+            <div key={tab} className={cx(styles.body, motion.contentEnter)}>
               <div className={styles.group}>
                 <div className={styles.groupHead}>
                   <span className={styles.groupTitle}>显示</span>
@@ -525,7 +563,7 @@ export function SettingsModal() {
               </div>
             </div>
           ) : tab === "hotkey" ? (
-            <div className={styles.body}>
+            <div key={tab} className={cx(styles.body, motion.contentEnter)}>
               <div className={styles.group}>
                 <div className={styles.groupHead}>
                   <span className={styles.groupTitle}>全局唤起</span>
@@ -550,7 +588,7 @@ export function SettingsModal() {
               </div>
             </div>
           ) : tab === "update" ? (
-            <div className={styles.body}>
+            <div key={tab} className={cx(styles.body, motion.contentEnter)}>
               <div className={styles.group}>
                 <div className={styles.groupHead}>
                   <span className={styles.groupTitle}>软件更新</span>
@@ -620,7 +658,7 @@ export function SettingsModal() {
               </div>
             </div>
           ) : (
-            <div className={styles.body}>
+            <div key={tab} className={cx(styles.body, motion.contentEnter)}>
               <div className={styles.group}>
                 <div className={styles.groupHead}>
                   <span className={styles.groupTitle}>备份</span>
