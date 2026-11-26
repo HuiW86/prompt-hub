@@ -19,6 +19,8 @@
  * equal-width segments; the active segment lifts to the primary surface.
  * Scene's task-layer identity is carried by position, not colour (ADR-019). */
 .tabs {
+  composes: segmentTrack from "../styles/motion.module.css";
+  --thumb-bg: var(--surface-1);
   display: flex;
   align-items: center;
   gap: var(--s-1);
@@ -425,8 +427,12 @@
   opacity: 1;
 }
 
+/* Press: settles back down at once (instant press-in, eased release). */
 .phrase:active {
   background: var(--surface-2);
+  box-shadow: none;
+  transform: none;
+  transition-duration: var(--d-instant);
 }
 
 .phrase:focus-visible {

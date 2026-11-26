@@ -19,10 +19,36 @@
 }
 
 /* Entrance (reshape W6): scrim fades, dialog rises 2% scale — one beat under
-   the C1 ceiling. Exit stays instant: dismissal must never lag the user. */
+   the C1 ceiling. Exit (.leaving) is shorter and never blocks input:
+   dismissal must never lag the user. */
 @keyframes overlay-in {
   from {
     opacity: 0;
+  }
+}
+
+/* Exit: shorter than the entrance, opacity only on the scrim and a slight
+   settle on the dialog. The leaving node is inert and pointer-events:none,
+   so the fade never delays the user's next action. */
+.leaving {
+  animation: overlay-out var(--d-fast) var(--ease) forwards;
+  pointer-events: none;
+}
+
+.leaving .modal {
+  animation: modal-out var(--d-fast) var(--ease) forwards;
+}
+
+@keyframes overlay-out {
+  to {
+    opacity: 0;
+  }
+}
+
+@keyframes modal-out {
+  to {
+    opacity: 0;
+    transform: scale(0.98);
   }
 }
 
@@ -52,6 +78,11 @@
 
 /* ── Left nav ──────────────────────────────────────────────────────────────── */
 .nav {
+  composes: segmentTrack from "../styles/motion.module.css";
+  /* The page selection slides between rows like the segmented controls do;
+     the thumb carries the active row's fill and hairline ring. */
+  --thumb-bg: var(--surface-2);
+  --thumb-shadow: inset 0 0 0 var(--hairline) var(--border-2);
   display: flex;
   flex-direction: column;
   gap: var(--s-1);
@@ -98,6 +129,10 @@
   background: var(--surface-2);
   border-color: var(--border-2);
   color: var(--fg-1);
+}
+
+.nav[data-thumb] > .navItem.active {
+  border-color: transparent;
 }
 
 .navItem:focus-visible {
@@ -275,6 +310,8 @@
    picked only by an --accent border — vanished under the neutral accent, where
    --accent resolves to the same ink as the text. */
 .segment {
+  composes: segmentTrack from "../styles/motion.module.css";
+  --thumb-shadow: var(--shadow-1);
   display: inline-flex;
   gap: var(--s-0_5);
   padding: var(--s-0_5);
@@ -379,7 +416,7 @@
   background: var(--accent-swatch-amber);
 }
 
-/* ── Switch ─────────────────────────────────────────────────────────────── */
+/* ── Switch ───────────────────────────────────────────────────────────────────── */
 .toggle {
   flex: 0 0 auto;
   width: var(--s-10);
@@ -390,7 +427,11 @@
   background: var(--surface-3);
   cursor: pointer;
   appearance: none;
-  transition: background-color var(--d-fast) var(--ease);
+  /* Track fill, ring and knob move as one: the knob's colour used to flip
+     instantly while it was still sliding. */
+  transition:
+    background-color var(--d-fast) var(--ease),
+    border-color var(--d-fast) var(--ease);
 }
 
 .toggle.on {
@@ -409,7 +450,9 @@
   height: var(--s-4);
   border-radius: var(--r-4);
   background: var(--fg-1);
-  transition: transform var(--d-fast) var(--ease);
+  transition:
+    transform var(--d-fast) var(--ease),
+    background-color var(--d-fast) var(--ease);
 }
 
 .toggle.on .knob {
@@ -439,7 +482,7 @@
   color: var(--fg-1);
 }
 
-/* ── Buttons ────────────────────────────────────────────────────────────── */
+/* ── Buttons ──────────────────────────────────────────────────────────────────── */
 .actionBtn {
   composes: ph-action from "../styles/typography.module.css";
   display: inline-flex;
