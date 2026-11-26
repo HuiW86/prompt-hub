@@ -65,6 +65,7 @@
 }
 
 .workspaces {
+  composes: segmentTrack from "../styles/motion.module.css";
   display: flex;
   gap: var(--s-0_5);
   padding: var(--s-0_5);

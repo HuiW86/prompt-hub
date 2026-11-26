@@ -22,6 +22,10 @@
   flex: 0 0 auto;
   color: var(--fg-3);
   opacity: var(--op-icon);
+  /* Focus lights the glass with the field, not a frame later. */
+  transition:
+    color var(--d-fast) var(--ease),
+    opacity var(--d-fast) var(--ease);
 }
 
 .field {

@@ -97,9 +97,10 @@
 .progressFill {
   display: block;
   height: 100%;
-  border-radius: var(--r-1);
   background: var(--accent);
-  transition: width var(--d-base) var(--ease);
+  transform: scaleX(var(--progress, 0));
+  transform-origin: left center;
+  transition: transform var(--d-base) var(--ease);
 }
 
 .progressIndeterminate {
@@ -108,10 +109,13 @@
   height: 100%;
   border-radius: var(--r-1);
   background: var(--accent);
-  animation: progress-slide var(--d-slow) var(--ease) infinite alternate;
+  /* One unhurried sweep in one direction, repeated (macOS indeterminate
+     bar). It used to bounce back and forth every 200ms, which read as a
+     glitch, not as "working". A loop is not a transition: --d-loop. */
+  animation: progress-sweep var(--d-loop) var(--ease) infinite;
 }
 
-@keyframes progress-slide {
+@keyframes progress-sweep {
   from {
     transform: translateX(-100%);
   }

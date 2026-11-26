@@ -47,6 +47,7 @@
   font-weight: var(--w-500);
   line-height: var(--lh-tight);
   cursor: pointer;
+  transition: color var(--d-fast) var(--ease);
 }
 
 .cueCell:hover {
@@ -63,6 +64,8 @@
   width: var(--s-1_5);
   height: var(--s-1_5);
   border-radius: 50%;
+  /* A state dot changes colour (idle → live), it does not blink. */
+  transition: background-color var(--d-fast) var(--ease);
 }
 
 .dotOk {
@@ -98,6 +101,7 @@
   font: inherit;
   white-space: nowrap;
   cursor: pointer;
+  transition: color var(--d-fast) var(--ease);
 }
 
 .updater:hover:not(:disabled) {
