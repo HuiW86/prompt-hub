@@ -615,6 +615,21 @@
   --d-base: 160ms;
   --d-slow: 200ms;
 
+  /* Motion language (2026-11 motion pass). One curve, four beats:
+       press-in     --d-instant  the surface answers the finger at once; the
+                                 RELEASE eases back on the element's own
+                                 transition (press is never late)
+       hover/state  --d-fast     colour, border, opacity
+       switch       --d-base     a selection moves between siblings (thumb
+                                 slides, active fill), a value re-fills
+       enter        --d-fast…--d-slow  surfaces fade in where they come from
+       exit         --d-fast     always shorter than the enter; never blocks
+                                 input (the leaving node is pointer-events:none)
+     Loops (indeterminate progress) are not transitions and ride --d-loop; the
+     ≤200ms ceiling is about how long a CHANGE takes, a loop never ends. */
+  --d-instant: 0ms;
+  --d-loop: 1200ms;
+
   /* Hover lift offset — interactive cards/rows rise together with --shadow-1
      (Promptscape hover language, ADR-018 补遗 P3-5; elevation rules §8.2.1). */
   --lift-1: -1px;
